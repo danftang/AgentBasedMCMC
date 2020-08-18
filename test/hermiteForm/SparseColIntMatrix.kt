@@ -283,7 +283,7 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
     // where M is this matrix
     // returns X
     //
-    fun IPsolve(B: SparseIntColumn, C: List<Double>): IntArray {
+    fun IPsolve(B: SparseIntColumn, C: List<Double> = DoubleArray(nCols) {0.0}.asList()): IntArray {
         val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
         val X = solver.makeIntVarArray(nCols, 0.0, Double.POSITIVE_INFINITY)
         val constraints = Array<MPConstraint>(nRows) { solver.makeConstraint() }

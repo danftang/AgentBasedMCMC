@@ -3,10 +3,7 @@ package experiments
 import com.google.ortools.linearsolver.MPConstraint
 import com.google.ortools.linearsolver.MPSolver
 import com.google.ortools.linearsolver.MPVariable
-import hermiteForm.HermiteDecomposition
-import hermiteForm.MCMCTreeNode
-import hermiteForm.SparseColIntMatrix
-import hermiteForm.gnuplot
+import hermiteForm.*
 import org.apache.commons.math3.distribution.EnumeratedDistribution
 import org.apache.commons.math3.primes.Primes
 import org.junit.Test
@@ -186,30 +183,42 @@ class SparseMatrixExpts {
         b[2] = -1
         b[N*T + 3] = 1
 
-        val decomposition = HermiteDecomposition(abmMatrix, b)
-//        val baseSolution = decomposition.baseSolution(b)
-        val constraints = decomposition.toConstraintMatrix()
-        val constraintVector = decomposition.actToNonBasisVector(-decomposition.baseState)
+        val mcmcTree = MCMCTree(abmMatrix, b, DoubleArray(abmMatrix.nCols) { 0.25 } )
 
-        val rootBasisVector = constraints.IPsolve(constraintVector, DoubleArray(constraints.nCols) {0.0}.asList())
+        for(s in 1..3) {
+            val sample = mcmcTree.currentSample.actValue
+            println(sample)
+            plotFeynmannDiagram(sample, abmMatrix, N)
+            mcmcTree.nextSample()
+        }
+//        println(abmMatrix.toSparsityString())
+
+//        val decomposition = HermiteDecomposition(abmMatrix, b)
+//        println(decomposition.nullBasis.toSparsityString())
+//        val baseSolution = decomposition.baseSolution(b)
+
+//        val constraints = decomposition.toConstraintMatrix()
+//        val constraintVector = decomposition.actToNonBasisVector(-decomposition.baseState)
+//        val rootBasisVector = constraints.IPsolve(constraintVector, DoubleArray(constraints.nCols) {0.0}.asList())
 //        val rootSolution = decomposition.basisVectorToActs(rootBasisVector)
 //        plotFeynmannDiagram(rootSolution, abmMatrix, N)
 
-        println(rootBasisVector.asList())
-        println(rootBasisVector[34])
+//        println(rootBasisVector.asList())
+//        println(rootBasisVector[34])
 
-        var sample = MCMCTreeNode(rootBasisVector, rootBasisVector.lastIndex, null)
 
-        println("Root sample is ${decomposition.basisVectorToActs(sample.value)}")
+//        var sample = MCMCTreeNode(rootBasisVector, rootBasisVector.lastIndex, null)
 
-        sample.generateAllChildren(decomposition)
-        sample.children.forEach {
-            val solution = decomposition.basisVectorToActs(it.value)
-            plotFeynmannDiagram(solution, abmMatrix, N)
-        }
-        for(child in sample.children) {
-            child.generateAllChildren(decomposition)
-        }
+//        println("Root sample is ${decomposition.basisVectorToActs(sample.value)}")
+
+//        sample.generateAllChildren(decomposition)
+//        sample.children.forEach {
+//            val solution = decomposition.basisVectorToActs(it.value)
+////            plotFeynmannDiagram(solution, abmMatrix, N)
+//        }
+//        for(child in sample.children) {
+//            child.generateAllChildren(decomposition)
+//        }
 
 
 
