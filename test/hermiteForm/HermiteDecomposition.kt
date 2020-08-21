@@ -11,7 +11,7 @@ class HermiteDecomposition {
     constructor(abm: SparseColIntMatrix, B: SparseColIntMatrix.SparseIntColumn) {
         hermiteForm = SparseColIntMatrix(abm)
         U = hermiteForm.hermiteDecomposition()
-        nullBasis = SparseColIntMatrix(U.subList(abm.nRows, U.nRows), U.nRows)
+        nullBasis = SparseColIntMatrix(U.subList(abm.nRows, U.nCols), U.nRows)
         nullBasis.upperTriangularise()
         nullBasis.upperTriangularThin()
 

@@ -2,6 +2,7 @@ package hermiteForm
 
 import org.apache.commons.math3.distribution.EnumeratedDistribution
 import org.apache.commons.math3.util.Pair
+import java.lang.RuntimeException
 import kotlin.math.exp
 import kotlin.math.min
 import kotlin.math.pow
@@ -26,7 +27,18 @@ class MCMCTreeNode(val tree: MCMCTree, val parent: MCMCTreeNode?, val breakpoint
         get() = min(Pcap, pTransitionFromParent * exp(parent?.targetLnProbability?:Double.NEGATIVE_INFINITY - targetLnProbability))
 
     val pAcceptTransitionFromParent: Double
-        get() = Pcap / (pTransitionFromParent  * exp(parent?.targetLnProbability?:Double.NEGATIVE_INFINITY - targetLnProbability))
+        get() {
+            try {
+                return if(parent != null) {
+                    Pcap / (pTransitionFromParent * exp(parent.targetLnProbability - targetLnProbability))
+                } else {
+                    0.0
+                }
+            } catch(err: RuntimeException) {
+                println("Infeasible child")
+                return 0.0
+            }
+        }
 
     val actValue: SparseColIntMatrix.SparseIntColumn
         get() = tree.hermite.basisVectorToActs(basisValue)

@@ -172,7 +172,81 @@ class SparseMatrixExpts {
         println(smallestVec.asList())
         val solution = positiveBaseState + positiveDefiniteNullBasis * SparseColIntMatrix.SparseIntColumn(smallestVec)
         plotFeynmannDiagram(solution,abm, N)
+    }
 
+    @Test
+    fun testStuff() {
+        val e = SparseColIntMatrix.ExtendedEuclid(1,1)
+        println("${e.gcd} ${e.y}")
+    }
+
+    @Test
+    fun scaleUp() {
+        val gridSize = 16
+        val timesteps = 2
+        val abmMatrix = twoDabmMatrix(gridSize, timesteps)
+//        println(abmMatrix.toSparsityString())
+        val observations = SparseColIntMatrix.SparseIntColumn()
+        for(agent in 1..20) {
+            val xPos = Random.nextInt(gridSize)
+            val yPos = Random.nextInt(gridSize)
+            observations[xPos*gridSize + yPos] = -1
+            observations[gridSize*gridSize*timesteps + xPos*gridSize + yPos] = 1
+        }
+
+        // Hermite decompose
+        val hermiteForm = abmMatrix.copy()
+        println("Starting...")
+        val U = hermiteForm.hermiteDecomposition()
+//        println(hermiteForm.diagonal())
+//        println(U)
+//        println(hermiteForm.toSparsityString())
+        println("Done Hermite decomposition")
+        // AX = B, X = UY, HY = B
+        val baseHermiteVector = hermiteForm.solveLowerTriangular(observations)
+        println("Base hermite state is $baseHermiteVector")
+        val baseState = U * baseHermiteVector
+        println("Base state is $baseState")
+        println("Hermite Residual is ${hermiteForm * baseHermiteVector - observations}")
+        println("Act Residual is ${abmMatrix * baseState - observations}")
+        val nullBasis = U.subMartixView(hermiteForm.nRows, U.nCols)
+        val solutionBasis = U.subMartixView(0, hermiteForm.nRows)
+        println("Solved for base state and generated null basis")
+//        println(nullBasis)
+
+        assert(nullBasis.checkNoZeroEntries())
+        println("Solution basis range is ${solutionBasis.valueRange()}")
+        println("null value range is ${nullBasis.valueRange()}")
+        println("Null basis sparsity is ${nullBasis.sparsityRatio()}")
+
+
+
+//        val nullBasisSolution = nullBasis.IPsolve(-baseState, DoubleArray(nullBasis.nCols) {0.0}.asList())
+//        println("solved")
+//        val solution = baseState + nullBasis * nullBasisSolution
+//        println(solution)
+
+
+        nullBasis.upperTriangularise()
+        assert(nullBasis.checkNoZeroEntries())
+        println("Upper triangularised null basis")
+        println("null value range is ${nullBasis.valueRange()}")
+        println("Null basis sparsity is ${nullBasis.sparsityRatio()}")
+//        println(nullBasis)
+        nullBasis.upperTriangularThin()
+        assert(nullBasis.checkNoZeroEntries())
+        println("Thinned null basis")
+        println("null value range is ${nullBasis.valueRange()}")
+        println("Null basis sparsity is ${nullBasis.sparsityRatio()}")
+        val positiveDefiniteBaseState = upperTriangularMinimise(baseState, nullBasis)
+        println("Got positive definite null basis and base state")
+        println(positiveDefiniteBaseState)
+
+
+        val positiveBasisSolution = nullBasis.IPsolve(-positiveDefiniteBaseState, DoubleArray(nullBasis.nCols) {0.0}.asList())
+        println("Solved for positive solution")
+        val solution = positiveDefiniteBaseState + nullBasis * positiveBasisSolution
+        println(solution)
     }
 
     @Test
@@ -185,10 +259,10 @@ class SparseMatrixExpts {
 
         val mcmcTree = MCMCTree(abmMatrix, b, DoubleArray(abmMatrix.nCols) { 0.25 } )
 
-        for(s in 1..3) {
+        for(s in 1..20) {
             val sample = mcmcTree.currentSample.actValue
             println(sample)
-            plotFeynmannDiagram(sample, abmMatrix, N)
+//            plotFeynmannDiagram(sample, abmMatrix, N)
             mcmcTree.nextSample()
         }
 //        println(abmMatrix.toSparsityString())
@@ -457,51 +531,56 @@ class SparseMatrixExpts {
 
 
 
-    fun twoDabmMatrix(): SparseColIntMatrix {
+    fun twoDabmMatrix(gridSize: Int, timesteps: Int): SparseColIntMatrix {
         val NActs = 6
-        val abmMatrix = SparseColIntMatrix((T+1)*N*N, T*N*(N-1)*NActs)
+        val abmMatrix = SparseColIntMatrix((timesteps+1)*gridSize*gridSize, timesteps*gridSize*(gridSize-1)*NActs)
+
+        // nCols = NActs*(gridsize-2)*(gridsize-2) + 2*(gridsize-2)*(NActs-2) + 2*(gridsize-2)*(NActs-1) + 4*(NActs-3)
+        // =
 
         var actColumn = 0
-        for(timestep in 0 until T) {
-            for(agentRow in 0 until N) {
-                for(agentCol in 0 until N) {
+        for(timestep in 0 until timesteps) {
+            for(agentRow in 0 until gridSize) {
+                for(agentCol in 0 until gridSize) {
                     if(agentCol>0) { // move left
                         val act = actColumn++
-                        abmMatrix[eqnId(timestep,agentRow,agentCol),act] = -1
-                        abmMatrix[eqnId(timestep+1,agentRow,agentCol-1),act] = 1
+                        abmMatrix[eqnId(gridSize, timestep,agentRow,agentCol),act] = -1
+                        abmMatrix[eqnId(gridSize, timestep+1,agentRow,agentCol-1),act] = 1
                     }
-                    if(agentCol<N-1) { // move right
+                    if(agentCol<gridSize-1) { // move right
                         val act = actColumn++
-                        abmMatrix[eqnId(timestep,agentRow,agentCol),act] = -1
-                        abmMatrix[eqnId(timestep+1,agentRow,agentCol+1),act] = 1
+                        abmMatrix[eqnId(gridSize, timestep,agentRow,agentCol),act] = -1
+                        abmMatrix[eqnId(gridSize,timestep+1,agentRow,agentCol+1),act] = 1
                     }
                     if(agentRow>0) { // move down
                         val act = actColumn++
-                        abmMatrix[eqnId(timestep,agentRow,agentCol),act] = -1
-                        abmMatrix[eqnId(timestep+1,agentRow-1,agentCol),act] = 1
+                        abmMatrix[eqnId(gridSize, timestep,agentRow,agentCol),act] = -1
+                        abmMatrix[eqnId(gridSize, timestep+1,agentRow-1,agentCol),act] = 1
                     }
-                    if(agentRow<N-1) { // move up
+                    if(agentRow<gridSize-1) { // move up
                         val act = actColumn++
-                        abmMatrix[eqnId(timestep,agentRow,agentCol),act] = -1
-                        abmMatrix[eqnId(timestep+1,agentRow+1,agentCol),act] = 1
+                        abmMatrix[eqnId(gridSize, timestep,agentRow,agentCol),act] = -1
+                        abmMatrix[eqnId(gridSize, timestep+1,agentRow+1,agentCol),act] = 1
                     }
                     if(agentCol>0) { // eat left
                         val act = actColumn++
-                        abmMatrix[eqnId(timestep,agentRow,agentCol),act] = -1
-                        abmMatrix[eqnId(timestep,agentRow,agentCol-1),act] = -1
-                        abmMatrix[eqnId(timestep+1,agentRow,agentCol),act] = 1
+                        abmMatrix[eqnId(gridSize, timestep,agentRow,agentCol),act] = -1
+                        abmMatrix[eqnId(gridSize, timestep,agentRow,agentCol-1),act] = -1
+                        abmMatrix[eqnId(gridSize, timestep+1,agentRow,agentCol),act] = 1
                     }
-                    if(agentCol<N-1) { // give birth right
+                    if(agentCol<gridSize-1) { // give birth right
                         val act = actColumn++
-                        abmMatrix[eqnId(timestep,agentRow,agentCol),act] = -1
-                        abmMatrix[eqnId(timestep+1,agentRow,agentCol+1),act] = 1
-                        abmMatrix[eqnId(timestep+1,agentRow,agentCol),act] = 1
+                        abmMatrix[eqnId(gridSize, timestep,agentRow,agentCol),act] = -1
+                        abmMatrix[eqnId(gridSize, timestep+1,agentRow,agentCol+1),act] = 1
+                        abmMatrix[eqnId(gridSize, timestep+1,agentRow,agentCol),act] = 1
                     }
                 }
             }
         }
         return abmMatrix
     }
+
+    fun eqnId(N:Int, timestep: Int, row: Int, col: Int) = timestep*N*N + row*N + col
 
     fun oneDabmMatrix(): SparseColIntMatrix {
         val NActs = 4
@@ -538,7 +617,6 @@ class SparseMatrixExpts {
     }
 
 
-    fun eqnId(timestep: Int, row: Int, col: Int) = timestep*N*N + row*N + col
 
     fun squareizeByEndPoint(matrix: SparseColIntMatrix): SparseColIntMatrix {
         val result = SparseColIntMatrix(matrix.nRows, matrix.nRows)
@@ -567,6 +645,7 @@ class SparseMatrixExpts {
         for(basis in upperNullBasis.asReversed()) {
             val maxIndex = basis.keys.max()
             if(maxIndex != null) {
+                if(basis[maxIndex] == 0) println("Found zero entry in column $basis")
                 minimised.weightedPlusAssign(basis, -minimised[maxIndex]/basis[maxIndex])
             }
         }

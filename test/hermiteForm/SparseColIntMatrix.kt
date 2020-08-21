@@ -80,6 +80,7 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
 
     // solves LX=Y where L is the lower triangular
     // part of this matrix
+    // Assumes that L^-1 is integer
     fun solveLowerTriangular(Y: SparseIntColumn): SparseIntColumn {
         val X = SparseIntColumn(Y)
         for(i in 0 until min(nCols, nRows)) {
@@ -120,13 +121,35 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
         return result
     }
 
+    fun diagonal(): SparseIntColumn {
+        val diag = SparseIntColumn()
+        for(i in 0 until min(nRows,nCols)) {
+            diag[i] = this[i,i]
+        }
+        return diag
+    }
+
 
     fun copy(): SparseColIntMatrix = SparseColIntMatrix(this)
 
+    fun subMartixView(fromColumn: Int, untilColumn: Int): SparseColIntMatrix {
+        val view = SparseColIntMatrix(nRows, 0)
+        view.ensureCapacity(untilColumn - fromColumn)
+        for(j in fromColumn until untilColumn) {
+            view.add(this[j])
+        }
+        return view
+    }
+
+    // Number of non-zero elements / total number of elements
+    fun sparsityRatio(): Double {
+        return sumBy { it.entries.size }.toDouble() / (nRows.toDouble()*nCols)
+    }
 
     fun hermiteDecomposition(): SparseColIntMatrix {
         val U = Identity(this.nCols)
         for(eqnIndex in 0 until this.nRows) {
+//            println("Calculating row $eqnIndex")
             var indexCol = this[eqnIndex]
             var UindexCol = U[eqnIndex]
             var indexColMagnitude = indexCol[eqnIndex]
@@ -151,14 +174,25 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
                     }
                 }
             }
+            // now reduce to the left
+//            for(colIndex in 0 until eqnIndex) {
+//                val swapColMagnitude = this[eqnIndex,colIndex]
+//                if(swapColMagnitude != 0) {
+//                    val reductionWeight = -swapColMagnitude / indexColMagnitude
+//                    this[colIndex].weightedPlusAssign(indexCol, reductionWeight)
+//                    U[colIndex].weightedPlusAssign(UindexCol, reductionWeight)
+//                }
+//            }
         }
         return U
     }
+
 
     fun upperTriangularise() {
         var col = nCols-1
         var row = nRows-1
         while(row >= 0 && col > 0) {
+//            println("upper triangularising row $row")
             var indexCol = this[col]
             var indexColMagnitude: Int
             do {
@@ -169,7 +203,12 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
                     if (swapColMagnitude != 0) {
                         if (indexColMagnitude != 0) {
                             val g = ExtendedEuclid(indexColMagnitude, swapColMagnitude)
+                            assert(indexCol.checkNoZeroEntries())
+                            assert(swapCol.checkNoZeroEntries())
                             hermiteColumnSwap(indexCol, swapCol, g.y, indexColMagnitude/g.gcd, swapColMagnitude/g.gcd)
+                            assert(indexCol.checkNoZeroEntries())
+                            assert(swapCol.checkNoZeroEntries())
+                            indexColMagnitude = indexCol[row]
 //                            val g = gcd(indexColMagnitude, swapColMagnitude)
 //                            swapCol *= -indexColMagnitude / g
 //                            swapCol.weightedPlusAssign(indexCol, swapColMagnitude / g)
@@ -199,6 +238,7 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
 
     fun upperTriangularThin() {
         for(col in nCols-2 downTo 0) {
+//            println("Thinning with col $col")
             val indexCol = this[col]
             indexCol.keys.max()?.also { row ->
                 val indexColMagnitude = this[row,col]
@@ -206,7 +246,7 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
                     val swapCol = this[j]
                     val swapColMagnitude = swapCol[row]
                     if(swapColMagnitude != 0) {
-                        val g = gcd(indexColMagnitude, swapColMagnitude)
+                        val g = if(indexColMagnitude == 1) 1 else gcd(indexColMagnitude, swapColMagnitude)
                         if(indexColMagnitude > 0) {
                             swapCol *= indexColMagnitude / g
                             swapCol.weightedPlusAssign(indexCol, -swapColMagnitude / g)
@@ -285,7 +325,7 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
     //
     fun IPsolve(B: SparseIntColumn, C: List<Double> = DoubleArray(nCols) {0.0}.asList()): IntArray {
         val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
-        val X = solver.makeIntVarArray(nCols, 0.0, Double.POSITIVE_INFINITY)
+        val X = solver.makeIntVarArray(nCols, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)
         val constraints = Array<MPConstraint>(nRows) { solver.makeConstraint() }
         for(col in 0 until nCols) {
             for(coefficient in this[col].entries) {
@@ -360,6 +400,20 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
         return out.toString()
     }
 
+    fun checkNoZeroEntries(): Boolean {
+        return fold(true) {acc, col -> acc && col.checkNoZeroEntries()}
+    }
+
+    fun valueRange(): IntRange {
+        var max = Int.MIN_VALUE
+        var min = Int.MAX_VALUE
+        forEach { col ->
+            val colRange = col.valueRange()
+            if(colRange.start < min) min = colRange.start
+            if(colRange.endInclusive > max) max = colRange.endInclusive
+        }
+        return IntRange(min, max)
+    }
 
     // map from column index to non-zero entry value
     class SparseIntColumn(val data: HashMap<Int,Int> = HashMap(2)) {
@@ -494,6 +548,20 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
             val negation = SparseIntColumn()
             negation.weightedPlusAssign(this, -1)
             return negation
+        }
+
+        fun checkNoZeroEntries(): Boolean {
+            return values.fold(true){acc, v -> acc && v != 0}
+        }
+
+        fun valueRange(): IntRange {
+            var min = Int.MAX_VALUE
+            var max = Int.MIN_VALUE
+            values.forEach {
+                if(it > max) max = it
+                if(it < min) min = it
+            }
+            return IntRange(min, max)
         }
     }
 
