@@ -6,6 +6,9 @@ import com.google.ortools.linearsolver.MPVariable
 import hermiteForm.*
 import org.apache.commons.math3.distribution.EnumeratedDistribution
 import org.apache.commons.math3.primes.Primes
+import org.jgrapht.alg.spanning.PrimMinimumSpanningTree
+import org.jgrapht.graph.DefaultEdge
+import org.jgrapht.graph.SimpleGraph
 import org.junit.Test
 import kotlin.math.ln
 import kotlin.math.pow
@@ -176,13 +179,27 @@ class SparseMatrixExpts {
 
     @Test
     fun testStuff() {
-        val e = SparseColIntMatrix.ExtendedEuclid(1,1)
-        println("${e.gcd} ${e.y}")
+        val g = SparseColIntMatrix.ExtendedEuclid(1,1)
+        println("GCD=${g.gcd} x = ${g.x}  y = ${g.y}")
+//        val myGraph = SimpleGraph<Int,DefaultEdge>(DefaultEdge::class.java)
+//        myGraph.addVertex(1)
+//        myGraph.addVertex(2)
+//        myGraph.addVertex(3)
+//        myGraph.addVertex(4)
+//        myGraph.addEdge(1,2)
+//        myGraph.addEdge(2,3)
+//        myGraph.addEdge(3,4)
+//        myGraph.addEdge(4,1)
+//        myGraph.addEdge(1,3)
+//        myGraph.addEdge(2,4)
+//        println(myGraph)
+//        val spanningTree = PrimMinimumSpanningTree(myGraph).spanningTree
+//        println(spanningTree)
     }
 
     @Test
     fun scaleUp() {
-        val gridSize = 16
+        val gridSize = 32
         val timesteps = 2
         val abmMatrix = twoDabmMatrix(gridSize, timesteps)
 //        println(abmMatrix.toSparsityString())
@@ -199,7 +216,7 @@ class SparseMatrixExpts {
         println("Starting...")
         val U = hermiteForm.hermiteDecomposition()
 //        println(hermiteForm.diagonal())
-//        println(U)
+//        println(U.toSparsityString())
 //        println(hermiteForm.toSparsityString())
         println("Done Hermite decomposition")
         // AX = B, X = UY, HY = B

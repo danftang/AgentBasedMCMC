@@ -153,7 +153,7 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
             var indexCol = this[eqnIndex]
             var UindexCol = U[eqnIndex]
             var indexColMagnitude = indexCol[eqnIndex]
-            for(colIndex in eqnIndex+1 until this.nCols) {
+            for(colIndex in this.nCols-1 downTo eqnIndex+1) {
                 val swapCol = this[colIndex]
                 val UswapCol = U[colIndex]
                 val swapColMagnitude = swapCol[eqnIndex]
@@ -359,8 +359,8 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
     // c2' = B*c1 - A*c2
     // where X is an integer, A != 0 and XA + YB = 1
     // which is equivalent to
-    // c2 = B*c1 - A*c2
-    // c1 = (c1 - Y*c2)/A
+    // c2' = B*c1 - A*c2
+    // c1' = (c1 - Y*c2')/A
     private fun hermiteColumnSwap(c1: SparseIntColumn, c2: SparseIntColumn, Y: Int, A: Int, B: Int) {
         c2 *= -A
         c2.weightedPlusAssign(c1,B)
@@ -464,12 +464,14 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
 
         operator fun timesAssign(multiplier: Int) {
             if(multiplier == 0) data.clear()
+            if(multiplier == 1) return
             for(entry in entries) {
                 entry.setValue(entry.value * multiplier)
             }
         }
 
         operator fun divAssign(denominator: Int) {
+            if(denominator == 1) return
             for(entry in entries) {
                 entry.setValue(entry.value/denominator)
             }
@@ -566,6 +568,7 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
     }
 
     class ExtendedEuclid {
+        val x: Int
         val y: Int
         val gcd: Int
 
@@ -589,7 +592,7 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
                 yp = last_y - q * yp
                 last_y = temp
             }
-//            x = last_x
+            x = last_x
             y = last_y
             gcd = a
 //            assert(A.rem(gcd) == 0)

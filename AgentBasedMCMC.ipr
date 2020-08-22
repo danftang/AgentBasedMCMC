@@ -29,7 +29,7 @@
       <module fileurl="file://$PROJECT_DIR$/AgentBasedMCMC.iml" filepath="$PROJECT_DIR$/AgentBasedMCMC.iml" />
     </modules>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" default="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="false" project-jdk-name="1.8" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
   <component name="VcsDirectoryMappings">
@@ -81,6 +81,15 @@
       <properties maven-id="org.apache.commons:commons-math3:3.6.1" />
       <CLASSES>
         <root url="jar://$MAVEN_REPOSITORY$/org/apache/commons/commons-math3/3.6.1/commons-math3-3.6.1.jar!/" />
+      </CLASSES>
+      <JAVADOC />
+      <SOURCES />
+    </library>
+    <library name="org.jgrapht:jgrapht-core:1.5.0" type="repository">
+      <properties maven-id="org.jgrapht:jgrapht-core:1.5.0" />
+      <CLASSES>
+        <root url="jar://$MAVEN_REPOSITORY$/org/jgrapht/jgrapht-core/1.5.0/jgrapht-core-1.5.0.jar!/" />
+        <root url="jar://$MAVEN_REPOSITORY$/org/jheaps/jheaps/0.13/jheaps-0.13.jar!/" />
       </CLASSES>
       <JAVADOC />
       <SOURCES />
