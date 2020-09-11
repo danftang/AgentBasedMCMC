@@ -1,5 +1,6 @@
-package cnf
+package experiments
 
+import conjunctiveNormalForm.*
 import org.junit.Test
 
 class CnfTest {

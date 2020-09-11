@@ -1,4 +1,4 @@
-package cnf
+package conjunctiveNormalForm
 
 import java.lang.StringBuilder
 
@@ -24,7 +24,7 @@ class CnfContext {
     //
     // In CNF, this translates to
     // (!x + a + b + c + ...)*(x + !a)*(x + !b)*(x + !c)...
-    fun newDependentOr(vararg literals: Literal): Pair<Literal,CnfFormula> {
+    fun newDependentOr(vararg literals: Literal): Pair<Literal, CnfFormula> {
         val x = newDependentVar()
         val f = CnfFormula()
         val notxClause = OrClause(literals.asSequence() + !x)

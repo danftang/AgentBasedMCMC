@@ -1,4 +1,4 @@
-package cnf
+package conjunctiveNormalForm
 
 class Literal(val id: Int) {
 

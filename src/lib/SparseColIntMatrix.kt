@@ -1,14 +1,16 @@
-package hermiteForm
+package lib
 
 import com.google.ortools.linearsolver.MPConstraint
 import com.google.ortools.linearsolver.MPSolver
 import org.apache.commons.math3.exception.OutOfRangeException
 import org.apache.commons.math3.util.ArithmeticUtils
 import org.apache.commons.math3.util.ArithmeticUtils.gcd
+import java.lang.IllegalArgumentException
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.math.*
+import kotlin.system.measureTimeMillis
 
 open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
     var nRows: Int
@@ -119,6 +121,15 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
             if(X[i] != 0) result.weightedPlusAssign(this[i], X[i])
         }
         return result
+    }
+
+    operator fun times(M: SparseColIntMatrix): SparseColIntMatrix {
+        assert(nCols == M.nRows)
+        val Product = SparseColIntMatrix(nRows, 0)
+        for(j in 0 until M.nCols) {
+            Product.addColRight(this * M[j])
+        }
+        return Product
     }
 
     fun diagonal(): SparseIntColumn {
@@ -323,9 +334,9 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
     // where M is this matrix
     // returns X
     //
-    fun IPsolve(B: SparseIntColumn, C: List<Double> = DoubleArray(nCols) {0.0}.asList()): IntArray {
+    fun IPsolve(B: SparseIntColumn, C: List<Double> = DoubleArray(nCols) {0.0}.asList(), constraintType: String = ">="): IntArray {
         val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
-        val X = solver.makeIntVarArray(nCols, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)
+        val X = solver.makeIntVarArray(nCols, 0.0, Double.POSITIVE_INFINITY)
         val constraints = Array<MPConstraint>(nRows) { solver.makeConstraint() }
         for(col in 0 until nCols) {
             for(coefficient in this[col].entries) {
@@ -333,14 +344,23 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
             }
         }
         for(i in 0 until nRows) {
-            constraints[i].setBounds(B[i].toDouble(), Double.POSITIVE_INFINITY)
+            when(constraintType) {
+                ">=" -> constraints[i].setBounds(B[i].toDouble(), Double.POSITIVE_INFINITY)
+                "=","==" -> constraints[i].setBounds(B[i].toDouble(), B[i].toDouble())
+                "<=" -> constraints[i].setBounds(Double.NEGATIVE_INFINITY, B[i].toDouble())
+                else -> throw(IllegalArgumentException("Unknown constraint type"))
+            }
         }
         val objective = solver.objective()
         for(i in C.indices) {
             objective.setCoefficient(X[i], C[i])
         }
         solver.objective().setMinimization()
-        val solveState = solver.solve()
+        val solveState: MPSolver.ResultStatus
+        val solveTime = measureTimeMillis {
+            solveState = solver.solve()
+        }
+        println("Solved in ${solveTime}ms")
         return if (solveState == MPSolver.ResultStatus.OPTIMAL)
             IntArray(X.size) { i -> X[i].solutionValue().toInt() }
         else
@@ -376,10 +396,11 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
         for(row in 0 until nRows) {
             for (col in this) {
                 val v = col[row]
+                if(v in 0..9) out.append(' ')
                 out.append(v)
                 out.append(' ')
             }
-            out.appendln()
+            out.append('\n')
         }
         return out.toString()
     }
@@ -416,7 +437,7 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
     }
 
     // map from column index to non-zero entry value
-    class SparseIntColumn(val data: HashMap<Int,Int> = HashMap(2)) {
+    class SparseIntColumn(val data: HashMap<Int,Int> = HashMap(4)) {
         val entries: MutableSet<MutableMap.MutableEntry<Int, Int>>
             get() = data.entries
 
@@ -425,6 +446,9 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
 
         val values: MutableCollection<Int>
             get() = data.values
+
+        val sparseSize: Int
+            get() = entries.size
 
         constructor(copy: SparseIntColumn): this(HashMap(copy.data))
 
@@ -456,6 +480,20 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
             return sum
         }
 
+        operator fun plus(other: IntArray): SparseIntColumn {
+            val sum = SparseIntColumn(this)
+            for(i in other.indices) {
+                if(other[i] != 0) {
+                    sum.data.merge(i, other[i]) { a, b ->
+                        val result = a + b
+                        if (result != 0) result else null
+                    }
+                }
+            }
+            return sum
+        }
+
+
         operator fun minus(other: SparseIntColumn): SparseIntColumn {
             val sum = SparseIntColumn(this)
             sum -= other
@@ -484,6 +522,12 @@ open class SparseColIntMatrix: ArrayList<SparseColIntMatrix.SparseIntColumn> {
                     if(result != 0) result else null
                 }
             }
+        }
+
+        override operator fun equals(other: Any?): Boolean {
+            return if(other is SparseIntColumn) {
+                data == other.data
+            } else false
         }
 
         // this += weight*otherCol

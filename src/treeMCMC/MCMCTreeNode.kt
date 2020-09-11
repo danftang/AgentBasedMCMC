@@ -1,5 +1,6 @@
-package hermiteForm
+package treeMCMC
 
+import lib.SparseColIntMatrix
 import org.apache.commons.math3.distribution.EnumeratedDistribution
 import org.apache.commons.math3.util.Pair
 import java.lang.RuntimeException
@@ -11,7 +12,7 @@ import kotlin.random.Random
 // breakpoint is the basis that is definitely different from parent, and takes on value breakpointValue
 // all bases after breakpoint are identical to parent
 // all bases before breakpoint are recalculated with IPSolve
-class MCMCTreeNode(val tree: MCMCTree, val parent: MCMCTreeNode?, val breakpoint: Int, val breakpointValue: Int,  var pTransitionFromParent: Double) {
+class MCMCTreeNode(val tree: MCMCTree, val parent: MCMCTreeNode?, val breakpoint: Int, val breakpointValue: Int, var pTransitionFromParent: Double) {
 
     val basisSize: Int
         get() = tree.hermite.nullBasis.nCols

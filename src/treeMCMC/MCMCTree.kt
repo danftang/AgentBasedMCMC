@@ -1,11 +1,8 @@
-package hermiteForm
+package treeMCMC
 
-import org.apache.commons.math3.distribution.EnumeratedDistribution
-import org.apache.commons.math3.util.Pair
-import kotlin.math.exp
+import HermiteDecomposition
+import lib.SparseColIntMatrix
 import kotlin.math.ln
-import kotlin.math.pow
-import kotlin.random.Random
 
 class MCMCTree {
     var currentSample: MCMCTreeNode

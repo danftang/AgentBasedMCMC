@@ -1,7 +1,6 @@
-package cnf
+package conjunctiveNormalForm
 
 import java.lang.StringBuilder
-import kotlin.math.absoluteValue
 
 class CnfFormula: ArrayList<OrClause> {
 

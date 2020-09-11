@@ -1,6 +1,5 @@
-package cnf
+package conjunctiveNormalForm
 
-import java.io.File
 import java.io.FileWriter
 import java.lang.StringBuilder
 
