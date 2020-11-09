@@ -1,4 +1,4 @@
-import lib.SparseColIntMatrix
+import lib.sparseMatrix.*
 import kotlin.math.sign
 
 // Represents the convex polyhedron defined by the points X such that
@@ -14,19 +14,18 @@ import kotlin.math.sign
 // and both X and X' are in the non-negative integer space.
 //
 // If TMX' = TB
-class ConvexPolyhedron(var M: SparseColIntMatrix, var B: SparseColIntMatrix.SparseIntColumn) {
-    var MT = M.transpose()
-    var U = SparseColIntMatrix.Identity(M.nCols) // Linear transform of
-    var R = SparseColIntMatrix.SparseIntColumn()
+class ConvexPolyhedron(var M: HashRowColIntMatrix, var B: HashIntVector) {
+    var U = HashRowColIntMatrix.identity(M.nCols) // Linear transform of
+    var R = HashIntVector()
 
     // find the valid point that maximises objective.transpose()*X
     // throws RuntimeException if there are no valid points in this polyhedron
-    fun maximise(objective: List<Double>): SparseColIntMatrix.SparseIntColumn {
+    fun maximise(objective: List<Double>): IntVector {
         return U * M.IPsolve(B, objective, "=") + R
     }
 
     // returns a random valid point
-    fun findValidPoint(): SparseColIntMatrix.SparseIntColumn {
+    fun findValidPoint(): IntVector {
         return maximise(DoubleArray(M.nCols) {0.0}.asList())
     }
 
@@ -43,7 +42,7 @@ class ConvexPolyhedron(var M: SparseColIntMatrix, var B: SparseColIntMatrix.Spar
             val redundantRows = HashSet<Int>() // rows with all zero coefficients
             for(i in 0 until M.nRows) {
                 if(B[i] == 0) {
-                    val row = MT[i]
+                    val row = M.rows[i]
                     val rowType = row.values.fold<Int, Int?>(0) { acc, v ->
                         if (acc == null || acc * v.sign == -1) null else v.sign
                     }
@@ -56,29 +55,29 @@ class ConvexPolyhedron(var M: SparseColIntMatrix, var B: SparseColIntMatrix.Spar
 
             // now remove redundant cols and rows
             if(!redundantRows.isEmpty()) {
-                val RT = SparseColIntMatrix.Identity(M.nRows)
-                RT.removeAll(redundantRows.map { RT[it] })
-                val R = RT.transpose()
+                val R = HashRowColIntMatrix.identity(M.nRows)
+                R.removeRows(redundantRows)
                 M = R * M
                 B = R * B
                 isReduced = true
             }
             if(!redundantCols.isEmpty()) {
-                U.removeAll(redundantCols.map { U[it] })
-                M.removeAll(redundantCols.map { M[it] })
+                U.removeColumns(redundantCols)
+                M.removeColumns(redundantCols)
                 isReduced = true
             }
-            if(isReduced) MT = M.transpose()
         }while(isReduced)
     }
 
     // constrains the solution so that certain
     // elements of the solution have certain values
+    // removing the columns that correspond to the constrained values
+    // and updating B and R appropriately
     // constraints specifies a map from solution index to value for that element
-    fun constrainSolution(constraints: SparseColIntMatrix.SparseIntColumn) {
-        R += U*constraints
+    fun constrainSolution(constraints: SparseIntVector) {
+        R.plusAssign(U*constraints)
         B.minusAssign(M*constraints)
-        M.removeAll(constraints.keys.map {M[it]})
-        U.removeAll(constraints.keys.map {U[it]})
+        M.removeColumns(constraints.keys)
+        U.removeColumns(constraints.keys)
     }
 }

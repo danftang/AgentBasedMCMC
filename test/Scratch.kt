@@ -2,20 +2,30 @@ import org.junit.Test
 
 class Scratch {
 
+
     data class MatrixEntry(var value: Int)
+
+//    class ColEntry(val col: Int, row: Int, value: Int): RowEntry(row, value) {
+//        override fun hashCode(): Int {
+//            return col
+//        }
+//    }
 
     @Test
     fun stuff() {
-        val map1 = HashMap<Int,MatrixEntry>()
-        val map2 = HashMap<Int,MatrixEntry>()
-        val myEntry = MatrixEntry(1234)
-        map1[1] = myEntry
-        map2[2] = myEntry
+        val row = HashMap<Int,MatrixEntry>()
+        val col = HashMap<Int,MatrixEntry>()
 
 
-        println("${map1[1]} ${map2[2]}")
-        map1[1]?.value = 2345
-        println("${map1[1]} ${map2[2]}")
+        val newEntry = MatrixEntry(1234)
+        col[2] = newEntry
+        row[1] = newEntry
+
+        col[2]?.value = 2345
+//        row[1]?.value = 5432
+
+        println(col[2]?.value)
+        println(row[1]?.value)
 
     }
 }

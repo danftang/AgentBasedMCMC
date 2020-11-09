@@ -1,6 +1,8 @@
 package treeMCMC
 
-import lib.SparseColIntMatrix
+import lib.sparseMatrix.HashColIntMatrix
+import lib.sparseMatrix.HashIntVector
+import lib.sparseMatrix.IntVector
 import org.apache.commons.math3.distribution.EnumeratedDistribution
 import org.apache.commons.math3.util.Pair
 import java.lang.RuntimeException
@@ -41,7 +43,7 @@ class MCMCTreeNode(val tree: MCMCTree, val parent: MCMCTreeNode?, val breakpoint
             }
         }
 
-    val actValue: SparseColIntMatrix.SparseIntColumn
+    val actValue: HashIntVector
         get() = tree.hermite.basisVectorToActs(basisValue)
 
     // Lazy values
@@ -49,9 +51,9 @@ class MCMCTreeNode(val tree: MCMCTree, val parent: MCMCTreeNode?, val breakpoint
         basisValue.asSequence().withIndex().sumByDouble {it.value * tree.basisLnProbabilities[it.index] }
     }
 
-    val basisValue: IntArray by lazy {
-        val reducedNullBasis = SparseColIntMatrix(tree.hermite.nullBasis.subList(0, breakpoint), tree.hermite.nullBasis.nRows)
-        val newValue = IntArray(basisSize) {0}
+    val basisValue: IntVector by lazy {
+        val reducedNullBasis = HashColIntMatrix(tree.hermite.nullBasis.subMatrixView(0, breakpoint))
+        val newValue = IntVector(basisSize) {0}
         if(parent != null) {
             for(i in breakpoint+1 until basisSize) {
                 newValue[i] = parent.basisValue[i]
@@ -67,7 +69,7 @@ class MCMCTreeNode(val tree: MCMCTree, val parent: MCMCTreeNode?, val breakpoint
     }
 
     val children: EnumeratedDistribution<MCMCTreeNode> by lazy {
-        val acts = SparseColIntMatrix.SparseIntColumn()
+//        val acts = HashIntVector()
 
         // calculate all upper bounds
         val upperBounds = basisUpperBounds()
@@ -94,12 +96,12 @@ class MCMCTreeNode(val tree: MCMCTree, val parent: MCMCTreeNode?, val breakpoint
 
 
     fun basisUpperBounds(): IntArray {
-        val acts = SparseColIntMatrix.SparseIntColumn()
+        val acts = HashIntVector()
         val upperBounds = IntArray(breakpoint) {0} // Inclusive upper bound for each basis value up to breakpoint
         for(col in basisSize-1 downTo 0) {
-            val thisBasis = tree.hermite.nullBasis[col]
+            val thisBasis = tree.hermite.nullBasis.columns[col]
             if(col < breakpoint) {
-                thisBasis.entries.filter { it.value < 0 }.forEach { antiAgent ->
+                thisBasis.filter { it.value < 0 }.forEach { antiAgent ->
                     if (tree.lastPositiveBasis[antiAgent.key] ?: -1 < col)
                         upperBounds[col] = (tree.hermite.baseState[antiAgent.key] - acts[antiAgent.key]) / antiAgent.value
                 }

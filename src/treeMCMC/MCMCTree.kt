@@ -1,29 +1,30 @@
 package treeMCMC
 
 import HermiteDecomposition
-import lib.SparseColIntMatrix
+import lib.sparseMatrix.HashColIntMatrix
+import lib.sparseMatrix.HashIntVector
 import kotlin.math.ln
 
 class MCMCTree {
     var currentSample: MCMCTreeNode
-    val abmMatrix: SparseColIntMatrix
+    val abmMatrix: HashColIntMatrix
     val hermite: HermiteDecomposition
     val actProbabilities: DoubleArray
     val basisLnProbabilities: DoubleArray
     val lastPositiveBasis: Map<Int,Int>  // map from an act to the left-most basis with a positive coefficient in that act
 
-    constructor(abmMatrix: SparseColIntMatrix, observations: SparseColIntMatrix.SparseIntColumn, actProbabilities: DoubleArray) {
+    constructor(abmMatrix: HashColIntMatrix, observations: HashIntVector, actProbabilities: DoubleArray) {
         this.actProbabilities = actProbabilities
         this.abmMatrix = abmMatrix
         hermite = HermiteDecomposition(abmMatrix, observations)
         lastPositiveBasis = HashMap()
         for(col in hermite.nullBasis.nCols-1 downTo 0) {
-            for(act in hermite.nullBasis[col].entries) {
+            for(act in hermite.nullBasis.columns[col]) {
                 if(act.value > 0) lastPositiveBasis[act.key] = col
             }
         }
-        basisLnProbabilities = hermite.nullBasis.map { basis ->
-            basis.entries.sumByDouble { it.value * ln(actProbabilities[it.key]) }
+        basisLnProbabilities = hermite.nullBasis.columns.map { basis ->
+            basis.sumByDouble { it.value * ln(actProbabilities[it.key]) }
         }.toDoubleArray()
         currentSample = MCMCTreeNode(this, null, hermite.nullBasis.nCols, -1, 0.0)
 

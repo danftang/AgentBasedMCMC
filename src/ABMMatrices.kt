@@ -1,10 +1,11 @@
-import lib.SparseColIntMatrix
+import lib.sparseMatrix.HashColIntMatrix
+import lib.sparseMatrix.SparseIntVector
 import lib.gnuplot
 
 object ABMMatrices {
-    fun twoDabmMatrix(gridSize: Int, timesteps: Int): SparseColIntMatrix {
+    fun twoDabmMatrix(gridSize: Int, timesteps: Int): HashColIntMatrix {
         val NActs = 6
-        val abmMatrix = SparseColIntMatrix(
+        val abmMatrix = HashColIntMatrix(
             (timesteps+1)*gridSize*gridSize,
             timesteps*gridSize*(gridSize-1)*NActs
         )
@@ -61,9 +62,9 @@ object ABMMatrices {
     // ABM with left, right, reproduce and eat
     // T is number of timesteps
     // N is number of grid points
-    fun oneDabmMatrix(T: Int, N: Int): SparseColIntMatrix {
+    fun oneDabmMatrix(T: Int, N: Int): HashColIntMatrix {
         val NActs = 4
-        val abmMatrix = SparseColIntMatrix((T+1)*N, T*(N*NActs - 4))
+        val abmMatrix = HashColIntMatrix((T+1)*N, T*(N*NActs - 4))
 
         var actColumn = 0
         for (timestep in 0 until T) {
@@ -98,9 +99,9 @@ object ABMMatrices {
     // ABM with left, right and stay-put
     // T is number of timesteps
     // N is number of grid points
-    fun oneDNoInteractionMatrix(T: Int, N: Int): SparseColIntMatrix {
+    fun oneDNoInteractionMatrix(T: Int, N: Int): HashColIntMatrix {
         val NActs = 3
-        val abmMatrix = SparseColIntMatrix((T+1)*N, T*(N*NActs - 2))
+        val abmMatrix = HashColIntMatrix((T+1)*N, T*(N*NActs - 2))
 
         var actColumn = 0
         for (timestep in 0 until T) {
@@ -125,14 +126,14 @@ object ABMMatrices {
     }
 
 
-    fun plotFeynmannDiagram(column: SparseColIntMatrix.SparseIntColumn, dynamics: SparseColIntMatrix, agentPositions: Int, timesteps: Int) {
+    fun plotFeynmannDiagram(state: SparseIntVector, dynamics: HashColIntMatrix, agentPositions: Int, timesteps: Int) {
         val particleVectors = ArrayList<Int>() // in format (x,y,dx,dy)...
         val antiparticleVectors = ArrayList<Int>()
-        for(act in column.entries) {
+        for(act in state) {
             val array = if(act.value>0) particleVectors else antiparticleVectors
             val sourceLocations = ArrayList<Pair<Int,Int>>()
             val destinationLocations = ArrayList<Pair<Int,Int>>()
-            for(actLocation in dynamics[act.key].entries) {
+            for(actLocation in dynamics.columns[act.key]) {
                 val location = Pair(actLocation.key.rem(agentPositions), actLocation.key.div(agentPositions))
                 if(actLocation.value > 0) destinationLocations.add(location) else sourceLocations.add(location)
             }

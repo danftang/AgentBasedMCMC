@@ -4,8 +4,10 @@ import ABMMatrices.oneDabmMatrix
 import ABMMatrices.plotFeynmannDiagram
 import ABMMatrices.twoDabmMatrix
 import ConvexPolyhedron
-import HermiteDecomposition
-import lib.SparseColIntMatrix
+import lib.sparseMatrix.HashColIntMatrix
+import lib.sparseMatrix.HashIntVector
+import lib.sparseMatrix.HashRowColIntMatrix
+import lib.sparseMatrix.SparseIntVector
 import org.junit.Test
 import kotlin.random.Random
 
@@ -22,11 +24,11 @@ class HermiteFormExpts {
         val abmMatrix = oneDabmMatrix(T,N)
 
         // observations
-        val b = SparseColIntMatrix.SparseIntColumn()
+        val b = HashIntVector()
         b[2] = -1
         b[N*T + 3] = 1
 
-        val abm = SparseColIntMatrix(abmMatrix)
+        val abm = HashColIntMatrix(abmMatrix)
         val U = abmMatrix.hermiteDecomposition()
         val baseHermiteVector = abmMatrix.solveLowerTriangular(b)
 
@@ -36,13 +38,13 @@ class HermiteFormExpts {
         print("Error vector (should be empty): ")
         println(abm*baseState - b)
 
-        val nullBasis = SparseColIntMatrix(U.subList(abmMatrix.nRows, U.nRows), U.nRows)
+        val nullBasis = HashColIntMatrix(U.subMatrixView(abmMatrix.nRows, U.nRows))
         nullBasis.upperTriangularise()
 
-        val positiveDefiniteNullBasis = SparseColIntMatrix(nullBasis)
+        val positiveDefiniteNullBasis = HashColIntMatrix(nullBasis)
         positiveDefiniteNullBasis.upperTriangularThin()
 
-        val shortestNullBasis = SparseColIntMatrix(nullBasis)
+        val shortestNullBasis = HashColIntMatrix(nullBasis)
         shortestNullBasis.lowerTriangulariseWithoutSwap()
         for(pass in 1..10) { nullBasis.minimiseAfterDoubleTriangularisation() }
 
@@ -55,10 +57,8 @@ class HermiteFormExpts {
         val squareNullBasis = squareizeByEndPoint(positiveDefiniteNullBasis)
         val positiveBase = minimise(baseState, squareNullBasis)
         println(positiveBase)
-        plotFeynmannDiagram(positiveDefiniteNullBasis[67], abm, N, T)
-        plotFeynmannDiagram(positiveDefiniteNullBasis[68], abm, N, T)
-        plotFeynmannDiagram(positiveDefiniteNullBasis[69], abm, N, T)
-        plotFeynmannDiagram(positiveDefiniteNullBasis[70], abm, N, T)
+        plotFeynmannDiagram(positiveDefiniteNullBasis.columns[67], abm, N, T)
+        plotFeynmannDiagram(positiveDefiniteNullBasis.columns[68], abm, N, T)
     }
 
     @Test
@@ -69,7 +69,7 @@ class HermiteFormExpts {
         println("abm sparsity is ${abmMatrix.sparsityRatio()}")
         println("abm geometry is ${abmMatrix.nRows} x ${abmMatrix.nCols}")
 //        println(abmMatrix.toSparsityString())
-        val observations = SparseColIntMatrix.SparseIntColumn()
+        val observations = HashIntVector()
         for(agent in 1..20) {
             val xPos = Random.nextInt(gridSize)
             val yPos = Random.nextInt(gridSize)
@@ -83,12 +83,12 @@ class HermiteFormExpts {
 //        println("trying to maximise ${max.key}")
 //        val positiveDirectSolution = abmMatrix.IPsolve(observations, DoubleArray(abmMatrix.nCols) { if(it == max.key) -1.0 else 0.0 }.asList(),"=")
         val positiveDirectSolution = abmMatrix.IPsolve(observations, DoubleArray(abmMatrix.nCols) {0.0}.asList(), "=")
-        println(SparseColIntMatrix.SparseIntColumn(positiveDirectSolution))
+        println(positiveDirectSolution)
         println("Error vector (should be empty) = ${abmMatrix * positiveDirectSolution - observations}")
 
 
         // zero removal
-        val polyhedron = ConvexPolyhedron(abmMatrix.copy(), observations.copy())
+        val polyhedron = ConvexPolyhedron(HashRowColIntMatrix(abmMatrix), HashIntVector(observations))
         println("Original polyhedron size is ${polyhedron.M.nRows} ${polyhedron.M.nCols}")
         polyhedron.removeZeros()
         println("Reduced polyhedron size is ${polyhedron.M.nRows} ${polyhedron.M.nCols}")
@@ -96,7 +96,7 @@ class HermiteFormExpts {
         // direct solve after zero removal
         println("Starting reduced direct solve")
         val positiveDirectSolution2 = polyhedron.findValidPoint()
-        println(SparseColIntMatrix.SparseIntColumn(positiveDirectSolution2))
+        println(positiveDirectSolution2)
         println("Error vector (should be empty) = ${abmMatrix * positiveDirectSolution2 - observations}")
 
 
@@ -139,7 +139,7 @@ class HermiteFormExpts {
         val abmMatrix = twoDabmMatrix(gridSize, timesteps)
         println("abm sparsity is ${abmMatrix.sparsityRatio()}")
 //        println(abmMatrix.toSparsityString())
-        val observations = SparseColIntMatrix.SparseIntColumn()
+        val observations = HashIntVector()
         for(agent in 1..20) {
             val xPos = Random.nextInt(gridSize)
             val yPos = Random.nextInt(gridSize)
@@ -162,8 +162,8 @@ class HermiteFormExpts {
         println("Base state is $baseState")
         println("Hermite Residual is ${hermiteForm * baseHermiteVector - observations}")
         println("Act Residual is ${abmMatrix * baseState - observations}")
-        val nullBasis = U.subMartixView(hermiteForm.nRows, U.nCols)
-        val solutionBasis = U.subMartixView(0, hermiteForm.nRows)
+        val nullBasis = U.subMatrixView(hermiteForm.nRows, U.nCols)
+        val solutionBasis = U.subMatrixView(0, hermiteForm.nRows)
         println("Solved for base state and generated null basis")
 //        println(nullBasis)
 
@@ -201,8 +201,8 @@ class HermiteFormExpts {
         val T = 2
         val N = 5
         val abmMatrix = oneDabmMatrix(T,N)
-        val abm = SparseColIntMatrix(abmMatrix)
-        val b = SparseColIntMatrix.SparseIntColumn()
+        val abm = HashColIntMatrix(abmMatrix)
+        val b = HashIntVector()
         b[2] = -1
         b[N*T + 3] = 1
 
@@ -210,10 +210,10 @@ class HermiteFormExpts {
         val U = abmMatrix.hermiteDecomposition()
         val baseHermiteVector = abmMatrix.solveLowerTriangular(b)
         val baseState = U * baseHermiteVector
-        val nullBasis = SparseColIntMatrix(U.subList(abmMatrix.nRows, U.nRows), U.nRows)
+        val nullBasis = HashColIntMatrix(U.subMatrixView(abmMatrix.nRows, U.nRows))
         nullBasis.upperTriangularise()
 
-        val positiveDefiniteNullBasis = SparseColIntMatrix(nullBasis)
+        val positiveDefiniteNullBasis = HashColIntMatrix(nullBasis)
         positiveDefiniteNullBasis.upperTriangularThin()
         val positiveBaseState = upperTriangularMinimise(baseState, positiveDefiniteNullBasis)
         println(positiveDefiniteNullBasis.toSparsityString())
@@ -224,15 +224,15 @@ class HermiteFormExpts {
 //        val basisConstraints = generateBasisConstraintMatrix(positiveDefiniteNullBasis).transpose()
 //        val smallestVec = IPsolve(basisConstraints, -positiveBaseState, DoubleArray(positiveDefiniteNullBasis.nCols) {0.0}.asList())
         val smallestVec = positiveDefiniteNullBasis.IPsolve(-positiveBaseState, DoubleArray(positiveDefiniteNullBasis.nCols) {0.0}.asList())
-        println(smallestVec.asList())
-        val solution = positiveBaseState + positiveDefiniteNullBasis * SparseColIntMatrix.SparseIntColumn(smallestVec)
-        plotFeynmannDiagram(solution,abm, N, T)
+        println(smallestVec)
+        val solution = positiveBaseState + positiveDefiniteNullBasis * smallestVec
+        plotFeynmannDiagram(solution.toSparseIntVector(),abm, N, T)
     }
 
 
-    fun upperTriangularMinimise(toMinimise: SparseColIntMatrix.SparseIntColumn, upperNullBasis: SparseColIntMatrix): SparseColIntMatrix.SparseIntColumn {
-        val minimised = toMinimise.copy()
-        for(basis in upperNullBasis.asReversed()) {
+    fun upperTriangularMinimise(toMinimise: SparseIntVector, upperNullBasis: HashColIntMatrix): HashIntVector {
+        val minimised = HashIntVector(toMinimise)
+        for(basis in upperNullBasis.columns.asReversed()) {
             val maxIndex = basis.keys.max()
             if(maxIndex != null) {
                 if(basis[maxIndex] == 0) println("Found zero entry in column $basis")
@@ -242,26 +242,26 @@ class HermiteFormExpts {
         return minimised
     }
 
-    fun squareizeByEndPoint(matrix: SparseColIntMatrix): SparseColIntMatrix {
-        val result = SparseColIntMatrix(matrix.nRows, matrix.nRows)
+    fun squareizeByEndPoint(matrix: HashColIntMatrix): HashColIntMatrix {
+        val result = HashColIntMatrix(matrix.nRows, matrix.nRows)
         for(column in matrix.columns) {
-            val endPoint = column.data.keys.max()?:0
-            result.columns[endPoint] = column
+            val endPoint = column.keys.max()?:0
+            result.setColumn(endPoint, column)
         }
         return result
     }
 
-    fun minimise(col: SparseColIntMatrix.SparseIntColumn, squareNullBasis: SparseColIntMatrix): SparseColIntMatrix.SparseIntColumn {
-        val denseCol = col.toIntArray(squareNullBasis.nCols)
+    fun minimise(col: SparseIntVector, squareNullBasis: HashColIntMatrix): SparseIntVector {
+        val denseCol = col.toIntVector(squareNullBasis.nCols)
         for(i in denseCol.size-1 downTo 0) {
             if(denseCol[i] != 0 && squareNullBasis[i,i] != 0) {
                 val w = -denseCol[i] / squareNullBasis[i, i]
-                for (element in squareNullBasis[i].entries) {
+                for (element in squareNullBasis.columns[i]) {
                     denseCol[element.key] += w * element.value
                 }
             }
         }
-        return SparseColIntMatrix.SparseIntColumn(denseCol)
+        return denseCol.toSparseIntVector()
     }
 
 

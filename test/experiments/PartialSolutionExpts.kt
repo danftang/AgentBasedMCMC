@@ -2,9 +2,10 @@ package experiments
 
 import ABMMatrices.twoDabmMatrix
 import ConvexPolyhedron
-import lib.SparseColIntMatrix
+import lib.sparseMatrix.HashColIntMatrix
+import lib.sparseMatrix.HashIntVector
+import lib.sparseMatrix.HashRowColIntMatrix
 import org.junit.Test
-import java.lang.RuntimeException
 import kotlin.random.Random
 
 // Propose constraints on the solution by specifying
@@ -27,7 +28,7 @@ class PartialSolutionExpts {
         println("abm sparsity is ${abmMatrix.sparsityRatio()}")
         println("abm geometry is ${abmMatrix.nRows} x ${abmMatrix.nCols}")
 //        println(abmMatrix.toSparsityString())
-        val observations = SparseColIntMatrix.SparseIntColumn()
+        val observations = HashIntVector()
         for(agent in 1..20) {
             val xPos = Random.nextInt(gridSize)
             val yPos = Random.nextInt(gridSize)
@@ -36,7 +37,7 @@ class PartialSolutionExpts {
         }
 
         // zero removal
-        val polyhedron = ConvexPolyhedron(abmMatrix.copy(), observations.copy())
+        val polyhedron = ConvexPolyhedron(HashRowColIntMatrix(abmMatrix), HashIntVector(observations))
         println("Original polyhedron size is ${polyhedron.M.nRows} ${polyhedron.M.nCols}")
         polyhedron.removeZeros()
         println("Reduced polyhedron size is ${polyhedron.M.nRows} ${polyhedron.M.nCols}")
@@ -46,7 +47,7 @@ class PartialSolutionExpts {
             val solution = polyhedron.findValidPoint()
             //println(SparseColIntMatrix.SparseIntColumn(solution))
             println("Error vector (should be empty) = ${abmMatrix * solution - observations}")
-            val newConstraint = SparseColIntMatrix.SparseIntColumn(Random.nextInt(polyhedron.M.nCols) to 1)
+            val newConstraint = HashIntVector(Random.nextInt(polyhedron.M.nCols) to 1)
             polyhedron.constrainSolution(newConstraint)
         }
     }

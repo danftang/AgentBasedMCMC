@@ -1,25 +1,25 @@
 
-import lib.SparseColIntMatrix
+import lib.sparseMatrix.*
 import java.util.*
 import kotlin.math.absoluteValue
 
 class HermiteDecomposition {
 //    val mask: BooleanArray // true if act with this index is the head of a null basis
-    val nullMaskMatrix: SparseColIntMatrix // pre-multiplication with this matrix removes rows in nullBasis that have a single 1 in them
+    val nullMaskMatrix: HashColIntMatrix // pre-multiplication with this matrix removes rows in nullBasis that have a single 1 in them
 //    val pseudoInverse: SparseColIntMatrix
-    val H: SparseColIntMatrix
-    val U: SparseColIntMatrix
-    val nullBasis: SparseColIntMatrix
-    val solutionBasis: SparseColIntMatrix
-    val baseState: SparseColIntMatrix.SparseIntColumn
+    val H: HashRowColIntMatrix
+    val U: HashColIntMatrix
+    val nullBasis: HashColIntMatrix
+    val solutionBasis: HashColIntMatrix
+    val baseState: HashIntVector
 
-    constructor(abm: SparseColIntMatrix, observation: SparseColIntMatrix.SparseIntColumn) {
-        H = SparseColIntMatrix(abm)
+    constructor(abm: HashColIntMatrix, observation: HashIntVector) {
+        H = HashRowColIntMatrix(abm)
         U = H.hermiteDecomposition()
-        nullBasis = U.subMartixView(abm.nRows, U.nCols)
+        nullBasis = U.subMatrixView(abm.nRows, U.nCols)
         nullBasis.upperTriangularise()
         nullBasis.upperTriangularThin()
-        solutionBasis = U.subMartixView(0, abm.nRows)
+        solutionBasis = U.subMatrixView(0, abm.nRows)
 
 //        mask = BooleanArray(nullBasis.nRows) { false }
 //        for(col in nullBasis.columns) {
@@ -33,12 +33,12 @@ class HermiteDecomposition {
 
 
     // Tree decomposition
-    constructor(abm: SparseColIntMatrix, observation: SparseColIntMatrix.SparseIntColumn, treeRootRow: Int) {
-        val decomp = TreeConstructor(abm.copy(), treeRootRow)
+    constructor(abm: HashColIntMatrix, observation: SparseIntVector, treeRootRow: Int) {
+        val decomp = TreeConstructor(HashRowColIntMatrix(abm), treeRootRow)
         H = decomp.H
         U = decomp.U
-        nullBasis = U.subMartixView(abm.nRows, U.nCols)
-        solutionBasis = U.subMartixView(0, abm.nRows)
+        nullBasis = U.subMatrixView(abm.nRows, U.nCols)
+        solutionBasis = U.subMatrixView(0, abm.nRows)
         baseState = solutionBasis * observation
 
         nullMaskMatrix = calculateMaskMatrix()
@@ -59,12 +59,12 @@ class HermiteDecomposition {
 //    }
 
 
-    private fun calculateMaskMatrix(): SparseColIntMatrix {
-        val M = SparseColIntMatrix(nullBasis.nRows, U.nRows)
+    private fun calculateMaskMatrix(): HashColIntMatrix {
+        val M = HashColIntMatrix(nullBasis.nRows, U.nRows)
         var row = 0
         nullBasis
             .transpose()
-            .mapIndexedNotNull { i, col ->
+            .columns.mapIndexedNotNull { i, col ->
                 if(col.sparseSize > 1) i else null
             }
             .forEach {i ->
@@ -74,26 +74,26 @@ class HermiteDecomposition {
         return M
     }
 
-    fun basisVectorToActs(basisVector: SparseColIntMatrix.SparseIntColumn): SparseColIntMatrix.SparseIntColumn {
+    fun basisVectorToActs(basisVector: HashIntVector): HashIntVector {
         return baseState + nullBasis * basisVector
     }
 
-    fun basisVectorToActs(basisVector: IntArray): SparseColIntMatrix.SparseIntColumn {
-        return baseState + nullBasis * basisVector
+    fun basisVectorToActs(basisVector: IntVector): HashIntVector {
+        return basisVectorToActs(basisVector.toSparseIntVector())
     }
 
-    fun basisVectorToActs(basisVector: List<Int>): SparseColIntMatrix.SparseIntColumn {
-        return baseState + nullBasis * basisVector
-    }
+//    fun basisVectorToActs(basisVector: List<Int>): SparseColIntMatrix.SparseIntColumn {
+//        return baseState + nullBasis * basisVector
+//    }
 
 
     // calculate the base solution, X, to the original abm constraints AX = B
     // The base solution is the one that maps to the zero null basis vector
-    fun baseSolution(B: SparseColIntMatrix.SparseIntColumn): SparseColIntMatrix.SparseIntColumn {
+    fun baseSolution(B: HashIntVector): HashIntVector {
         val baseHermiteVector = H.solveLowerTriangular(B)
         val baseState = U * baseHermiteVector
         // now remove surplus null vectors so all null vectors so negative null basis additions are discounted
-        for(basis in nullBasis.asReversed()) {
+        for(basis in nullBasis.columns.asReversed()) {
             val maxIndex = basis.keys.max()
             if(maxIndex != null) {
                 baseState.weightedPlusAssign(basis, -baseState[maxIndex]/basis[maxIndex])
@@ -117,26 +117,25 @@ class HermiteDecomposition {
         val pendingInteractions = HashMap<Int,ArrayList<Int>>() // queue of interactions to possibly join tree. Maps basis size to column indices
         val pivotPoints: ArrayDeque<Pair<Int,Int>>      // Pivot points waiting to be reduced (row,col)
         val rowsInTree = HashSet<Int>()                 // rows already reduced
-        val HT: SparseColIntMatrix
-        val H: SparseColIntMatrix
-        val U: SparseColIntMatrix
+ //       val HT: HashColIntMatrix
+        val H: HashRowColIntMatrix
+        val U: HashColIntMatrix
         var basisSize = 1
         val rootRow: Int
         val colIsInteraction: Array<Boolean>            // true if this action is an interaction
 
-        constructor(H: SparseColIntMatrix, rootRow: Int) {
+        constructor(H: HashRowColIntMatrix, rootRow: Int) {
             this.H = H
             this.rootRow = rootRow
-            U = SparseColIntMatrix.Identity(H.nCols)
+            U = HashColIntMatrix.identity(H.nCols)
             pivotPoints = ArrayDeque<Pair<Int,Int>>(H.nRows)    // (row,col)
-            HT = H.transpose()
             colIsInteraction = Array(H.nCols) { j ->
-                H[j].sparseSize > 2
+                H.columns[j].sparseSize > 2
             }
-            HT[rootRow].keys
-                .filter { j -> H[j].sparseSize == 2 }
+            H.rows[rootRow].keys
+                .filter { j -> H.columns[j].sparseSize == 2 }
                 .forEach { j ->
-                    addPivotPoint(H[j].keys.find {it != rootRow}!! ,j)
+                    addPivotPoint(H.columns[j].keys.find {it != rootRow}!! ,j)
                 } // add all non-interaction events
             while(!pivotPoints.isEmpty()) {
                 val pivotPoint = getNextPivotPoint()
@@ -148,27 +147,25 @@ class HermiteDecomposition {
             var minReductionSize = Int.MAX_VALUE
             var minReducerColumn = -1
             for(j in 0 until H.nCols) {
-                val col = H[j]
+                val col = H.columns[j]
                 if(col.sparseSize == 1 && col.keys.first() == rootRow) {
-                    if(U[j].values.sumBy { it.absoluteValue } < minReductionSize) {
-                        minReductionSize = U[j].sparseSize
+                    if(U.columns[j].values.sumBy { it.absoluteValue } < minReductionSize) {
+                        minReductionSize = U.columns[j].sparseSize
                         minReducerColumn = j
                     }
                 }
             }
             if(minReducerColumn != -1) {
-                println("reducing root on column $minReducerColumn ${H[minReducerColumn]}")
+                println("reducing root on column $minReducerColumn ${H.columns[minReducerColumn]}")
                 val indexMagnitude = H[rootRow,minReducerColumn]
-                val pivotCol = H[minReducerColumn]
-                val UPivotCol = U[minReducerColumn]
                 assert(indexMagnitude.absoluteValue == 1)
                 for(j in 0 until H.nCols) {
                     if(j != minReducerColumn) {
                         val swapMagnitude = H[rootRow, j]
                         if (swapMagnitude != 0) {
                             val weight = -swapMagnitude / indexMagnitude
-                            H[j].weightedPlusAssign(pivotCol, weight)
-                            U[j].weightedPlusAssign(UPivotCol, weight)
+                            H.weightedColPlusAssign(j, minReducerColumn, weight)
+                            U.weightedColPlusAssign(j, minReducerColumn, weight)
                         }
                     }
                 }
@@ -176,19 +173,19 @@ class HermiteDecomposition {
 
             // now rearrange columns into identity
             for(j in 0 until H.nCols) {
-                var swapj = H[j].keys.firstOrNull()
+                var swapj = H.columns[j].keys.firstOrNull()
                 while(swapj != null && swapj != j) {
                     H.swapCols(j, swapj)
                     U.swapCols(j, swapj)
-                    swapj = H[j].keys.firstOrNull()
+                    swapj = H.columns[j].keys.firstOrNull()
                 }
             }
 
             // now ensure all columns are +ve
             for(j in 0 until H.nRows) {
                 if(H[j,j] < 0) {
-                    H[j] *= -1
-                    U[j] *= -1
+                    H.replaceNonZeroElementsInCol(j) { _, v -> -v}
+                    U.replaceNonZeroElementsInCol(j) { _, v -> -v}
                 }
             }
         }
@@ -197,20 +194,18 @@ class HermiteDecomposition {
             val pivotVal = H[row,col]
 //            println("reducing on $row $col ${H[col]}")
             assert(pivotVal.absoluteValue == 1)
-            val HpivotCol = H[col]
-            val UpivotCol = U[col]
-            HT[row].entries.forEach { rowElement ->
+            H.rows[row].forEach { rowElement ->
                 val colToReduce = rowElement.key
                 if(colToReduce != col) {
                     val weight = -rowElement.value/pivotVal
-                    H[colToReduce].weightedPlusAssign(HpivotCol, weight)
-                    U[colToReduce].weightedPlusAssign(UpivotCol, weight)
-                    val reducedSize = H[colToReduce].keys.size - if(H[colToReduce].keys.contains(rootRow)) 1 else 0
+                    H.weightedColPlusAssign(colToReduce, col, weight)
+                    U.weightedColPlusAssign(colToReduce, col, weight)
+                    val reducedSize = H.columns[colToReduce].sparseSize - if(H.columns[colToReduce].keys.contains(rootRow)) 1 else 0
                     if(reducedSize == 1) {
                         if(colIsInteraction[colToReduce]) {
                             addPendingInteraction(colToReduce)
                         } else {
-                            addPivotPoint(H[colToReduce].keys.find { it != rootRow }!!, colToReduce)
+                            addPivotPoint(H.columns[colToReduce].keys.find { it != rootRow }!!, colToReduce)
                         }
                     }
 //                    val childMaxVal = H[colToReduce].values.maxBy { it.absoluteValue }?.absoluteValue?:-1
@@ -228,7 +223,7 @@ class HermiteDecomposition {
 
         fun addPendingInteraction(j: Int) {
             pendingInteractions
-                .getOrPut(U[j].values.sumBy { it.absoluteValue } ) { ArrayList() }
+                .getOrPut(U.columns[j].values.sumBy { it.absoluteValue } ) { ArrayList() }
                 .add(j)
 
         }
@@ -242,13 +237,13 @@ class HermiteDecomposition {
 
         fun getNextPivotPoint(): Pair<Int,Int> {
             val pivotPoint = pivotPoints.pollFirst()
-            val pivotSize = U[pivotPoint.second].sparseSize
+            val pivotSize = U.columns[pivotPoint.second].sparseSize
             if(pivotSize > basisSize) {
                 basisSize = pivotSize
                 pendingInteractions
                     .get(basisSize)
                     ?.forEach { j ->
-                        val i = H[j].keys.find { it != rootRow }
+                        val i = H.columns[j].keys.find { it != rootRow }
                         if(i != null && !rowsInTree.contains(i)) {
                             pivotPoints.addLast(Pair(i, j))
                             rowsInTree.add(i)
