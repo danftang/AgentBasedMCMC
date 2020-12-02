@@ -1,8 +1,8 @@
 package treeMCMC
 
-import lib.sparseMatrix.HashColIntMatrix
-import lib.sparseMatrix.HashIntVector
-import lib.sparseMatrix.IntVector
+import lib.sparseIntMatrix.HashColIntMatrix
+import lib.sparseIntMatrix.HashIntVector
+import lib.sparseIntMatrix.IntArrayVector
 import org.apache.commons.math3.distribution.EnumeratedDistribution
 import org.apache.commons.math3.util.Pair
 import java.lang.RuntimeException
@@ -51,9 +51,9 @@ class MCMCTreeNode(val tree: MCMCTree, val parent: MCMCTreeNode?, val breakpoint
         basisValue.asSequence().withIndex().sumByDouble {it.value * tree.basisLnProbabilities[it.index] }
     }
 
-    val basisValue: IntVector by lazy {
+    val basisValue: IntArrayVector by lazy {
         val reducedNullBasis = HashColIntMatrix(tree.hermite.nullBasis.subMatrixView(0, breakpoint))
-        val newValue = IntVector(basisSize) {0}
+        val newValue = IntArrayVector(basisSize) {0}
         if(parent != null) {
             for(i in breakpoint+1 until basisSize) {
                 newValue[i] = parent.basisValue[i]

@@ -4,10 +4,10 @@ import ABMMatrices.oneDabmMatrix
 import ABMMatrices.plotFeynmannDiagram
 import ABMMatrices.twoDabmMatrix
 import ConvexPolyhedron
-import lib.sparseMatrix.HashColIntMatrix
-import lib.sparseMatrix.HashIntVector
-import lib.sparseMatrix.HashRowColIntMatrix
-import lib.sparseMatrix.SparseIntVector
+import lib.sparseIntMatrix.HashColIntMatrix
+import lib.sparseIntMatrix.HashIntVector
+import lib.sparseIntMatrix.HashRowColIntMatrix
+import lib.sparseIntMatrix.SparseIntVector
 import org.junit.Test
 import kotlin.random.Random
 

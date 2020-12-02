@@ -1,5 +1,5 @@
 
-import lib.sparseMatrix.*
+import lib.sparseIntMatrix.*
 import java.util.*
 import kotlin.math.absoluteValue
 
@@ -78,7 +78,7 @@ class HermiteDecomposition {
         return baseState + nullBasis * basisVector
     }
 
-    fun basisVectorToActs(basisVector: IntVector): HashIntVector {
+    fun basisVectorToActs(basisVector: IntArrayVector): HashIntVector {
         return basisVectorToActs(basisVector.toSparseIntVector())
     }
 

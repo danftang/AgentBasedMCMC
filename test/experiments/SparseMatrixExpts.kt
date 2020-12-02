@@ -1,20 +1,12 @@
 package experiments
 
 import ABMMatrices.oneDabmMatrix
-import com.google.ortools.linearsolver.MPConstraint
-import com.google.ortools.linearsolver.MPSolver
-import lib.sparseMatrix.HashColIntMatrix
-import lib.gnuplot
-import lib.sparseMatrix.HashIntVector
-import org.apache.commons.math3.distribution.EnumeratedDistribution
-import org.apache.commons.math3.primes.Primes
+import lib.sparseIntMatrix.HashIntVector
 import org.jgrapht.alg.spanning.PrimMinimumSpanningTree
 import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.graph.SimpleGraph
 import org.junit.Test
 import treeMCMC.MCMCTree
-import kotlin.math.ln
-import kotlin.math.pow
 
 class SparseMatrixExpts {
     val N = 5

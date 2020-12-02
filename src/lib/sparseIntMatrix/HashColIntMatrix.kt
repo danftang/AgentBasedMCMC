@@ -1,4 +1,4 @@
-package lib.sparseMatrix
+package lib.sparseIntMatrix
 
 import org.apache.commons.math3.exception.OutOfRangeException
 import org.apache.commons.math3.util.ArithmeticUtils.gcd

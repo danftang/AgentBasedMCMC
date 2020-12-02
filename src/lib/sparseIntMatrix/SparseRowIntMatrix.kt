@@ -1,11 +1,4 @@
-package lib.sparseMatrix
-
-import com.google.ortools.linearsolver.MPConstraint
-import com.google.ortools.linearsolver.MPSolver
-import java.lang.IllegalArgumentException
-import kotlin.math.min
-import kotlin.math.sign
-import kotlin.system.measureTimeMillis
+package lib.sparseIntMatrix
 
 interface SparseRowIntMatrix: SparseIntMatrix {
     val rows:       List<SparseIntVector>
@@ -26,6 +19,7 @@ interface SparseRowIntMatrix: SparseIntMatrix {
 
     fun replaceNonZeroElementsInRow(col: Int, map: (row: Int, value: Int) -> Int)
 
+    // row[i1] = row[i1] + weight*row[i2]
     fun weightedRowPlusAssign(i1: Int, i2: Int, weight: Int) {
         for(entry in rows[i2]) {
             plusAssign(i1, entry.key, weight*entry.value)
@@ -40,8 +34,8 @@ interface SparseRowIntMatrix: SparseIntMatrix {
         return result
     }
 
-    override operator fun times(X: IntVector): IntVector {
-        return IntVector(this.nRows) { i ->
+    override operator fun times(X: IntArrayVector): IntArrayVector {
+        return IntArrayVector(this.nRows) { i ->
             rows[i].dotProd(X)
         }
     }

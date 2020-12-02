@@ -1,4 +1,4 @@
-package lib.sparseMatrix
+package lib.sparseIntMatrix
 
 import java.util.AbstractMap
 
@@ -78,7 +78,7 @@ class HashRowColIntMatrix: SparseRowIntMatrix, SparseColIntMatrix {
 
     override fun times(X: SparseIntVector) = super<SparseColIntMatrix>.times(X)
 
-    override fun times(X: IntVector) = super<SparseColIntMatrix>.times(X)
+    override fun times(X: IntArrayVector) = super<SparseColIntMatrix>.times(X)
 
     operator fun times(M: SparseIntMatrix): HashRowColIntMatrix {
         assert(nCols == M.nRows)
@@ -176,8 +176,12 @@ class HashRowColIntMatrix: SparseRowIntMatrix, SparseColIntMatrix {
     }
 
     fun timesAssignRow(row: Int, multiplier: Int) {
-        _rows[row].data.forEach { entry ->
-            entry.value.value = entry.value.value * multiplier
+        if(multiplier != 0) {
+            _rows[row].data.forEach { entry ->
+                entry.value.value = entry.value.value * multiplier
+            }
+        } else {
+            _rows[row].data.clear() // TODO: and remove column entries
         }
     }
 

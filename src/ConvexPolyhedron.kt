@@ -1,4 +1,7 @@
-import lib.sparseMatrix.*
+import lib.sparseIntMatrix.HashIntVector
+import lib.sparseIntMatrix.HashRowColIntMatrix
+import lib.sparseIntMatrix.IntArrayVector
+import lib.sparseIntMatrix.SparseIntVector
 import kotlin.math.sign
 
 // Represents the convex polyhedron defined by the points X such that
@@ -20,12 +23,12 @@ class ConvexPolyhedron(var M: HashRowColIntMatrix, var B: HashIntVector) {
 
     // find the valid point that maximises objective.transpose()*X
     // throws RuntimeException if there are no valid points in this polyhedron
-    fun maximise(objective: List<Double>): IntVector {
+    fun maximise(objective: List<Double>): IntArrayVector {
         return U * M.IPsolve(B, objective, "=") + R
     }
 
     // returns a random valid point
-    fun findValidPoint(): IntVector {
+    fun findValidPoint(): IntArrayVector {
         return maximise(DoubleArray(M.nCols) {0.0}.asList())
     }
 

@@ -1,4 +1,4 @@
-package lib.sparseMatrix
+package lib.sparseIntMatrix
 
 class HashIntVector(val data: HashMap<Int,Int>): SparseIntVector {
     override val sparseSize: Int
@@ -11,6 +11,13 @@ class HashIntVector(val data: HashMap<Int,Int>): SparseIntVector {
     constructor(copy: SparseIntVector) : this(HashMap(copy.sparseSize)) {
         for (entry in copy) {
             data[entry.key] = entry.value
+        }
+    }
+
+    constructor(copy: IntArrayVector) : this() {
+        for (i in copy.indices) {
+            val xi = copy[i]
+            if(xi != 0) data[i] = xi
         }
     }
 
@@ -28,7 +35,7 @@ class HashIntVector(val data: HashMap<Int,Int>): SparseIntVector {
         data[index] = value
     }
 
-    fun setEqual(denseVector: IntVector) {
+    fun setEqual(denseVector: IntArrayVector) {
         data.clear()
         for(i in 0 until denseVector.size) {
             val xi = denseVector[i]

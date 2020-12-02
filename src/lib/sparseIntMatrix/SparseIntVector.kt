@@ -1,4 +1,4 @@
-package lib.sparseMatrix
+package lib.sparseIntMatrix
 
 interface SparseIntVector: Iterable<Map.Entry<Int,Int>> {
     val sparseSize: Int     // number of non-zero entries
@@ -48,7 +48,7 @@ interface SparseIntVector: Iterable<Map.Entry<Int,Int>> {
         return sum
     }
 
-    operator fun plus(other: IntVector): IntVector {
+    operator fun plus(other: IntArrayVector): IntArrayVector {
         return other + this
     }
 
@@ -60,8 +60,8 @@ interface SparseIntVector: Iterable<Map.Entry<Int,Int>> {
     }
 
 
-    operator fun minus(other: IntVector): IntVector {
-        val result = IntVector(other.size) {
+    operator fun minus(other: IntArrayVector): IntArrayVector {
+        val result = IntArrayVector(other.size) {
             -other[it]
         }
         for(entry in this) {
@@ -93,7 +93,7 @@ interface SparseIntVector: Iterable<Map.Entry<Int,Int>> {
         return columns.first.sumBy { it.value * columns.second[it.key] }
     }
 
-    fun dotProd(other: IntVector): Int {
+    fun dotProd(other: IntArrayVector): Int {
         var sum = 0
         for(i in other.indices) {
             sum += other[i]*this[i]
@@ -112,8 +112,8 @@ interface SparseIntVector: Iterable<Map.Entry<Int,Int>> {
         return IntRange(min, max)
     }
 
-    fun toIntVector(size: Int): IntVector {
-        val result = IntVector(size)
+    fun toIntVector(size: Int): IntArrayVector {
+        val result = IntArrayVector(size)
         for(entry in this) {
             result[entry.key] = entry.value
         }

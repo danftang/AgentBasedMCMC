@@ -2,9 +2,8 @@ package experiments
 
 import ABMMatrices.twoDabmMatrix
 import ConvexPolyhedron
-import lib.sparseMatrix.HashColIntMatrix
-import lib.sparseMatrix.HashIntVector
-import lib.sparseMatrix.HashRowColIntMatrix
+import lib.sparseIntMatrix.HashIntVector
+import lib.sparseIntMatrix.HashRowColIntMatrix
 import org.junit.Test
 import kotlin.random.Random
 

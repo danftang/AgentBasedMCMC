@@ -1,10 +1,6 @@
-package lib.sparseMatrix
+package lib.sparseIntMatrix
 
-import com.google.ortools.linearsolver.MPConstraint
-import com.google.ortools.linearsolver.MPSolver
-import java.lang.IllegalArgumentException
 import kotlin.math.min
-import kotlin.system.measureTimeMillis
 
 interface SparseColIntMatrix: SparseIntMatrix {
     val columns:    List<SparseIntVector>
@@ -44,8 +40,8 @@ interface SparseColIntMatrix: SparseIntMatrix {
     }
 
 
-    override operator fun times(X: IntVector): IntVector {
-        val result = IntVector(nRows)
+    override operator fun times(X: IntArrayVector): IntArrayVector {
+        val result = IntArrayVector(nRows)
         for(i in X.indices) {
             for(entry in columns[i]) {
                 result[entry.key] += entry.value * X[i]
@@ -58,54 +54,6 @@ interface SparseColIntMatrix: SparseIntMatrix {
     fun removeColumns(colsToRemove: Iterable<Int>)
 
     fun replaceNonZeroElementsInCol(col: Int, map: (row: Int, value: Int) -> Int)
-
-
-    // Minimise CX
-    // Subject to:
-    // MX >= B
-    // and
-    // X >= 0 and X is integer
-    // where M is this matrix
-    // returns X
-    //
-    fun IPsolve(B: SparseIntVector, C: List<Double> = DoubleArray(nCols) {0.0}.asList(), constraintType: String = ">="): IntVector {
-        val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
-        val X = solver.makeIntVarArray(nCols, 0.0, Double.POSITIVE_INFINITY)
-        val constraints = Array<MPConstraint>(nRows) { solver.makeConstraint() }
-        for(col in 0 until nCols) {
-            for(coefficient in columns[col]) {
-                constraints[coefficient.key].setCoefficient(X[col], coefficient.value.toDouble())
-            }
-        }
-        for(i in 0 until nRows) {
-            when(constraintType) {
-                ">=" -> constraints[i].setBounds(B[i].toDouble(), Double.POSITIVE_INFINITY)
-                "=","==" -> constraints[i].setBounds(B[i].toDouble(), B[i].toDouble())
-                "<=" -> constraints[i].setBounds(Double.NEGATIVE_INFINITY, B[i].toDouble())
-                else -> throw(IllegalArgumentException("Unknown constraint type"))
-            }
-        }
-        val objective = solver.objective()
-        for(i in C.indices) {
-            objective.setCoefficient(X[i], C[i])
-        }
-        solver.objective().setMinimization()
-        val solveState: MPSolver.ResultStatus
-        val solveTime = measureTimeMillis {
-            solveState = solver.solve()
-        }
-        println("Solved in ${solveTime}ms")
-        return if (solveState == MPSolver.ResultStatus.OPTIMAL)
-            IntVector(X.size) { i -> X[i].solutionValue().toInt() }
-        else
-            throw(RuntimeException(
-                when (solveState) {
-                    MPSolver.ResultStatus.INFEASIBLE -> "Infeasible"
-                    MPSolver.ResultStatus.UNBOUNDED -> "Unbounded"
-                    else -> "Solve Error"
-                }
-            ))
-    }
 
 
     fun hermiteDecomposition(): HashColIntMatrix {

@@ -1,5 +1,5 @@
-import lib.sparseMatrix.HashColIntMatrix
-import lib.sparseMatrix.SparseIntVector
+import lib.sparseIntMatrix.HashColIntMatrix
+import lib.sparseIntMatrix.SparseIntVector
 import lib.gnuplot
 
 object ABMMatrices {
@@ -58,6 +58,15 @@ object ABMMatrices {
     fun eqnId(N:Int, timestep: Int, row: Int, col: Int) = timestep*N*N + row*N + col
 
 
+//    fun twoDFermionicAbmMatrix(gridSize: Int, timesteps: Int): HashColIntMatrix {
+//        val M = twoDabmMatrix(gridSize, timesteps)
+//        val originalNCols = M.nCols
+//        val originalNRows = M.nCols
+//        M.resize(M.nRows + M.nCols,M.nCols*2)
+//        for(i in originalNRows until M.nRows) {
+//
+//        }
+//    }
 
     // ABM with left, right, reproduce and eat
     // T is number of timesteps

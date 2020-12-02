@@ -1,8 +1,8 @@
 package treeMCMC
 
 import HermiteDecomposition
-import lib.sparseMatrix.HashColIntMatrix
-import lib.sparseMatrix.HashIntVector
+import lib.sparseIntMatrix.HashColIntMatrix
+import lib.sparseIntMatrix.HashIntVector
 import kotlin.math.ln
 
 class MCMCTree {

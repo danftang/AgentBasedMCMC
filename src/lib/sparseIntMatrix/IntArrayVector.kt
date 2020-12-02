@@ -1,6 +1,6 @@
-package lib.sparseMatrix
+package lib.sparseIntMatrix
 
-class IntVector(val data: IntArray): AbstractList<Int>() {
+class IntArrayVector(val data: IntArray): AbstractList<Int>() {
 
     override val size: Int
         get() = data.size
@@ -13,30 +13,30 @@ class IntVector(val data: IntArray): AbstractList<Int>() {
 
     constructor(size: Int): this(IntArray(size) { 0 })
 
-    operator fun plus(other: IntVector): IntVector {
+    operator fun plus(other: IntArrayVector): IntArrayVector {
         assert(this.size == other.size)
-        return IntVector(this.size) {
+        return IntArrayVector(this.size) {
             this[it] + other[it]
         }
     }
 
-    operator fun plus(other: SparseIntVector): IntVector {
-        val result = IntVector(data.copyOf())
+    operator fun plus(other: SparseIntVector): IntArrayVector {
+        val result = IntArrayVector(data.copyOf())
         for(entry in other) {
             result[entry.key] += entry.value
         }
         return result
     }
 
-    operator fun minus(other: IntVector): IntVector {
+    operator fun minus(other: IntArrayVector): IntArrayVector {
         assert(this.size == other.size)
-        return IntVector(this.size) {
+        return IntArrayVector(this.size) {
             this[it] - other[it]
         }
     }
 
-    operator fun minus(other: SparseIntVector): IntVector {
-        val result = IntVector(data.copyOf())
+    operator fun minus(other: SparseIntVector): IntArrayVector {
+        val result = IntArrayVector(data.copyOf())
         for(entry in other) {
             result[entry.key] -= entry.value
         }
