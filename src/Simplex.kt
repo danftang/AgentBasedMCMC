@@ -1,19 +1,28 @@
 import com.google.ortools.linearsolver.MPSolver
 import lib.abstractAlgebra.*
 import lib.sparseMatrix.GridMapMatrix
-import lib.vector.MapVector
-import lib.vector.MutableMapVector
+import lib.sparseMatrix.IPsolve
+import lib.sparseMatrix.SparseMatrix
+import lib.sparseMatrix.copyTo
+import lib.vector.*
+import org.apache.commons.math3.distribution.EnumeratedDistribution
+import org.apache.commons.math3.fraction.Fraction
 import java.lang.RuntimeException
+import kotlin.math.pow
+import kotlin.math.roundToInt
 
 
-class Simplex<T: Any>(
+open class Simplex<T>(
     val M: GridMapMatrix<T>,
     val basicColsByRow: IntArray = IntArray(M.nRows-1) { -1 }
-): FieldOperators<T> by M {
+): FieldOperators<T> by M
+    where T: Number,
+          T: Comparable<T>
+{
 
-    val B: MutableMapVector<T>
+    val B: MutableSparseVector<T>
         inline get() = M.columns[bColumn]
-    val objective: MutableMapVector<T>
+    val objective: MutableSparseVector<T>
         inline get() = M.rows[objectiveRow]
     val objectiveRow: Int
         inline get() = M.nRows-1
@@ -23,13 +32,35 @@ class Simplex<T: Any>(
     data class PivotPoint(val row: Int, val col: Int)
 
 
-    fun X(): Map<Int,T> {
-        val x = HashMap<Int, T>()
+    fun X(): SparseVector<T> {
+        val x = B.new()
         for (i in 0 until objectiveRow) {
             val basicCol = basicColsByRow[i]
-            x[basicCol] = B[i] / M[i, basicCol]!!
+            x[basicCol] = B[i] / M[i, basicCol]
         }
         return x
+    }
+
+    constructor(
+        xCoefficients: SparseMatrix<T>,
+        constants: SparseVector<T>,
+        objective: SparseVector<T>)
+            : this(
+        GridMapMatrix(xCoefficients.operators,xCoefficients.nRows+1, xCoefficients.nCols+1)
+    ) {
+//        val initialSolution = xCoefficients.IPsolve(constants, DoubleArray(xCoefficients.nCols) {0.0}.asList(), "==")
+        xCoefficients.copyTo(M)
+        objective.copyTo(M.rows[objectiveRow])
+        constants.copyTo(M.columns[bColumn])
+
+        val initialSolution = xCoefficients
+            .IPsolve(constants, emptyMap<Int,T>().asMapVector(xCoefficients.operators), "==")
+            .asList()
+            .mapIndexedNotNull { index, value ->
+                if(value != 0.0) index else null
+            }
+
+        pivotColumns(initialSolution)
     }
 
 
@@ -69,8 +100,8 @@ class Simplex<T: Any>(
 
     // pivots in all non-zero columns in the supplied solution
     // then greedily pivots in any remaining rows
-    fun pivotToSolution(solution: Map<Int,T>) {
-        for((j,_) in solution) {
+    fun pivotColumns(columnsToPivotIn: List<Int>) {
+        for(j in columnsToPivotIn) {
             if(!isBasicColumn(j)) {
                 val pivotRow =
                     M.columns[j].nonZeroEntries
@@ -107,7 +138,9 @@ class Simplex<T: Any>(
     fun isBasicColumn(j: Int): Boolean {
         val col = M.columns[j]
         if(col.nonZeroEntries.size != 1) return false
-        return basicColsByRow[col.nonZeroEntries.entries.first().key] == j
+        val row = col.nonZeroEntries.entries.first().key
+        if(row == objectiveRow) return false
+        return basicColsByRow[row] == j
     }
 
 
@@ -116,10 +149,11 @@ class Simplex<T: Any>(
     // M_k' = (M_ij*M_k - M_kj*M_i)/G
     // where G is the greatest common divisor of M_ij and M_kj
     // if the pivot point is -ve, multiplies the pivot row by -1 to make it positive
+    inline fun pivot(point: PivotPoint) = pivot(point.row, point.col)
     fun pivot(i: Int, j: Int) {
         assert(i>=0 && i < M.nRows-1)
         assert(j>=0 && j < M.nCols-1)
-        var Mij = M[i,j]!!
+        var Mij = M[i,j]
 
         M.rows[i] /= Mij
 //        M.rowReassign(i) { it/Mij }
@@ -153,19 +187,72 @@ class Simplex<T: Any>(
         }
 
         return limits
-            .filter { it.second == dXjmax }
+            .filter { it.second as Number == dXjmax }
             .map { it.first }
     }
 
 
     fun allPositivePivotPoints(): List<PivotPoint> {
-        return (0 until bColumn).asSequence()
+        return (0 until M.nCols).asSequence()
+            .filter { it != bColumn }
             .flatMap { j ->
                 pivotableRows(j).asSequence()
                     .map { i ->
                         PivotPoint(i,j)
                     }
             }.toList()
+    }
+
+
+    // returns all pivots that maintain a positive solution
+    // and that do not have a zero in the B column
+    // (i.e. that a pivot here will change the solution)
+    fun allNonDegeneratePivots(): List<PivotPoint> {
+        return (0 until M.nCols).asSequence()
+            .filter { it != bColumn }
+            .flatMap { j ->
+                pivotableRows(j).asSequence()
+                    .filter { i -> B[i] != zero && B[i] != -zero }
+                    .map { i ->
+                        PivotPoint(i,j)
+                    }
+            }.toList()
+
+    }
+
+    // returns all pivots that maintain a positive solution
+    // and that have a zero in the B column
+    // (i.e. that a pivot here will not change the solution)
+    fun allDegeneratePivots(): List<PivotPoint> {
+        return (0 until bColumn).asSequence()
+            .flatMap { j ->
+                pivotableRows(j).asSequence()
+                    .filter { i -> B[i] == zero }
+                    .map { i ->
+                        PivotPoint(i,j)
+                    }
+            }.toList()
+    }
+
+
+
+
+    fun postPivotB(pivot: PivotPoint): SparseVector<T> {
+        val Bpiv = B[pivot.row]/M[pivot.row,pivot.col]
+        val Bprime = B.toMutableSparseVector()
+        Bprime.weightedPlusAssign(M.columns[pivot.col], -Bpiv)
+        Bprime[pivot.row] = Bpiv
+        return Bprime
+    }
+
+
+
+    fun T.roundToInt(): Int {
+        return when(this) {
+            is Double -> roundToInt()
+            is Fraction -> (numerator*1.0/denominator).roundToInt()
+            else -> throw(UnsupportedOperationException("Don't know how to round a ${this.javaClass.simpleName}"))
+        }
     }
 
 }
@@ -199,10 +286,9 @@ fun MPSolver.toSimplex(): Simplex<Double> {
 
     this.solve()
     val initialSolution = variables()
-        .filter { it.solutionValue() != 0.0 }
-        .associate { Pair(it.index(), it.solutionValue()) }
+        .mapNotNull { if(it.solutionValue() != 0.0) it.index() else null }
 
-    simplex.pivotToSolution(initialSolution)
+    simplex.pivotColumns(initialSolution)
 
     return simplex
 }

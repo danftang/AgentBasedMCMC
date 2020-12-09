@@ -1,10 +1,6 @@
 package lib.vector
 
-import lib.abstractAlgebra.FieldElement
-import org.apache.commons.math3.linear.OpenMapRealVector
-import org.apache.commons.math3.linear.SparseFieldVector
-
-interface MutableSparseVector<T: Any>: SparseVector<T> {
+interface MutableSparseVector<T>: SparseVector<T> {
     override val nonZeroEntries: MutableMap<Int,T>
 
     operator fun set(index: Int, value: T){
@@ -43,7 +39,7 @@ interface MutableSparseVector<T: Any>: SparseVector<T> {
 
 }
 
-inline fun<T: Any> MutableSparseVector<T>.mapAssign(unaryOp: (T)->T) {
+inline fun<T> MutableSparseVector<T>.mapAssign(unaryOp: (T)->T) {
     val iter = nonZeroEntries.iterator()
     while(iter.hasNext()) {
         val entry = iter.next()
@@ -52,20 +48,20 @@ inline fun<T: Any> MutableSparseVector<T>.mapAssign(unaryOp: (T)->T) {
     }
 }
 
-inline fun<T: Any> MutableSparseVector<T>.mapAssign(other: SparseVector<T>, lhsOnlyOp: (T)->T, crossinline rhsOnlyOp: (T)->T, binaryOp: (T, T)->T) {
-    val iter = nonZeroEntries.iterator()
-    while(iter.hasNext()) {
-        val entry = iter.next()
+inline fun<T> MutableSparseVector<T>.mapAssign(other: SparseVector<T>, lhsOnlyOp: (T)->T, crossinline rhsOnlyOp: (T)->T, binaryOp: (T, T)->T) {
+    val toRemove = ArrayList<Int>()
+    for(entry in nonZeroEntries) {
         val otherVal = other.nonZeroEntries[entry.key]
         val newVal = if(otherVal != null) binaryOp(entry.value, otherVal) else lhsOnlyOp(entry.value)
-        if(newVal != zero) entry.setValue(newVal) else iter.remove()
+        if(newVal == zero || newVal == -zero) toRemove.add(entry.key) else entry.setValue(newVal)
     }
     for(entry in other.nonZeroEntries) {
         nonZeroEntries.compute(entry.key) { key, oldValue ->
             if(oldValue != null) oldValue else {
                 val newVal = rhsOnlyOp(entry.value)
-                if(newVal == zero) null else newVal
+                if(newVal == zero || newVal == -zero) null else newVal // TODO: Sort out the problem of -ve zero with boxed Double!!
             }
         }
     }
+    toRemove.forEach { nonZeroEntries.remove(it) }
 }

@@ -2,17 +2,43 @@ package experiments
 
 import ABMMatrices.twoDabmMatrix
 import Simplex
-import lib.abstractAlgebra.DoubleOperators
-import lib.collections.GridMap
+import SimplexMCMC
+import lib.abstractAlgebra.*
 import lib.sparseMatrix.GridMapMatrix
+import lib.sparseMatrix.IPsolve
+import lib.sparseMatrix.mapNonZeroEntriesTo
+import lib.vector.*
+import org.apache.commons.math3.fraction.Fraction
 import org.junit.Test
+import kotlin.math.absoluteValue
+import kotlin.math.pow
+import kotlin.random.Random
 
 // Experiments with pivoting the ABM matrix, a-la Simplex algorithm
 class SimplexExpts {
 
+    val gridSize = 3
+    val timesteps = 2
+    val nAgents = 4
+    val abmMatrix = twoDabmMatrix(gridSize, timesteps)
+    val observations = MutableMapVector(IntOperators)
+
+
     init {
         System.loadLibrary("jniortools")
+
+        val startPos = Array(nAgents) {
+            Pair(Random.nextInt(gridSize-1), Random.nextInt(gridSize-1))
+        }
+        for(agent in startPos.indices) {
+            val xPos = startPos[agent].first
+            val yPos = startPos[agent].second
+            observations[xPos*gridSize + yPos] = -1
+            observations[gridSize*gridSize*timesteps + xPos*gridSize + yPos] = 1
+        }
+
     }
+
 
     @Test
     fun introToLinearProgrammingAndGameTheoryPage89() {
@@ -50,6 +76,46 @@ class SimplexExpts {
         simplex.minimise()
         println()
         println(simplex.X())
+        assert(simplex.X().nonZeroEntries == mapOf(0 to 10.0, 1 to 30.0, 3 to 20.0))
+    }
+
+    @Test
+    fun fractionalMatrix() {
+        val coeffs = GridMapMatrix(FieldElementOperators(Fraction.ZERO.field),4,8)
+        coeffs[0,0] = Fraction(-2.0)
+        coeffs[0,2] = Fraction(6.0)
+        coeffs[0,3] = Fraction(2.0)
+        coeffs[0,5] = Fraction(-3.0)
+        coeffs[0,6] = Fraction(1.0)
+
+        coeffs[1,0] = Fraction(-4.0)
+        coeffs[1,1] = Fraction(1.0)
+        coeffs[1,2] = Fraction(7.0)
+        coeffs[1,3] = Fraction(1.0)
+        coeffs[1,5] = Fraction(-1.0)
+
+        coeffs[2,2] = Fraction(-5.0)
+        coeffs[2,3] = Fraction(3.0)
+        coeffs[2,4] = Fraction(1.0)
+        coeffs[2,5] = Fraction(-1.0)
+
+        // constants
+        coeffs[0,7] = Fraction(20.0)
+        coeffs[1,7] = Fraction(10.0)
+        coeffs[2,7] = Fraction(60.0)
+
+        // objective
+        coeffs[3,2] = Fraction(13.0)
+        coeffs[3,3] = Fraction(-6.0)
+        coeffs[3,5] = Fraction(2.0)
+
+        val initialPivots = intArrayOf(6,1,4)
+        val simplex = Simplex(coeffs, initialPivots)
+        println(simplex.M)
+        simplex.minimise()
+        println()
+        println(simplex.X())
+        assert(simplex.X().nonZeroEntries == mapOf(0 to Fraction(10.0), 1 to Fraction(30.0), 3 to Fraction(20.0)))
     }
 
 
@@ -77,151 +143,96 @@ class SimplexExpts {
 //        println(simplex.findAllPositivePivotCols())
 //    }
 
-//    @Test
-//    fun twoDABM() {
-//        val gridSize = 8
-//        val timesteps = 4
-//        val nAgents = 32
-//        val abmMatrix = twoDabmMatrix(gridSize, timesteps)
-//        val observations = HashIntVector()
-//        val startPos = Array(nAgents) {
-//            Pair(Random.nextInt(gridSize-1), Random.nextInt(gridSize-1))
-//        }
-//        for(agent in startPos.indices) {
-//            val xPos = startPos[agent].first
-//            val yPos = startPos[agent].second
-//            observations[xPos*gridSize + yPos] = -1
-//            observations[gridSize*gridSize*timesteps + xPos*gridSize + yPos] = 1
-//        }
-//
-//        val eventProbs = (0 until abmMatrix.nCols).associateWith { 1.0/abmMatrix.nCols }
-//
-//        val simplex = Simplex(abmMatrix, observations, eventProbs)
-//
-//        val Xinit = constructInitialSolution(simplex, startPos, gridSize, timesteps)
-//
-//        println("Starting Hermite transformation")
-//        val hermiteTime = measureTimeMillis {
-////            simplex.pivotRootedSourceTree(Xinit)
-//            simplex.pivotSourcePolyTree(Xinit)
-//        }
-//        println("Done in $hermiteTime ms")
-//
-//        println("pivoted rows = ${simplex.pivotPoints.size}")
-//        println("Total M size = ${simplex.M.nRows} x ${simplex.M.nCols}")
-//        println("Base solution = ${simplex.X}")
-////        println("Observation error = ${simplex.observationNorm()}")
-//
-//        assert(simplex.M*simplex.X == simplex.B)
-//        assert(simplex.X.isPositive())
-//
-//        println("Row sizes = ${simplex.M.rows.map { it.sparseSize }}")
-//        println("Col sizes = ${simplex.M.columns.map { it.sparseSize }}")
-////        println("Smallest root reduction column ${
-////        simplex.M.columns.filter {
-////            it[simplex.M.nRows-1] != 0
-////        }.map { it.sparseSize }.run { min() }
-////        }")
-//        println("Root row = ${simplex.M.rows[simplex.M.nRows-1]}")
-//        println("Root row +- count ${simplex.M.rows[simplex.M.nRows-1].count {it.value > 0}} ${simplex.M.rows[simplex.M.nRows-1].count {it.value < 0}}")
-//        val rootActRows = simplex.M.columns.takeLast(nAgents).map { it.keys.first() }.toSet()
-//        println("Count of columns with no root acts ${simplex.M.columns.count {
-//            it.all { !rootActRows.contains(it.key) }
-//        }}")
-//
-//        println()
-//        println("Starting MCMC chain")
-//        for(p in 1..40) {
-//            println()
-//            val oldSolution = HashIntVector(simplex.X)
-//            val pivotTime = measureTimeMillis {
-////                simplex.pivotPerturb()
-////                simplex.columnPerturb()
-////                simplex.hybridPerturb()
-//                simplex.mcmcPerturb()
-//            }
-//            println("Found solution in $pivotTime ms")
-//            println("new solution = ${simplex.X}")
-//            println("Change is ${simplex.X - oldSolution}")
-//            assert(simplex.M*simplex.X == simplex.B)
-//            assert(simplex.X.isPositive())
-//        }
-//
-//        println("Done!")
-//    }
+
+    @Test
+    fun twoDABM() {
+
+        val fieldOperators = FractionOperators // DoubleOperators
+        // val doubleToField: Double.()->Fraction = { Fraction(this) }
+        val intToField: Int.()->Fraction = { Fraction(this,1) }
+
+        val eventProbs = (0 until abmMatrix.nCols).associateWith { fieldOperators.one }.asMapVector(fieldOperators)
+
+        val abmGridMatrix = abmMatrix.mapNonZeroEntriesTo(
+            GridMapMatrix(fieldOperators, abmMatrix.nRows, abmMatrix.nCols)) {
+            it.intToField()
+        }
 
 
-//    @Test
-//    fun findInitialSolutionTest() {
-//        val gridSize = 32
-//        val timesteps = 6
-//        val nAgents = 100
-//        val abmMatrix = twoDabmMatrix(gridSize, timesteps)
-//        val observations = HashIntVector()
-//        val startPos = Array(nAgents) {
-//            Pair(Random.nextInt(gridSize-1), Random.nextInt(gridSize-1))
+        val fieldObservations = observations.mapNonZeroEntriesTo(MutableMapVector(fieldOperators)) {
+            it.intToField()
+        }
+
+//        val initialSolution = abmGridMatrix
+//            .IPsolve(fieldObservations, emptyMap<Int,Fraction>().asMapVector(fieldOperators), "==")
+//            .toMapVector()
+//            .mapNonZeroEntriesTo(MutableMapVector(fieldOperators)) { it.doubleToField() }
+
+//        println(doubleAbmMatrix)
+//        println(initialSolution)
+//        println(doubleAbmMatrix * initialSolution)
+//        println(observations)
+
+//        println("initial solution is ${initialSolution}")
+
+        val simplex = Simplex(abmGridMatrix, fieldObservations, eventProbs)
+
+//        for(i in simplex.basicColsByRow.indices) {
+//            val j = simplex.basicColsByRow[i]
+//            assert(j >= 0 && j < simplex.bColumn)
+//            assert(simplex.M[i,j] != fieldOperators.zero)
 //        }
-//        for(agent in startPos.indices) {
-//            val xPos = startPos[agent].first
-//            val yPos = startPos[agent].second
-//            observations[xPos*gridSize + yPos] = -1
-//            observations[gridSize*gridSize*timesteps + xPos*gridSize + yPos] = 1
-//        }
-//
-//        val simplex = Simplex(abmMatrix, observations)
-//
-//
-//        println("Starting Hermite transformation")
-//        val hermiteTime = measureTimeMillis {
-////            simplex.pivotSourcePolyTree()
-//            simplex.pivotRootedSourceTree()
-//        }
-//
-//        println("Done in $hermiteTime ms")
-//
-//        println("pivoted rows = ${simplex.pivotPoints.size}")
-//        println("Total M size = ${simplex.M.nRows} x ${simplex.M.nCols}")
-//        println("Base solution = ${simplex.X}")
-////        println("Observation error = ${simplex.observationNorm()}")
-//        assert(simplex.M*simplex.X == simplex.B)
-//
-//        for(i in 0 until simplex.M.nRows) {
-//            assert(simplex.X[simplex.pivotPoints[i]] == simplex.B[i])
-//        }
-//
-//        if(simplex.X.isPositive()) {
-//            println("Positive solution already!")
-//        } else {
-//            println("Pivoting out negatives...")
-//            simplex.pivotOutNegatives()
-//        }
-//
-//        assert(simplex.M*simplex.X == simplex.B)
-//        assert(simplex.X.isPositive())
-//
+
+        var nIntegerSolutions = 0
+        var nPivots = 0
+        for(i in 1..100) {
+            println("Sampling $i")
+            var ndPivots = simplex.allNonDegeneratePivots()
+//            while(ndPivots.isEmpty()) {
+            for(j in 1..100) {
+                val pivot = simplex.allDegeneratePivots().random()
+                simplex.pivot(pivot.row, pivot.col)
+                ndPivots = simplex.allNonDegeneratePivots()
+            }
+            val ndPivot = ndPivots.random()
+            simplex.pivot(ndPivot.row, ndPivot.col)
+            val x = simplex.X()
+            println("Solution is $x")
+            if(simplex.isAtIntegerSolution()) {
+                println("Solution is Integer")
+                nIntegerSolutions++
+            } else println("Solution is not integer")
+
+//            if(simplex.isBinary()) println("Binary") else println("Not Binary")
+//            if(simplex.isNormalised()) println("Normalised") else println("Not Normalised")
+            nPivots++
+            println("Fraction of solutions integer = ${nIntegerSolutions*1.0/nPivots}")
+//            simplex.setToZeroIfBelow(0.001)
+        }
+
+
+        println("Done!")
+    }
+
+//    fun Simplex<Double>.isAtIntegerSolution(): Boolean {
+//        val doubleSolution = X()
+//        val intSolution = MutableMapVector(IntOperators)
+//        doubleSolution.mapNonZeroEntriesTo(intSolution) { it.roundToInt() }
+//        return abmMatrix * intSolution == observations
 //    }
 
-//    fun constructInitialSolution(S: OldSimplex, agentPos: Array<Pair<Int,Int>>, gridSize: Int, timesteps: Int): Map<Int,Int> {
-//        val pivots = HashMap<Int,Int>()
-//        for(agent in agentPos) {
-//            for(t in 0 until timesteps step 2) {
-//                val startRow = gridSize*gridSize*t + agent.first * gridSize + agent.second
-//                val midRow = startRow + gridSize * gridSize + 1
-//                val endRow = midRow + gridSize * gridSize - 1
-//                val left =
-//                    S.M.rows[startRow]
-//                        .keys
-//                        .find { S.M[midRow, it] == 1 && S.M.columns[it].sparseSize == 2 }
-//                        ?: throw(RuntimeException("Action not found"))
-//                pivots[midRow] = left
-//                val right =
-//                    S.M.rows[midRow]
-//                        .keys
-//                        .find { S.M[endRow, it] == 1 && S.M.columns[it].sparseSize == 2}
-//                        ?: throw(RuntimeException("Action not found"))
-//                pivots[endRow] = right
-//            }
-//        }
-//        return pivots
-//    }
+    fun<T> Simplex<T>.isAtIntegerSolution(): Boolean where T : Comparable<T>, T: Number {
+        val intSolution = X().mapNonZeroEntriesTo(MutableMapVector(IntOperators)) { it.roundToInt() }
+        return abmMatrix * intSolution == observations
+    }
+
+
+    fun Simplex<Double>.setToZeroIfBelow(smallest: Double) {
+        val iter = M.nonZeroEntries.iterator()
+        while(iter.hasNext()) {
+            val entry = iter.next()
+            if(entry.value.absoluteValue < smallest) iter.remove()
+        }
+    }
+
 }

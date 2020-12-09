@@ -1,8 +1,10 @@
 package lib.vector
 
+import lib.abstractAlgebra.IntFieldElement
+import lib.abstractAlgebra.IntOperators
 import kotlin.reflect.KClass
 
-inline class IntArrayVector(val data: IntArray): MutableVector<Int> {
+inline class IntArrayVector(val data: IntArray): MutableVector<Int>, IntOperators {
     override fun set(index: Int, value: Int) {
         data[index] = value
     }
@@ -14,25 +16,7 @@ inline class IntArrayVector(val data: IntArray): MutableVector<Int> {
         return data[index]
     }
 
-    override fun new(): MutableVector<Int> {
-        return IntArrayVector(IntArray(size) { 0 })
+    override fun new(size: Int, init: (Int)->Int): MutableVector<Int> {
+        return IntArrayVector(IntArray(size) { init(it) })
     }
-
-    // FieldOperators<Int> implementation
-    override fun Int.plus(other: Int) = this + other
-    override fun Int.minus(other: Int) = this - other
-    override fun Int.unaryMinus() = -this
-    override fun Int.times(other: Int) = this * other
-    override fun Int.div(other: Int) = this / other
-    override fun Int.compareTo(other: Int) = this.compareTo(other)
-
-    override val zero: Int
-        get() = 0
-
-    override val one: Int
-        get() = 1
-
-    override val runtimeClass: KClass<Int>
-        get() = Int::class
-
 }

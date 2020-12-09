@@ -1,20 +1,29 @@
 package lib.vector
 
-import lib.abstractAlgebra.Field
-import lib.abstractAlgebra.FieldElement
 import lib.abstractAlgebra.FieldOperators
+import lib.abstractAlgebra.WithFieldElementOperators
+import org.apache.commons.math3.FieldElement
 
-class ArrayVector<T: Any>(val fieldOperators: FieldOperators<T>, val data: Array<T>): MutableVector<T>, FieldOperators<T> by fieldOperators {
+open class ArrayVector<T: FieldElement<T>>(open val data: Array<out T>): Vector<T>, WithFieldElementOperators<T> {
 
-    constructor(fieldOperators: FieldOperators<T>, size: Int): this(fieldOperators, Array<Any>(size) { fieldOperators.zero } as Array<T>)
 
     override val size: Int = data.size
 
     override fun get(index: Int) = data[index]
-
-    override fun set(index: Int, value: T) {
-        data[index] = value
+    override fun new(size: Int, init: (Int) -> T): MutableVector<T> {
+        return MutableArrayVector(size, init)
     }
 
-    override fun new(): MutableVector<T> = ArrayVector(fieldOperators, size)
+
+//    override fun new(): MutableVector<T> = ArrayVector(size)
 }
+
+inline fun<T: FieldElement<T>> Array<T>.asArrayVector(): ArrayVector<T> {
+    return ArrayVector( this)
+}
+
+
+fun<T: FieldElement<T>> arrayVectorOf(vararg values: T): ArrayVector<T> {
+    return ArrayVector(values)
+}
+

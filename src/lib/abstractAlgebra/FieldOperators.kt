@@ -1,17 +1,18 @@
 package lib.abstractAlgebra
 
+import lib.vector.MutableMapVector
 import kotlin.reflect.KClass
 
-interface FieldOperators<T: Any> {
+interface FieldOperators<T>: AlgebraicOperators<T> {
     val zero: T
     val one: T
-    val runtimeClass: KClass<T>
+    val operators: FieldOperators<T>
+        get() = this
+//    val runtimeKClass: KClass<out T>
 
-    operator fun T.plus(other: T): T
-    operator fun T.minus(other: T): T
-    operator fun T.unaryMinus(): T
-    operator fun T.times(other: T): T
-    operator fun T.div(other: T): T
-    operator fun T.compareTo(other: T): Int
-
+//    operator fun T.plus(other: T): T
+//    operator fun T.minus(other: T): T
+//    operator fun T.unaryMinus(): T
+//    operator fun T.times(other: T): T
+//    operator fun T.div(other: T): T
 }

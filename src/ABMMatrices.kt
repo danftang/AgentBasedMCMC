@@ -1,11 +1,14 @@
+import lib.abstractAlgebra.IntOperators
 import lib.sparseIntMatrix.HashColIntMatrix
 import lib.sparseIntMatrix.SparseIntVector
 import lib.gnuplot
+import lib.sparseMatrix.GridMapMatrix
 
 object ABMMatrices {
-    fun twoDabmMatrix(gridSize: Int, timesteps: Int): HashColIntMatrix {
+    fun twoDabmMatrix(gridSize: Int, timesteps: Int): GridMapMatrix<Int> {
         val NActs = 6
-        val abmMatrix = HashColIntMatrix(
+        val abmMatrix = GridMapMatrix(
+            IntOperators,
             (timesteps+1)*gridSize*gridSize,
             timesteps*gridSize*(gridSize-1)*NActs
         )
@@ -71,9 +74,9 @@ object ABMMatrices {
     // ABM with left, right, reproduce and eat
     // T is number of timesteps
     // N is number of grid points
-    fun oneDabmMatrix(T: Int, N: Int): HashColIntMatrix {
+    fun oneDabmMatrix(T: Int, N: Int): GridMapMatrix<Int> {
         val NActs = 4
-        val abmMatrix = HashColIntMatrix((T+1)*N, T*(N*NActs - 4))
+        val abmMatrix = GridMapMatrix(IntOperators, (T+1)*N, T*(N*NActs - 4))
 
         var actColumn = 0
         for (timestep in 0 until T) {
@@ -108,9 +111,9 @@ object ABMMatrices {
     // ABM with left, right and stay-put
     // T is number of timesteps
     // N is number of grid points
-    fun oneDNoInteractionMatrix(T: Int, N: Int): HashColIntMatrix {
+    fun oneDNoInteractionMatrix(T: Int, N: Int): GridMapMatrix<Int> {
         val NActs = 3
-        val abmMatrix = HashColIntMatrix((T+1)*N, T*(N*NActs - 2))
+        val abmMatrix = GridMapMatrix(IntOperators,(T+1)*N, T*(N*NActs - 2))
 
         var actColumn = 0
         for (timestep in 0 until T) {

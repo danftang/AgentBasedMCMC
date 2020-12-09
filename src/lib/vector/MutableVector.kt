@@ -1,23 +1,16 @@
 package lib.vector
 
-import lib.abstractAlgebra.Field
-import lib.abstractAlgebra.FieldElement
-import lib.abstractAlgebra.FieldOperators
+import lib.abstractAlgebra.DoubleFieldElement
+import org.apache.commons.math3.FieldElement
 
-interface MutableVector<T: Any>: Vector<T> {
+interface MutableVector<T>: Vector<T> {
     operator fun set(index: Int, value: T)
 
     operator fun timesAssign(multiplier: T) {
-        if (multiplier == one) return
-        if (multiplier == zero) {
-            for(i in 0 until size) set(i,zero)
-            return
-        }
         mapAssign { it * multiplier }
     }
 
     operator fun divAssign(denominator: T) {
-        if(denominator == one) return
         mapAssign { it / denominator }
     }
 
@@ -32,13 +25,16 @@ interface MutableVector<T: Any>: Vector<T> {
     fun weightedPlusAssign(other: Vector<T>, weight: T) {
         mapAssign(other) {a,b -> a + weight*b}
     }
-
 }
 
-inline fun<T: Any> MutableVector<T>.mapAssign(unaryOp: (T)->T) {
+inline operator fun MutableVector<DoubleFieldElement>.set(index: Int, value: Double) {
+    set(index, DoubleFieldElement(value))
+}
+
+inline fun<T> MutableVector<T>.mapAssign(unaryOp: (T)->T) {
     for (i in 0 until size) set(i, unaryOp(get(i)))
 }
 
-inline fun<T: Any> MutableVector<T>.mapAssign(other: Vector<T>, binaryOp: (T, T)->T) {
+inline fun<T> MutableVector<T>.mapAssign(other: Vector<T>, binaryOp: (T, T)->T) {
     for(i in 0 until size) set(i, binaryOp(get(i),other[i]))
 }

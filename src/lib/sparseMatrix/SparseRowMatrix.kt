@@ -9,13 +9,8 @@ interface SparseRowMatrix<T: Any>: SparseMatrix<T> {
     override val nRows: Int
         get() = rows.size
 
-    override val entries: Sequence<SparseMatrix.Entry<T>>
-        get() = rows
-            .asSequence()
-            .mapIndexed { i, row ->
-                row.nonZeroEntries.asSequence().map { SparseMatrix.Entry(i, it.key, it.value) }
-            }
-            .flatten()
+    override val nonZeroEntries: MutableIterable<SparseMatrix.Entry<T>>
+        get() = object: MutableIterable<Entry<T>> { override fun iterator() = EntryIterator(rows) }
 
     override fun get(row: Int, col: Int): T {
         return rows[row][col]
@@ -51,5 +46,38 @@ interface SparseRowMatrix<T: Any>: SparseMatrix<T> {
 //            plusAssign(i1, entry.key, weight*entry.value)
 //        }
 //    }
+
+    class Entry<T>(override val row: Int, val rowEntry: MutableMap.MutableEntry<Int,T>): SparseMatrix.Entry<T> {
+        override val col: Int
+            get() = rowEntry.key
+        override val value: T
+            get() = rowEntry.value
+        override fun setValue(newValue: T): T = rowEntry.setValue(newValue)
+    }
+
+    class EntryIterator<T: Any>(
+        val vectors: List<MutableSparseVector<T>>,
+        var vectorIndex: Int,
+        var vectorIterator:MutableIterator<MutableMap.MutableEntry<Int,T>>): MutableIterator<Entry<T>> {
+
+        constructor(rows: List<MutableSparseVector<T>>): this(rows,0, rows[0].nonZeroEntries.entries.iterator()) {
+            advanceToNextEntry()
+        }
+
+        override fun hasNext() = vectorIterator.hasNext()
+
+        override fun next(): Entry<T> {
+            val entry = vectorIterator.next()
+            advanceToNextEntry()
+            return Entry(vectorIndex, entry)
+        }
+
+        override fun remove() { vectorIterator.remove() }
+
+        private inline fun advanceToNextEntry() {
+            while(!vectorIterator.hasNext() && vectorIndex != vectors.lastIndex)
+                vectorIterator = vectors[++vectorIndex].nonZeroEntries.entries.iterator()
+        }
+    }
 
 }

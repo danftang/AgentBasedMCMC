@@ -1,11 +1,11 @@
 package lib.collections
 
-class MutableListView<STORE,VIEW>(val underlyingList: MutableList<STORE>, val readTransform: (STORE)->VIEW): AbstractMutableList<VIEW>() {
+class MutableListView<STORE,VIEW>(val underlyingList: MutableList<STORE>, val readTransform: (STORE)->VIEW, val writeTransform: (VIEW)->STORE): AbstractMutableList<VIEW>() {
     override val size: Int
         get() = underlyingList.size
 
     override fun add(index: Int, element: VIEW) {
-        TODO("Not yet implemented")
+        underlyingList.add(index, writeTransform(element))
     }
 
     override fun get(index: Int): VIEW {
@@ -17,7 +17,7 @@ class MutableListView<STORE,VIEW>(val underlyingList: MutableList<STORE>, val re
     }
 
     override fun set(index: Int, element: VIEW): VIEW {
-        TODO("Not yet implemented")
+        return readTransform(underlyingList.set(index, writeTransform(element)))
     }
 
 }

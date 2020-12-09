@@ -11,12 +11,17 @@ import kotlin.math.sign
 import kotlin.system.measureTimeMillis
 
 interface SparseMatrix<T: Any>: FieldOperators<T> {
-    data class Entry<T>(val row: Int, val col: Int, val value: T)
+    interface Entry<T> {
+        val row: Int
+        val col: Int
+        val value: T
+        fun setValue(newValue: T): T
+    }
 
-    val entries: Sequence<Entry<T>>
-
+    val nonZeroEntries: MutableIterable<Entry<T>>
     val nRows: Int
     val nCols: Int
+
 
     operator fun get(row: Int, col: Int): T
     operator fun times(X: SparseVector<T>): SparseVector<T>
@@ -30,7 +35,7 @@ interface SparseMatrix<T: Any>: FieldOperators<T> {
 //    fun MutableMap<Int,T>.asMutableSparseVector(): MutableSparseVector<T>
 
     fun diagonal(): SparseVector<T> {
-        val diag = MutableMapVector(this)
+        val diag = MutableMapVector(operators)
         for(i in 0 until min(nRows,nCols)) {
             diag[i] = this[i,i]
         }
@@ -48,11 +53,11 @@ interface SparseMatrix<T: Any>: FieldOperators<T> {
 // where M is this matrix
 // returns X
 //
-fun<T: Number> SparseMatrix<T>.IPsolve(B: SparseVector<T>, C: List<Double> = DoubleArray(nCols) {0.0}.asList(), constraintType: String = ">="): DoubleArray {
+fun<T: Number> SparseMatrix<T>.IPsolve(B: SparseVector<T>, C: SparseVector<T>, constraintType: String = ">="): DoubleArray {
     val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
     val X = solver.makeIntVarArray(nCols, 0.0, Double.POSITIVE_INFINITY)
     val constraints = Array<MPConstraint>(nRows) { solver.makeConstraint() }
-    for(entry in entries) {
+    for(entry in nonZeroEntries) {
         constraints[entry.row].setCoefficient(X[entry.col], entry.value.toDouble())
     }
     for(i in 0 until nRows) {
@@ -64,8 +69,8 @@ fun<T: Number> SparseMatrix<T>.IPsolve(B: SparseVector<T>, C: List<Double> = Dou
         }
     }
     val objective = solver.objective()
-    for(i in C.indices) {
-        objective.setCoefficient(X[i], C[i])
+    for(entry in C.nonZeroEntries) {
+        objective.setCoefficient(X[entry.key], entry.value.toDouble())
     }
     solver.objective().setMinimization()
     var solveState: MPSolver.ResultStatus? = null
@@ -101,5 +106,15 @@ fun<T: Number> SparseMatrix<T>.toSparsityString(): String {
         out.appendln()
     }
     return out.toString()
+}
+
+
+inline fun<T: Any, R: Any> SparseMatrix<T>.mapNonZeroEntriesTo(destination: SparseMatrix<R>, transform: (T)->R): SparseMatrix<R> {
+    for(entry in nonZeroEntries) destination[entry.row, entry.col] = transform(entry.value)
+    return destination
+}
+
+inline fun<T: Any> SparseMatrix<T>.copyTo(destination: SparseMatrix<T>) {
+    for(entry in nonZeroEntries) destination[entry.row, entry.col] = entry.value
 }
 
