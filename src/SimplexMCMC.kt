@@ -2,6 +2,8 @@ import lib.sparseMatrix.SparseMatrix
 import lib.vector.SparseVector
 import lib.vector.asMapVector
 import org.apache.commons.math3.distribution.BinomialDistribution
+import kotlin.math.exp
+import kotlin.math.ln
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.random.Random
@@ -14,44 +16,44 @@ import kotlin.random.Random
 class SimplexMCMC<T>(
     xCoefficients: SparseMatrix<T>,
     constants: SparseVector<T>,
-    val pmf: (SparseVector<T>) -> Double
+    val logPmf: (SparseVector<T>) -> Double
 ) : Simplex<T>(xCoefficients, constants, emptyMap<Int,T>().asMapVector(xCoefficients.operators)) where T: Comparable<T>, T: Number {
 
-    val fractionPenaltyK: Double          = 0.5
+    val fractionPenaltyK: Double          = ln(0.5)
     val binomial: BinomialDistribution    = BinomialDistribution(basicColsByRow.size, 0.5)
     var positivePivots: List<PivotPoint>
-    var probabilityOfX: Double
+    var logProbOfX: Double
 
     init {
         positivePivots = allPositivePivotPoints()
-        probabilityOfX = probabilityOf(X())
+        logProbOfX = logProbOf(X())
     }
 
-    // Choose a pivot with a probability
+    // Choose a positive pivot with uniform probability
+    // and reject based on Metropolis-Hastings
     fun mcmcTransition() {
         val proposalPivot = positivePivots.random()
-        val acceptanceDenominator = probabilityOfX / positivePivots.size
+        var logAcceptance = ln(positivePivots.size.toDouble()) - logProbOfX
         val rejectionPivot = PivotPoint(proposalPivot.row, basicColsByRow[proposalPivot.row])
         pivot(proposalPivot)
         val newPositivePivots = allPositivePivotPoints()
-        val newProbOfX  = probabilityOf(X())
-        val acceptanceNumerator = newProbOfX / newPositivePivots.size
-        val acceptanceProb = min(1.0, acceptanceNumerator/acceptanceDenominator)
+        val newLogProbOfX  = logProbOf(X())
+        logAcceptance += newLogProbOfX - ln(newPositivePivots.size.toDouble())
+        val acceptanceProb = min(1.0, exp(logAcceptance))
         if(Random.nextDouble() >= acceptanceProb) {
             pivot(rejectionPivot)
         } else {
             positivePivots = newPositivePivots
-            probabilityOfX = newProbOfX
+            logProbOfX = newLogProbOfX
         }
     }
 
-    fun fractionPenalty(x: SparseVector<T>): Double {
-        return fractionPenaltyK.pow(
-            x.nonZeroEntries.values.count { it.toDouble() != it.toInt().toDouble() }
-        )
+    fun logFractionPenalty(x: SparseVector<T>): Double {
+        return fractionPenaltyK * x.nonZeroEntries.values.count { it.toDouble() != it.toInt().toDouble() }
+
     }
 
-    fun probabilityOf(x: SparseVector<T>): Double =
-        pmf(x) * fractionPenalty(x) / binomial.probability(x.nonZeroEntries.size)
+    fun logProbOf(x: SparseVector<T>): Double =
+        logPmf(x) + logFractionPenalty(x) - binomial.logProbability(x.nonZeroEntries.size)
 
 }

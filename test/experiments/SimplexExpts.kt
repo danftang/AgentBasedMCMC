@@ -11,6 +11,8 @@ import lib.vector.*
 import org.apache.commons.math3.fraction.Fraction
 import org.junit.Test
 import kotlin.math.absoluteValue
+import kotlin.math.ln
+import kotlin.math.log
 import kotlin.math.pow
 import kotlin.random.Random
 
@@ -148,71 +150,32 @@ class SimplexExpts {
     fun twoDABM() {
 
         val fieldOperators = FractionOperators // DoubleOperators
-        // val doubleToField: Double.()->Fraction = { Fraction(this) }
         val intToField: Int.()->Fraction = { Fraction(this,1) }
-
-        val eventProbs = (0 until abmMatrix.nCols).associateWith { fieldOperators.one }.asMapVector(fieldOperators)
 
         val abmGridMatrix = abmMatrix.mapNonZeroEntriesTo(
             GridMapMatrix(fieldOperators, abmMatrix.nRows, abmMatrix.nCols)) {
             it.intToField()
         }
-
-
         val fieldObservations = observations.mapNonZeroEntriesTo(MutableMapVector(fieldOperators)) {
             it.intToField()
         }
-
-//        val initialSolution = abmGridMatrix
-//            .IPsolve(fieldObservations, emptyMap<Int,Fraction>().asMapVector(fieldOperators), "==")
-//            .toMapVector()
-//            .mapNonZeroEntriesTo(MutableMapVector(fieldOperators)) { it.doubleToField() }
-
-//        println(doubleAbmMatrix)
-//        println(initialSolution)
-//        println(doubleAbmMatrix * initialSolution)
-//        println(observations)
-
-//        println("initial solution is ${initialSolution}")
-
-        val simplex = Simplex(abmGridMatrix, fieldObservations, eventProbs)
-
-//        for(i in simplex.basicColsByRow.indices) {
-//            val j = simplex.basicColsByRow[i]
-//            assert(j >= 0 && j < simplex.bColumn)
-//            assert(simplex.M[i,j] != fieldOperators.zero)
-//        }
-
-        var nIntegerSolutions = 0
-        var nPivots = 0
-        for(i in 1..100) {
-            println("Sampling $i")
-            var ndPivots = simplex.allNonDegeneratePivots()
-//            while(ndPivots.isEmpty()) {
-            for(j in 1..100) {
-                val pivot = simplex.allDegeneratePivots().random()
-                simplex.pivot(pivot.row, pivot.col)
-                ndPivots = simplex.allNonDegeneratePivots()
-            }
-            val ndPivot = ndPivots.random()
-            simplex.pivot(ndPivot.row, ndPivot.col)
-            val x = simplex.X()
-            println("Solution is $x")
-            if(simplex.isAtIntegerSolution()) {
-                println("Solution is Integer")
-                nIntegerSolutions++
-            } else println("Solution is not integer")
-
-//            if(simplex.isBinary()) println("Binary") else println("Not Binary")
-//            if(simplex.isNormalised()) println("Normalised") else println("Not Normalised")
-            nPivots++
-            println("Fraction of solutions integer = ${nIntegerSolutions*1.0/nPivots}")
-//            simplex.setToZeroIfBelow(0.001)
+        val simplex = SimplexMCMC(abmGridMatrix, fieldObservations) { solution ->
+            solution.nonZeroEntries.size * ln(0.1)
         }
 
-
+        var lastX: SparseVector<Fraction>? = null
+        for(sample in 1..10000) {
+            simplex.mcmcTransition()
+            val newX = simplex.X()
+            if(newX != lastX) {
+                println(newX)
+                lastX = newX
+            }
+        }
         println("Done!")
     }
+
+
 
 //    fun Simplex<Double>.isAtIntegerSolution(): Boolean {
 //        val doubleSolution = X()
