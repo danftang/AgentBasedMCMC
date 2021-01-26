@@ -241,6 +241,7 @@ class GridMap<T>(
         override fun next(): MutableMap.MutableEntry<Int, T> {
             val underlyingEntry = underlyingIterator.next()
             lastSeenRow = underlyingEntry.key
+            assert(lastSeenRow != null)
             return underlyingEntry
         }
 

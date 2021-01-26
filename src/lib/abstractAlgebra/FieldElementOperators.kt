@@ -18,6 +18,7 @@ inline class FieldElementOperators<T: FieldElement<T>>(val apacheField: Field<T>
     override fun T.unaryMinus() = this.negate()
     override fun T.times(other: T) = this.multiply(other)
     override fun T.div(other: T) = this.divide(other)
+    override fun T.isZero() = this == zero
 }
 
 fun<T: FieldElement<T>> Field<T>.asFieldOperators() = FieldElementOperators(this)

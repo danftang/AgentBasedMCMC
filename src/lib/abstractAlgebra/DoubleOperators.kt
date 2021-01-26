@@ -8,7 +8,7 @@ interface DoubleOperators: FieldOperators<Double> {
     override fun Double.unaryMinus() = -this
     override fun Double.times(other: Double) = this * other
     override fun Double.div(other: Double) = this / other
-
+    override fun Double.isZero() = this == 0.0
 
     override val zero: Double
         get() = 0.0

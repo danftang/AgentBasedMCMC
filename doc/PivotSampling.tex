@@ -1,0 +1,123 @@
+\documentclass{article}
+
+\usepackage{arxiv}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{lipsum}		% Can be removed after putting your text content
+\usepackage{amssymb,amsmath,amsthm}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{apacite}
+
+\newtheorem{theorem}{Theorem}
+
+\title{Sampling from the Bayesian poster of an agent-based model given partial observations}
+
+%\date{September 9, 1985}	% Here you can change the date presented in the paper title
+%\date{} 					% Or removing it
+
+\author{
+  Daniel Tang\\
+  Leeds Institute for Data Analytics\thanks{This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No. 757455)}\\
+  University of Leeds\\
+  Leeds, UK\\
+  \texttt{D.Tang@leeds.ac.uk} \\
+  %% examples of more authors
+  %% \AND
+  %% Coauthor \\
+  %% Affiliation \\
+  %% Address \\
+}
+
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+abstract
+\end{abstract}
+
+% keywords can be removed
+\keywords{Data assimilation, Bayesian inference, Agent based model, Integer linear programming, predator prey model}
+
+\section{Introduction}
+%##########################################
+
+Suppose we have a closed, convex polyhedron defined as
+\begin{equation}
+AX = B
+\label{polyhedron}
+\end{equation}
+subject to
+\[
+x_i \in \mathbb{Z}_{\ge 0}
+\]
+for all $i$, where $X = x_1...x_n$. And a probability distribution over the space of X
+\begin{equation}
+P(X) = \prod_i \omega_i^{x_i}
+\label{probability}
+\end{equation}
+Our aim is to sample from valid points (i.e. those that satisfy the constraints) with the given probability distribution.
+
+\section{Pivot sampling}
+
+\begin{theorem}
+For any two extreme positive, integer solutions of $AX_a = B$ and $AX_b = B$ there exists a sequence of positive solutions $X_0...X_N$ such that $X_0 = X_a$, $X_N = X_b$ and there exists a sequence of pivots $\pi_1...\pi_N$ such that pivoting at these points produces the sequence of solutions $X_0...X_N$.
+\end{theorem}
+
+\begin{proof}
+Start with a full pivot with $X_a$ as a solution. Now let $C$ be the set of events/columns in $X_b$ that are not currently pivoted-in and let $R$ be the set of rows whose currently pivoted columns are not in $X_a \cup X_b$. While there exists a column $j \in C$ and a row $i \in R$ such that $A_{ij} = \pm 1$ pivot on $(i,j)$. Since all rows with pivoted columns not in $X_a$ have $B_i = 0$ then, $i \in R \implies B_i = 0$ so the pivot does not alter the solution.
+
+All remaining events/columns in $C$ must have all rows in $R$ either $0$, $>1$ or $<-1$.
+
+If there is an event/column with all rows in $R$ equal to $0$, then we have found a loop in $X_b-X_a$ which must be positive [proof? no subset of $X_b - X_a$ can, when added to $X_a$ result in a negative number], so we can pivot it in.
+
+So, we need to show that it is impossible that we end up with all multiple occupation numbers outside of $X_a \cup X_b$ for all columns/events left in $C$. For Fermionic ABMs this is necessarily true [proof?].
+
+If we choose a currently pivoted-in event at random and fan out along currently pivoted-in events according to the original constraint matrix for those events, then each row has a "distance" from that point. If we pivot as soon as we reach a row that contains a pivot of an event in $C$, then ...? 
+
+Multiple occupation can only occur for interactions (disregarding predicates) so there must remain only interactions in $C$. Also, if interactions must have only singleton states in the original constraint matrix, there must exist singleton events in the pivoted equivalent. So all these singleton events must be in $X_a \cup X_b$ if all events in $R$ are multiply occupied.
+
+At any point during pivoting, there must exist events in $C$ that 
+
+If a column has multiple occupation on all rows in $R$, there must be at least one member of $C$ which replaces at least some of these multiple occupations, since in the final pivot, these will all be zero. But maybe this too has all multiple occupations in $R$. This can't go on forever though...at some point the event must join to $X_a$ in at least one point.
+
+Consider a branch that has multiple occupation in a column
+
+\end{proof}
+
+(Assume partially observed start/end conditions)
+
+Start with the agent conservation equations.
+
+Find the nearest positive corner points to $X_a$ and $X_b$ (call them $X_a'$ and $X_b'$) and make those the first and last transitions.
+
+Form the tree from sources to sinks where nodes are agent-state/timestep pairs and parents are events in $X_a$ that have the node state as a consequence. Since $X_a$ is an extreme point, this tree must exist. Now add agent-state/timestep nodes in $X_b$ that aren't in $X_a$. Now add events in $X_b$ that join sources from separate trees. The remaining events in $X_b$ are pivots. [we can add one more loop for the root of the tree...but which one?]. 
+
+[Better to think in terms of loops rather than trees?]
+
+%Form the bipartite graph with rows-id's on the left and column-id's on the right with edges where there is a non-zero element in (row,column) in $A$. Add only columns with non-zero values in $X_a'$ of $X_b'$. Find a maximal one-one mapping $\mu$ that contains all non-zero columns in $X_a'$ as a subset (this must exist since $X_a'$ is a corner).
+
+Each edge represents a pivot point. Pivot on each edge in the one-one mapping. The remaining edges $\pi_1...\pi_N$ are pivot points in the sequence.
+
+Since $X_a'$ and $X_b'$ are trees, each $\pi_i$ must be a point where the b-tree joins the a-tree.
+
+Each pivot has the effect of clipping off a subtree and adding the root of the subtree to the children of another node. If all edges are positive edges, then the solution is positive.
+
+Each new branch may "require" other agents to be present at certain space-time points. Since the requirements of an event may only contain events in a previous timestep, there cannot be cycles of requirements. So, if we take the pivot with the earliest time, all its requirements must be fulfilled (otherwise $X_b$ would not be a solution), so we arrange the pivots in chronological order and there's the answer!
+
+
+%\bibliographystyle{unsrtnat}
+%\bibliographystyle{apalike} 
+\bibliographystyle{apacite}
+\bibliography{references}
+
+\end{document}

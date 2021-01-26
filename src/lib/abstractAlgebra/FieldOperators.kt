@@ -8,6 +8,9 @@ interface FieldOperators<T>: AlgebraicOperators<T> {
     val one: T
     val operators: FieldOperators<T>
         get() = this
+
+    fun T.isZero(): Boolean  // ...in order to deal with the problem that -0.0 != 0.0 for boxed Doubles
+
 //    val runtimeKClass: KClass<out T>
 
 //    operator fun T.plus(other: T): T

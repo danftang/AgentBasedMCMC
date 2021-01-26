@@ -1,0 +1,240 @@
+\documentclass{article}
+
+\usepackage{arxiv}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{lipsum}		% Can be removed after putting your text content
+\usepackage{amssymb,amsmath,amsthm}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{apacite}
+
+\newtheorem{theorem}{Theorem}
+\DeclareMathOperator\supp{supp}
+
+\title{Sampling from the Bayesian poster of an agent-based model given partial observations}
+
+%\date{September 9, 1985}	% Here you can change the date presented in the paper title
+%\date{} 					% Or removing it
+
+\author{
+  Daniel Tang\\
+  Leeds Institute for Data Analytics\thanks{This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No. 757455)}\\
+  University of Leeds\\
+  Leeds, UK\\
+  \texttt{D.Tang@leeds.ac.uk} \\
+  %% examples of more authors
+  %% \AND
+  %% Coauthor \\
+  %% Affiliation \\
+  %% Address \\
+}
+
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+abstract
+\end{abstract}
+
+% keywords can be removed
+\keywords{Data assimilation, Bayesian inference, Agent based model, Integer linear programming, predator prey model}
+
+\section{Introduction}
+%##########################################
+
+
+Suppose we have a timestepping ABM where each agent is in one of a finite number of states and at each timestep each agent must choose how to act from a finite number of possible acts. Given this, we can define an ABM as:
+\begin{itemize}
+\item A domain of agent actions $\mathcal{A} =\{ a_0 ... a_n \}$
+
+\item A domain of agent states $\mathcal{S} = \{\sigma_0 ... \sigma_m\}$
+
+\item An agent timestep function, $a = \pi(\psi,\Psi)$, which is a computer program whose input is the agent's state $\psi \in \mathcal{S}$ and a (sparse) vector, $\Psi$, whose elements $\psi_i$ are the number of agents in state $\sigma_i$ in the model, and whose output is a chosen action $a$. The program may make calls to a random number generator, so the function is stochastic and we write $P(\pi(\psi,\Psi)=a)$ to be the probability that the program will return action $a$, given inputs $\psi$ and $\Psi$.
+
+\item An agent transition tensor $F_\phi^{\psi a}$ whose elements give the number of agents in state $\phi$ that result from an agent in state $\psi$ performing act $a$.
+\end{itemize}
+
+Let a model timestep consist of a matrix $E$ whose elements are the number of agents in state $\psi$ that perform act $a$ in this timestep. Similarly, let a model trajectory be a tensor $T^t_{\psi a}$ whose elements are the number of agents in state $\psi$ at the start of timestep $t$ that perform act $a$ between timestep $t$ and timestep $t+1$.
+
+A trajectory must satisfy a number of constraints in order to be a possible trajectory of an ABM. Since the elements of a trajectory are counts, they must all be non-negative integers. So we have the \textit{non-negative integer constraint} that
+\begin{equation}
+\forall t,\psi, a: T^t_{\psi a} \in \mathbb{Z}_{\ge 0}
+\label{nonNegative}
+\end{equation}
+
+A trajectory, $T^t_{\psi a}$, must also be \textit{continuous} which means that each agent that results from the actions of an agent in timestep $t$ must appear in the actions of timestep $t+1$. This can be expressed in terms of the \textit{continuity constraints}:
+\begin{equation}
+\forall t \in 1 ... n:\forall \phi: \sum_{\psi, a} F_\phi^{\psi a}T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0
+\label{continuous}
+\end{equation}
+
+If a trajectory satisfies constraints \ref{nonNegative} and \ref{continuous} we say that it is \textit{valid}.
+
+Suppose we have a prior belief, $P_0(\Psi)$, over the state of the ABM at time $t=0$. The prior probability of a trajectory is then given by
+\[
+P(T^t_{\psi a}) =
+\begin{cases}
+P_0(\sum_aT^0_{\psi a}) \prod_{t, \psi, a} P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{T^{t}_{\psi a}} & \text{if } T^t_{\psi a} \text{ is valid} \\
+0 & \text{otherwise}\\
+\end{cases}
+\]
+
+Suppose we also have a set of noisy, aggregate observations, $\Omega_t$, for each timestep of the ABMs trajectory and an easily computed likelihood function $P(\Omega_t|\Psi_t)$. Our aim is to generate a number of samples from the posterior distribution
+\[
+P(T^t_{\psi a}|\Omega) \propto \prod_{t'} P\left(\Omega_{t'} \middle| \sum_aT^{t'}_{\phi a}\right)P(T^t_{\psi a})
+\]
+
+[TODO: Add observation at last timestep (or define dummy final state)]
+
+For notational convenience, we can express our prior belief over the start state in terms of a set of observations, $\Omega_0$, at $t=0$, so $P_0(\Psi) = P(\Omega_0|\Psi)$ and we can write
+\begin{equation}
+P(T^t_{\psi a}|\Omega_{0...T}) \propto 
+\begin{cases}
+\prod_{t} P\left(\Omega_{t'} \middle| \sum_aT^{t}_{\phi a}\right) \prod_{t, \psi, a}P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{T^{t}_{\psi a}} & \text{if } T^t_{\psi a} \text{ is valid} \\
+0 & \text{otherwise}\\
+\end{cases}
+\label{posterior}
+\end{equation}
+The same technique can also be used if there are any boundary conditions that aren't at $t=0$.
+
+In practice, generating samples from this distribution is difficult because the posterior has zero probability for the vast majority of trajectories, because most trajectories are invalid, contain an impossible action or are refuted by the observations. So, for example, even though we can generate samples from the prior by simply performing a forward execution of the model, it is often very unlikely that this sample will fit the observations, so techniques such as rejection sampling are not practical.
+
+Our strategy in this paper is to use Markov Chain Monte-Carlo sampling. In order to do this, though, we need to choose a proposal function which generates a new sample from the current one. This is often done by randomly perturbing the current sample. However, if we randomly perturb an ABM trajectory it is highly unlikely that we'll end up with a trajectory that is valid, contains only possible actions and satisfies the observations. In practice, then, all proposals would be rejected and we'd end up stuck on the initial sample.
+
+In order to solve this problem, note that we'd like to choose our proposal from the support of $P(T^t_{\psi a}|\Omega_{0...T})$. If we let
+\[
+P_{\Omega}^t(T^s_{\psi a}) = P\left(\Omega \middle| \sum_aT^{t}_{\phi a}\right)
+\]
+and
+\[
+P^t_{\pi \xi c}(T^s_{\psi a}) = P(\pi(\xi,\sum_bT^{t}_{\phi b})=c)^{T^{t}_{\psi a}}
+\]
+Then from equation \ref{posterior}
+\begin{equation}
+\supp (P( \,.\, |\Omega_{0...T})) = \bigcap_t \left( \supp(P^t_{\Omega_t}) \cap \bigcap_{\xi, c} \supp(P^t_{\pi \xi c}) \right)
+\label{support}
+\end{equation}
+
+In order to generate a sample from this support, we first express the likelihood function as a computer program $\omega(\Psi)$ whose input is a model state and whose output is a full set of observations (i.e. a value for each type of observation that exists in $\Omega_{0...T}$). This program may make calls to a random number generator, so the function is stochastic and we write and we write $P(\omega(\Psi) \in \Omega)$ to denote the probability that $\omega(\Psi)$ returns a set of observations that are equal to $\Omega$ for all observations that are present in $\Omega$ (if an observation is absent in $\Omega$, the returned value can have any value [... marginal prob ... support is projection to lower dimension ... constraint is just actually observed values are equal to Omega, absent observations can be removed or ignored]). So if we let
+\[
+P_{\omega Z}^t(T^s_{\psi a}) = P\left(\omega\left(\sum_aT^{t}_{\phi a}\right) = Z \right)
+\]
+
+\[
+\supp(P_{\Omega}^t) = \bigcup_{Z \in \Omega} \supp(P^t_{\omega Z}) 
+\]
+
+Equation \ref{support} now consists of the intersection of the supports of computer programs.
+
+[TODO: only include actually observed values and have separate functions for each observation]
+
+
+\subsection{Agent policy constraints}
+
+Let a policy be defined as a computer program whose input is $\psi$, the current state of the agent, and $\Psi$ a sparse vector consisting of the number of agents in other states, and whose return value, $\Phi$, is a vector consisting of the number of agents in each state resulting from the actions of this agent at the end of this timestep (including its own state, if applicable). The agent can die (set to dead state or don't include in return state), set its state or create another agent in a given state. There is also a Filp function which takes a probability and returns a Boolean whose probability of being true is the supplied probability.
+
+The interface to $\Psi$ consists of $occupation(\phi)$ which returns the occupation number of state $\phi$. Occupation numbers can be added, subtracted, negated, multiplied by an integer and added to an integer to give another occupation number. There is a greater-than-or-equal-to operator that that compares with an integer to give a linear Boolean expression. Logical operations between linear Boolean expressions and local variables or expressions on $\psi$ will reduce to logical operations on true or false values.
+
+The ``support semantics'' of the program gives the actions that are possible given a known $\psi$ but an unknown $\Psi$, where each path through the program is considered a separate action. The support semantics, for a given $\psi$, is a set of $(a,B,v)$ pairs where $a$ is a string of `0's and `1's denoting the direction of program flow at each branch, $B$ is a Boolean expression on linear inequalities on $\Psi$ for which $a$ is possible if $B$ is satisfied, and $v$ is an assignment of local variables to values (in the case of occupation number type variables, these will be linear expressions) which give the values of any variables that remain in scope after execution (possibly as a function of local variables in-scope at the start of execution).
+
+Let $v(a)$ be the assignment to local variables at a given point in the program, given an execution along $a$. [Let $P(a,B)$ be the probability of following $a$ given that $B$ is satisfied.]
+
+Let $S \otimes T$ be the set $\left\{(a+a',B\wedge B', v' \otimes v) : (a,B,v)\in S \wedge (a',B',v')\in T\wedge (B\wedge B' \ne false)\right\}$ where $a + a'$ is interpreted as concatenation and $(v'\otimes v)(x) = v'(v(x))$. 
+
+The semantics of two consecutive statements with semantics $A$ and $B$ is $A\otimes B$.
+
+A raw Boolean expression (i.e. as found in an if statement/loop guard) can be converted into a Boolean solely on $\Psi$, given values of any other local variables, by substituting the variables for their values. We write this, for convenience, as $C(v)$
+
+ $b$, is a set of $(a,B)$ pairs representing the disjunction of its members. A linear Boolean expressions on $\Psi$ is just $\{(\emptyset,B)\}$ where $\emptyset$ is the empty string. b \texttt{ \&\& Flip(p)} means $\{(1+a,B) : (a,B)\in b \}$, \texttt{B || Flip(p)} means $\{(\emptyset,B),(1,true)\}$.
+
+The negation of a raw Boolean, $b$, is $\{(\arg\min_{\{\overline{a}:(a,B)\in b\}}|a|,\bigwedge_{(a,B)\in b} \overline{B})\}$ if $\bigwedge_{(a,B)\in b} \overline{B} \ne false$ and all $\{a:(a,B)\in b\}$ agree (i.e. they are all prefixes of the longest member), or the empty set otherwise. The negation of a Flip string $\overline{a}$ is the string with all 
+
+The semantics of an if statement on a raw Boolean expression, $B$, is $\{(1,B)\}\otimes D \cup \{(0,\overline{B})\}\otimes E $ where $B$ is the Boolean expression, $D$ is the semantics of the if body and $E$ is the semantics of the else body.
+ 
+The semantics of a loops whose guard contains an expression on $\Psi$ is the fix-point of 
+\[
+S = S \otimes \left( \left\{(0,\overline{G})\right\} \cup  \{(1,G)\}\otimes D \right) 
+\]
+[The guard here may depend on program variables, so to get a fix-point they need to be part of the semantics. Better to just go around the loop collecting paths until the path becomes impossible]
+
+[local variables may get entangled with $\Psi$ so need to be included in the semantics. e.g. if(Psi.occupation(1)) then x = 1 else x = 2. In which case, the semantics needs to be a function from paths to joint assignments to variables and Boolean expressions on Psi (and perhaps probabilities)]
+
+\section{Sampling from a Fermionic ABM}
+
+We define a Fermionic ABM to be one where no two agents can share the same state at the same time. i.e. in addition to the non-negative integer constraint of equation \ref{nonNegative} we have the \textit{Fermionic constraint}
+\begin{equation}
+\forall t,\psi: \sum_a \tau^t_{\psi a} \le 1
+\label{fermionic}
+\end{equation}
+
+\begin{theorem}
+The non-negative, integer, continuous, Fermionic trajectories of an ABM are the vertices of the polytope described by the constraints in equations \ref{continuous}, \ref{fermionic} and
+\begin{equation}
+\forall t,\psi, a: \tau^t_{\psi a} \ge 0
+\label{positive}
+\end{equation}
+i.e. all vertices are on the grid of non-negative integer points.
+\end{theorem}
+\begin{proof}
+To prove that a valid Fermionic trajectory is on a vertex, note that all $\tau^t_{\psi a}$ must be either 0 or 1. So the variable is at an extreme value of either equation \ref{positive} or \ref{fermionic}, so the trajectory must be on a vertex.
+
+To prove that a vertex is a valid Fermionic trajecotry... 
+
+We first show that if all variables $\tau^{t-1}_{\phi a}$, at time $t-1$, are non-negative integer on a vertex, then all variables $\tau^t_{\phi a}$, at time $t$, are also non-negative integer.
+
+Since by conjecture all $\tau^{t-1}_{\phi a}$ are non-negative, integer and all $f^{\psi a}_\phi$ are, by definition, also non-negative integer, it follows that
+\[
+\sum_{\psi, a} f_\phi^{\psi a}\tau^{t-1}_{\psi a} \in \mathbb{Z}_{\ge 0}
+\]
+Substituting \ref{fermionic} into \ref{continuous} gives
+\[
+\sum_{\psi, a} f_\phi^{\psi a}\tau^{t-1}_{\psi a} \le 1
+\]
+so 
+\[
+\sum_{\psi, a} f_\phi^{\psi a}\tau^{t-1}_{\psi a} \in \left\{1,0\right\}
+\]
+substituting back into \ref{continuous} gives
+\[
+\sum_a \tau^t_{\phi a} \in \left\{0,1\right\}
+\]
+
+[starting with start state, this can take any binary value, now show that the first timestep is integer and induce for other timesteps. Perhaps add actions in groups that share the same start-state and show that vertices remain integer in the higher dimensional state. This can be shown more easily by introducing an auxiliary variable that is the number of agents in a given (phi,t) state]
+
+[start with a fractional solution, recursively remove valid agent trajectories until there are non left, proving that it was a sum of valid trajectories][since all coefficients start at value 1, all ]
+
+[show that a valid trajectory, once pivoted in, leaves all coefficients 1, so all neighbours of all valid trajectories are valid trajectories, so all vertices are valid. Since, before any pivots, each column has exactly one +ve value (i.e. the source of the action edge) and in a continuous trajectory there is exactly one action for each (state,time) pair and *the connectivity graph is a tree*]
+
+[choose the smallest fractional value and subtract that weight of the integer solution that has maximum overlap]
+
+
+[With just agent continuity constraints, we have a cone whose vertex is at zero and whose beams are the trajectories of single agents. Show that addition of integer upper bounds can only add corners at integer solutions, i.e. show that the intersection of the hypercube with the beams occurs at the vertices of the hypercube]
+
+[]
+\end{proof}
+
+
+
+
+\begin{theorem}
+For any pair of valid trajectories, $(A,B)$, there exists a path along edges of the polyhedron from $A$ to $B$.
+\end{theorem}
+\begin{proof}
+\end{proof}
+
+%\bibliographystyle{unsrtnat}
+%\bibliographystyle{apalike} 
+\bibliographystyle{apacite}
+\bibliography{references}
+
+\end{document}

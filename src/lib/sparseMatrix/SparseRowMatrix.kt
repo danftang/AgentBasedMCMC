@@ -1,5 +1,7 @@
 package lib.sparseMatrix
 
+import lib.collections.RemovableEntry
+import lib.collections.mutableMapByRemovable
 import lib.vector.MutableSparseVector
 import lib.vector.SparseVector
 
@@ -9,8 +11,12 @@ interface SparseRowMatrix<T: Any>: SparseMatrix<T> {
     override val nRows: Int
         get() = rows.size
 
-    override val nonZeroEntries: MutableIterable<SparseMatrix.Entry<T>>
-        get() = object: MutableIterable<Entry<T>> { override fun iterator() = EntryIterator(rows) }
+    override val nonZeroEntries: Iterable<SparseMatrix.Entry<T>>
+        get() = rows.withIndex().flatMap { (row, vector) ->
+            vector.nonZeroEntries.entries.mutableMapByRemovable { entry ->
+                REntry(row, entry) { this.isZero() }
+            }
+        }
 
     override fun get(row: Int, col: Int): T {
         return rows[row][col]
@@ -33,51 +39,19 @@ interface SparseRowMatrix<T: Any>: SparseMatrix<T> {
         return result
     }
 
-//    fun clearRow(i: Int)
-//    fun swapRows(i1: Int, i2: Int)
-//
-//    fun removeRows(rowsToRemove: Iterable<Int>)
-//
-//    fun replaceNonZeroElementsInRow(col: Int, map: (row: Int, value: Int) -> Int)
-//
-//    // row[i1] = row[i1] + weight*row[i2]
-//    fun weightedRowPlusAssign(i1: Int, i2: Int, weight: Int) {
-//        for(entry in rows[i2]) {
-//            plusAssign(i1, entry.key, weight*entry.value)
-//        }
-//    }
-
-    class Entry<T>(override val row: Int, val rowEntry: MutableMap.MutableEntry<Int,T>): SparseMatrix.Entry<T> {
+    class REntry<T>(override val row: Int, val entry: RemovableEntry<MutableMap.MutableEntry<Int, T>>, val isZero: T.()->Boolean): SparseMatrix.Entry<T> {
         override val col: Int
-            get() = rowEntry.key
+            get() = entry.value.key
         override val value: T
-            get() = rowEntry.value
-        override fun setValue(newValue: T): T = rowEntry.setValue(newValue)
-    }
-
-    class EntryIterator<T: Any>(
-        val vectors: List<MutableSparseVector<T>>,
-        var vectorIndex: Int,
-        var vectorIterator:MutableIterator<MutableMap.MutableEntry<Int,T>>): MutableIterator<Entry<T>> {
-
-        constructor(rows: List<MutableSparseVector<T>>): this(rows,0, rows[0].nonZeroEntries.entries.iterator()) {
-            advanceToNextEntry()
-        }
-
-        override fun hasNext() = vectorIterator.hasNext()
-
-        override fun next(): Entry<T> {
-            val entry = vectorIterator.next()
-            advanceToNextEntry()
-            return Entry(vectorIndex, entry)
-        }
-
-        override fun remove() { vectorIterator.remove() }
-
-        private inline fun advanceToNextEntry() {
-            while(!vectorIterator.hasNext() && vectorIndex != vectors.lastIndex)
-                vectorIterator = vectors[++vectorIndex].nonZeroEntries.entries.iterator()
+            get() = entry.value.value
+        override fun setValue(newValue: T): T {
+            return if(newValue.isZero()) {
+                val oldValue = value
+                entry.remove()
+                oldValue
+            } else {
+                entry.value.setValue(newValue)
+            }
         }
     }
-
 }

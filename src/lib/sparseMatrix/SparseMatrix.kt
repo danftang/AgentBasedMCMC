@@ -18,7 +18,7 @@ interface SparseMatrix<T: Any>: FieldOperators<T> {
         fun setValue(newValue: T): T
     }
 
-    val nonZeroEntries: MutableIterable<Entry<T>>
+    val nonZeroEntries: Iterable<Entry<T>>
     val nRows: Int
     val nCols: Int
 

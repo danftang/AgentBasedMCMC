@@ -8,6 +8,7 @@ interface IntOperators: FieldOperators<Int> {
     override fun Int.unaryMinus() = -this
     override fun Int.times(other: Int) = this * other
     override fun Int.div(other: Int) = this / other
+    override fun Int.isZero() = this == 0
 
     override val zero: Int
         get() = 0

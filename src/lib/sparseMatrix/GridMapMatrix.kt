@@ -9,7 +9,7 @@ import lib.vector.SparseVector
 class GridMapMatrix<T: Any>(override val operators: FieldOperators<T>, val gridMap: GridMap<T>): SparseRowMatrix<T>, SparseColMatrix<T>, FieldOperators<T> by operators {
     override val rows = VectorizedList(gridMap.rows)
     override val columns = VectorizedList(gridMap.columns)
-    override val nonZeroEntries: MutableIterable<SparseMatrix.Entry<T>>
+    override val nonZeroEntries: Iterable<SparseMatrix.Entry<T>>
         get() = super<SparseColMatrix>.nonZeroEntries
 
     constructor(operators: FieldOperators<T>, nRows: Int, nCols: Int): this(operators, GridMap(nRows, nCols))

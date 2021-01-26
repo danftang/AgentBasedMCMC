@@ -16,8 +16,10 @@
 \usepackage{graphicx}
 \usepackage{subfig}
 \usepackage{apacite}
+\usepackage{algorithmic}
 
 \newtheorem{theorem}{Theorem}
+\DeclareMathOperator\supp{supp}
 
 \title{Sampling from the Bayesian poster of an agent-based model given partial observations}
 
@@ -51,145 +53,276 @@ abstract
 \section{Introduction}
 %##########################################
 
-Suppose we have a closed, convex polyhedron defined as
+
+Suppose we have a timestepping ABM where agents have a finite number of possible internal states and a finite number of ways of acting on their world. Given this, we can define an ABM as:
+\begin{itemize}
+\item A domain of agent actions $\mathcal{A} =\{ a_0 ... a_n \}$
+
+\item A domain of agent states $\mathcal{S} = \{\sigma_0 ... \sigma_m\}$
+
+\item An agent timestep function, $a = \pi(\psi,\Psi)$, which is a computer program whose input is the agent's state $\psi \in \mathcal{S}$ and a (sparse) vector, $\Psi$, whose elements $\psi_i$ are the number of agents in state $\sigma_i$ in the model, and whose output is a chosen action $a \in \mathcal{A}$. The program may make calls to a random number generator, so the function is stochastic and we write $P(\pi(\psi,\Psi)=a)$ to be the probability that the program will return action $a$, given inputs $\psi$ and $\Psi$.
+
+\item An agent transition tensor $F_\phi^{\psi a}$ whose elements give the number of agents in state $\phi$ that result from an agent in state $\psi$ performing act $a$ (including the acting agent).
+\end{itemize}
+
+Let a model timestep consist of a matrix $E$ whose elements $e_{\psi a}$ are the number of agents in state $\psi$ that perform act $a$ in this timestep. Similarly, let a model trajectory be a tensor $T^t_{\psi a}$ whose elements are the number of agents in state $\psi$ that perform act $a$ in timestep $t$.
+
+A trajectory must satisfy a number of constraints in order to be a possible trajectory of an ABM. Since the elements of a trajectory are counts, they must all be non-negative integers. So we have the \textit{non-negative integer constraint} that
 \begin{equation}
-AX = B
-\label{polyhedron}
+\forall t,\psi, a: T^t_{\psi a} \in \mathbb{Z}_{\ge 0}
+\label{nonNegativeInt}
 \end{equation}
-subject to
-\[
-x_i \in \mathbb{Z}_{\ge 0}
-\]
-for all $i$, where $X = x_1...x_n$. And a probability distribution over the space of X
+
+A trajectory, $T^t_{\psi a}$, must also be \textit{continuous} which means that each agent that results from the actions of an agent in timestep $t$ must appear in the actions of timestep $t+1$. This can be expressed in terms of the \textit{continuity constraints}:
 \begin{equation}
-P(X) = \prod_i \omega_i^{x_i}
-\label{probability}
+\forall t \in 1 ... n:\forall \phi: \sum_{\psi, a} F_\phi^{\psi a}T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0
+\label{continuous}
 \end{equation}
-Our aim is to sample from valid points (i.e. those that satisfy the constraints) with the given probability distribution.
 
-\section{Tree sampling}
-%######################
-Suppose we have an oracle, $\Omega(M,Y)$, which (deterministically) returns some $X\in \mathbb{Z}_{\ge0}$ such that $MX=Y$ or returns some null vector if no such solution exists. We can use this oracle to find a solution with a given prefix (or to show that no such solution exists). Suppose we have a prefix vector $P$ of length $m$ so we can write equation \ref{polyhedron} as
-\[
-\begin{pmatrix}
-R|S
-\end{pmatrix}
-\begin{pmatrix}
-V \\
-W 
-\end{pmatrix}
-= B
-\]
-where $R$ consists of the first $m$ columns of $A$ and $S$ the last $n-m$ columns, then we have
-\[
-SW = B - RV
-\]
-so if we let $W = \Omega(S,B-RV)$ then either $W$ is the null vector (and no solution exists with $V$ as prefix) or
-\[
-AX = A\begin{pmatrix}
-V \\
-W 
-\end{pmatrix}
-= B
-\]
-Given this, we can use the shorthand notation $\Omega_{AB}(V) = X$.
+If a trajectory satisfies constraints \ref{nonNegativeInt} and \ref{continuous} we say that it is \textit{valid}.
 
-Consider now a tree whose nodes are associated with prefix vectors $V$. Each node is a valid prefix so induces a valid solution $X = \Omega_{AB}(V)$ is a valid solution. The children of a node with prefix $V$ and solution $X$ have prefixes of the form $V_c = (X_q|x)$ where $X_q$ is a prefix of $X$ of length $q$, where $q$ is greater than or equal to the length of $V$ and $x$ is a single element, adding one more dimension to the prefix such that $V_c \ne X_{q+1}$.
-
-The root of the tree is the empty prefix, $\emptyset$, and all valid children of a parent are present in the tree, so the tree contains all valid solutions.
-
-We can make this tree into a Markov chain by defining transition probabilities between nodes. Each node induces a target probability given by equation \ref{probability} on its induced solution. We also define the node's \textit{prefix probability} as 
+Suppose we have a prior belief, $P_0(\Psi)$, over the state of the ABM at time $t=0$. The prior probability of a trajectory is then given by
 \[
-P(V) = \prod_i \omega_i^{v_i}
-\]
-and a node's extension probability as
-\[
-P_e(V) = \omega_m^{v_m}
-\]
-where $m$ is the length of $V$ and $v_m$ is the $m^{th}$ element of $V$.
-
-Given a node with prefix $V$, children $V'_1...V'_n$ and parent $V_p$, the probability of transition from parent to child $V'_q$ is given by
-\[
-\tau_{V\rightarrow V'_q} = CP_e(V'_q)
-\]
-the probability of transition to the node's parent is given by
-\[
-\tau_{V\rightarrow V_p} = \min\left(\tau_c, \frac{C_pP_e(V)P(X_p)}{P(X)}\right)
-\]
-and $C$ is a normalisation factor given by
-\[
-C =  \frac{1 - \tau_{V\rightarrow V_p}}{\sum_q P_e(V'_q)}
-\]
-given this, the acceptance probability of transition to the $q^{th}$ child is
-\[
-P_a = \min\left(1, \frac{P(X'_q)\tau_{V'_q\rightarrow V}}{P(X)\tau_{V\rightarrow V'_q}}\right)
-\]
-there are two regimes here: if
-\[
-\frac{CP_e(V'_q)P(X)}{P(X'_q)} < \tau_c 
-\]
-then the acceptance probability is 1.
-
-Acceptance probability of transition to parent is
-\[
-P_a = \min\left(1, \frac{P(X_p)\tau_{V_p\rightarrow V}}{P(X)\tau_{V\rightarrow V_p}}\right)
-\]
-which is 1 as long as
-\[
-\frac{C_pP_e(V)P(X_p)}{P(X)} < \tau_c
+P(T^t_{\psi a}) =
+\begin{cases}
+P_0(\sum_aT^0_{\psi a}) \prod_{t, \psi, a} P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{T^{t}_{\psi a}} & \text{if } T^t_{\psi a} \text{ is valid} \\
+0 & \text{otherwise}\\
+\end{cases}
 \]
 
-In the case that a node is a leaf, then the probability of transition to parent, $\tau_{V\rightarrow V_p}$, must be 1 which means acceptance probability is
+Suppose we also have a set of noisy, aggregate observations, $\Omega$ and an easily computed likelihood function $P(\Omega|T^t_{\psi a})$. Our aim is to generate a number of samples from the posterior distribution
 \[
-\frac{P(X_p)C_pP_e(V)}{P(X)}
+P(T^t_{\psi a}|\Omega) \propto P\left(\Omega \middle| T^{t}_{\psi a}\right)P(T^t_{\psi a})
 \]
 
-\section{Pivot sampling}
+We assume that each observation is independent of the others given the trajectory, so that
+\[
+P(\Omega|T^t_{\psi a}) = \prod_{(\omega,v) \in \Omega} P(\omega=v|T^t_{\psi a})
+\]
+
+Also, for notational convenience, we express our prior belief in terms of a set of observations, $\Omega_0$, at $t=0$, so that $P_0(\sum_a T^0_{\psi a}) \propto \prod_{(\omega,v) \in \Omega_0} P(\omega=v|T^t_{\psi a})$ (the same can be done for any boundary conditions that aren't at $t=0$). The posterior can now be written as
+\begin{equation}
+P(T^t_{\psi a}|\Omega) \propto 
+\begin{cases}
+\prod_{(\omega,v) \in \Omega} P\left(\omega=v \middle| T^{t}_{\psi a}\right) \prod_{t, \psi, a}P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{T^{t}_{\psi a}} & \text{if } T^t_{\psi a} \text{ is valid} \\
+0 & \text{otherwise}\\
+\end{cases}
+\label{posterior}
+\end{equation}
+
+This posterior has zero probability for the vast majority of trajectories because most trajectories are invalid, contain an impossible action or are refuted by the observations. This makes sampling from this distribution vary difficult in practice. For example, even though we can generate samples from the prior by simply performing a forward execution of the model, it is often very unlikely that this sample will fit the observations, so techniques such as rejection sampling are not practical.
+
+Our strategy in this paper will be to use Markov Chain Monte-Carlo sampling. However, this requires a proposal function which generates a new sample from the current one. This is often done by randomly perturbing the current sample. However, if we randomly perturb an ABM trajectory it's very unlikely that we'll end up with a trajectory that is valid, contains only possible actions and satisfies the observations. In practice, then, a random perturbation would almost always be rejected and we'd probably end up stuck on the initial sample until we grew old.
+
+\section{Approximating the support of the posterior}
+%##########################################
+
+
+In order to solve this problem, we'll make the states of our Markov chain an approximation of the support of the posterior, $P(T^t_{\psi a}|\Omega)$, (i.e. the set of trajectories that have non-zero probability) and restrict our proposal function to perturbations that are in this approximation.
+
+If we let
+\[
+P^t_{\pi \xi c}(T^s_{\psi a}) = P(\pi(\xi,\sum_bT^{t}_{\phi b})=c)^{T^{t}_{\psi a}}
+\]
+Then from equation \ref{posterior}
+\begin{equation}
+\supp (P( \,.\, |\Omega)) = \bigcap_{(\omega,v) \in \Omega}  \supp(P(\omega = v \mid . )) \cap \bigcap_{t, \xi, c} \supp(P^t_{\pi \xi c})
+\label{support}
+\end{equation}
+i.e. in order for the posterior to be non-zero, all the observation likelihoods must be non-zero and the probability of each agent's action at every timestep must be non-zero.
+
+In order to approximate this support, we first express each likelihood function $P(\omega=v|T^t_{\psi a})$ as a computer program $\omega(T^t_{\psi a})$ whose input is a trajectory and whose output is the value of the observation. This program may make calls to a random number generator, so the function is stochastic and we write $P(\omega(T^t_{\psi a}) = v)$ to denote the probability that $\omega(T^t_{\psi a})$ returns a value $v$. So equation \ref{support} now consists of the intersection of terms of the form $\supp(P(\rho(.) = y))$ where $\rho$ is a computer program whose input is a trajectory and y is a given output. So, we need a way to find, or approximate, the set of inputs of a computer program that would produce a given output, and to take the intersection of these sets. Our strategy here is to calculate a set of linear inequalities, $\mathcal{P}$, on trajectories that are satisfied for all $x$ such that $\rho(x)$ might return $y$. Note that the converse is not necessarily true; if $x$ satisfies $\mathcal{P}$ then it might not be possible for $\rho(x)$ to return $y$. So $\mathcal{P}$ can be thought of as an approximation of $\supp(P(\rho(.)=y))$ in that it may include some extra members. However, for our purposes, a certain amount of approximation is tolerable and won't result in any approximation in the Markov Chain. If we happen to choose a proposal from $\mathcal{P}$ that isn't in $\supp(P(\rho(.)=y))$ then it will just be rejected. This is fine as long as we generate acceptable proposals at a reasonable rate.
+
+A computer program can be transformed into a set of linear inequalities using a technique known as \textit{abstract interpretation}\cite{cousot1977abstract}. Tools to do this already exist (e.g. PAGAI\cite{henry2012pagai}) and are used widely in applications such as the verification of safety critical systems\cite{blanchet2003static}. For our application we choose the abstract domain of convex polyhedra\cite{cousot1978automatic}\cite{becchi2018efficient}. Calls to a random number generator are dealt with, without loss of generality, by providing a single function \texttt{rand()} that returns a floating point number between 0 and 1 with uniform probability. In the abstract domain, this is equivalent to the generation of a new variable, $r$, that satisfies $0 \le r < 1$.
+
+Once we have the linear approximations of the support of each program, the intersection of these supports is just the set of trajectories that satisfy all of the inequalities. So, if we let $\mathcal{P}(\rho(.)=v)$ be the set of inequalities which approximate $\supp(P(\rho(.)=v))$ then we have the \textit{support inequalities}
+\begin{equation}
+\supp(P(P(.|\Omega))) \subset \bigcap_{(\omega,v) \in \Omega}  \mathcal{P}(\omega(.) = v) \cap \bigcap_{t, \xi, c} \mathcal{P}(\pi'(\xi,t,.)=c)
+\label{linearSupport}
+\end{equation}
+where
+\[
+\pi'(\xi, s, T^t_{\psi a}) = \pi(\xi,\sum_bT^{s}_{\phi b})
+\]
+In order to ensure the trajectory is valid, we also intersect with the constraints in \ref{continuous}, which are also linear. We can express the non-negative part of equation \ref{nonNegativeInt} as the linear constraints
+\begin{equation}
+\forall t, \psi, a: T^t_{\psi a} \ge 0.
+\label{nonNegative}
+\end{equation}
+
+The integer part we will consider in the next section.
+
+\section{From convex polyhedron to Markov process}
+%#####################################################
+
+Once we've generated a set of inequalities that contain the support of the posterior, we next need a proposal function that will allow us to transition between trajectories in a Markov chain, while ensuring the inequalities remain satisfied.
+
+\subsection{A proposal function for a Fermionic ABM}
+%#############################################
+
+We define a Fermionic ABM to be one where no two agents can share the same state at the same time. i.e. in addition to the validity constraints of equation \ref{nonNegativeInt} and \ref{continuous} the trajectory of a Fermionic ABM also satisfies the \textit{Fermionic constraint}
+\begin{equation}
+\forall t,\psi: \sum_a T^t_{\psi a} \le 1
+\label{fermionic}
+\end{equation}
+in which case we call it a \textit{Fermionic trajectory}.
 
 \begin{theorem}
-For any two extreme positive, integer solutions of $AX_a = B$ and $AX_b = B$ there exists a sequence of positive solutions $X_0...X_N$ such that $X_0 = X_a$, $X_N = X_b$ and there exists a sequence of pivots $\pi_1...\pi_N$ such that pivoting at these points produces the sequence of solutions $X_0...X_N$.
+All valid Fermionic trajectories are on the vertices of the convex polyhedron described by equations \ref{continuous}, \ref{nonNegative}, \ref{fermionic} and \ref{linearSupport}.
 \end{theorem}
-
 \begin{proof}
-Start with a full pivot with $X_a$ as a solution. Now let $C$ be the set of events/columns in $X_b$ that are not currently pivoted-in and let $R$ be the set of rows whose currently pivoted columns are not in $X_a \cup X_b$. While there exists a column $j \in C$ and a row $i \in R$ such that $A_{ij} = \pm 1$ pivot on $(i,j)$. Since all rows with pivoted columns not in $X_a$ have $B_i = 0$ then, $i \in R \implies B_i = 0$ so the pivot does not alter the solution.
+This can be seen immediately since equations \ref{nonNegative} and \ref{fermionic} describe a unit hupercube, so all integer solutions are on vertices.
+\end{proof}
 
-All remaining events/columns in $C$ must have all rows in $R$ either $0$, $>1$ or $<-1$.
+\begin{theorem}
+For any pair of valid trajectories, $A$ and $B$, there exists a path along edges of the polyhedron from $A$ to $B$ that only traverses through integer solutions.
+\end{theorem}
+\begin{proof}
 
-If there is an event/column with all rows in $R$ equal to $0$, then we have found a loop in $X_b-X_a$ which must be positive [proof? no subset of $X_b - X_a$ can, when added to $X_a$ result in a negative number], so we can pivot it in.
-
-So, we need to show that it is impossible that we end up with all multiple occupation numbers outside of $X_a \cup X_b$ for all columns/events left in $C$. For Fermionic ABMs this is necessarily true [proof?].
-
-If we choose a currently pivoted-in event at random and fan out along currently pivoted-in events according to the original constraint matrix for those events, then each row has a "distance" from that point. If we pivot as soon as we reach a row that contains a pivot of an event in $C$, then ...? 
-
-Multiple occupation can only occur for interactions (disregarding predicates) so there must remain only interactions in $C$. Also, if interactions must have only singleton states in the original constraint matrix, there must exist singleton events in the pivoted equivalent. So all these singleton events must be in $X_a \cup X_b$ if all events in $R$ are multiply occupied.
-
-At any point during pivoting, there must exist events in $C$ that 
-
-If a column has multiple occupation on all rows in $R$, there must be at least one member of $C$ which replaces at least some of these multiple occupations, since in the final pivot, these will all be zero. But maybe this too has all multiple occupations in $R$. This can't go on forever though...at some point the event must join to $X_a$ in at least one point.
-
-Consider a branch that has multiple occupation in a column
+[Take the difference A-B and decompose into integer null vectors (loops)]
 
 \end{proof}
 
-(Assume partially observed start/end conditions)
+Since all Fermionic trajectories are on vertices, we could create a Markov process whose states are the vertices of the polyhedron and whose transitions are its edges. So the proposal function would choose from the neighbouring vertices of the current state. If there exist vertices that don't fall on the grid of integer solutions, then we want to encourage the Markov process away from these states. This could be done by multiplying their probability by a ``fractional penalty'' based on the number of non-integer values in the solution. In order to ensure that fractional solutions aren't returned as samples, fractional vertices are classed as ``non-emitting'', in that the process can pass through these states, but no sample is generated when doing so.
 
-Start with the agent conservation equations.
+This approach is computationally convenient as navigation along edges of a polyhedron can be achieved efficiently by using the pivoting operation of the Simplex algorithm\cite{dantzig1955generalized}\cite{thie2011introduction}. Given a system of $m$ linear equality constraints on $n$ variables (where any inequalities are turned into equalities by the addition of slack variables), let a \textit{pivot state} be a partition of the variables into $m$ \textit{basic variables} and $n-m$ \textit{non-basic variables} such that if we constrain all \textit{non-basic variables} to zero there remains a unique solution. Such solutions can be shown to be at a vertex of the original polyhedron. A \textit{pivot} is a perturbation of a pivot state such that one of the basic variables is swapped with one of the non-basic variables, so the set of basic variables loses one of its members and gains a new member from the set of non-basic variables, such that the perturbed state is also a valid pivot state. This induces a new solution, and new vertex which is adjacent to the original vertex in the sense that there is an edge connecting the two.
 
-Find the nearest positive corner points to $X_a$ and $X_b$ (call them $X_a'$ and $X_b'$) and make those the first and last transitions.
+This use of pivoting is complicated somewhat when the vertices of the polyhedron are degenerate. A degenerate vertex is one that can be generated by more than one pivot state. This can occur when any of the basic variables are zero, since a pivot has the effect of constraining a basic-variable's value to zero and removing a constraint on a non-basic variable, but if the basic-variable's value is zero to start with, the additional constraint has no effect on the solution. If there are many zero-valued basic variables there may be a large number of pivots that do not change the solution. In full generality, if there are $\sigma$ zero-valued basic variables, then the vertex can be associated with a \textit{degenerate pivot state} which is a partition of the variables $(D_1,D_0)$ such that $D_1$ is the set of non-zero valued basic-variables of size $|D_1| = m-\sigma$ and $D_0$ is the set of zero-valued variables (whether basic or non-basic) of size $|D| = n-m+\sigma$. We say that a pivot state \textit{matches} a vertex if its basic variables are a superset of $D_1$, and so has this vertex as its solution. A  ``degeneracy graph''\cite{zornig93degeneracy} is the graph whose nodes are the pivot states that match this vertex and whose edges are the pivots between states.
 
-Form the tree from sources to sinks where nodes are agent-state/timestep pairs and parents are events in $X_a$ that have the node state as a consequence. Since $X_a$ is an extreme point, this tree must exist. Now add agent-state/timestep nodes in $X_b$ that aren't in $X_a$. Now add events in $X_b$ that join sources from separate trees. The remaining events in $X_b$ are pivots. [we can add one more loop for the root of the tree...but which one?]. 
+We'd like to somehow embed these degeneracy graphs into our Markov process in a computationally efficient way. Mapping each node on the degeneracy graph to a state in the Markov process has the disadvantage that we'd somehow have to assign probabilities to nodes such that the sum of the probabilities of all the nodes associated with a vertex equals the desired probability of the vertex. However, calculating the number of nodes in a degeneracy graph is computationally expensive\cite{zornig93degeneracy} so it's not clear how we should assign probabilities to nodes. An alternative would be to maintain a single Markov state per vertex, use the degeneracy graph to generate all neigbouring vertices, then choose a proposal from these. However, a highly degenerate vertex may have a very large number of neighbours, so generating them all is also potentially computationally costly\cite{gal1992new}\cite{yamada1994enumerating}.
 
-[Better to think in terms of loops rather than trees?]
+We propose a computationally efficient solution based on the observation in \cite{yamada1994enumerating} that there is a one to one mapping between neighbours of a vertex and the extreme rays of
+\begin{eqnarray*}
+Ay & = & 0, \\
+  y & \ge & 0
+\end{eqnarray*}
 
-%Form the bipartite graph with rows-id's on the left and column-id's on the right with edges where there is a non-zero element in (row,column) in $A$. Add only columns with non-zero values in $X_a'$ of $X_b'$. Find a maximal one-one mapping $\mu$ that contains all non-zero columns in $X_a'$ as a subset (this must exist since $X_a'$ is a corner).
+where $A$ is the matrix formed from the rows of the simplex tableau that are equal to zero in the $b$ column and contain at least one positive, non-basic coefficient. We'll call this the \textit{neighbourhood} polyhedron.
 
-Each edge represents a pivot point. Pivot on each edge in the one-one mapping. The remaining edges $\pi_1...\pi_N$ are pivot points in the sequence.
+Define a neighbour of a degenerate vertex as a vertex that can be reached by a single pivot (on a row with non-zero b) from one of the vertex's matched pivot states. i.e. Two vertices $A$ and $B$ are neighbours if there exists a pair of pivot states $a$ and $b$ such that $a$ matches $A$, $b$ matches $B$ and $a$ and $b$ are neighbours.
 
-Since $X_a'$ and $X_b'$ are trees, each $\pi_i$ must be a point where the b-tree joins the a-tree.
+[minimise an augmented state over all variables?]
 
-Each pivot has the effect of clipping off a subtree and adding the root of the subtree to the children of another node. If all edges are positive edges, then the solution is positive.
+Pivoting-in a variable on a non-zero row makes that variable greater than zero, then $\sum_{j\in Q} x_j > 0$ must be true of all neighbours, where $Q$ is the set of non-basic columns with at least one positive coefficient on a non-zero row.
 
-Each new branch may "require" other agents to be present at certain space-time points. Since the requirements of an event may only contain events in a previous timestep, there cannot be cycles of requirements. So, if we take the pivot with the earliest time, all its requirements must be fulfilled (otherwise $X_b$ would not be a solution), so we arrange the pivots in chronological order and there's the answer!
+To turn this into a Markov process, begin with a polyhedron with $m$ constraints on $n$ variables. Consider now a vertex of that polyhedron with $\sigma$ zero-valued basic variables. Suppose out of those $\sigma$ basic variables, $m_1$ of them are on rows in the tableaux that have at least one positive coefficient (i.e. $A_1$ has $m_1$ rows)\footnote{[need to prove this is constant for all nodes in the degeneracy graph]}. Assign to that vertex a Markov state for each of the $n-m+\sigma \choose m_1$ sets of $m_1$ basic variables chosen from the $n-m+\sigma$ zero-valued variables; call this the \textit{neighbourhood state}. Note that it is clear that the neighbourhood polyhedron cannot have more vertices than there are neighbourhood states, but it may have fewer. Let $P(v)$ be the desired probability of the vertex and assign each Markov state a probability of
+\[
+P(s) = \frac{P(v)}{\left. n-m+\sigma \choose m_1 \right.}.
+\]
+This assures that the sum of the probabilities of all possible neighbourhood states assigned to a vertex is the desired probability of the vertex.
+
+In order to generate proposal transitions for each state, first decide with fixed probability, $\alpha$, whether to make a transition to another state in the same vertex or a neighbouring vertex.
+
+If we decide to transition to another state inside the same vertex then simply choose, with uniform probability, a member of the current neighbourhood state and swap it for a non-basic variable, again chosen uniformly. Since the proposed state has the same probability by definition, and the probability of making the reverse transition is the same as making the forward transition, then the proposal is always accepted.
+
+If we choose to transition to a neighbouring vertex, first map the neighbourhood state, $\mu$, to a valid set of basic variables $B$ for the neighbourhood polyhedron using the following algorithm:
+
+\begin{algorithmic}
+\STATE $P \leftarrow$ simplex tableau for the neighbourhood polyhedron
+\STATE $Q \leftarrow \emptyset$
+\FOR{$i=0$ to $m$}
+\STATE $q \leftarrow m_i$
+\WHILE{the $q^{th}$ column of $P$ is zero on all rows $k \notin Q$}
+\STATE $q \leftarrow (q + 1) \mod (n-m+\sigma)$
+\ENDWHILE
+\STATE pivot $P$ on any non-zero row, $k \notin Q$, of the $q^{th}$ column
+\STATE add $q$ to $Q$
+\ENDFOR
+\end{algorithmic}
+
+Note that this terminates as long as $A_1$ is of full rank, which is guaranteed as long as our original set of constraints has full rank.
+
+[need to prove that this is a unique mapping for all start states]
+
+Once we have a tableau of the neighbourhood polyhedron in it's mapped pivot state, there will be exactly one row which hasn't been pivoted by the above algorithm (since there will be $m_1+1$ constraints, the extra one being the $\sum_i y_i = 1$ constraint). Each possible pivot point on this row identifies a vertex of the neighbourhood polyhedron, which itself maps to a possible neighbour of the current vertex\footnote{We can prove that this row isn't equal to zero by disallowing the $\sum_i y_i = 1$ row  from being pivoted-in during the mapping from $\mu$ to $B$}. So, we take this set to be the set of possible destination vertices.
+
+
+Given a destination vertex, we also need to choose a neighbourhood state at the destination. For this, we choose a state such that the current pivot state can be retained as much as possible, so as to reduce the computation needed to do the transition. To do this, we start with the current neighbourhood state and remove any variables that are non-zero in the destination. We then add/delete variables, chosen at random with a uniform probability, until we reach the correct number of members for the new value of $m_1$.
+
+ So, if $r_x$ of the members of the source neighbourhood state are non-zero in the destination then and the source and destination states have $\sigma_x$ and $\sigma_y$ zero-valued basic variables respectively, and the size of the neighbourhood state in the source and destination is $m_{1x}$ and $m_{1y}$ respectively, then we need to choose $m_{1y} - m_{1x} +r_x$ new variables out of a total of $n-m+\sigma_y+m_{1x}-r_x$.
+So, the acceptance probability is given by
+\[
+\alpha = \min\left(1,
+\frac{P(Y) P_{Y \rightarrow X}\left.n-m+\sigma_x\choose m_{1x}\right. \left.n-m+\sigma_y + m_{1x} - r_x\choose m_{1y} - m_{1x} + r_x\right. }
+{P(X) P_{X \rightarrow Y}\left.n-m+\sigma_y\choose m_{1y}\right. \left.n-m+\sigma_x + m_{1y} - r_y\choose m_{1x} - m_{1y} + r_y\right.}\right)
+\]
+So, in order to make this as close to 1 as possible, we choose a destination, from the set of possible pivots, with probability proportional to
+\[
+P_{X \rightarrow Y} \propto \frac{P(Y)\left.n-m+\sigma_y + m_{1x} - r_x\choose m_{1y} - m_{1x} + r_x\right.}{\left.n-m+\sigma_y\choose m_{1y}\right.}
+\]
+
+
+%#########################################################################################################
+\section{Notes}
+
+To prove that a vertex is a valid Fermionic trajecotry... 
+
+We first show that if all variables $\tau^{t-1}_{\phi a}$, at time $t-1$, are non-negative integer on a vertex, then all variables $\tau^t_{\phi a}$, at time $t$, are also non-negative integer.
+
+Since by conjecture all $\tau^{t-1}_{\phi a}$ are non-negative, integer and all $f^{\psi a}_\phi$ are, by definition, also non-negative integer, it follows that
+\[
+\sum_{\psi, a} f_\phi^{\psi a}\tau^{t-1}_{\psi a} \in \mathbb{Z}_{\ge 0}
+\]
+Substituting \ref{fermionic} into \ref{continuous} gives
+\[
+\sum_{\psi, a} f_\phi^{\psi a}\tau^{t-1}_{\psi a} \le 1
+\]
+so 
+\[
+\sum_{\psi, a} f_\phi^{\psi a}\tau^{t-1}_{\psi a} \in \left\{1,0\right\}
+\]
+substituting back into \ref{continuous} gives
+\[
+\sum_a \tau^t_{\phi a} \in \left\{0,1\right\}
+\]
+
+[starting with start state, this can take any binary value, now show that the first timestep is integer and induce for other timesteps. Perhaps add actions in groups that share the same start-state and show that vertices remain integer in the higher dimensional state. This can be shown more easily by introducing an auxiliary variable that is the number of agents in a given (phi,t) state]
+
+[start with a fractional solution, recursively remove valid agent trajectories until there are non left, proving that it was a sum of valid trajectories][since all coefficients start at value 1, all ]
+
+[show that a valid trajectory, once pivoted in, leaves all coefficients 1, so all neighbours of all valid trajectories are valid trajectories, so all vertices are valid. Since, before any pivots, each column has exactly one +ve value (i.e. the source of the action edge) and in a continuous trajectory there is exactly one action for each (state,time) pair and *the connectivity graph is a tree*]
+
+[choose the smallest fractional value and subtract that weight of the integer solution that has maximum overlap]
+
+
+[With just agent continuity constraints, we have a cone whose vertex is at zero and whose beams are the trajectories of single agents. Show that addition of integer upper bounds can only add corners at integer solutions, i.e. show that the intersection of the hypercube with the beams occurs at the vertices of the hypercube]
+
+[]
+
+
+
+
+
+
+\subsection{Agent policy constraints}
+
+Let a policy be defined as a computer program whose input is $\psi$, the current state of the agent, and $\Psi$ a sparse vector consisting of the number of agents in other states, and whose return value, $\Phi$, is a vector consisting of the number of agents in each state resulting from the actions of this agent at the end of this timestep (including its own state, if applicable). The agent can die (set to dead state or don't include in return state), set its state or create another agent in a given state. There is also a Filp function which takes a probability and returns a Boolean whose probability of being true is the supplied probability.
+
+The interface to $\Psi$ consists of $occupation(\phi)$ which returns the occupation number of state $\phi$. Occupation numbers can be added, subtracted, negated, multiplied by an integer and added to an integer to give another occupation number. There is a greater-than-or-equal-to operator that that compares with an integer to give a linear Boolean expression. Logical operations between linear Boolean expressions and local variables or expressions on $\psi$ will reduce to logical operations on true or false values.
+
+The ``support semantics'' of the program gives the actions that are possible given a known $\psi$ but an unknown $\Psi$, where each path through the program is considered a separate action. The support semantics, for a given $\psi$, is a set of $(a,B,v)$ pairs where $a$ is a string of `0's and `1's denoting the direction of program flow at each branch, $B$ is a Boolean expression on linear inequalities on $\Psi$ for which $a$ is possible if $B$ is satisfied, and $v$ is an assignment of local variables to values (in the case of occupation number type variables, these will be linear expressions) which give the values of any variables that remain in scope after execution (possibly as a function of local variables in-scope at the start of execution).
+
+Let $v(a)$ be the assignment to local variables at a given point in the program, given an execution along $a$. [Let $P(a,B)$ be the probability of following $a$ given that $B$ is satisfied.]
+
+Let $S \otimes T$ be the set $\left\{(a+a',B\wedge B', v' \otimes v) : (a,B,v)\in S \wedge (a',B',v')\in T\wedge (B\wedge B' \ne false)\right\}$ where $a + a'$ is interpreted as concatenation and $(v'\otimes v)(x) = v'(v(x))$. 
+
+The semantics of two consecutive statements with semantics $A$ and $B$ is $A\otimes B$.
+
+A raw Boolean expression (i.e. as found in an if statement/loop guard) can be converted into a Boolean solely on $\Psi$, given values of any other local variables, by substituting the variables for their values. We write this, for convenience, as $C(v)$
+
+ $b$, is a set of $(a,B)$ pairs representing the disjunction of its members. A linear Boolean expressions on $\Psi$ is just $\{(\emptyset,B)\}$ where $\emptyset$ is the empty string. b \texttt{ \&\& Flip(p)} means $\{(1+a,B) : (a,B)\in b \}$, \texttt{B || Flip(p)} means $\{(\emptyset,B),(1,true)\}$.
+
+The negation of a raw Boolean, $b$, is $\{(\arg\min_{\{\overline{a}:(a,B)\in b\}}|a|,\bigwedge_{(a,B)\in b} \overline{B})\}$ if $\bigwedge_{(a,B)\in b} \overline{B} \ne false$ and all $\{a:(a,B)\in b\}$ agree (i.e. they are all prefixes of the longest member), or the empty set otherwise. The negation of a Flip string $\overline{a}$ is the string with all 
+
+The semantics of an if statement on a raw Boolean expression, $B$, is $\{(1,B)\}\otimes D \cup \{(0,\overline{B})\}\otimes E $ where $B$ is the Boolean expression, $D$ is the semantics of the if body and $E$ is the semantics of the else body.
+ 
+The semantics of a loops whose guard contains an expression on $\Psi$ is the fix-point of 
+\[
+S = S \otimes \left( \left\{(0,\overline{G})\right\} \cup  \{(1,G)\}\otimes D \right) 
+\]
+[The guard here may depend on program variables, so to get a fix-point they need to be part of the semantics. Better to just go around the loop collecting paths until the path becomes impossible]
+
+[local variables may get entangled with $\Psi$ so need to be included in the semantics. e.g. if(Psi.occupation(1)) then x = 1 else x = 2. In which case, the semantics needs to be a function from paths to joint assignments to variables and Boolean expressions on Psi (and perhaps probabilities)]
 
 
 %\bibliographystyle{unsrtnat}

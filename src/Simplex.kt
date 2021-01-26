@@ -72,7 +72,7 @@ open class Simplex<T>(
         while (bland77Pivot()) {
             println(M)
         }
-        return objective.nonZeroEntries.none { it.value < zero }
+        return objective.nonZeroEntries.none { it.value < -zero }
     }
 
 
@@ -87,7 +87,7 @@ open class Simplex<T>(
     // Returns true if the pivot was performed
     private fun bland77Pivot(): Boolean {
         val pivotCol = objective.nonZeroEntries.asSequence()
-            .mapNotNull { if(it.value < zero && it.key != bColumn) it.key else null }
+            .mapNotNull { if(it.value < -zero && it.key != bColumn) it.key else null }
             .min() // TODO: Could be made faster by keeping the objective row in an ordered tree
             ?:return false
         val pivotRow = pivotableRows(pivotCol)
@@ -192,6 +192,20 @@ open class Simplex<T>(
     }
 
 
+    // maximum +ve value this column can take in a pivot without forcing -ve solution
+    // null if there is no limit.
+    fun columnPivotLimit(j: Int): T? {
+        var dXjmax: T? = null
+        M.columns[j].nonZeroEntries.forEach { (i, Mij) ->
+            if(i != objectiveRow && Mij > zero) {
+                val dXji = B[i]/Mij
+                if (dXji <= dXjmax?:dXji) dXjmax = dXji
+            }
+        }
+        return dXjmax
+    }
+
+
     fun allPositivePivotPoints(): List<PivotPoint> {
         return (0 until M.nCols).asSequence()
             .filter { it != bColumn }
@@ -203,6 +217,22 @@ open class Simplex<T>(
             }.toList()
     }
 
+//    data class PivotPointsByDegeneracy(val degeneratePivots: List<PivotPoint>, val nonDegeneratePivots: List<PivotPoint>)
+//    fun allPositivePivotPointsByDegeneracy(): PivotPointsByDegeneracy {
+//        val degeneratePivots = ArrayList<PivotPoint>()
+//        val nonDegeneratePivots = ArrayList<PivotPoint>()
+////        return (0 until M.nCols) asSequence()
+////            .filter { it != bColumn }
+////            .flatMap { j ->
+////                pivotableRows(j).asSequence()
+////                    .map { i ->
+////                        PivotPoint(i,j)
+////                    }
+////            }.toList()
+//    }
+
+    fun isDegenerate(pivot: PivotPoint): Boolean = B[pivot.row].isZero()
+
 
     // returns all pivots that maintain a positive solution
     // and that do not have a zero in the B column
@@ -212,7 +242,7 @@ open class Simplex<T>(
             .filter { it != bColumn }
             .flatMap { j ->
                 pivotableRows(j).asSequence()
-                    .filter { i -> B[i] != zero && B[i] != -zero }
+                    .filter { i -> !B[i].isZero() }
                     .map { i ->
                         PivotPoint(i,j)
                     }
@@ -227,7 +257,7 @@ open class Simplex<T>(
         return (0 until bColumn).asSequence()
             .flatMap { j ->
                 pivotableRows(j).asSequence()
-                    .filter { i -> B[i] == zero }
+                    .filter { i -> B[i].isZero() }
                     .map { i ->
                         PivotPoint(i,j)
                     }

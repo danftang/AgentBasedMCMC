@@ -8,8 +8,10 @@ import lib.sparseMatrix.GridMapMatrix
 import lib.sparseMatrix.IPsolve
 import lib.sparseMatrix.mapNonZeroEntriesTo
 import lib.vector.*
+import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution
 import org.apache.commons.math3.fraction.Fraction
 import org.junit.Test
+import java.util.*
 import kotlin.math.absoluteValue
 import kotlin.math.ln
 import kotlin.math.log
@@ -19,9 +21,9 @@ import kotlin.random.Random
 // Experiments with pivoting the ABM matrix, a-la Simplex algorithm
 class SimplexExpts {
 
-    val gridSize = 3
-    val timesteps = 2
-    val nAgents = 4
+    val gridSize = 32
+    val timesteps = 4
+    val nAgents = 30
     val abmMatrix = twoDabmMatrix(gridSize, timesteps)
     val observations = MutableMapVector(IntOperators)
 
@@ -151,6 +153,8 @@ class SimplexExpts {
 
         val fieldOperators = FractionOperators // DoubleOperators
         val intToField: Int.()->Fraction = { Fraction(this,1) }
+//        val fieldOperators = DoubleOperators // DoubleOperators
+//        val intToField: Int.()->Double = { this.toDouble() }
 
         val abmGridMatrix = abmMatrix.mapNonZeroEntriesTo(
             GridMapMatrix(fieldOperators, abmMatrix.nRows, abmMatrix.nCols)) {
@@ -165,10 +169,14 @@ class SimplexExpts {
 
         var lastX: SparseVector<Fraction>? = null
         for(sample in 1..10000) {
-            simplex.mcmcTransition()
+            var nRejections = 0
+            while(!simplex.mcmcTransition()) nRejections++
+//            println("$nRejections rejections")
+//            simplex.setToZeroIfBelow(1e-4)
             val newX = simplex.X()
             if(newX != lastX) {
                 println(newX)
+                println(simplex.M.sparsity())
                 lastX = newX
             }
         }
@@ -191,11 +199,15 @@ class SimplexExpts {
 
 
     fun Simplex<Double>.setToZeroIfBelow(smallest: Double) {
-        val iter = M.nonZeroEntries.iterator()
-        while(iter.hasNext()) {
-            val entry = iter.next()
-            if(entry.value.absoluteValue < smallest) iter.remove()
+        M.nonZeroEntries.forEach { entry ->
+            if(entry.value.absoluteValue < smallest) entry.setValue(zero)
         }
+//        val iter = M.nonZeroEntries.iterator()
+//        while(iter.hasNext()) {
+//            val entry = iter.next()
+//            if(entry.value.absoluteValue < smallest) iter.remove()
+//        }
     }
+
 
 }

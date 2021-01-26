@@ -1,5 +1,7 @@
 package lib.sparseMatrix
 
+import lib.collections.RemovableEntry
+import lib.collections.mutableMapByRemovable
 import lib.vector.MutableSparseVector
 import lib.vector.SparseVector
 
@@ -9,8 +11,12 @@ interface SparseColMatrix<T: Any>: SparseMatrix<T> {
     override val nCols: Int
         get() = columns.size
 
-    override val nonZeroEntries: MutableIterable<SparseMatrix.Entry<T>>
-        get() = object: MutableIterable<Entry<T>> { override fun iterator() = EntryIterator(columns) }
+    override val nonZeroEntries: Iterable<SparseMatrix.Entry<T>>
+        get() = columns.withIndex().flatMap { (col, vector) ->
+            vector.nonZeroEntries.entries.mutableMapByRemovable { entry ->
+                CEntry(col, entry) { this.isZero() }
+            }
+        }
 
     override fun get(row: Int, col: Int): T {
         return columns[col][row]
@@ -32,38 +38,61 @@ interface SparseColMatrix<T: Any>: SparseMatrix<T> {
         return result
     }
 
-    class Entry<T>(override val col: Int, val colEntry: MutableMap.MutableEntry<Int,T>): SparseMatrix.Entry<T> {
+    // number of nonZeroEntries / (nRows*nCols)
+    fun sparsity(): Double {
+        val nonZeroEntriesSize = columns.sumBy { it.nonZeroEntries.size }
+        return nonZeroEntriesSize.toDouble()/(nRows*nCols)
+    }
+
+    class CEntry<T>(override val col: Int, val entry: RemovableEntry<MutableMap.MutableEntry<Int,T>>, val isZero: T.()->Boolean): SparseMatrix.Entry<T> {
         override val row: Int
-            get() = colEntry.key
+            get() = entry.value.key
         override val value: T
-            get() = colEntry.value
-        override fun setValue(newValue: T): T = colEntry.setValue(newValue)
-    }
-
-    class EntryIterator<T: Any>(
-        val vectors: List<MutableSparseVector<T>>,
-        var vectorIndex: Int,
-        var vectorIterator:MutableIterator<MutableMap.MutableEntry<Int,T>>): MutableIterator<Entry<T>> {
-
-        constructor(columns: List<MutableSparseVector<T>>): this(columns,0, columns[0].nonZeroEntries.entries.iterator()) {
-            advanceToNextEntry()
-        }
-
-        override fun hasNext() = vectorIterator.hasNext()
-
-        override fun next(): Entry<T> {
-            val sparseVecEntry = vectorIterator.next()
-            val matrixEntry = Entry(vectorIndex, sparseVecEntry)
-            advanceToNextEntry()
-            return matrixEntry
-        }
-
-        override fun remove() { vectorIterator.remove() }
-
-        private inline fun advanceToNextEntry() {
-            while(!vectorIterator.hasNext() && vectorIndex != vectors.lastIndex)
-                vectorIterator = vectors[++vectorIndex].nonZeroEntries.entries.iterator()
+            get() = entry.value.value
+        override fun setValue(newValue: T): T {
+            return if(newValue.isZero()) {
+                val oldValue = value
+                entry.remove()
+                oldValue
+            } else {
+                entry.value.setValue(newValue)
+            }
         }
     }
+
+//    class Entry<T>(override val col: Int, val colEntry: MutableMap.MutableEntry<Int,T>): SparseMatrix.Entry<T> {
+//        override val row: Int
+//            get() = colEntry.key
+//        override val value: T
+//            get() = colEntry.value
+//        override fun setValue(newValue: T): T = colEntry.setValue(newValue) // TODO: Deal with set to zero
+//    }
+
+
+    // Iterator through a flattened list of MutableSparseVectors
+//    class EntryIterator<T: Any>(
+//        val vectors: List<MutableSparseVector<T>>,
+//        var vectorIndex: Int,
+//        var vectorIterator:MutableIterator<MutableMap.MutableEntry<Int,T>>): MutableIterator<Entry<T>> {
+//
+//        constructor(columns: List<MutableSparseVector<T>>): this(columns,0, columns[0].nonZeroEntries.entries.iterator())
+//
+//        override fun hasNext(): Boolean {
+//            if(vectorIterator.hasNext()) return true
+//            for(i in vectorIndex + 1 until vectors.size) {
+//                if(!vectors[i].nonZeroEntries.isEmpty()) return true
+//            }
+//            return false
+//        }
+//
+//        override fun next(): Entry<T> {
+//            while(!vectorIterator.hasNext() && vectorIndex != vectors.lastIndex)
+//                vectorIterator = vectors[++vectorIndex].nonZeroEntries.entries.iterator()
+//            return Entry(vectorIndex, vectorIterator.next())
+//        }
+//
+//        override fun remove() { vectorIterator.remove() }
+//
+//    }
 
 }
