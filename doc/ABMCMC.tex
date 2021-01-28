@@ -16,7 +16,9 @@
 \usepackage{graphicx}
 \usepackage{subfig}
 \usepackage{apacite}
-\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
 
 \newtheorem{theorem}{Theorem}
 \DeclareMathOperator\supp{supp}
@@ -155,7 +157,16 @@ The integer part we will consider in the next section.
 \section{From convex polyhedron to Markov process}
 %#####################################################
 
-Once we've generated a set of inequalities that contain the support of the posterior, we next need a proposal function that will allow us to transition between trajectories in a Markov chain, while ensuring the inequalities remain satisfied.
+Once we've generated a set of inequalities that contain the support of the posterior, we next need to form a Markov process whose states emit solutions to the inequalities and whose stationary distribution is the posterior $P(T \mid \Omega)$. I order to perform MCMC we'd like to define the Markov process in terms of a set of states, $\mathbb{S}$, and a stochastic proposal function $f:\mathbb{S} \to \mathbb{S}$ such that $P(f(s_n) = s_{n+1})$ defines the conditional transition probability $P(s_{n+1} \mid s_n)$. The proposal function should have the following properties:
+\begin{itemize}
+\item There should be a set of transitions with non-zero probability between any two states. This ensures proper mixing as time tends to infinity.
+
+\item The probability of emitting a trajectory $T$ should be our target posterior probability $P(T \mid \Omega)$, and all emitted trajectories should be solutions of our set of linear equations.
+
+\item For any transition from state $s_a \to s_b$ the probability of transitioning from $s_b \to s_a$ should be non-zero. This allows us to use the Metropolis Hastings algorithm to attain detailed balance.
+
+\item The proposal function should be computationally efficient. 
+\end{itemize}
 
 \subsection{A proposal function for a Fermionic ABM}
 %#############################################
@@ -183,13 +194,66 @@ For any pair of valid trajectories, $A$ and $B$, there exists a path along edges
 
 \end{proof}
 
-Since all Fermionic trajectories are on vertices, we could create a Markov process whose states are the vertices of the polyhedron and whose transitions are its edges. So the proposal function would choose from the neighbouring vertices of the current state. If there exist vertices that don't fall on the grid of integer solutions, then we want to encourage the Markov process away from these states. This could be done by multiplying their probability by a ``fractional penalty'' based on the number of non-integer values in the solution. In order to ensure that fractional solutions aren't returned as samples, fractional vertices are classed as ``non-emitting'', in that the process can pass through these states, but no sample is generated when doing so.
+Since all Fermionic trajectories are on vertices, the obvious way forward would be to define a Markov process whose states, $\mathbb{S}$, are the vertices of the polyhedron and whose transitions are its edges. So, the proposal function would choose from the neighbouring vertices of the current state. There may exist vertices that don't fall on the grid of integer solutions, so are not associated with valid trajectories. However, extra states can be added to a Markov process without affecting the emitted samples as long as the extra states do not emit samples (i.e. the process can pass through these states, but no sample is generated when doing so). However, we don't want to spend too much computational effort moving between non-emitting states, so we should ensure that the probability of being in a non-emitting state isn't much greater than that of being in an emitting state. In order to encourage the Markov process away from these fractional states their probability is multiplied by a ``fractional penalty'' $e^{-kn}$ where $n$ is the number of non-integer values in the solution and $k$ is a constant parameter.
 
-This approach is computationally convenient as navigation along edges of a polyhedron can be achieved efficiently by using the pivoting operation of the Simplex algorithm\cite{dantzig1955generalized}\cite{thie2011introduction}. Given a system of $m$ linear equality constraints on $n$ variables (where any inequalities are turned into equalities by the addition of slack variables), let a \textit{pivot state} be a partition of the variables into $m$ \textit{basic variables} and $n-m$ \textit{non-basic variables} such that if we constrain all \textit{non-basic variables} to zero there remains a unique solution. Such solutions can be shown to be at a vertex of the original polyhedron. A \textit{pivot} is a perturbation of a pivot state such that one of the basic variables is swapped with one of the non-basic variables, so the set of basic variables loses one of its members and gains a new member from the set of non-basic variables, such that the perturbed state is also a valid pivot state. This induces a new solution, and new vertex which is adjacent to the original vertex in the sense that there is an edge connecting the two.
+This approach is computationally convenient as navigation along edges of a polyhedron can be achieved efficiently by using the pivoting operation of the Simplex algorithm\cite{dantzig1955generalized}\cite{thie2011introduction}. Given a system of $m$ linear equality constraints on $n$ variables (where any inequalities are turned into equalities by the addition of slack variables), let a \textit{pivot state} be a partition of the variables into $m$ \textit{basic variables} and $n-m$ \textit{non-basic variables} such that if we constrain all \textit{non-basic variables} to zero there remains a unique solution. Such solutions can be shown to be at a vertex of the polyhedron described by the constraints. A \textit{pivot} is a perturbation of a pivot state such that one of the basic variables is swapped with one of the non-basic variables so the set of basic variables loses one of its members and gains a new member from the set of non-basic variables, such that the perturbed state is also a valid pivot state. It can be shown that every edge of a convex polyhedron corresponds to a unique pivot, so moving along an edge can be achieved computationally by performing a pivot.
 
-This use of pivoting is complicated somewhat when the vertices of the polyhedron are degenerate. A degenerate vertex is one that can be generated by more than one pivot state. This can occur when any of the basic variables are zero, since a pivot has the effect of constraining a basic-variable's value to zero and removing a constraint on a non-basic variable, but if the basic-variable's value is zero to start with, the additional constraint has no effect on the solution. If there are many zero-valued basic variables there may be a large number of pivots that do not change the solution. In full generality, if there are $\sigma$ zero-valued basic variables, then the vertex can be associated with a \textit{degenerate pivot state} which is a partition of the variables $(D_1,D_0)$ such that $D_1$ is the set of non-zero valued basic-variables of size $|D_1| = m-\sigma$ and $D_0$ is the set of zero-valued variables (whether basic or non-basic) of size $|D| = n-m+\sigma$. We say that a pivot state \textit{matches} a vertex if its basic variables are a superset of $D_1$, and so has this vertex as its solution. A  ``degeneracy graph''\cite{zornig93degeneracy} is the graph whose nodes are the pivot states that match this vertex and whose edges are the pivots between states.
+This use of pivoting is complicated somewhat when the vertices of the polyhedron are degenerate. A degenerate vertex is one that can be generated by more than one pivot state. This can occur when any of the basic variables are zero, since a pivot has the effect of making a basic variable non-basic, so its value will be constrained to zero; but if the basic-variable's value is zero to start with, constraining it to zero has no effect. If there are many zero-valued basic variables there may be a large number of pivots, and even sequences of pivots, that do not change the solution, and consequently many pivot states which have the same solution. This has the consequence that a degenerate vertex may have a very large number of neighbours, so choosing one at random becomes a non-trivial task since it would be computationally costly to simply enumerate them all and choose one\cite{gal1992new}\cite{yamada1994enumerating}.
 
-We'd like to somehow embed these degeneracy graphs into our Markov process in a computationally efficient way. Mapping each node on the degeneracy graph to a state in the Markov process has the disadvantage that we'd somehow have to assign probabilities to nodes such that the sum of the probabilities of all the nodes associated with a vertex equals the desired probability of the vertex. However, calculating the number of nodes in a degeneracy graph is computationally expensive\cite{zornig93degeneracy} so it's not clear how we should assign probabilities to nodes. An alternative would be to maintain a single Markov state per vertex, use the degeneracy graph to generate all neigbouring vertices, then choose a proposal from these. However, a highly degenerate vertex may have a very large number of neighbours, so generating them all is also potentially computationally costly\cite{gal1992new}\cite{yamada1994enumerating}.
+An alternative strategy is to replace the Markov states representing degenerate vertices with multiple states. As long as they all emit the same trajectory and the sum of their probabilities is the probability of the vertex then the Markov process will still emit samples from the posterior.
+
+Let an \textit{ordered tableau} be a simplex tableau where all degenerate rows (i.e. rows with value zero) are above all non-degenerate rows, and non-degenerate rows are ordered by the index of the variable that is pivoted-in on that row. We now associate a Markov state with each ordered tableau, assigning it a probability according to algorithm \ref{probAlgorithm}:
+
+\begin{algorithm}
+\caption{Algorithm to calculate probability of a degeneracy state}
+\label{probAlgorithm}
+\begin{algorithmic}
+\State $A \leftarrow$ an ordered tableau
+\State $P_T \leftarrow$ the probability of the vertex that is the solution to this tableau
+\State $P_d \leftarrow 1.0$
+\State $\sigma \leftarrow$ the number of degenerate rows in $A$
+\For{$i = 0 \dots \sigma-1$}
+	\State $Cols \leftarrow$ the set of columns in A that have at least one non-zero value in rows $i \le r < \sigma$
+	\State $P_d \leftarrow P_d/|Cols|$
+\EndFor
+\State \Return $P_d \times P_T$
+\end{algorithmic}
+\end{algorithm}
+
+The transitions between states are the valid pivots and the swapping of position of any two degenerate rows. The proposal function is shown in algorithm \ref{proposal}
+
+\begin{algorithm}
+\caption{Proposal function}
+\label{proposal}
+\begin{algorithmic}
+\Function{Proposal}{A}
+\State $A' \leftarrow A$ (the ordered tableau of the current state)
+\State $\alpha, \beta \leftarrow$ constant parameters
+\State $p_0 \leftarrow$ the set of degenerate pivots of A (i.e. the ones that do not change the solution)
+\State $p_1 \leftarrow$ the set of non-degenerate pivots of A (i.e. the ones that change the solution)
+\If{\Call{Bernoulli}{$\alpha$}}
+  \State $r \leftarrow$ choose member of $p_1$ with uniform probability
+  \State perform pivot $r$ on $A'$
+\ElsIf{\Call{Bernoulli}{$\beta$}}
+  \State $r \leftarrow$ choose member of $p_0$ with uniform probability
+  \State perform pivot $r$ on $A'$
+\Else
+  \State choose two degenerate rows $a$ and $b$ with uniform probability
+  \State swap rows $a$ and $b$ of $A'$ 
+\EndIf
+\State \Return $A'$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+We need to show that this assignment of probability to ordered tableaus creates a Markov process that emits samples from the posterior. 
+
+\begin{theorem}
+The sum of the probabilities of all ordered tableaus of a vertex, $T$, is $P_T$ 
+\end{theorem}
+\begin{proof}
+
+\end{proof}
 
 We propose a computationally efficient solution based on the observation in \cite{yamada1994enumerating} that there is a one to one mapping between neighbours of a vertex and the extreme rays of
 \begin{eqnarray*}
@@ -197,7 +261,33 @@ Ay & = & 0, \\
   y & \ge & 0
 \end{eqnarray*}
 
-where $A$ is the matrix formed from the rows of the simplex tableau that are equal to zero in the $b$ column and contain at least one positive, non-basic coefficient. We'll call this the \textit{neighbourhood} polyhedron.
+where $A$ is the matrix formed from the rows of the simplex tableau that are equal to zero in the $b$ column. The extreme rays can be transformed to vertices by adding the constraint
+\[
+\sum_i y_i = 1
+\]
+ We'll call this the \textit{neighbourhood} polyhedron.
+
+Note that if a vertex has $\sigma$ zero-valued basic variables (it is $\sigma$\textit{-degenerate}) then the neighbourhood polyhedron has $\sigma + 1$ constraints and $n-m+\sigma$ variables, so the number of neighbours is bounded above by
+\[
+\nu_{max} = \left. n-m+\sigma \choose \sigma + 1 \right.
+\]
+corresponding with the number of ways of choosing $\sigma + 1$ basic variables out of $n-m+\sigma$. With this in mind, we associate $\nu_{max}$ states with each vertex and split the probability equally between them, so that each state has a probability of
+\[
+P_s = \frac{P(T|\Omega)}{\left. n-m+\sigma \choose \sigma + 1 \right.}
+\]
+Each state is associated with a choice of $\sigma+1$ zero-valued variables. It could be that some of these aren't valid pivot states of the neighbourhood polynomial, but we map each Markov state to a unique vertex of the neighbourhood polynomial 
+
+It helps to understand the structure of the pivot states associated with a degenerate vertex by thinking about the  ``degeneracy graph''\cite{zornig93degeneracy} of the vertex. This is the graph whose nodes are the pivot states and whose edges are the pivots between states.
+
+Mapping each node on the degeneracy graph to a state in the Markov process has the disadvantage that we'd somehow have to assign probabilities to the nodes such that the sum of their probabilities is the probability of the vertex. However, calculating the number of nodes in a degeneracy graph is computationally expensive\cite{zornig93degeneracy} so it's not clear how we should assign probabilities to nodes.
+
+
+In full generality, if there are $\sigma$ zero-valued basic variables, then the vertex can be associated with a \textit{degenerate pivot state} which is a partition of the variables $(D_1,D_0)$ such that $D_1$ is the set of non-zero valued basic-variables of size $|D_1| = m-\sigma$ and $D_0$ is the set of zero-valued variables (whether basic or non-basic) of size $|D| = n-m+\sigma$. We say that a pivot state \textit{matches} a vertex if its basic variables are a superset of $D_1$, and so has this vertex as its solution. 
+
+
+
+ 
+ 
 
 Define a neighbour of a degenerate vertex as a vertex that can be reached by a single pivot (on a row with non-zero b) from one of the vertex's matched pivot states. i.e. Two vertices $A$ and $B$ are neighbours if there exists a pair of pivot states $a$ and $b$ such that $a$ matches $A$, $b$ matches $B$ and $a$ and $b$ are neighbours.
 
@@ -217,18 +307,18 @@ If we decide to transition to another state inside the same vertex then simply c
 
 If we choose to transition to a neighbouring vertex, first map the neighbourhood state, $\mu$, to a valid set of basic variables $B$ for the neighbourhood polyhedron using the following algorithm:
 
-\begin{algorithmic}
-\STATE $P \leftarrow$ simplex tableau for the neighbourhood polyhedron
-\STATE $Q \leftarrow \emptyset$
-\FOR{$i=0$ to $m$}
-\STATE $q \leftarrow m_i$
-\WHILE{the $q^{th}$ column of $P$ is zero on all rows $k \notin Q$}
-\STATE $q \leftarrow (q + 1) \mod (n-m+\sigma)$
-\ENDWHILE
-\STATE pivot $P$ on any non-zero row, $k \notin Q$, of the $q^{th}$ column
-\STATE add $q$ to $Q$
-\ENDFOR
-\end{algorithmic}
+%\begin{algorithmic}
+%\STATE $P \leftarrow$ simplex tableau for the neighbourhood polyhedron
+%\STATE $Q \leftarrow \emptyset$
+%\FOR{$i=0$ to $m$}
+%\STATE $q \leftarrow m_i$
+%\WHILE{the $q^{th}$ column of $P$ is zero on all rows $k \notin Q$}
+%\STATE $q \leftarrow (q + 1) \mod (n-m+\sigma)$
+%\ENDWHILE
+%\STATE pivot $P$ on any non-zero row, $k \notin Q$, of the $q^{th}$ column
+%\STATE add $q$ to $Q$
+%\ENDFOR
+%\end{algorithmic}
 
 Note that this terminates as long as $A_1$ is of full rank, which is guaranteed as long as our original set of constraints has full rank.
 
