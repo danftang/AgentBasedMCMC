@@ -246,174 +246,47 @@ The transitions between states are the valid pivots and the swapping of position
 \end{algorithmic}
 \end{algorithm}
 
-We need to show that this assignment of probability to ordered tableaus creates a Markov process that emits samples from the posterior. 
+We need to show that this assignment of probability to ordered tableaus has the property that the sum of the probabilities associated with a vertex is the probability of that vertex.
 
 \begin{theorem}
-The sum of the probabilities of all ordered tableaus of a vertex, $T$, is $P_T$ 
+If $\mathbb{E}(T)$ is the set of all ordered tableaus with solution $T$, and $P(A)$ is the probability assigned to ordered tableau $A$ by algorithm \ref{probAlgorithm} and $P_T$ is the probability assigned to vertex $T$ then
+\[
+\sum_{A \in \mathbb{E}(T)} P(A) = P_T
+\]
 \end{theorem}
 \begin{proof}
+Consider the stochastic algorithm \ref{unityProof}. It is clear that every possible output is an ordered tableau with solution $T$ and that every ordered tableau with solution $T$ is a possible output of the algorithm. The probability that algorithm \ref{unityProof} outputs tableau $A$ is
+\[
+\frac{1}{\prod_{i=0}^{\sigma-1} C_i^\sigma(A)} 
+\]
+where $C_i^\sigma(A)$ is the number of columns that have at least one non-zero value in rows $i \le r < \sigma$ in $A$ since $C_i^\sigma(A)$ is invariant under pivots on rows $i \le r < \sigma$. But this is exactly the probability $P_d$ in algorithm \ref{probAlgorithm}.
 
+It is also clear that, with probability 1, the algorithm returns an ordered tableau, so the sum of the probabilities of all possible outputs of algorithm \ref{unityProof} must also be 1. So
+\[
+\sum_{A \in \mathbb{E}(T)} P_d(A) = 1
+\]
+but $P(A) = P_d(A)P_T$ so 
+\[
+\sum_{A \in \mathbb{E}(T)} P(A) = \sum_{A \in \mathbb{E}(T)} P_d(A)P_T = P_T
+\]
 \end{proof}
 
-We propose a computationally efficient solution based on the observation in \cite{yamada1994enumerating} that there is a one to one mapping between neighbours of a vertex and the extreme rays of
-\begin{eqnarray*}
-Ay & = & 0, \\
-  y & \ge & 0
-\end{eqnarray*}
+\begin{algorithm}
+\caption{Random choice of ordered tableau with solution T}
+\label{unityProof}
+\begin{algorithmic}
+\State $A \leftarrow $ any ordered tableau with solution $T$
+\For{$i = 0 \dots \sigma-1$}
+  \State $Cols \leftarrow$ the set of columns in A that have at least one non-zero value in rows $i \le r < \sigma$
+  \State $r \leftarrow$ random member of $Cols$ chosen with uniform probability
+  \State pivot on column $r$ and lowest index row, $i \le r < \sigma$, of $A$
+  \State swap the newly pivoted row and the $i^{th}$ row of $A$
+\EndFor
+\State \Return A
+\end{algorithmic}
+\end{algorithm}
 
-where $A$ is the matrix formed from the rows of the simplex tableau that are equal to zero in the $b$ column. The extreme rays can be transformed to vertices by adding the constraint
-\[
-\sum_i y_i = 1
-\]
- We'll call this the \textit{neighbourhood} polyhedron.
-
-Note that if a vertex has $\sigma$ zero-valued basic variables (it is $\sigma$\textit{-degenerate}) then the neighbourhood polyhedron has $\sigma + 1$ constraints and $n-m+\sigma$ variables, so the number of neighbours is bounded above by
-\[
-\nu_{max} = \left. n-m+\sigma \choose \sigma + 1 \right.
-\]
-corresponding with the number of ways of choosing $\sigma + 1$ basic variables out of $n-m+\sigma$. With this in mind, we associate $\nu_{max}$ states with each vertex and split the probability equally between them, so that each state has a probability of
-\[
-P_s = \frac{P(T|\Omega)}{\left. n-m+\sigma \choose \sigma + 1 \right.}
-\]
-Each state is associated with a choice of $\sigma+1$ zero-valued variables. It could be that some of these aren't valid pivot states of the neighbourhood polynomial, but we map each Markov state to a unique vertex of the neighbourhood polynomial 
-
-It helps to understand the structure of the pivot states associated with a degenerate vertex by thinking about the  ``degeneracy graph''\cite{zornig93degeneracy} of the vertex. This is the graph whose nodes are the pivot states and whose edges are the pivots between states.
-
-Mapping each node on the degeneracy graph to a state in the Markov process has the disadvantage that we'd somehow have to assign probabilities to the nodes such that the sum of their probabilities is the probability of the vertex. However, calculating the number of nodes in a degeneracy graph is computationally expensive\cite{zornig93degeneracy} so it's not clear how we should assign probabilities to nodes.
-
-
-In full generality, if there are $\sigma$ zero-valued basic variables, then the vertex can be associated with a \textit{degenerate pivot state} which is a partition of the variables $(D_1,D_0)$ such that $D_1$ is the set of non-zero valued basic-variables of size $|D_1| = m-\sigma$ and $D_0$ is the set of zero-valued variables (whether basic or non-basic) of size $|D| = n-m+\sigma$. We say that a pivot state \textit{matches} a vertex if its basic variables are a superset of $D_1$, and so has this vertex as its solution. 
-
-
-
- 
- 
-
-Define a neighbour of a degenerate vertex as a vertex that can be reached by a single pivot (on a row with non-zero b) from one of the vertex's matched pivot states. i.e. Two vertices $A$ and $B$ are neighbours if there exists a pair of pivot states $a$ and $b$ such that $a$ matches $A$, $b$ matches $B$ and $a$ and $b$ are neighbours.
-
-[minimise an augmented state over all variables?]
-
-Pivoting-in a variable on a non-zero row makes that variable greater than zero, then $\sum_{j\in Q} x_j > 0$ must be true of all neighbours, where $Q$ is the set of non-basic columns with at least one positive coefficient on a non-zero row.
-
-To turn this into a Markov process, begin with a polyhedron with $m$ constraints on $n$ variables. Consider now a vertex of that polyhedron with $\sigma$ zero-valued basic variables. Suppose out of those $\sigma$ basic variables, $m_1$ of them are on rows in the tableaux that have at least one positive coefficient (i.e. $A_1$ has $m_1$ rows)\footnote{[need to prove this is constant for all nodes in the degeneracy graph]}. Assign to that vertex a Markov state for each of the $n-m+\sigma \choose m_1$ sets of $m_1$ basic variables chosen from the $n-m+\sigma$ zero-valued variables; call this the \textit{neighbourhood state}. Note that it is clear that the neighbourhood polyhedron cannot have more vertices than there are neighbourhood states, but it may have fewer. Let $P(v)$ be the desired probability of the vertex and assign each Markov state a probability of
-\[
-P(s) = \frac{P(v)}{\left. n-m+\sigma \choose m_1 \right.}.
-\]
-This assures that the sum of the probabilities of all possible neighbourhood states assigned to a vertex is the desired probability of the vertex.
-
-In order to generate proposal transitions for each state, first decide with fixed probability, $\alpha$, whether to make a transition to another state in the same vertex or a neighbouring vertex.
-
-If we decide to transition to another state inside the same vertex then simply choose, with uniform probability, a member of the current neighbourhood state and swap it for a non-basic variable, again chosen uniformly. Since the proposed state has the same probability by definition, and the probability of making the reverse transition is the same as making the forward transition, then the proposal is always accepted.
-
-If we choose to transition to a neighbouring vertex, first map the neighbourhood state, $\mu$, to a valid set of basic variables $B$ for the neighbourhood polyhedron using the following algorithm:
-
-%\begin{algorithmic}
-%\STATE $P \leftarrow$ simplex tableau for the neighbourhood polyhedron
-%\STATE $Q \leftarrow \emptyset$
-%\FOR{$i=0$ to $m$}
-%\STATE $q \leftarrow m_i$
-%\WHILE{the $q^{th}$ column of $P$ is zero on all rows $k \notin Q$}
-%\STATE $q \leftarrow (q + 1) \mod (n-m+\sigma)$
-%\ENDWHILE
-%\STATE pivot $P$ on any non-zero row, $k \notin Q$, of the $q^{th}$ column
-%\STATE add $q$ to $Q$
-%\ENDFOR
-%\end{algorithmic}
-
-Note that this terminates as long as $A_1$ is of full rank, which is guaranteed as long as our original set of constraints has full rank.
-
-[need to prove that this is a unique mapping for all start states]
-
-Once we have a tableau of the neighbourhood polyhedron in it's mapped pivot state, there will be exactly one row which hasn't been pivoted by the above algorithm (since there will be $m_1+1$ constraints, the extra one being the $\sum_i y_i = 1$ constraint). Each possible pivot point on this row identifies a vertex of the neighbourhood polyhedron, which itself maps to a possible neighbour of the current vertex\footnote{We can prove that this row isn't equal to zero by disallowing the $\sum_i y_i = 1$ row  from being pivoted-in during the mapping from $\mu$ to $B$}. So, we take this set to be the set of possible destination vertices.
-
-
-Given a destination vertex, we also need to choose a neighbourhood state at the destination. For this, we choose a state such that the current pivot state can be retained as much as possible, so as to reduce the computation needed to do the transition. To do this, we start with the current neighbourhood state and remove any variables that are non-zero in the destination. We then add/delete variables, chosen at random with a uniform probability, until we reach the correct number of members for the new value of $m_1$.
-
- So, if $r_x$ of the members of the source neighbourhood state are non-zero in the destination then and the source and destination states have $\sigma_x$ and $\sigma_y$ zero-valued basic variables respectively, and the size of the neighbourhood state in the source and destination is $m_{1x}$ and $m_{1y}$ respectively, then we need to choose $m_{1y} - m_{1x} +r_x$ new variables out of a total of $n-m+\sigma_y+m_{1x}-r_x$.
-So, the acceptance probability is given by
-\[
-\alpha = \min\left(1,
-\frac{P(Y) P_{Y \rightarrow X}\left.n-m+\sigma_x\choose m_{1x}\right. \left.n-m+\sigma_y + m_{1x} - r_x\choose m_{1y} - m_{1x} + r_x\right. }
-{P(X) P_{X \rightarrow Y}\left.n-m+\sigma_y\choose m_{1y}\right. \left.n-m+\sigma_x + m_{1y} - r_y\choose m_{1x} - m_{1y} + r_y\right.}\right)
-\]
-So, in order to make this as close to 1 as possible, we choose a destination, from the set of possible pivots, with probability proportional to
-\[
-P_{X \rightarrow Y} \propto \frac{P(Y)\left.n-m+\sigma_y + m_{1x} - r_x\choose m_{1y} - m_{1x} + r_x\right.}{\left.n-m+\sigma_y\choose m_{1y}\right.}
-\]
-
-
-%#########################################################################################################
-\section{Notes}
-
-To prove that a vertex is a valid Fermionic trajecotry... 
-
-We first show that if all variables $\tau^{t-1}_{\phi a}$, at time $t-1$, are non-negative integer on a vertex, then all variables $\tau^t_{\phi a}$, at time $t$, are also non-negative integer.
-
-Since by conjecture all $\tau^{t-1}_{\phi a}$ are non-negative, integer and all $f^{\psi a}_\phi$ are, by definition, also non-negative integer, it follows that
-\[
-\sum_{\psi, a} f_\phi^{\psi a}\tau^{t-1}_{\psi a} \in \mathbb{Z}_{\ge 0}
-\]
-Substituting \ref{fermionic} into \ref{continuous} gives
-\[
-\sum_{\psi, a} f_\phi^{\psi a}\tau^{t-1}_{\psi a} \le 1
-\]
-so 
-\[
-\sum_{\psi, a} f_\phi^{\psi a}\tau^{t-1}_{\psi a} \in \left\{1,0\right\}
-\]
-substituting back into \ref{continuous} gives
-\[
-\sum_a \tau^t_{\phi a} \in \left\{0,1\right\}
-\]
-
-[starting with start state, this can take any binary value, now show that the first timestep is integer and induce for other timesteps. Perhaps add actions in groups that share the same start-state and show that vertices remain integer in the higher dimensional state. This can be shown more easily by introducing an auxiliary variable that is the number of agents in a given (phi,t) state]
-
-[start with a fractional solution, recursively remove valid agent trajectories until there are non left, proving that it was a sum of valid trajectories][since all coefficients start at value 1, all ]
-
-[show that a valid trajectory, once pivoted in, leaves all coefficients 1, so all neighbours of all valid trajectories are valid trajectories, so all vertices are valid. Since, before any pivots, each column has exactly one +ve value (i.e. the source of the action edge) and in a continuous trajectory there is exactly one action for each (state,time) pair and *the connectivity graph is a tree*]
-
-[choose the smallest fractional value and subtract that weight of the integer solution that has maximum overlap]
-
-
-[With just agent continuity constraints, we have a cone whose vertex is at zero and whose beams are the trajectories of single agents. Show that addition of integer upper bounds can only add corners at integer solutions, i.e. show that the intersection of the hypercube with the beams occurs at the vertices of the hypercube]
-
-[]
-
-
-
-
-
-
-\subsection{Agent policy constraints}
-
-Let a policy be defined as a computer program whose input is $\psi$, the current state of the agent, and $\Psi$ a sparse vector consisting of the number of agents in other states, and whose return value, $\Phi$, is a vector consisting of the number of agents in each state resulting from the actions of this agent at the end of this timestep (including its own state, if applicable). The agent can die (set to dead state or don't include in return state), set its state or create another agent in a given state. There is also a Filp function which takes a probability and returns a Boolean whose probability of being true is the supplied probability.
-
-The interface to $\Psi$ consists of $occupation(\phi)$ which returns the occupation number of state $\phi$. Occupation numbers can be added, subtracted, negated, multiplied by an integer and added to an integer to give another occupation number. There is a greater-than-or-equal-to operator that that compares with an integer to give a linear Boolean expression. Logical operations between linear Boolean expressions and local variables or expressions on $\psi$ will reduce to logical operations on true or false values.
-
-The ``support semantics'' of the program gives the actions that are possible given a known $\psi$ but an unknown $\Psi$, where each path through the program is considered a separate action. The support semantics, for a given $\psi$, is a set of $(a,B,v)$ pairs where $a$ is a string of `0's and `1's denoting the direction of program flow at each branch, $B$ is a Boolean expression on linear inequalities on $\Psi$ for which $a$ is possible if $B$ is satisfied, and $v$ is an assignment of local variables to values (in the case of occupation number type variables, these will be linear expressions) which give the values of any variables that remain in scope after execution (possibly as a function of local variables in-scope at the start of execution).
-
-Let $v(a)$ be the assignment to local variables at a given point in the program, given an execution along $a$. [Let $P(a,B)$ be the probability of following $a$ given that $B$ is satisfied.]
-
-Let $S \otimes T$ be the set $\left\{(a+a',B\wedge B', v' \otimes v) : (a,B,v)\in S \wedge (a',B',v')\in T\wedge (B\wedge B' \ne false)\right\}$ where $a + a'$ is interpreted as concatenation and $(v'\otimes v)(x) = v'(v(x))$. 
-
-The semantics of two consecutive statements with semantics $A$ and $B$ is $A\otimes B$.
-
-A raw Boolean expression (i.e. as found in an if statement/loop guard) can be converted into a Boolean solely on $\Psi$, given values of any other local variables, by substituting the variables for their values. We write this, for convenience, as $C(v)$
-
- $b$, is a set of $(a,B)$ pairs representing the disjunction of its members. A linear Boolean expressions on $\Psi$ is just $\{(\emptyset,B)\}$ where $\emptyset$ is the empty string. b \texttt{ \&\& Flip(p)} means $\{(1+a,B) : (a,B)\in b \}$, \texttt{B || Flip(p)} means $\{(\emptyset,B),(1,true)\}$.
-
-The negation of a raw Boolean, $b$, is $\{(\arg\min_{\{\overline{a}:(a,B)\in b\}}|a|,\bigwedge_{(a,B)\in b} \overline{B})\}$ if $\bigwedge_{(a,B)\in b} \overline{B} \ne false$ and all $\{a:(a,B)\in b\}$ agree (i.e. they are all prefixes of the longest member), or the empty set otherwise. The negation of a Flip string $\overline{a}$ is the string with all 
-
-The semantics of an if statement on a raw Boolean expression, $B$, is $\{(1,B)\}\otimes D \cup \{(0,\overline{B})\}\otimes E $ where $B$ is the Boolean expression, $D$ is the semantics of the if body and $E$ is the semantics of the else body.
- 
-The semantics of a loops whose guard contains an expression on $\Psi$ is the fix-point of 
-\[
-S = S \otimes \left( \left\{(0,\overline{G})\right\} \cup  \{(1,G)\}\otimes D \right) 
-\]
-[The guard here may depend on program variables, so to get a fix-point they need to be part of the semantics. Better to just go around the loop collecting paths until the path becomes impossible]
-
-[local variables may get entangled with $\Psi$ so need to be included in the semantics. e.g. if(Psi.occupation(1)) then x = 1 else x = 2. In which case, the semantics needs to be a function from paths to joint assignments to variables and Boolean expressions on Psi (and perhaps probabilities)]
-
+Given this, it's clear that all the necessary properties of the proposal function are fulfilled.
 
 %\bibliographystyle{unsrtnat}
 %\bibliographystyle{apalike} 
