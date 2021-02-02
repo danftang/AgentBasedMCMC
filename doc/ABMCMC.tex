@@ -62,7 +62,7 @@ Suppose we have a timestepping ABM where agents have a finite number of possible
 
 \item A domain of agent states $\mathcal{S} = \{\sigma_0 ... \sigma_m\}$
 
-\item A computer program, $\pi(\psi,\Psi)$,  where $\psi \in \mathcal{S}$ is the agent's state and $\Psi$ is a (sparse) vector whose $i^{th}$ element is the number of agents in state $\sigma_i$ at the start of the timestep. The program can make calls to a random number generator, so its returned value may be non-deterministic and we write $P(\pi(\psi,\Psi)=a)$ to be the probability that the program will return value $a$, given inputs $\psi$ and $\Psi$. The program returns an action $a \in \mathcal{A}$ which is the action  performed by the agent in this timestep.
+\item A computer program, $\pi(\psi,\Psi)$,  where $\psi \in \mathcal{S}$ is the agent's state and $\Psi$ is a (sparse) vector whose $i^{th}$ element is the number of agents in state $\sigma_i$ at the start of the timestep. The program can make calls to a random number generator that returns a value $0 \le r < 1$ with uniform probability, so its returned value may be non-deterministic and we write $P(\pi(\psi,\Psi)=a)$ to be the probability that the program will return value $a$, given inputs $\psi$ and $\Psi$. The program returns an action $a \in \mathcal{A}$ which is the action  performed by the agent in this timestep.
 
 \item An agent transition tensor $F_\phi^{\psi a}$ whose elements give the number of agents in state $\phi$ that result from an agent in state $\psi$ performing act $a$ (including the acting agent).
 \end{itemize}
@@ -107,7 +107,7 @@ We can assign an ordering of agent states by placing agent \texttt{a} in the (\t
 \end{algorithmic}
 \end{algorithm}
 
-The timestep function for a predator/prey agent is shown in algorithm \ref{agentTimestep} (where we assume the grid has periodic boundary conditions so we don't need to worry about its edges). The transition tensor encodes the results of the various actions. So, for example, state $\sigma_0$ corresponds to a prey at position (0,0). If this agent moves right (i.e. performs action $a_1$) then the result is a prey at position (1,0) (i.e. in state $\sigma_1$) so $F^{01}_1 = 1$ etc.
+The timestep function for a predator/prey agent is shown in algorithm \ref{agentTimestep} (where we assume the grid has periodic boundary conditions so we don't need to worry about its edges). The transition tensor encodes the results of the various actions. So, for example, the zero$^{th}$ state, $\sigma_0$, corresponds to a prey at position (0,0). If this agent moves right (i.e. performs action $a_1$) then the result is a prey at position (1,0) (i.e. in state $\sigma_1$) so $F^{01}_1 = 1$ etc.
 
 Let a model timestep consist of a matrix $E$ whose elements $e_{\psi a}$ are the number of agents in state $\psi$ that perform act $a$ in this timestep. Similarly, let a model trajectory be a tensor $T^t_{\psi a}$ whose elements are the number of agents in state $\psi$ that perform act $a$ in timestep $t$.
 
@@ -125,7 +125,7 @@ A trajectory, $T^t_{\psi a}$, must also be \textit{continuous} which means that 
 
 If a trajectory satisfies constraints \ref{nonNegativeInt} and \ref{continuous} we say that it is \textit{valid}.
 
-Suppose we have a prior belief, $P_0(\Psi)$, over the state of the ABM at time $t=0$ (in our predator/prey example, this may consist, for example, of some knowledge about the initial population distribution). The prior probability of a trajectory is then given by
+Suppose we have a prior belief, $P_0(\Psi)$, over the state of the ABM at time $t=0$ (in the example of the predator/prey model, let's suppose we know the probability of finding a predator or prey at each gridpoint at $t=0$, but don't know the exact positions of each agent). Given this, the prior probability of a trajectory is
 \[
 P(T^t_{\psi a}) =
 \begin{cases}
@@ -134,20 +134,20 @@ P_0(\sum_aT^0_{\psi a}) \prod_{t, \psi, a} P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{
 \end{cases}
 \]
 
-Suppose we also have a set of noisy, aggregate observations, $\Omega$, with a likelihood function $P(\Omega|T^t_{\psi a})$. In our running example, let's suppose we note down when and where we see footprints of predator and prey. Our aim is to generate a number of samples from the posterior distribution
+Suppose we also have a set of noisy, aggregate observations, $\Omega$, that have a likelihood function $P(\Omega|T^t_{\psi a})$. In our running example, let's suppose we periodically note down when and where we see footprints of predator and prey. Our aim is to generate a number of samples from the posterior distribution
 \[
 P(T^t_{\psi a}|\Omega) \propto P\left(\Omega \middle| T^{t}_{\psi a}\right)P(T^t_{\psi a})
 \]
 
-We assume that observations are independent given the trajectory and that each individual observation in $\Omega$ can be simulated by a computer program $\omega(T^t_{\psi a})$ which may make calls to a random number generator. The probability, $P(\omega(T^t_{\psi a}) = v)$, that the program returns a value $v$ defines the likelihood of observing value $v$ upon making observation $\omega$ on trajectory $T^t_{\psi a}$. i.e. $\omega(T^t_{\psi a})$ is just a simulation of the observation, which is usually quite easy to write and to compute. 
+We assume that observations are independent given the trajectory and that each individual observation in $\Omega$ can be simulated by a computer program $\omega(T^t_{\psi a})$ which may make calls to a random number generator. The probability, $P(\omega(T^t_{\psi a}) = v)$, that the program returns a value $v$ defines the likelihood of observing value $v$ upon making observation $\omega$ on trajectory $T^t_{\psi a}$. i.e. $\omega(T^t_{\psi a})$ is just a simulation of the observation, which is usually quite easy to express as a computer program and to compute. 
 
-In the case of the predator prey model, let's suppose at the end of every day we go out to a fixed set of inspection sites and check for footprints. Suppose that if predators were present in the grid-square containing an inspection site on that day, there's a 50\% chance we'll see a footprint, and if prey were present, there's a 25\% chance. The observation function for a site is shown in algorithm \ref{observationFunc}
+In the case of the predator prey model, let's suppose that at the end of every day we go out to a fixed set of inspection sites and check for footprints. Suppose that if predators were present in the grid-square containing an inspection site on that day, there's a 50\% chance we'll see a footprint, and if prey were present, there's a 25\% chance. The observation function for a site is shown in algorithm \ref{observationFunc}
 
 \begin{algorithm}
-\caption{Observation function for predator/prey footprints}
+\caption{Function for observing predator/prey footprints at a site}
 \label{observationFunc}
 \begin{algorithmic}
-\Function{Observation}{T} \Comment{T is the ABM trajectory}
+\Function{ObserveFootprints}{T} \Comment{T is the ABM trajectory}
 \State $t \leftarrow$ time of observation
 \State $x \leftarrow$ x-position of observation
 \State $y \leftarrow$ y-position of observation
@@ -174,7 +174,7 @@ Given this
 P(\Omega|T^t_{\psi a}) = \prod_{(\omega,v) \in \Omega} P(\omega(T^t_{\psi a})=v)
 \]
 
-Also, for notational convenience, we express our prior beliefs in terms of a set of observations, $\Omega_0$, at $t=0$, so that $P_0(\sum_a T^0_{\psi a}) \propto \prod_{(\omega,v) \in \Omega_0} P(\omega=v|T^t_{\psi a})$ (the same can be done for any priors that aren't at $t=0$). The posterior can now be written as
+Also, for notational convenience, and without loss of generality, we express our prior beliefs in terms of a set of observations, $\Omega_0$, at $t=0$, so that $P_0(\sum_a T^0_{\psi a}) \propto \prod_{(\omega,v) \in \Omega_0} P(\omega(T^t_{\psi a})=v)$ (this also allows any priors that aren't at $t=0$). The posterior can now be written as
 \begin{equation}
 P(T^t_{\psi a}|\Omega) \propto 
 \begin{cases}
@@ -185,15 +185,15 @@ P(T^t_{\psi a}|\Omega) \propto
 \end{equation}
 where $\Omega$ now includes any priors.
 
-In many practical applications, sampling from this posterior is difficult because it has zero probability for the vast majority of trajectories (i.e. most trajectories are invalid, contain an impossible action or are refuted by the observations). For example, even though we can generate samples from the prior by simply performing a forward execution of the model, it is often very unlikely that this sample will fit the observations, so simple techniques such as rejection sampling are not practical.
+In many practical applications, sampling from this posterior is difficult because it has zero probability for the vast majority of trajectories (i.e. most trajectories are invalid, contain an impossible action or are refuted by the observations). This is true of our predator/prey model, for example. Even though we can generate valid trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the trajectory has no predator or prey at a time and place that we observed footprints, then the observations refute the trajectory and the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling are not practical.
 
-Our strategy in this paper will be to use Markov Chain Monte-Carlo sampling. However, this method requires a proposal function which randomly generates the next sample given the current one. This suffers from the same problem that most trajectories have zero probability. For example if we generate a new sample by perturbing one or more elements of the last sample at random, it's very unlikely that we'll end up with a trajectory that is valid, contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
+In this paper we'll use the Metropolis-Hastings algorithm to generate samples. However, this method requires a proposal function which randomly generates the next sample given the current one. However, given the current sample, we still have the problem of finding a trajectory with non-zero probability. For example if we generate a new trajectory by perturbing one or more elements of the last sample at random (a common strategy with Metropolis-Hastings), it's very unlikely that we'll end up with a trajectory that is valid, contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
 
 \section{Approximating the support of the posterior}
 %##########################################
 
 
-In order to solve this problem, we'll make an approximation of the support of the posterior, $P(T^t_{\psi a}|\Omega)$, (i.e. the set of trajectories that have non-zero probability) and restrict our proposal function to perturbations that are in this approximation.
+To solve this problem we'd like to constrain our proposal function to the support of the posterior, $\supp(P(T^t_{\psi a}|\Omega))$ (i.e. the set of trajectories that have non-zero probability).
 
 If we let
 \[
@@ -207,21 +207,29 @@ Then from equation \ref{posterior}
 \left\{T^t_{\psi a} \mid T^t_{\psi a} \text{is valid}\right\}
 \label{support}
 \end{equation}
-i.e. in order for the posterior to be non-zero, all the observation likelihoods must be non-zero and the probability of each agent's action at every timestep must be non-zero.
+i.e. in order for the posterior to be non-zero, all the observation likelihoods must be non-zero, the probability of each agent's action at every timestep must be non-zero and the trajectory must be valid.
 
-The first two terms in equation \ref{support} consists of the supports of various computer programs whose inputs are ABM trajectories and whose outputs are given. So, we need a way to find, or approximate, the set of trajectories that, when passed to a computer program, would produce a given output; then we need to take the intersection of these sets. Our strategy here is to calculate a set of linear inequalities, $\mathcal{P}$, on trajectories that are satisfied for all $x$ such that $P(\rho(x)=y) > 0$. Note that the converse is not necessarily true; if $x$ satisfies $\mathcal{P}$ then it might not be possible for $\rho(x)$ to return $y$. So $\mathcal{P}$ can be thought of as an approximation in that it is a superset of $\supp(P(\rho(.)=y))$ . However, for our purposes, this approximation won't result in any approximation in the Markov Chain. If we happen to choose a proposal from $\mathcal{P}$ that isn't in $\supp(P(\rho(.)=y))$ then it will just be rejected. This is fine as long as we generate acceptable proposals at a reasonable rate.
+The first two terms in equation \ref{support} consists of the supports of computer programs whose inputs are ABM trajectories and whose outputs are given, i.e. the set of trajectories that, when passed to a computer program, would produce a given output.
 
-A computer program can be transformed into a set of linear inequalities using a technique known as \textit{abstract interpretation}\cite{cousot1977abstract}. Tools to do this already exist (e.g. PAGAI\cite{henry2012pagai}) and are used widely in applications such as the verification of safety critical systems\cite{blanchet2003static}. For our application we choose the abstract domain of convex polyhedra\cite{cousot1978automatic}\cite{becchi2018efficient}. Calls to a random number generator are dealt with, without loss of generality, by providing a single function \texttt{rand()} that returns a floating point number between 0 and 1 with uniform probability. In the abstract domain, this is equivalent to the generation of a new variable, $r$, that satisfies $0 \le r < 1$.
+Calculating the support of a computer program for a given output is, in full generality, NP-complete\footnote{Consider, for example, a program that accepts an assignment of variables to truth values, and returns true if that assignment satisfies a Boolean formula. Deciding whether the support of this program, given that it returns true, is empty or not is equivalent to solving the Boolean satisfiability problem, which is known to be NP-complete\cite{cook1971complexity}} but it is possible to use a technique known as \textit{abstract interpretation}\cite{cousot1977abstract} to efficiently calculate a superset of the support. So, given a computer program $\rho$, we can calculate a set $\mathcal{P}(\rho, v)$ such that
+\[
+\supp(P(\rho(.)=y)) \subset \mathcal{P}(\rho, v)
+\]
+Tools to perform abstract interpretation already exist (e.g. PAGAI\cite{henry2012pagai}) and are used widely in applications such as the verification of safety critical systems\cite{blanchet2003static} and in practice $\mathcal{P}(\rho, v)$ is often reasonably tight (i.e. most members of $\mathcal{P}(\rho, v)$ are in $\supp(P(\rho(.)=y))$). For our application we choose to express $\mathcal{P}(\rho, v)$ in terms of a set of linear inequalities on $\rho$'s inputs, this corresponds to the abstract domain of convex polyhedra\cite{cousot1978automatic}\cite{becchi2018efficient}. Calls to the random number generator can be dealt with in the abstract domain by generating a new variable, $r$, that satisfies $0 \le r < 1$ for each call to \texttt{Random()}.
 
-Once we have the linear approximations of the support of each program, the intersection of these supports is just the set of trajectories that satisfy all of the inequalities. So, if we let $\mathcal{P}(\rho(.)=v)$ be the set of inequalities which approximate $\supp(P(\rho(.)=v))$ then we have, from equation \ref{support}, the \textit{support inequalities}
+If we replace the supports in equation \ref{support} with their equivalent supersets we end up with a superset of the posterior
 \begin{equation}
-\supp(P(P(.|\Omega))) \subset
-\bigcap_{(\omega,v) \in \Omega}  \mathcal{P}(\omega(.) = v) \cap
-\bigcap_{t, \psi, a} \mathcal{P}(\pi'(t,\psi,.)=a) \cap
+\supp(P(.|\Omega)) \subset
+\bigcap_{(\omega,v) \in \Omega}  \mathcal{P}(\omega, v) \cap
+\bigcap_{t, \psi, a} \mathcal{P}(\pi'(t,\psi,.), a) \cap
 \left\{T^t_{\psi a} \mid T^t_{\psi a} \text{is valid}\right\}
 \label{linearSupport}
 \end{equation}
-In order to deal with the final term, which requires the trajectories in the support to be valid, we first intersect with the continuity constraints in \ref{continuous}, which are also linear. Finally we leave the non-negative integer constraints of equation \ref{nonNegativeInt} as separate constraints.
+The intersections are now intersections of sets of inequalities which are just the set of trajectories that satisfy all of the inequalities, i.e. the union of the inequalities.
+
+Constraining our proposal function to members of the superset in equation \ref{linearSupport} instead of the true support won't affect the stationary distribution of the Markov Chain. If the proposal function happens to return a trajectory that isn't in $\supp(P(\rho(.)=y))$ then it will just be rejected. This is fine as long as we generate acceptable proposals at a reasonable rate.
+
+It remains for us to deal with the final term in equation \ref{linearSupport}, which requires the trajectories in the support to be valid. The first part of validity, the continuity constraints in \ref{continuous}, are not a problem because they are also linear constraints so can be treated along with the other constraints. The non-negative integer constraints of equation \ref{nonNegativeInt} are left as separate constraints.
 
 Without loss of generality, we express inequalities as equalities by introducing slack variables so that
 \[
@@ -234,39 +242,28 @@ is equivalent to
 \text{subject to}\ \lambda & \ge 0 \\
 \end{split}
 \]
-and
-\[
-\sum_i c_i x_i < y
-\]
-is equivalent to
-\[
-\begin{split}
- \sum_i c_i x_i + \lambda & = y \\
-\text{subject to}\ \lambda & > 0 \\
-\end{split}
-\]
 
-All the constraints can now be gathered into a single matrix equation
-\[
+All the constraints can now be gathered into a standard matrix form
+\begin{equation}
 \begin{split}
 Ax &= y \\
-\text{subject to}\ x_i &\ge 0,\  i \in X_{\ge}\\
-x_j &> 0, \ j \in X_{>}\\
-x_k &\in \mathbb{Z}, \ k \in X_{\ge} \cup X_{>}
+\text{subject to}\ x_i &\ge 0\\
+x_i &\in \mathbb{Z}
 \end{split}
-\]
+\label{Axy}
+\end{equation}
 where the vector $x$ contains the elements of the trajectory tensor $T^t_{\psi a}$ and the slack variables $\lambda$.
 
 \section{From convex polyhedron to Markov process}
 %#####################################################
 
-Once we've generated a set of inequalities that contain the support of the posterior, we next need to form a Markov process whose states emit solutions to the inequalities and whose stationary distribution is the posterior $P(T \mid \Omega)$. I order to perform MCMC we'd like to define the Markov process in terms of a set of states, $\mathbb{S}$, and a stochastic proposal function $f:\mathbb{S} \to \mathbb{S}$ such that $P(f(s_n) = s_{n+1})$ defines the conditional transition probability $P(s_{n+1} \mid s_n)$. The proposal function should have the following properties:
+Given a set of inequalities that contain the support of the posterior, we next need to define a stochastic proposal function $f:\mathbb{S} \to \mathbb{S}$ on a set of Markov states, $\mathbb{S}$, where each state, $\sigma$, is associated with a trajectory $T(\sigma)$. The proposal function should have the following properties:
 \begin{itemize}
-\item There should be a set of transitions with non-zero probability between any two states. This ensures proper mixing as time tends to infinity.
+\item There should be a set of transitions with non-zero probability between any two Markov states. This ensures proper mixing as time tends to infinity.
 
-\item The probability of emitting a trajectory $T$ should be our target posterior probability $P(T \mid \Omega)$, and all emitted trajectories should be solutions of our set of linear equations.
+\item The probability of being in a state associated with trajectory $T$ should be our target posterior probability $P(T \mid \Omega)$.
 
-\item For any transition from state $s_a \to s_b$ the probability of transitioning from $s_b \to s_a$ should be non-zero. This allows us to use the Metropolis Hastings algorithm to attain detailed balance.
+\item For any transition from state $s_a \to s_b$ the probability of transitioning from $s_b \to s_a$ should be non-zero. This allows us to attain detailed balance by using the Metropolis Hastings algorithm.
 
 \item The proposal function should be computationally efficient. 
 \end{itemize}
@@ -274,7 +271,7 @@ Once we've generated a set of inequalities that contain the support of the poste
 \subsection{A proposal function for a Fermionic ABM}
 %#############################################
 
-We define a Fermionic ABM to be one where no two agents can share the same state at the same time. i.e. in addition to the validity constraints of equation \ref{nonNegativeInt} and \ref{continuous} the trajectory of a Fermionic ABM also satisfies the \textit{Fermionic constraint}
+We define a Fermionic ABM to be one where no two agents can share the same state at the same time. i.e. in addition to the validity constraints of equations \ref{nonNegativeInt} and \ref{continuous} the trajectory of a Fermionic ABM also satisfies the \textit{Fermionic constraint}
 \begin{equation}
 \forall t,\psi: \sum_a T^t_{\psi a} \le 1
 \label{fermionic}
@@ -282,26 +279,29 @@ We define a Fermionic ABM to be one where no two agents can share the same state
 in which case we call it a \textit{Fermionic trajectory}.
 
 \begin{theorem}
-All valid Fermionic trajectories are on the vertices of the convex polyhedron described by equations \ref{continuous}, \ref{nonNegative}, \ref{fermionic} and \ref{linearSupport}.
+All trajectories that satisfy equations \ref{nonNegativeInt}, \ref{continuous} and \ref{fermionic} are at extreme points. Where an extreme point is one that can't be expressed as a linear combination of two other points that satisfy the constraints.
 \end{theorem}
 \begin{proof}
-This can be seen immediately since equations \ref{nonNegative} and \ref{fermionic} describe a unit hupercube, so all integer solutions are on vertices.
+This can be seen immediately since equations \ref{nonNegativeInt} and \ref{fermionic} describe a unit hupercube, so all integer solutions are on vertices.
 \end{proof}
 
-\begin{theorem}
-For any pair of valid trajectories, $A$ and $B$, there exists a path along edges of the polyhedron from $A$ to $B$ that only traverses through integer solutions.
-\end{theorem}
-\begin{proof}
+%\begin{theorem}
+%For any pair of valid trajectories, $A$ and $B$, there exists a path along edges of the polyhedron from $A$ to $B$ that only traverses through integer solutions.
+%\end{theorem}
+%\begin{proof}
+%[Take the difference A-B and decompose into integer null vectors (loops)]
+%\end{proof}
 
-[Take the difference A-B and decompose into integer null vectors (loops)]
+This seemingly abstract fact has a profound practical consequence for the efficiency of our proposal function.
+Given a system of $m$ linear constraints on $n$ variables expressed in the form $Ax=y$, let a \textit{pivot state} be a partition of the variables into $m$ \textit{basic variables} and $n-m$ \textit{non-basic variables} such that if we constrain all non-basic variables to zero there remains a unique solution in which $x_i \ge 0$ for all $i$. Such solutions can be shown to be at the extreme points of equations \ref{Axy}\cite{dantzig1955generalized} and can be calculated using the same method as described in the Simplex algorithm\cite{dantzig1955generalized}\cite{vanderbei2015linear}.
 
-\end{proof}
+The Simplex algorithm also gives a method to perform a \textit{pivot}, which is a perturbation of a pivot state such that one of the basic variables becomes non-basic and one of the non-basic variables becomes basic, such that the perturbed state is also a valid pivot state. This can be used in our proposal function to efficiently generate a new trajectory from a current one.
 
-Since all Fermionic trajectories are on vertices, the obvious way forward would be to define a Markov process whose states, $\mathbb{S}$, are the vertices of the polyhedron and whose transitions are its edges. So, the proposal function would choose from the neighbouring vertices of the current state. There may exist vertices that don't fall on the grid of integer solutions, so are not associated with valid trajectories. However, extra states can be added to a Markov process without affecting the emitted samples as long as the extra states do not emit samples (i.e. the process can pass through these states, but no sample is generated when doing so). However, we don't want to spend too much computational effort moving between non-emitting states, so we should ensure that the probability of being in a non-emitting state isn't much greater than that of being in an emitting state. In order to encourage the Markov process away from these fractional states their probability is multiplied by a ``fractional penalty'' $e^{-kn}$ where $n$ is the number of non-integer values in the solution and $k$ is a constant parameter.
+There may exist extreme points that don't fall on the grid of integer solutions, so do not satisfy the integer constraint. However, if we posit the existence of a \textit{null trajectory}, $0$, and associate all fractional solutions with the null trajectory, then simply ignore null samples, then we end up with samples from the posterior, as required (i.e. the Markov chain can pass through fractional states, but no sample is generated when doing so). However, we don't want to spend too much computational effort moving between fractional states, so we should ensure that the probability of being in a fractional state isn't much greater than that of being in an integer state. In order to encourage the Markov process away from these fractional states their probability is multiplied by a ``fractional penalty'' $e^{-kn}$ where $n$ is the number of non-integer values in the solution and $k$ is a constant parameter. 
 
-This approach is computationally convenient as navigation along edges of a polyhedron can be achieved efficiently by using the pivoting operation of the Simplex algorithm\cite{dantzig1955generalized}\cite{thie2011introduction}. Given a system of $m$ linear equality constraints on $n$ variables (where any inequalities are turned into equalities by the addition of slack variables), let a \textit{pivot state} be a partition of the variables into $m$ \textit{basic variables} and $n-m$ \textit{non-basic variables} such that if we constrain all \textit{non-basic variables} to zero there remains a unique solution. Such solutions can be shown to be at a vertex of the polyhedron described by the constraints. A \textit{pivot} is a perturbation of a pivot state such that one of the basic variables is swapped with one of the non-basic variables so the set of basic variables loses one of its members and gains a new member from the set of non-basic variables, such that the perturbed state is also a valid pivot state. It can be shown that every edge of a convex polyhedron corresponds to a unique pivot, so moving along an edge can be achieved computationally by performing a pivot.
+The use of pivoting is complicated somewhat when the solutions are degenerate. A degenerate solution is one that can be generated by more than one pivot state. This can occur when any of the basic variables are zero, since a pivot has the effect of making a basic variable non-basic, so its value will be constrained to zero; but if the basic-variable's value is zero to start with, constraining it to zero has no effect. If there are many zero-valued basic variables there may be a large number of pivot states that have the same solution. This is problematic because we need to assign a probability to each Markov state, but all we have given are the probabilities of trajectories.
 
-This use of pivoting is complicated somewhat when the vertices of the polyhedron are degenerate. A degenerate vertex is one that can be generated by more than one pivot state. This can occur when any of the basic variables are zero, since a pivot has the effect of making a basic variable non-basic, so its value will be constrained to zero; but if the basic-variable's value is zero to start with, constraining it to zero has no effect. If there are many zero-valued basic variables there may be a large number of pivots, and even sequences of pivots, that do not change the solution, and consequently many pivot states which have the same solution. This has the consequence that a degenerate vertex may have a very large number of neighbours, so choosing one at random becomes a non-trivial task since it would be computationally costly to simply enumerate them all and choose one\cite{gal1992new}\cite{yamada1994enumerating}.
+ This has the consequence that a degenerate vertex may have a very large number of neighbours, so choosing one at random becomes a non-trivial task since it would be computationally costly to simply enumerate them all and choose one\cite{gal1992new}\cite{yamada1994enumerating}.
 
 An alternative strategy is to replace the Markov states representing degenerate vertices with multiple states. As long as they all emit the same trajectory and the sum of their probabilities is the probability of the vertex then the Markov process will still emit samples from the posterior.
 
