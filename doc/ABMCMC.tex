@@ -67,6 +67,48 @@ Suppose we have a timestepping ABM where agents have a finite number of possible
 \item An agent transition tensor $F_\phi^{\psi a}$ whose elements give the number of agents in state $\phi$ that result from an agent in state $\psi$ performing act $a$ (including the acting agent).
 \end{itemize}
 
+As a very simple demonstration, we'll take a spatial predator-prey model where agents are either predator or prey moving about a 2-dimensional grid. In this case, the domain of actions are $\mathbb{A} = \{$move-left, move-right, move-up, move-down, reproduce up, reproduce down, reporduce left, reproduce right, be eaten, die$\}$. So the domain of agent states, $\mathcal{S}$, can be thought of as the class 
+\begin{lstlisting}
+class Agent {
+	Boolean	isaPredator
+	Integer	xPosition
+	Integer	yPosition
+}
+\end{lstlisting}
+
+We can assign an ordering of agent states by placing agent \texttt{a} in the (\texttt{a.isaPredator*G$^2$ + a.yPositition*G + a.xPosition})$^{th}$ position, where \texttt{G} is the size of the grid.
+
+\begin{algorithm}
+\caption{Timestep of a predator/prey agent}
+\label{agentTimestep}
+\begin{algorithmic}
+\Function{Timestep}{agent, otherAgents}
+\If{agent.isaPredator}
+  \If{\Call{random}{ } < $\beta_0$ and number of prey on neighbouring gridsquares of otherAgents > 0}
+    \State\Return reproduce left, right, up or down based on a call to \Call{Random}{ }
+  \EndIf
+  \If{\Call{random}{ } < $\gamma_0$}
+    \State\Return die
+  \EndIf
+\Else
+  \If{\Call{random}{ } < $\beta_1$}
+    \State\Return reproduce left, right, up or down based on a call to \Call{Random}{ }
+  \EndIf
+  \If{\Call{random}{ } < $\gamma_1$}
+    \State\Return die
+  \EndIf
+  \If{\Call{random}{ } < $\delta$ and number of predators on this or neighbouring gridsquares of otherAgents > 0}
+    \State\Return be eaten
+  \EndIf
+  
+\EndIf
+\State \Return move left, right, up or down based on a call to \Call{Random}{ }
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+The timestep function for a predator/prey agent is shown in algorithm \ref{agentTimestep} (where we assume the grid has periodic boundary conditions so we don't need to worry about its edges). The transition tensor encodes the results of the various actions. So, for example, state $\sigma_0$ corresponds to a prey at position (0,0). If this agent moves right (i.e. performs action $a_1$) then the result is a prey at position (1,0) (i.e. in state $\sigma_1$) so $F^{01}_1 = 1$ etc.
+
 Let a model timestep consist of a matrix $E$ whose elements $e_{\psi a}$ are the number of agents in state $\psi$ that perform act $a$ in this timestep. Similarly, let a model trajectory be a tensor $T^t_{\psi a}$ whose elements are the number of agents in state $\psi$ that perform act $a$ in timestep $t$.
 
 A trajectory must satisfy a number of constraints in order to be a possible trajectory of an ABM. Since the elements of a trajectory are counts, they must all be non-negative integers, we'll call this the \textit{non-negative integer constraint}
@@ -83,7 +125,7 @@ A trajectory, $T^t_{\psi a}$, must also be \textit{continuous} which means that 
 
 If a trajectory satisfies constraints \ref{nonNegativeInt} and \ref{continuous} we say that it is \textit{valid}.
 
-Suppose we have a prior belief, $P_0(\Psi)$, over the state of the ABM at time $t=0$. The prior probability of a trajectory is then given by
+Suppose we have a prior belief, $P_0(\Psi)$, over the state of the ABM at time $t=0$ (in our predator/prey example, this may consist, for example, of some knowledge about the initial population distribution). The prior probability of a trajectory is then given by
 \[
 P(T^t_{\psi a}) =
 \begin{cases}
@@ -92,12 +134,40 @@ P_0(\sum_aT^0_{\psi a}) \prod_{t, \psi, a} P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{
 \end{cases}
 \]
 
-Suppose we also have a set of noisy, aggregate observations, $\Omega$, with a likelihood function $P(\Omega|T^t_{\psi a})$. Our aim is to generate a number of samples from the posterior distribution
+Suppose we also have a set of noisy, aggregate observations, $\Omega$, with a likelihood function $P(\Omega|T^t_{\psi a})$. In our running example, let's suppose we note down when and where we see footprints of predator and prey. Our aim is to generate a number of samples from the posterior distribution
 \[
 P(T^t_{\psi a}|\Omega) \propto P\left(\Omega \middle| T^{t}_{\psi a}\right)P(T^t_{\psi a})
 \]
 
 We assume that observations are independent given the trajectory and that each individual observation in $\Omega$ can be simulated by a computer program $\omega(T^t_{\psi a})$ which may make calls to a random number generator. The probability, $P(\omega(T^t_{\psi a}) = v)$, that the program returns a value $v$ defines the likelihood of observing value $v$ upon making observation $\omega$ on trajectory $T^t_{\psi a}$. i.e. $\omega(T^t_{\psi a})$ is just a simulation of the observation, which is usually quite easy to write and to compute. 
+
+In the case of the predator prey model, let's suppose at the end of every day we go out to a fixed set of inspection sites and check for footprints. Suppose that if predators were present in the grid-square containing an inspection site on that day, there's a 50\% chance we'll see a footprint, and if prey were present, there's a 25\% chance. The observation function for a site is shown in algorithm \ref{observationFunc}
+
+\begin{algorithm}
+\caption{Observation function for predator/prey footprints}
+\label{observationFunc}
+\begin{algorithmic}
+\Function{Observation}{T} \Comment{T is the ABM trajectory}
+\State $t \leftarrow$ time of observation
+\State $x \leftarrow$ x-position of observation
+\State $y \leftarrow$ y-position of observation
+\State $G \leftarrow$ size of grid
+\State $\psi \leftarrow G^2 + Gy + x$   \Comment{state of predator in this gridsquare}  
+\State $\phi \leftarrow Gy + x$     \Comment{state of prey in this gridsquare}
+\State $F_{pred} \leftarrow$ \Call{False}{}  \Comment{did we observe predator footprints?}
+\State $F_{prey} \leftarrow$ \Call{False}{}  \Comment{did we observe prey footprints?}
+
+\If{$\sum_a T^t_{\psi a} > 0$ and \Call{Random}{ } < 0.5}
+\State $F_{pred} \leftarrow$ \Call{True}{}
+\EndIf
+\If{$\sum_a T^t_{\phi a} > 0$ and \Call{Random}{ } < 0.25}
+\State $F_{prey} \leftarrow$ \Call{True}{}
+\EndIf
+\State\Return $F_{pred}$, $F_{prey}$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
 
 Given this
 \[
