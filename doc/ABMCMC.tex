@@ -279,10 +279,16 @@ We define a Fermionic ABM to be one where no two agents can share the same state
 in which case we call it a \textit{Fermionic trajectory} [this can be weakened to $T^t_{\psi a} \le 1$].
 
 \begin{theorem}
-All trajectories that satisfy equations \ref{nonNegativeInt}, \ref{continuous} and \ref{fermionic} are at extreme points. Where an extreme point is one that can't be expressed as a linear combination of two other points that satisfy the constraints.
+All trajectories that satisfy equations \ref{nonNegativeInt} and \ref{fermionic} are at extreme points. Where an extreme point is one that can't be expressed as a linear combination of two other points that satisfy the constraints.
 \end{theorem}
 \begin{proof}
-This can be seen immediately since equations \ref{nonNegativeInt} and \ref{fermionic} describe a unit hupercube, so all integer solutions are on vertices.
+
+Inequality \ref{fermionic} can only be satisfied by non-negative integers if, for any given $t$ and $\psi$ either all $T^t_{\psi a}$ are zero or one element of $T^t_{\psi a}$ is one and the rest zero. In the first case the solution is touching all $|a|$ of the $T^t_{\psi a} \ge 0$ constraints, in the second case the solution is touching $|a|-1$ of the $T^t_{\psi a} \ge 0$ constraints and one $\sum_a T^t_{\psi a} \le 1$ constraint to give a total of $|a|$.
+
+[Conversely, we can show that all extreme points are integer points, so we have the polytope of integer solutions]
+
+[In the case of the action Fermionic constraint, this can be seen immediately since equations \ref{nonNegativeInt} and the action Fermionic constraint describe a unit hupercube, so all integer solutions are on vertices.]
+
 \end{proof}
 
 %\begin{theorem}
@@ -324,60 +330,7 @@ To solve this problem in a computationally efficient way we introduce the concep
 	\State $C \leftarrow C \ \cup $ the set of non-zero columns in row $R[i]$ of $A_n$
 	\State $P_d \leftarrow P_d/(|C|+i+1)$
 \EndFor
-\State \Return $\frac{P_d P_T |B|!}{(|B|-\sigma)!}$
-\EndFunction
-\end{algorithmic}
-\end{algorithm}
-
-We now show that this assignment of probability to ordered pivot states has the property that the sum of the probabilities associated with a trajecotry is the probability of that trajectory.
-
-
-
-\begin{theorem}
-If $\mathbb{E}(T)$ is the set of all ordered pivot states with solution $T$, $P(S)$ be the probability assigned to ordered pivot state $S$ by algorithm \ref{probAlgorithm} and $P_T$ is the probability assigned to trajectory $T$ then
-\[
-\sum_{S \in \mathbb{E}(T)} P(S) = P_T
-\]
-\end{theorem}
-\begin{proof}
-Let $D(S)$ be the (ordered) tuple of degenerate variables in ordered pivot state $S$, and let $\mathbb{E}(T|F)$ be the set of ordered pivot states that have the solution $T$ such that $F$ is a prefix of $D(S)$.
-
-Given a set of ordered pivot states $\mathbb{S}$, let $C_n(\mathbb{S})$ be the number of different symbols in the $n^{th}$ position of $D(S), S \in \mathbb{S}$
-
-Consider the stochastic algorithm \ref{unityProof}.
-
-[need to show that the probability distribution of the output is independent of which degenerate state is on the input]
-[need to show that there is a unique path through the program for each output...infact need formula for prob...with which we don't need the algorithm! (although this proves it adds to 1) ]
-
- It is clear that every possible output is an ordered tableau with solution $T$ and that every ordered tableau with solution $T$ is a possible output of the algorithm. The probability that algorithm \ref{unityProof} outputs tableau $A$ is
-\[
-\frac{1}{\prod_{i=0}^{\sigma-1} C_i^\sigma(A)} 
-\]
-where $C_i^\sigma(A)$ is the number of columns that have at least one non-zero value in rows $i \le r < \sigma$ in $A$ since $C_i^\sigma(A)$ is invariant under pivots on rows $i \le r < \sigma$. But this is exactly the probability $P_d$ in algorithm \ref{probAlgorithm}.
-
-It is also clear that, with probability 1, the algorithm returns an ordered tableau, so the sum of the probabilities of all possible outputs of algorithm \ref{unityProof} must also be 1. So
-\[
-\sum_{A \in \mathbb{E}(T)} P_d(A) = 1
-\]
-but $P(A) = P_d(A)P_T$ so 
-\[
-\sum_{A \in \mathbb{E}(T)} P(A) = \sum_{A \in \mathbb{E}(T)} P_d(A)P_T = P_T
-\]
-\end{proof}
-
-\begin{algorithm}
-\caption{Probabilistic generator of degenerate ordered pivot states}
-\label{unityProof}
-\begin{algorithmic}
-\Function{GenerateDegeneratePivotState}{$A_b$,$A_n$,$B$} \Comment{Any ordered pivot state}
-\State $A_b',A_n',B' \leftarrow A_b,A_n,B$
-\For{$i = 0 \dots \sigma-1$}
-  \State $Cols \leftarrow$ the set of columns in A that have at least one non-zero value in rows $i \le r < \sigma$
-  \State $r \leftarrow$ random member of $Cols$ chosen with uniform probability
-  \State pivot on column $r$ and lowest index row, $i \le r < \sigma$, of $A$
-  \State swap the newly pivoted row and the $i^{th}$ row of $A$
-\EndFor
-\State \Return A \Comment{A randomly chosen pivot state with the same solution as $(A_b,A_n,B)$}
+\State \Return $\frac{P_d P_T(|B|-\sigma)!}{|B|!}$
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
@@ -412,6 +365,93 @@ The proposal function for ordered pivot states is shown in algorithm \ref{propos
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
+
+
+
+We now show that this assignment of probability to ordered pivot states has the property that the sum of the probabilities associated with a trajecotry is the probability of that trajectory.
+
+First some notation: let $\mathbb{E}(T)$ be the set of all ordered pivot states with solution $T$, let $T(S)$ be the trajectory associated with pivot state $S$, let $D(S)$ be the tuple of degenerate variables in ordered pivot state $S$, let $D_{\le n}(S)$ be the n-tuple consisting of the first $n$ elements of $D(S)$ and let
+\begin{equation}
+C(\mathbb{S} \mid V) = \left\|\left\{ V^+ :  S \in \mathbb{S}, V^+ = D_{\le |V|+1}(S), V^+_{\le |V|}=V \right\}\right\|
+\label{count}
+\end{equation}
+i.e. among the members of $\mathbb{S}$ that have the degenerate variable prefix $V$, $C(\mathbb{S}|V)$ counts how many distinct degenerate variable prefixes of length $|V|+1$ there are.
+
+
+
+
+\begin{theorem}
+If we assign the probability
+\[
+P(S) =  \frac{(m-\sigma_{T(S)})!}{m!} \frac{P_{T(S)}}{\prod_{q=1}^{\sigma_{T(S)}} C(\mathbb{E}(T(S)) \mid D_{\le (q-1)}(S))}
+\]
+to pivot state $S$, where $m$ is the number of constraints and $\sigma_{T}$ is the degeneracy of trajectory $T$ (i.e. $m$ minus the number of non-zero variables in $T$) then
+\[
+\sum_{S \in \mathbb{E}(T)} P(S) = P_{T}
+\]
+\end{theorem}
+\begin{proof}
+Expanding the sum over degenerate states
+\[
+\sum_{S \in \mathbb{E}(T)} P(S) =
+P_T \frac{(m-\sigma_T)!}{m!} \sum_{S \in \mathbb{E}(T)} \frac{1}{\prod_{q=1}^{\sigma_T} C(\mathbb{E}(T) \mid D_{\le (q-1)}(S))}
+\]
+
+Notice first that all pivot states with the same $\sigma_T$-tuple of degenerate variables, $D(S)$, have the same probability. There are exactly $\frac{m!}{(m-\sigma_T)!}$ ordered pivot states with a given $D(S)$, corresponding to the different placings of the $m-\sigma_T$ non-degenerate basic variables among the $m$ possible positions. So, if we let
+\[
+\mathbb{D}(T) = \left\{ D(S) : S \in \mathbb{E}(T) \right\}
+\]
+then
+\[
+\sum_{S \in \mathbb{E}(T)} P(S) = P_T \sum_{D \in \mathbb{D}(T)} \frac{1}{\prod_{q=0}^{\sigma_T-1} C(\mathbb{E}(T) \mid D_{\le q})}
+\]
+Since $C(\mathbb{S} \mid V)$ depends only on the order of the degenerate variables in the members of $\mathbb{S}$
+\[
+C(\mathbb{E}(T) \mid V) = C(\mathbb{D}(T) \mid V)
+\]
+so
+\begin{equation}
+\sum_{S \in \mathbb{E}(T)} P(S) = P_T \sum_{D \in \mathbb{D}(T)} \frac{1}{\prod_{q=0}^{\sigma_T-1} C(\mathbb{D}(T) \mid D_{\le q})}
+\label{normalForm}
+\end{equation}
+if we separate the terms in the sum into groups that share the same prefix apart from the last variable then we get
+\[
+\sum_{S \in \mathbb{E}(T)} P(S) = 
+P_T \sum_{V : D \in \mathbb{D}(T), V = D_{\le (\sigma_T-1)}} 
+\left(
+\frac{1}{\prod_{q=0}^{\sigma_T-2} C(\mathbb{D}(T|V_{\le q}))}
+\sum_{V^+: V^+ \in \mathbb{D}(T), V = V^+_{\le (\sigma_T-1)}}
+\frac{1}{C(\mathbb{D}(T|V))}
+\right)
+\]
+So
+\[
+\sum_{S \in \mathbb{E}(T)} P(S) = 
+P_T \sum_{V : D \in \mathbb{D}(T), V = D_{\le (\sigma_T-1)}} 
+\frac{1}{\prod_{q=0}^{\sigma_T-2} C(\mathbb{D}(T|V_{\le q}))}
+\frac{\left\|\left\{V^+: V^+ \in \mathbb{D}(T), V = V^+_{\le (\sigma_T-1)}\right\}\right\|}{C(\mathbb{D}(T|V_{\le (\sigma_T-1)}))}
+\]
+but the final fraction here is 1 by equation \ref{count}, so
+\[
+\sum_{S \in \mathbb{E}(T)} P(S) = 
+P_T \sum_{V : D \in \mathbb{D}(T), V = D_{\le (\sigma_T-1)}} 
+\frac{1}{\prod_{q=0}^{\sigma_T-2} C(\mathbb{D}(T|V_{\le q}))}
+\]
+we can now use the same argument again to reduce the upper bound of $q$ iteratively until we show that the sum on the right hand equals one, so
+\[
+\sum_{S \in \mathbb{E}(T)} P(S) = P_T
+\]
+\end{proof}
+
+\begin{theorem}
+Algorithm \ref{probAlgorithm} assigns a probability
+\[
+P(S) =  \frac{(m-\sigma_{T(S)})!}{m!} \frac{P_{T(S)}}{\prod_{q=1}^{\sigma_{T(S)}} C(\mathbb{E}(T(S)) \mid D_{\le (q-1)}(S))}
+\]
+to pivot state $S$
+\end{theorem}
+\begin{proof}
+\end{proof}
 
 
 
