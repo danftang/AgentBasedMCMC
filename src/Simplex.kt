@@ -11,7 +11,18 @@ import java.lang.RuntimeException
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
-
+//////////////////////////////////////////////////////////////////////////
+// Represents a linear program in the form
+// maximise CX
+// subject to
+// AX = B
+// X >= 0
+//
+// Packed into a single matrix
+//
+// M = (A|B)
+//     (C 0)
+//////////////////////////////////////////////////////////////////////////
 open class Simplex<T>(
     val M: GridMapMatrix<T>,
     val basicColsByRow: IntArray = IntArray(M.nRows-1) { -1 }

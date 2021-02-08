@@ -62,12 +62,12 @@ Suppose we have a timestepping ABM where agents have a finite number of possible
 
 \item A domain of agent states $\mathcal{S} = \{\sigma_0 ... \sigma_m\}$
 
-\item A computer program, $\pi(\psi,\Psi)$,  where $\psi \in \mathcal{S}$ is the agent's state and $\Psi$ is a (sparse) vector whose $i^{th}$ element is the number of agents in state $\sigma_i$ at the start of the timestep. The program can make calls to a random number generator that returns a value $0 \le r < 1$ with uniform probability, so its returned value may be non-deterministic and we write $P(\pi(\psi,\Psi)=a)$ to be the probability that the program will return value $a$, given inputs $\psi$ and $\Psi$. The program returns an action $a \in \mathcal{A}$ which is the action  performed by the agent in this timestep.
+\item A computer program, $\pi(\psi,\Psi)$ where $\psi \in \mathcal{S}$ is the agent's state and $\Psi$ is a (sparse) vector whose $i^{th}$ element is the number of agents in state $\sigma_i$ at the start of the timestep. The program returns an action $a \in \mathcal{A}$ which defines the behaviour of the agent in a timestep. The program may make calls to a random number generator that returns a value $0 \le r < 1$ with uniform probability, so its returned value may be non-deterministic and we write $P(\pi(\psi,\Psi)=a)$ to be the probability that the program will return action $a$, given inputs $\psi$ and $\Psi$. 
 
-\item An agent transition tensor $F_\phi^{\psi a}$ whose elements give the number of agents in state $\phi$ that result from an agent in state $\psi$ performing act $a$ (including the acting agent).
+\item An agent transition tensor $F_\phi^{\psi a}$ which defines the effects that actions have on the world. Each element of $F^{\psi a}_\phi$ is the number of agents in state $\phi$ that result from an agent in state $\psi$ performing act $a$ (this includes the final state of the acting agent).
 \end{itemize}
 
-As a very simple demonstration, we'll take a spatial predator-prey model where agents are either predator or prey moving about a 2-dimensional grid. In this case, the domain of actions are $\mathbb{A} = \{$move-left, move-right, move-up, move-down, reproduce up, reproduce down, reporduce left, reproduce right, be eaten, die$\}$. So the domain of agent states, $\mathcal{S}$, can be thought of as the class 
+As a very simple demonstration, we'll take a spatial predator-prey model where agents are either predator or prey moving about a 2-dimensional grid. In this case, the domain of actions are $\mathbb{A} = \{$move-left, move-right, move-up, move-down, reproduce up, reproduce down, reporduce left, reproduce right, be eaten, die$\}$, and the domain of agent states, $\mathcal{S}$, can be thought of as the class 
 \begin{lstlisting}
 class Agent {
 	Boolean	isaPredator
@@ -76,7 +76,7 @@ class Agent {
 }
 \end{lstlisting}
 
-We can assign an ordering of agent states by placing agent \texttt{a} in the (\texttt{a.isaPredator*G$^2$ + a.yPositition*G + a.xPosition})$^{th}$ position, where \texttt{G} is the size of the grid.
+It will be useful in the following to define an ordering of agent states, as a The ordering we choose isn't important but we choose to place agent \texttt{a} in the (\texttt{a.isaPredator*G$^2$ + a.yPositition*G + a.xPosition})$^{th}$ position, where \texttt{G} is the size of the grid.
 
 \begin{algorithm}
 \caption{Timestep of a predator/prey agent}
@@ -257,13 +257,13 @@ where the vector $x$ contains the elements of the trajectory tensor $T^t_{\psi a
 \section{From convex polyhedron to Markov process}
 %#####################################################
 
-Given a set of inequalities that contain the support of the posterior, we next need to define a stochastic proposal function $f:\mathbb{S} \to \mathbb{S}$ on a set of Markov states, $\mathbb{S}$, where each state, $\sigma$, is associated with a trajectory $T(\sigma)$. The proposal function should have the following properties:
+Given a set of inequalities that contain the support of the posterior, we next need to define a stochastic proposal function $f:\mathbb{S} \to \mathbb{S}$ on a set of Markov states, $\mathbb{S}$, where each state, $S$, is associated with a trajectory $T(S)$. The proposal function should have the following properties:
 \begin{itemize}
 \item There should be a set of transitions with non-zero probability between any two Markov states. This ensures proper mixing as time tends to infinity.
 
-\item The probability of being in a state associated with trajectory $T$ should be our target posterior probability $P(T \mid \Omega)$.
+\item At the stationary point, the probability of being in a state associated with trajectory $T$ should be our target posterior probability $P(T \mid \Omega)$.
 
-\item For any transition from state $s_a \to s_b$ the probability of transitioning from $s_b \to s_a$ should be non-zero. This allows us to attain detailed balance by using the Metropolis Hastings algorithm.
+\item For any transition from state $S_a \to S_b$ the probability of transitioning from $S_b \to S_a$ should be non-zero. This allows us to attain detailed balance by using the Metropolis Hastings algorithm.
 
 \item The proposal function should be computationally efficient. 
 \end{itemize}
@@ -306,9 +306,9 @@ A_bX_b + A_nX_n = B
 \end{equation}
 where $X_b$ and $X_n$ are the basic and non-basic variables respectively, $A_b$ is the matrix formed from the columns in $A$ that correspond to the basic variables and $A_n$ is the matrix formed from the columns of $A$ that correspond to the non-basic variables. If we now constrain all non-basic variables to zero then we're left with $A_bX_b = B$ but since $A_b$ is an $m \times m$ square matrix then $X_b = A_b^{-1}B$ gives a unique solution, as long as $A_b$ is invertable. If $A_b$ is invertable and $X_b$ has no negative entries then we say that the pivot state is valid. It can be shown that all valid pivot states of equations \ref{Axy} correspond to extreme points\cite{dantzig1955generalized}.
 
-This idea leads to a computationally very efficient way of perturbing trajectories. We begin by representing the constraints and the current trajectory in the form of equation \ref{tableau1}. If we multiply any row of $A_b$ by some constant, $c$, then the truth of equation \ref{tableau1} can be maintained by multiplying the same row of $A_n$ and of $B$ by $c$ as well. Similarly if we add one row of $A_b$ to another row, the equations can be maintained by performing the same row operation on $A_n$ and $B$. If the current trajectory is valid, then $A_b$ must be invertable, so it is possible, by performing a sequence of row additions and multiplications, to transform $A_b$ into a form such that each row and column is zero on all elements except one, which is 1. We'll call this the standard form. Once in this form, the solution $X_b$ can be read off directly from $B$ if we assume $X_n = 0$.
+This idea leads to a computationally very efficient way of perturbing trajectories. We begin by representing the constraints and the current trajectory in the form of equation \ref{tableau1}. If we multiply any row of $A_b$ by some constant, $c$, then the truth of equation \ref{tableau1} can be maintained by multiplying the same row of $A_n$ and of $B$ by $c$ as well. Similarly if we add one row of $A_b$ to another row, the equations can be maintained by performing the same row operation on $A_n$ and $B$. If the pivot state is valid, then $A_b$ is invertable so we can use Gaussian elimination, by performing a sequence of row additions and multiplications, to transform $A_b$ into a form such that each row and column is zero on all elements except one, which is 1. We'll call this the standard form. Once in this form, if we assume $X_n = 0$ the solution for $X_b$ can be read off directly from $B$.
 
-Given a valid solution in standard form, a perturbed valid solution can be generated by choosing a column, $C$, of $A_n$, with at least one positive-valued row, and choosing from among those rows the one, $C_i$, that minimises $B_i/C_i$. We then make the variable corresponding to column $C$ a basic variable and make the basic variable corresponding to row $i$ of $A_b$ non-basic by swapping column $C$ with the column on row $i$ of $A_b$ that has value 1. $A_b$ is now not in standard form as column $C$ will, in general, have more than one non-zero value so we perform row additions and multiplications to return it to standard form. This perturbation is known as a \textit{pivot} operation and is the same method as employed in the Simplex algorithm\cite{dantzig1955generalized}\cite{vanderbei2015linear}. This is exactly what we need for our proposal function since it efficiently generates a new valid trajectory from a current one.
+Given a valid pivot state in standard form, a perturbed valid solution can be generated by choosing a column, $C$, of $A_n$, with at least one positive-valued row, and choosing from among those rows the one, $C_i$, that minimises $B_i/C_i$. We then make the variable corresponding to column $C$ a basic variable and make the basic variable corresponding to row $i$ of $A_b$ non-basic by swapping column $C$ with the column on row $i$ of $A_b$ that has value 1. $A_b$ is now not in standard form as column $C$ will, in general, have more than one non-zero value so we perform Gaussian elimination (row additions and multiplications) to return it to standard form. This perturbation is known as a \textit{pivot} operation and is the same method as employed in the Simplex algorithm\cite{dantzig1955generalized}\cite{vanderbei2015linear}. This is exactly what we need for our proposal function since it efficiently generates a new valid trajectory from a current one.
 
 Although pivoting ensures solutions are positive, there may exist extreme points that don't fall on the grid of integer solutions and so do not satisfy the integer constraint. However, if we posit the existence of a \textit{null trajectory} and associate all fractional solutions with the null trajectory, then simply ignore null samples, then we end up with samples from the posterior, as required (i.e. the Markov chain can pass through fractional states, but no sample is generated when doing so). However, we don't want to spend too much computational effort moving between fractional states, so we encourage the Markov process away from these fractional states by multiplying their probability by a ``fractional penalty'' $e^{-kn}$ where $n$ is the number of non-integer values in the solution and $k$ is a constant parameter.
 
@@ -323,12 +323,14 @@ To solve this problem in a computationally efficient way we introduce the concep
 \Function{Probability}{$A_b$,$A_n$,$B$} \Comment{Standard representation of an ordered pivot state}
 \State $P_T \leftarrow$ the probability of the trajectory of the current solution
 \State $P_d \leftarrow 1.0$
-\State $R \leftarrow$ indices of $B$ that are zero, in descending order
-\State $\sigma \leftarrow$ length of $R$
 \State $C \leftarrow \emptyset$
-\For{$i = 0 \dots \sigma-1$}
-	\State $C \leftarrow C \ \cup $ the set of non-zero columns in row $R[i]$ of $A_n$
-	\State $P_d \leftarrow P_d/(|C|+i+1)$
+\State $r \leftarrow 0$
+\For{$i = |B|-1 \text{ down to } 0$}
+  \If{B[i] == 0}
+	\State $C \leftarrow C \ \cup $ the indices of the non-zero entries in row $i$ of $A_n$
+	\State $P_d \leftarrow P_d/(|C|+r+1)$
+	\State $r \leftarrow r + 1$
+  \EndIf
 \EndFor
 \State \Return $\frac{P_d P_T(|B|-\sigma)!}{|B|!}$
 \EndFunction
@@ -383,7 +385,7 @@ i.e. among the members of $\mathbb{S}$ that have the degenerate variable prefix 
 \begin{theorem}
 If we assign the probability
 \[
-P(S) =  \frac{(m-\sigma_{T(S)})!}{m!} \frac{P_{T(S)}}{\prod_{q=1}^{\sigma_{T(S)}} C(\mathbb{E}(T(S)) \mid D_{\le (q-1)}(S))}
+P(S) =  \frac{(m-\sigma_{T(S)})!}{m!} \frac{P_{T(S)}}{\prod_{q=0}^{\sigma_{T(S)}-1} C(\mathbb{E}(T(S)) \mid D_{\le q}(S))}
 \]
 to pivot state $S$, where $m$ is the number of constraints and $\sigma_{T}$ is the degeneracy of trajectory $T$ (i.e. $m$ minus the number of non-zero variables in $T$) then
 \[
@@ -394,7 +396,7 @@ to pivot state $S$, where $m$ is the number of constraints and $\sigma_{T}$ is t
 Expanding the sum over degenerate states
 \[
 \sum_{S \in \mathbb{E}(T)} P(S) =
-P_T \frac{(m-\sigma_T)!}{m!} \sum_{S \in \mathbb{E}(T)} \frac{1}{\prod_{q=1}^{\sigma_T} C(\mathbb{E}(T) \mid D_{\le (q-1)}(S))}
+P_T \frac{(m-\sigma_T)!}{m!} \sum_{S \in \mathbb{E}(T)} \frac{1}{\prod_{q=0}^{\sigma_T-1} C(\mathbb{E}(T) \mid D_{\le q}(S))}
 \]
 
 Notice first that all pivot states with the same $\sigma_T$-tuple of degenerate variables, $D(S)$, have the same probability. There are exactly $\frac{m!}{(m-\sigma_T)!}$ ordered pivot states with a given $D(S)$, corresponding to the different placings of the $m-\sigma_T$ non-degenerate basic variables among the $m$ possible positions. So, if we let
@@ -446,11 +448,32 @@ we can now use the same argument again to reduce the upper bound of $q$ iterativ
 \begin{theorem}
 Algorithm \ref{probAlgorithm} assigns a probability
 \[
-P(S) =  \frac{(m-\sigma_{T(S)})!}{m!} \frac{P_{T(S)}}{\prod_{q=1}^{\sigma_{T(S)}} C(\mathbb{E}(T(S)) \mid D_{\le (q-1)}(S))}
+P(S) =  \frac{(m-\sigma_{T(S)})!}{m!} \frac{P_{T(S)}}{\prod_{q=0}^{\sigma_{T(S)}-1} C(\mathbb{E}(T(S)) \mid D_{\le q}(S))}
 \]
 to pivot state $S$
 \end{theorem}
 \begin{proof}
+By inspection of the algorithm, it can be seen that the algorithm assigns probability 
+\[
+P(S) =  \frac{(m-\sigma_{T(S)})!}{m!} \frac{P_{T(S)}}{\prod_{r=0}^{\sigma_{T(S)}-1} \left(\left\|C'(S, r)\right\| + r + 1\right)}
+\]
+where
+\[
+C'(S,r) = C'(S,r-1) \cup N(S,r)
+\]
+\[
+C'(S,-1) = \emptyset
+\]
+and $N(S,r)$ is the set of indices of the non-zero entries in the $r$-from-last degenerate row of $A_n$. So, $C'(S,r)$ is the set of columns that have at least one non-zero entry on a degenerate row on or below the $r$-from-last.
+
+However, $C(\mathbb{E}(T(S)) \mid D_{\le q}(S))$ is, by definition, the number of different degenerate variables that can take the $(q+1)^{th}$ place in the list of degenerate variables, given that the first $q$ are given by $D_{\le q}(S)$.
+
+Now, given an ordered pivot state, $S$ in standard form; if there exists a column, $j$, with a non-zero entry in a degenerate row, $i$,  of $A_n$ or $A_b$ below the $q^{th}$ degenerate row, then we can generate a valid member of $\mathbb{E}(T(S))$ with $j$ the $(q+1)^{th}$ variable by pivoting on column $j$ and row $i$ (if not already pivoted in), then swapping row $i$ with whichever row makes it the $(q+1)^{th}$ degenerate variable. Conversely, if there exists a member of $\mathbb{E}(T(S))$ with $j$ as the $(q+1)^{th}$ variable, it must be possible to pivot on the $j^{th}$ column without pivoting out any of the first $q$ degenerate variables or the non-degenerate variables. The only way this is possible is if there is either a non-zero entry in the $j^{th}$ column of $A_n$ or $A_b$ below the $q^{th}$ degenerate row. So, the set of degenerate variables that can take the $(q+1)^{th}$ place is the set of columns that have non-zero entries in degenerate rows below the $q^{th}$ in $A_n$ or $A_b$. From the form of $A_b$ we know immediately that there are $r+1$ columns with non-zero degenerate entries on or below the $r$-to-last degenerate row. So
+\[
+C(\mathbb{E}(T(S)) \mid D_{\le \sigma_{T(S)} -1 - r}(S)) = \left\|C'(S, r)\right\| + r + 1
+\]
+
+
 \end{proof}
 
 

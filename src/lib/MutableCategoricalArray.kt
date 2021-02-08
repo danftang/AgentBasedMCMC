@@ -41,7 +41,7 @@ class MutableCategoricalArray: AbstractList<Double> {
     }
 
 
-    // sets the probability associated with the supplied index
+    // sets the un-normalised probability associated with the supplied index
     operator fun set(index: Int, probability: Double) {
         var sum = probability
         var indexOffset = 1
@@ -63,7 +63,7 @@ class MutableCategoricalArray: AbstractList<Double> {
     }
 
 
-    // returns the probability associated with the supplied index.
+    // returns the un-normalised probability associated with the supplied index.
     override operator fun get(index: Int): Double = tree[index] - descendantSum(index)
 
 
@@ -83,7 +83,7 @@ class MutableCategoricalArray: AbstractList<Double> {
     }
 
 
-    // Sets the probabilities of the first N integers
+    // Sets the un-normalised probabilities of the first N integers
     fun setAll(values: List<Double>) {
         for(i in values.size-1 downTo 0) {
             tree[i] = descendantSum(i) + values[i]
@@ -91,10 +91,14 @@ class MutableCategoricalArray: AbstractList<Double> {
     }
 
 
-    // the sum of all probabilities (doesn't need to be 1.0)
+    // the sum of all un-normalised probabilities (doesn't need to be 1.0)
     fun sum(): Double {
         return tree[0]
     }
+
+
+    // Returns the normalised probability of the index'th element
+    fun P(index: Int): Double = get(index)/sum()
 
 
 //    fun asList(): List<Double> {
