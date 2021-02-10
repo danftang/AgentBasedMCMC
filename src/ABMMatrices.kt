@@ -5,6 +5,10 @@ import lib.gnuplot
 import lib.sparseMatrix.GridMapMatrix
 
 object ABMMatrices {
+
+
+
+
     fun twoDabmMatrix(gridSize: Int, timesteps: Int): GridMapMatrix<Int> {
         val NActs = 6
         val abmMatrix = GridMapMatrix(

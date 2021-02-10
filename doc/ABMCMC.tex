@@ -62,12 +62,12 @@ Suppose we have a timestepping ABM where agents have a finite number of possible
 
 \item A domain of agent states $\mathcal{S} = \{\sigma_0 ... \sigma_m\}$
 
-\item A computer program, $\pi(\psi,\Psi)$ where $\psi \in \mathcal{S}$ is the agent's state and $\Psi$ is a (sparse) vector whose $i^{th}$ element is the number of agents in state $\sigma_i$ at the start of the timestep. The program returns an action $a \in \mathcal{A}$ which defines the behaviour of the agent in a timestep. The program may make calls to a random number generator that returns a value $0 \le r < 1$ with uniform probability, so its returned value may be non-deterministic and we write $P(\pi(\psi,\Psi)=a)$ to be the probability that the program will return action $a$, given inputs $\psi$ and $\Psi$. 
+\item An \textit{agent timestep}, which is a computer program, $\pi(\psi,\Psi)$, where $\psi \in \mathcal{S}$ is the agent's state and $\Psi \in \mathbb{Z}^m$ is a (sparse) vector whose $i^{th}$ element is the number of agents in state $\sigma_i$ at the start of the timestep. The program returns an action $a \in \mathcal{A}$ which defines the behaviour of the agent in a timestep. The program may make calls to a random number generator that returns a value $0 \le r < 1$ with uniform probability, so its returned value may be non-deterministic and we write $P(\pi(\psi,\Psi)=a)$ to be the probability that the program will return action $a$, given inputs $\psi$ and $\Psi$. 
 
-\item An agent transition tensor $F_\phi^{\psi a}$ which defines the effects that actions have on the world. Each element of $F^{\psi a}_\phi$ is the number of agents in state $\phi$ that result from an agent in state $\psi$ performing act $a$ (this includes the final state of the acting agent).
+\item An \textit{action function}, $F: \mathcal{S} \times \mathcal{A} \to \mathbb{Z}^m$, which defines the effect of an action on the world, where $F(\psi, a)$ gives a (sparse) vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $i$ that result from an agent in state $\psi$ performing act $a$ (this includes the final state of the acting agent).
 \end{itemize}
 
-As a very simple demonstration, we'll take a spatial predator-prey model where agents are either predator or prey moving about a 2-dimensional grid. In this case, the domain of actions are $\mathbb{A} = \{$move-left, move-right, move-up, move-down, reproduce up, reproduce down, reporduce left, reproduce right, be eaten, die$\}$, and the domain of agent states, $\mathcal{S}$, can be thought of as the class 
+As a very simple demonstration, we'll take a spatial predator-prey model where agents are either predator or prey moving about a 2-dimensional grid. In this case, the domain of actions are $\mathbb{A} = \{$move-left, move-right, move-up, move-down, give-birth, die$\}$, and the domain of agent states, $\mathcal{S}$, can be thought of as the class 
 \begin{lstlisting}
 class Agent {
 	Boolean	isaPredator
@@ -85,45 +85,44 @@ It will be useful in the following to define an ordering of agent states, as a T
 \Function{Timestep}{agent, otherAgents}
 \If{agent.isaPredator}
   \If{\Call{random}{ } < $\beta_0$ and number of prey on neighbouring gridsquares of otherAgents > 0}
-    \State\Return reproduce left, right, up or down based on a call to \Call{Random}{ }
+    \State\Return give-birth \Comment{more likely to reproduce when food is available}
   \EndIf
   \If{\Call{random}{ } < $\gamma_0$}
     \State\Return die
   \EndIf
 \Else
   \If{\Call{random}{ } < $\beta_1$}
-    \State\Return reproduce left, right, up or down based on a call to \Call{Random}{ }
+    \State\Return give-birth
   \EndIf
   \If{\Call{random}{ } < $\gamma_1$}
     \State\Return die
   \EndIf
   \If{\Call{random}{ } < $\delta$ and number of predators on this or neighbouring gridsquares of otherAgents > 0}
-    \State\Return be eaten
+    \State\Return die \Comment{been eaten by predator}
   \EndIf
   
 \EndIf
-\State \Return move left, right, up or down based on a call to \Call{Random}{ }
+\State \Return move-left, move-right, move-up or move-down based on a call to \Call{Random}{ }
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
 
-The timestep function for a predator/prey agent is shown in algorithm \ref{agentTimestep} (where we assume the grid has periodic boundary conditions so we don't need to worry about its edges). The transition tensor encodes the results of the various actions. So, for example, the zero$^{th}$ state, $\sigma_0$, corresponds to a prey at position (0,0). If this agent moves right (i.e. performs action $a_1$) then the result is a prey at position (1,0) (i.e. in state $\sigma_1$) so $F^{01}_1 = 1$ etc.
+The timestep function for a predator/prey agent is shown in algorithm \ref{agentTimestep} (where we assume the grid has periodic boundary conditions so we don't need to worry about its edges). The transition tensor encodes the results of the various actions. So, for example, the zero$^{th}$ state, $\sigma_0$, corresponds to a prey at position (0,0). If this agent moves right (i.e. performs action $a_1$) then the result is a prey at position (1,0) (i.e. in state $\sigma_1$) so $F(0,1) = \left<0,1,0...\right>$ etc.
 
 Let a model timestep consist of a matrix $E$ whose elements $e_{\psi a}$ are the number of agents in state $\psi$ that perform act $a$ in this timestep. Similarly, let a model trajectory be a tensor $T^t_{\psi a}$ whose elements are the number of agents in state $\psi$ that perform act $a$ in timestep $t$.
 
 A trajectory must satisfy a number of constraints in order to be a possible trajectory of an ABM. Since the elements of a trajectory are counts, they must all be non-negative integers, we'll call this the \textit{non-negative integer constraint}
 \begin{equation}
-\forall t,\psi, a: T^t_{\psi a} \in \mathbb{Z}_{\ge 0}
+\forall t,\psi, a: T^t_{\psi a} \ge 0, T^t_{\psi a} \in \mathbb{Z}
 \label{nonNegativeInt}
 \end{equation}
 
 A trajectory, $T^t_{\psi a}$, must also be \textit{continuous} which means that each agent that results from the actions of an agent in timestep $t$ must appear in the actions of timestep $t+1$. This can be expressed in terms of the \textit{continuity constraints}:
 \begin{equation}
-\forall t \in 1 ... n:\forall \phi: \sum_{\psi, a} F_\phi^{\psi a}T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0
+\forall t \in 1 ... n:\forall \phi: \sum_{\psi, a} F(\psi, a)_\phi T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0
 \label{continuous}
 \end{equation}
-
-If a trajectory satisfies constraints \ref{nonNegativeInt} and \ref{continuous} we say that it is \textit{valid}.
+where the trajectory runs from $t=0$ to $t=n$. If a trajectory satisfies constraints \ref{nonNegativeInt} and \ref{continuous} we say that it is \textit{valid}.
 
 Suppose we have a prior belief, $P_0(\Psi)$, over the state of the ABM at time $t=0$ (in the example of the predator/prey model, let's suppose we know the probability of finding a predator or prey at each gridpoint at $t=0$, but don't know the exact positions of each agent). Given this, the prior probability of a trajectory is
 \[
@@ -178,7 +177,7 @@ Also, for notational convenience, and without loss of generality, we express our
 \begin{equation}
 P(T^t_{\psi a}|\Omega) \propto 
 \begin{cases}
-\prod_{(\omega,v) \in \Omega} P\left(\omega(T^{t}_{\psi a})=v\right) \prod_{t, \psi, a}P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{T^{t}_{\psi a}} & \text{if } T^t_{\psi a} \text{ is valid} \\
+\prod_{(\omega,v) \in \Omega} P\left(\omega(T^{t}_{\psi a})=v\right) \prod_{T^t_{\psi a} > 0}P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{T^{t}_{\psi a}} & \text{if } T^t_{\psi a} \text{ is valid} \\
 0 & \text{otherwise}\\
 \end{cases}
 \label{posterior}
@@ -203,11 +202,11 @@ Then from equation \ref{posterior}
 \begin{equation}
 \supp (P( \,.\, |\Omega)) = 
 \bigcap_{(\omega,v) \in \Omega}  \supp\left(P\left(\omega(.)=v\right)\right) \cap
-\bigcap_{t, \psi, a} \supp\left(P\left( \pi'(t,\psi,.) = a \right)\right) \cap
+\bigcap_{t, \psi, a} \left(\supp\left(P\left( \pi'(t,\psi,.) = a \right)\right) \cup \left\{T^s_{\xi b}: T^t_{\psi a} = 0\right\}\right) \cap
 \left\{T^t_{\psi a} \mid T^t_{\psi a} \text{is valid}\right\}
 \label{support}
 \end{equation}
-i.e. in order for the posterior to be non-zero, all the observation likelihoods must be non-zero, the probability of each agent's action at every timestep must be non-zero and the trajectory must be valid.
+i.e. in order for the posterior to be non-zero, all the observation likelihoods must be non-zero, the probability of each agent's action at every timestep must be non-zero and the trajectory must be valid (note that we've dropped the exponent in the agent action term as it doesn't affect the support).
 
 The first two terms in equation \ref{support} consists of the supports of computer programs whose inputs are ABM trajectories and whose outputs are given, i.e. the set of trajectories that, when passed to a computer program, would produce a given output.
 
@@ -215,21 +214,22 @@ Calculating the support of a computer program for a given output is, in full gen
 \[
 \supp(P(\rho(.)=y)) \subset \mathcal{P}(\rho, v)
 \]
-Tools to perform abstract interpretation already exist (e.g. PAGAI\cite{henry2012pagai}) and are used widely in applications such as the verification of safety critical systems\cite{blanchet2003static} and in practice $\mathcal{P}(\rho, v)$ is often reasonably tight (i.e. most members of $\mathcal{P}(\rho, v)$ are in $\supp(P(\rho(.)=y))$). For our application we choose to express $\mathcal{P}(\rho, v)$ in terms of a set of linear inequalities on $\rho$'s inputs, this corresponds to the abstract domain of convex polyhedra\cite{cousot1978automatic}\cite{becchi2018efficient}. Calls to the random number generator can be dealt with in the abstract domain by generating a new variable, $r$, that satisfies $0 \le r < 1$ for each call to \texttt{Random()}.
+Tools to perform abstract interpretation already exist (e.g. PAGAI\cite{henry2012pagai}) and are used widely in applications such as the verification of safety critical systems\cite{blanchet2003static} and in practice $\mathcal{P}(\rho, v)$ is often reasonably tight (i.e. most members of $\mathcal{P}(\rho, v)$ are in $\supp(P(\rho(.)=y))$). For our application we choose to express $\mathcal{P}(\rho, v)$ in terms of a set of linear inequalities on $\rho$'s inputs, this corresponds to the abstract domain of convex polyhedra\cite{cousot1978automatic}\cite{becchi2018efficient}. Calls to the random number generator can be dealt with in the abstract domain by generating a new variable, $r$, that satisfies $0 \le r < 1$ for each call to \texttt{Random()}. These can either be left in as ``auxiliary'' variables in the same way as slack variables, or removed as soon as the variable goes out of scope by finding the convex hull of the projection into a lower dimensional space (this can be done using the double description method\cite{motzkin1953double}).
 
 If we replace the supports in equation \ref{support} with their equivalent supersets we end up with a superset of the posterior
 \begin{equation}
 \supp(P(.|\Omega)) \subset
 \bigcap_{(\omega,v) \in \Omega}  \mathcal{P}(\omega, v) \cap
-\bigcap_{t, \psi, a} \mathcal{P}(\pi'(t,\psi,.), a) \cap
+\bigcap_{t, \psi, a} \left( \mathcal{P}(\pi'(t,\psi,.), a) \cup \left\{T^s_{\xi b}: T^t_{\psi a} = 0\right\} \right)\cap
 \left\{T^t_{\psi a} \mid T^t_{\psi a} \text{is valid}\right\}
 \label{linearSupport}
 \end{equation}
-The intersections are now intersections of sets of inequalities which are just the set of trajectories that satisfy all of the inequalities, i.e. the union of the inequalities.
 
 Constraining our proposal function to members of the superset in equation \ref{linearSupport} instead of the true support won't affect the stationary distribution of the Markov Chain. If the proposal function happens to return a trajectory that isn't in $\supp(P(\rho(.)=y))$ then it will just be rejected. This is fine as long as we generate acceptable proposals at a reasonable rate.
 
-It remains for us to deal with the final term in equation \ref{linearSupport}, which requires the trajectories in the support to be valid. The first part of validity, the continuity constraints in \ref{continuous}, are not a problem because they are also linear constraints so can be treated along with the other constraints. The non-negative integer constraints of equation \ref{nonNegativeInt} are left as separate constraints.
+The final term in equation \ref{linearSupport}, which requires the trajectories in the support to be valid, consists of the continuity constraints of equation \ref{continuous}, which are also linear constraints so can be treated along with the other constraints, and the non-negative integer constraints of equation \ref{nonNegativeInt} which we leave as separate constraints.
+
+The union term in equation \ref{linearSupport} can also be transformed to a set of linear constraints, but the way we do this depends on the type of ABM we're dealing with, so we defer the explanation until sections \ref{Fermionic} and ...
 
 Without loss of generality, we express inequalities as equalities by introducing slack variables so that
 \[
@@ -252,7 +252,7 @@ x_i &\in \mathbb{Z}
 \end{split}
 \label{Axy}
 \end{equation}
-where the vector $x$ contains the elements of the trajectory tensor $T^t_{\psi a}$ and the slack variables $\lambda$.
+where the vector $X$ contains the elements of the trajectory tensor $T^t_{\psi a}$ and the slack variables $\lambda$.
 
 \section{From convex polyhedron to Markov process}
 %#####################################################
@@ -269,14 +269,41 @@ Given a set of inequalities that contain the support of the posterior, we next n
 \end{itemize}
 
 \subsection{A proposal function for a Fermionic ABM}
+\label{Fermionic}
 %#############################################
 
 We define a Fermionic ABM to be one where no two agents can share the same state at the same time. i.e. in addition to the validity constraints of equations \ref{nonNegativeInt} and \ref{continuous} the trajectory of a Fermionic ABM also satisfies the \textit{Fermionic constraint}
 \begin{equation}
-\forall t,\psi: \sum_a T^t_{\psi a} \le 1
+\begin{split}
+\forall t,\psi: \sum_a T^t_{\psi a} \le 1 \\
+\forall \phi: \sum_{\psi, a} F(\psi, a)_\phi T^n_{\psi a} \le 1
+\end{split}
 \label{fermionic}
 \end{equation}
 in which case we call it a \textit{Fermionic trajectory} [this can be weakened to $T^t_{\psi a} \le 1$].
+
+It is clear that every element of a Fermionic trajectory must be either 0 or 1. This means we can easily convert the union term in equation \ref{linearSupport} 
+\[
+\mathcal{P}(\pi'(t,\psi,.), a) \cup \left\{T^s_{\xi b}: T^t_{\psi a} = 0\right\}
+\]
+into a set of linear constraints. Expanding $\mathcal{P}$ we have
+\[
+\left(\bigcap_j \sum_i a_{ij}x_i \le b_j \right) \cup \left\{X: x_k = 0\right\} = \bigcap_j \left( \sum_i a_{ij}x_i \le b_j  \cup \left\{X: x_k = 0\right\}\right)
+\]
+where we've projected the elements of the trajectory $T^t_{\psi a}$ into a vector $X$. But
+\[
+\sum_i a_{ij}x_i \le b_j  \cup \left\{X: x_k = 0\right\} = \sum_i a_{ij}x_i + \left(\sum_i \frac{|a_{ij}| + a_{ij}}{2} - b_j\right)x_k \le \sum_i \frac{|a_{ij}| + a_{ij}}{2} 
+\]
+since all $x_i$ are also either 0 or 1 so $\sum_i a_{ij}x_i$ must be less than $\frac{|a_{ij}| + a_{ij}}{2}$ and the constraint is satisfied if $x_k$ is 0, whereas we have the original constraint if $x_k$ is 1.
+
+So, taking our predator prey agent of algorithm \ref{agentTimestep} as an example, we can see that the move, reproduce and die actions can be returned under any configuration of other agents\footnote{the Fermionic constraint is dealt with separately, so we don't need to worry about that here}, so for these actions the union is also unconditionally true. However, the reproduction actions of a predator are conditional on there being some prey on neighbouring gridsquares. So, suppose we have a predator in state $\psi$ at time $t$. The support of it's timestep function given that it returns a reproduction action is
+\[
+\sum_{i \in N^t_\psi} -x_i \le -1
+\]
+where $N^t_\psi$ is the set of indices that correspond to elements of $T^t_{\phi a}$ where $\phi$ is a prey on a gridsquare neighbouring $\psi$ at time $t$. So, taking the union with $\left\{X: x_k = 0\right\}$, the final constraint for a predator in state $\psi$ at time $t$ is
+\[
+\sum_{i \in N^t_\psi} -x_i  + x_k  \le 0
+\]
 
 \begin{theorem}
 All trajectories that satisfy equations \ref{nonNegativeInt} and \ref{fermionic} are at extreme points. Where an extreme point is one that can't be expressed as a linear combination of two other points that satisfy the constraints.
