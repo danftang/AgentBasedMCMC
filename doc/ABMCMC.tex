@@ -296,7 +296,7 @@ where we've projected the elements of the trajectory $T^t_{\psi a}$ into a vecto
 \]
 since all $x_i$ are also either 0 or 1 so $\sum_i a_{ij}x_i$ must be less than $\frac{|a_{ij}| + a_{ij}}{2}$ and the constraint is satisfied if $x_k$ is 0, whereas we have the original constraint if $x_k$ is 1.
 
-So, taking our predator prey agent of algorithm \ref{agentTimestep} as an example, we can see that the move, reproduce and die actions can be returned under any configuration of other agents\footnote{the Fermionic constraint is dealt with separately, so we don't need to worry about that here}, so for these actions the union is also unconditionally true. However, the reproduction actions of a predator are conditional on there being some prey on neighbouring gridsquares. So, suppose we have a predator in state $\psi$ at time $t$. The support of it's timestep function given that it returns a reproduction action is
+So, taking our predator prey agent of algorithm \ref{agentTimestep} as an example, we can see that the move, reproduce and die actions can be returned irrespective of the state of other agents\footnote{the Fermionic constraint is dealt with separately, so we don't need to worry about that here}, so for these actions the union is also unconditionally true. However, the reproduction actions of a predator are conditional on there being some prey on neighbouring gridsquares. So, suppose we have a predator in state $\psi$ at time $t$, the support of it's timestep function given that it returns a reproduction action is
 \[
 \sum_{i \in N^t_\psi} -x_i \le -1
 \]
