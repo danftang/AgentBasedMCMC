@@ -7,6 +7,7 @@ import lib.sparseMatrix.copyTo
 import lib.vector.*
 import org.apache.commons.math3.distribution.EnumeratedDistribution
 import org.apache.commons.math3.fraction.Fraction
+import java.lang.Integer.max
 import java.lang.RuntimeException
 import kotlin.math.pow
 import kotlin.math.roundToInt
@@ -74,6 +75,52 @@ open class Simplex<T>(
         pivotColumns(initialSolution)
     }
 
+    constructor(constraints: List<Constraint<T>>, objective: SparseVector<T>) : this(
+        GridMapMatrix(objective.operators, constraints.size+1, 1)
+    ) {
+        val nVariables = max(
+            constraints
+                .flatMap { it.coefficients.keys }
+                .max()
+                ?:-1,
+            objective.nonZeroEntries.keys
+                .max()
+                ?:-1
+        ) + 1
+        val nSlackVars = constraints.count { it.relation != "==" }
+        var nextSlackVar = nVariables
+        M.resize(M.nRows, nVariables + nSlackVars + 1)
+        constraints.forEachIndexed { i, constraint ->
+            constraint.coefficients.forEach { (j, x) ->
+                M[i,j] = x
+            }
+            when(constraint.relation) {
+                ">=" -> M[i,nextSlackVar++] = -operators.one
+                "<=" -> M[i,nextSlackVar++] = operators.one
+            }
+            B[i] = constraint.constant
+        }
+        objective.nonZeroEntries.forEach { (j,x) ->
+            this.objective[j] = x
+        }
+    }
+
+
+    // Find an initial positive pivot state from a raw set of constraints
+    // first look for any columns that are already potentially basic
+    // then pivot in the remaining rows on the first element
+    // then add (imaginary) auxiliary variables on negative rows
+    // and minimise the sum of auxiliary vars.
+    fun findInitialSolution() {
+        for(j in 0 until bColumn) {
+            if(M.columns[j].nonZeroEntries.size == 1) {
+                basicColsByRow[M.columns[j].nonZeroEntries.keys.first()] = j
+            } else if (M.columns[j].nonZeroEntries.size == 2 && !objective[j].isZero()) {
+                basicColsByRow[M.columns[j].nonZeroEntries.keys.min()!!] = j
+            }
+        }
+        TODO("Finish this")
+    }
 
     // perform simplex algorithm with Bland(77) ordering
     // to find the solution that minimises the objective

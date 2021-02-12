@@ -60,7 +60,7 @@ Suppose we have a timestepping ABM where agents have a finite number of possible
 \begin{itemize}
 \item A domain of agent actions $\mathcal{A} =\{ a_0 ... a_n \}$
 
-\item A domain of agent states $\mathcal{S} = \{\sigma_0 ... \sigma_m\}$
+\item A domain of agent states $\mathcal{S} = \{\psi_0 ... \psi_m\}$
 
 \item An \textit{agent timestep}, which is a computer program, $\pi(\psi,\Psi)$, where $\psi \in \mathcal{S}$ is the agent's state and $\Psi \in \mathbb{Z}^m$ is a (sparse) vector whose $i^{th}$ element is the number of agents in state $\sigma_i$ at the start of the timestep. The program returns an action $a \in \mathcal{A}$ which defines the behaviour of the agent in a timestep. The program may make calls to a random number generator that returns a value $0 \le r < 1$ with uniform probability, so its returned value may be non-deterministic and we write $P(\pi(\psi,\Psi)=a)$ to be the probability that the program will return action $a$, given inputs $\psi$ and $\Psi$. 
 
@@ -107,9 +107,9 @@ It will be useful in the following to define an ordering of agent states, as a T
 \end{algorithmic}
 \end{algorithm}
 
-The timestep function for a predator/prey agent is shown in algorithm \ref{agentTimestep} (where we assume the grid has periodic boundary conditions so we don't need to worry about its edges). The transition tensor encodes the results of the various actions. So, for example, the zero$^{th}$ state, $\sigma_0$, corresponds to a prey at position (0,0). If this agent moves right (i.e. performs action $a_1$) then the result is a prey at position (1,0) (i.e. in state $\sigma_1$) so $F(0,1) = \left<0,1,0...\right>$ etc.
+The timestep function for a predator/prey agent is shown in algorithm \ref{agentTimestep} (where we assume the grid has periodic boundary conditions so we don't need to worry about its edges). The action function encodes the results of the various actions. So, for example, the zero$^{th}$ state, $\sigma_0$, corresponds to a prey at position (0,0). If this agent moves right (i.e. performs action $a_1$) then the result is a prey at position (1,0) (i.e. in state $\sigma_1$) so $F(0,1) = \left<0,1,0...\right>$ etc.
 
-Let a model timestep consist of a matrix $E$ whose elements $e_{\psi a}$ are the number of agents in state $\psi$ that perform act $a$ in this timestep. Similarly, let a model trajectory be a tensor $T^t_{\psi a}$ whose elements are the number of agents in state $\psi$ that perform act $a$ in timestep $t$.
+Let a model timestep consist of a matrix $E$ whose elements $e_{\psi a}$ are the number of agents in state $\psi$ that perform act $a$ in this timestep. Similarly, let a model trajectory be a tensor, $T$, whose elements, $T^t_{\psi a}$, are the number of agents in state $\psi$ that perform act $a$ in timestep $t$.
 
 A trajectory must satisfy a number of constraints in order to be a possible trajectory of an ABM. Since the elements of a trajectory are counts, they must all be non-negative integers, we'll call this the \textit{non-negative integer constraint}
 \begin{equation}
@@ -117,18 +117,37 @@ A trajectory must satisfy a number of constraints in order to be a possible traj
 \label{nonNegativeInt}
 \end{equation}
 
-A trajectory, $T^t_{\psi a}$, must also be \textit{continuous} which means that each agent that results from the actions of an agent in timestep $t$ must appear in the actions of timestep $t+1$. This can be expressed in terms of the \textit{continuity constraints}:
+A trajectory, $T^t_{\psi a}$, must also be \textit{continuous} which means that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. This can be expressed in terms of the \textit{continuity constraints}:
 \begin{equation}
 \forall t \in 1 ... n:\forall \phi: \sum_{\psi, a} F(\psi, a)_\phi T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0
 \label{continuous}
 \end{equation}
 where the trajectory runs from $t=0$ to $t=n$. If a trajectory satisfies constraints \ref{nonNegativeInt} and \ref{continuous} we say that it is \textit{valid}.
 
-Suppose we have a prior belief, $P_0(\Psi)$, over the state of the ABM at time $t=0$ (in the example of the predator/prey model, let's suppose we know the probability of finding a predator or prey at each gridpoint at $t=0$, but don't know the exact positions of each agent). Given this, the prior probability of a trajectory is
+If we let $\Psi^t_\psi$ be the number of agents in state $\psi$ at the beginning of timestep $t$ then the prior probability of a trajectory is
 \[
-P(T^t_{\psi a}) =
+P(T) =
 \begin{cases}
-P_0(\sum_aT^0_{\psi a}) \prod_{t, \psi}\left(\sum_a T^t_{\psi a}\right)!\prod_a \frac{P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T^t_{\psi a} \text{ is valid} \\
+P\left(\Psi^0_{*} = \sum_a T^0_{* a}\right) \prod_{\psi, t} P\left(T^t_{\psi *} \mid \Psi^t_* = \sum_a T^t_{* a}\right) & \text{if } T \text{ is valid} \\
+0 & \text{otherwise}
+\end{cases}
+\]
+where $P(\Psi^0_*)$ is our prior beliefs about the state at time $t=0$, and we use $*$ as an index when we want to emphasise that the index remains unbound.
+
+For example, in the predator/prey model, we may know the probability of finding a predator or prey at each gridpoint at $t=0$, may not know the exact positions of each agent so the prior would be a product of Poisson distributions
+\[
+P(\Psi^0_*) = \prod_\psi \frac{\lambda_\psi^{\Psi^0_\psi} e^{\lambda_\psi}}{\Psi^0_\psi!}.
+\]
+
+However, we know the probability that a single agent in a given state will perform an action given the state of the other agents, this is defined by the agent timestep function, so the joint probability that $\Psi^t_\psi$ agents will perform actions $T^t_{\psi *}$ is the multinomial distribution
+\[
+P\left(T^t_{\psi *} \mid \Psi^t_*\right) = \Psi^t_\psi!\prod_a \frac{P(\pi(\psi,\Psi^t_*)=a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!}.
+\]
+So the prior probability of a trajectory is
+\[
+P(T) =
+\begin{cases}
+P(\Psi^0_* = \sum_aT^0_{* a}) \prod_{t, \psi}\left(\sum_a T^t_{\psi a}\right)!\prod_a \frac{P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T^t_{\psi a} \text{ is valid} \\
 0 & \text{otherwise}\\
 \end{cases}
 \]
@@ -177,7 +196,7 @@ Also, for notational convenience, and without loss of generality, we express our
 \begin{equation}
 P(T^t_{\psi a}|\Omega) \propto 
 \begin{cases}
-\prod_{(\omega,v) \in \Omega} P\left(\omega(T^{t}_{\psi a})=v\right) \prod_{t, \psi}\left(\sum_a T^t_{\psi a}\right)!\prod_{a:T^t_{\psi a} > 0}\frac{P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{T^{t}_{\psi a}}}{T^t_{\psi a}!} & \text{if } T^t_{\psi a} \text{ is valid} \\
+\prod_{(\omega,v) \in \Omega} P\left(\omega(T^{t}_{\psi a})=v\right) \prod_{t, \psi}\left(\sum_a T^t_{\psi a}\right)!\prod_{a}\frac{P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{T^{t}_{\psi a}}}{T^t_{\psi a}!} & \text{if } T^t_{\psi a} \text{ is valid} \\
 0 & \text{otherwise}\\
 \end{cases}
 \label{posterior}
