@@ -128,7 +128,7 @@ Suppose we have a prior belief, $P_0(\Psi)$, over the state of the ABM at time $
 \[
 P(T^t_{\psi a}) =
 \begin{cases}
-P_0(\sum_aT^0_{\psi a}) \prod_{t, \psi, a} P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{T^{t}_{\psi a}} & \text{if } T^t_{\psi a} \text{ is valid} \\
+P_0(\sum_aT^0_{\psi a}) \prod_{t, \psi}\left(\sum_a T^t_{\psi a}\right)!\prod_a \frac{P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T^t_{\psi a} \text{ is valid} \\
 0 & \text{otherwise}\\
 \end{cases}
 \]
@@ -177,7 +177,7 @@ Also, for notational convenience, and without loss of generality, we express our
 \begin{equation}
 P(T^t_{\psi a}|\Omega) \propto 
 \begin{cases}
-\prod_{(\omega,v) \in \Omega} P\left(\omega(T^{t}_{\psi a})=v\right) \prod_{T^t_{\psi a} > 0}P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{T^{t}_{\psi a}} & \text{if } T^t_{\psi a} \text{ is valid} \\
+\prod_{(\omega,v) \in \Omega} P\left(\omega(T^{t}_{\psi a})=v\right) \prod_{t, \psi}\left(\sum_a T^t_{\psi a}\right)!\prod_{a:T^t_{\psi a} > 0}\frac{P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{T^{t}_{\psi a}}}{T^t_{\psi a}!} & \text{if } T^t_{\psi a} \text{ is valid} \\
 0 & \text{otherwise}\\
 \end{cases}
 \label{posterior}
