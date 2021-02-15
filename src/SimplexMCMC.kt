@@ -1,8 +1,6 @@
 import lib.sparseMatrix.SparseMatrix
 import lib.vector.SparseVector
-import lib.vector.asMapVector
-import org.apache.commons.math3.distribution.BinomialDistribution
-import java.util.*
+import lib.vector.asVector
 import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
 import kotlin.math.absoluteValue
@@ -26,7 +24,7 @@ class SimplexMCMC<T>(
     xCoefficients: SparseMatrix<T>,             // The A of AX=B
     constants: SparseVector<T>,                 // The B of AX=B
     val logPmf: (SparseVector<T>) -> Double     // The target distribution
-) : Simplex<T>(xCoefficients, constants, emptyMap<Int,T>().asMapVector(xCoefficients.operators)) where T: Comparable<T>, T: Number {
+) : Simplex<T>(xCoefficients, constants, emptyMap<Int,T>().asVector(xCoefficients.operators)) where T: Comparable<T>, T: Number {
 
     val fractionPenaltyK: Double          = ln(0.5)
     val degeneratePivotWeight             = 0.001

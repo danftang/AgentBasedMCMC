@@ -3,7 +3,7 @@ import lib.abstractAlgebra.IntOperators
 import lib.sparseMatrix.GridMapMatrix
 import lib.sparseMatrix.IPsolve
 import lib.vector.MutableMapVector
-import lib.vector.asDoubleMapVector
+import lib.vector.asDoubleVector
 import org.junit.Test
 
 class SparseMatrixTest {
@@ -75,7 +75,7 @@ class SparseMatrixTest {
         val B = M * V
         println(B)
 
-        val X = M.IPsolve(B, emptyMap<Int,Double>().asDoubleMapVector(), "==")
+        val X = M.IPsolve(B, emptyMap<Int,Double>().asDoubleVector(), "==")
         println(X.toList())
     }
 }

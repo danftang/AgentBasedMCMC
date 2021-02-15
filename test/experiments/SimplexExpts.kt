@@ -1,6 +1,7 @@
 package experiments
 
 import ABMMatrices.twoDabmMatrix
+import Constraint
 import Simplex
 import SimplexMCMC
 import lib.abstractAlgebra.*
@@ -82,6 +83,34 @@ class SimplexExpts {
         println(simplex.X())
         assert(simplex.X().nonZeroEntries == mapOf(0 to 10.0, 1 to 30.0, 3 to 20.0))
     }
+
+    @Test
+    fun testInitialPositiveSolution() {
+        val constraints = listOf(
+            Constraint(hashMapOf(
+                0 to 1.0
+            ),"<=", 2.0),
+            Constraint(hashMapOf(
+                1 to 1.0
+            ),"<=", 2.0),
+            Constraint(hashMapOf(
+                0 to 1.0,
+                1 to 1.0
+            ), ">=", 1.0)
+        )
+        val objective = hashMapOf(
+            0 to 1.0,
+            1 to 1.0
+        ).asDoubleVector()
+        val simplex = Simplex(constraints, objective)
+        println(simplex.M)
+        simplex.minimise()
+        println("Solution is")
+        println(simplex.X())
+        simplex.X().nonZeroEntries.forEach { assert(it.value > 0.0) }
+    }
+
+
 
     @Test
     fun fractionalMatrix() {

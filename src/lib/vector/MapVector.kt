@@ -3,7 +3,6 @@ package lib.vector
 import lib.abstractAlgebra.*
 import org.apache.commons.math3.Field
 import org.apache.commons.math3.FieldElement
-import java.lang.StringBuilder
 
 abstract class MapVector<T>(override val nonZeroEntries: Map<Int,T>) : SparseVector<T> {
 
@@ -15,30 +14,30 @@ fun DoubleArray.toMapVector(): MapVector<Double> = this.asSequence()
     .withIndex()
     .filter { it.value != 0.0 }
     .associate { Pair(it.index, it.value) }
-    .asDoubleMapVector()
+    .asDoubleVector()
 
 
 fun<T: FieldElement<T>> Array<T>.toMapVector(field: Field<T>) = this.asSequence()
     .withIndex()
     .filter { it.value != field.zero }
     .associate { Pair(it.index, it.value) }
-    .asMapVector(field)
+    .asVector(field)
 
 
-inline fun Map<Int,Double>.asDoubleMapVector(): MapVector<Double> = object: MapVector<Double>(this@asDoubleMapVector), DoubleOperators {
+inline fun Map<Int,Double>.asDoubleVector(): MapVector<Double> = object: MapVector<Double>(this@asDoubleVector), DoubleOperators {
     override fun new() = DoubleMapVector()
 }
 
-inline fun Map<Int,Int>.asIntMapVector(): MapVector<Int> = object: MapVector<Int>(this@asIntMapVector), IntOperators {
+inline fun Map<Int,Int>.asIntVector(): MapVector<Int> = object: MapVector<Int>(this@asIntVector), IntOperators {
     override fun new() = IntMapVector()
 }
 
-inline fun<T> Map<Int,T>.asMapVector(operators: FieldOperators<T>): MapVector<T> = object: MapVector<T>(this@asMapVector),
+inline fun<T> Map<Int,T>.asVector(operators: FieldOperators<T>): MapVector<T> = object: MapVector<T>(this@asVector),
         FieldOperators<T> by operators {
     override fun new()= MutableMapVector(operators)
 }
 
-inline fun<T: FieldElement<T>> Map<Int,T>.asMapVector(apacheField: Field<T>): MapVector<T> = asMapVector(FieldElementOperators(apacheField))
+inline fun<T: FieldElement<T>> Map<Int,T>.asVector(apacheField: Field<T>): MapVector<T> = asVector(FieldElementOperators(apacheField))
 
 //inline fun Map<Int,DoubleFieldElement>.asDoubleFieldMapVector() = object: MapVector<DoubleFieldElement>(this@asDoubleFieldMapVector) {
 //    override fun new(): MutableSparseVector<DoubleFieldElement> {

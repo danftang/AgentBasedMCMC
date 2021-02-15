@@ -17,8 +17,8 @@ class MutableMapVector<T>(
     override fun equals(other: Any?) = isEqualTo(other)
 }
 
-inline fun<T: Any> MutableMap<Int,T>.asMutableMapVector(operators: FieldOperators<T>): MutableMapVector<T> =
+inline fun<T: Any> MutableMap<Int,T>.asMutableVector(operators: FieldOperators<T>): MutableMapVector<T> =
     MutableMapVector(operators, this)
 
-inline fun<T: FieldElement<T>> MutableMap<Int,T>.asMutableMapVector(apacheField: Field<T>): MutableMapVector<T> =
-    MutableMapVector(apacheField.asFieldOperators(), this)
+//inline fun<T: FieldElement<T>> MutableMap<Int,T>.asMutableMapVector(apacheField: Field<T>): MutableMapVector<T> =
+//    MutableMapVector(apacheField.asFieldOperators(), this)

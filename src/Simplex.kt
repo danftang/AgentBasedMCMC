@@ -5,11 +5,10 @@ import lib.sparseMatrix.IPsolve
 import lib.sparseMatrix.SparseMatrix
 import lib.sparseMatrix.copyTo
 import lib.vector.*
-import org.apache.commons.math3.distribution.EnumeratedDistribution
 import org.apache.commons.math3.fraction.Fraction
 import java.lang.Integer.max
 import java.lang.RuntimeException
-import kotlin.math.pow
+import java.util.AbstractMap
 import kotlin.math.roundToInt
 
 //////////////////////////////////////////////////////////////////////////
@@ -65,8 +64,9 @@ open class Simplex<T>(
         objective.copyTo(M.rows[objectiveRow])
         constants.copyTo(M.columns[bColumn])
 
+        // Find initial positive solution
         val initialSolution = xCoefficients
-            .IPsolve(constants, emptyMap<Int,T>().asMapVector(xCoefficients.operators), "==")
+            .IPsolve(constants, emptyMap<Int,T>().asVector(xCoefficients.operators), "==")
             .asList()
             .mapIndexedNotNull { index, value ->
                 if(value != 0.0) index else null
@@ -103,23 +103,87 @@ open class Simplex<T>(
         objective.nonZeroEntries.forEach { (j,x) ->
             this.objective[j] = x
         }
+
+        println("Constraints in M")
+        println(M)
+        println("Finding initial solution")
+        findInitialSolution()
+
     }
 
 
-    // Find an initial positive pivot state from a raw set of constraints
-    // first look for any columns that are already potentially basic
+    // Find an initial positive pivot state from a raw set of constraints.
+    //
+    // First look for any columns that are already potentially basic
     // then pivot in the remaining rows on the first element
-    // then add (imaginary) auxiliary variables on negative rows
-    // and minimise the sum of auxiliary vars.
+    // then pivot to reduce negativity until non-negative solution is found
     fun findInitialSolution() {
         for(j in 0 until bColumn) {
             if(M.columns[j].nonZeroEntries.size == 1) {
-                basicColsByRow[M.columns[j].nonZeroEntries.keys.first()] = j
+                val i = M.columns[j].nonZeroEntries.keys.first()
+                basicColsByRow[i] = j
+                M.rows[i] /= M[i,j]
             } else if (M.columns[j].nonZeroEntries.size == 2 && !objective[j].isZero()) {
-                basicColsByRow[M.columns[j].nonZeroEntries.keys.min()!!] = j
+                val i = M.columns[j].nonZeroEntries.keys.min()!!
+                basicColsByRow[i] = j
+                M.rows[i] /= M[i,j]
             }
         }
-        TODO("Finish this")
+        for(i in basicColsByRow.indices) {
+            if(basicColsByRow[i] < 0) {
+               pivot(i, M.rows[i].nonZeroEntries.keys.first())
+            }
+        }
+        println("Initial pivoted solution")
+        println(M)
+        pivotOutNegatives()
+    }
+
+    // Pivots until all elements of X are non-negative.
+    //
+    // Does this by repeatedly pivoting on the column
+    // whose sum over elements in rows with negative B is minimised
+    // until either X is non-negative or no column has a negative sum
+    // over elements in B-negative rows.
+    // This is guaranteed to get to a positive solution or prove that
+    // none exists since if no column has a negative sum then no pivot increases the
+    // sum of negative elements of X. So the sum of these elements of X must be maximised
+    // (by the Simplex algorithm), but if this is true at a negative solution then
+    // there must not exist a non-negative solution since this would have a higher
+    // sum than the maximum.
+    //
+    // returns true if a non-negative solution is found.
+    fun pivotOutNegatives(): Boolean {
+        println("Pivoting out negatives")
+        var negativeRows: List<MutableMapVector<T>>
+        do {
+            negativeRows = B.nonZeroEntries
+                .entries
+                .filter { it.value < operators.zero && it.key < objectiveRow }
+                .map { M.rows[it.key] }
+            val sumOfNegativeRows = MutableMapVector(operators, HashMap())
+            negativeRows.forEach {
+                sumOfNegativeRows += it
+            }
+            sumOfNegativeRows.nonZeroEntries.remove(bColumn)
+            val (pivotColumn, bNegativeSum) = sumOfNegativeRows.nonZeroEntries
+                .minBy { it.value }
+                ?: AbstractMap.SimpleEntry<Int, T>(0, operators.zero)
+            if (bNegativeSum < operators.zero) {
+                // find row to pivot on
+                var pivotRow: Pair<Int,T>? = null
+                M.columns[pivotColumn].nonZeroEntries.forEach { (i, Mij) ->
+                    val dXj = B[i]/Mij
+                    if(i != objectiveRow && dXj > zero && (pivotRow?.let { dXj < it.second } != false)) {
+                        pivotRow = Pair(i, dXj)
+                    }
+                }
+                pivot(pivotRow!!.first, pivotColumn) // pivotRow cannot be null if bNegativeSum < 0
+                println(M)
+                println()
+            }
+        } while(bNegativeSum < operators.zero)
+        return negativeRows.isEmpty()
     }
 
     // perform simplex algorithm with Bland(77) ordering
