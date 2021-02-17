@@ -85,7 +85,7 @@ class SimplexExpts {
     }
 
     @Test
-    fun testInitialPositiveSolution() {
+    fun testPivotOutNegatives() {
         val constraints = listOf(
             Constraint(hashMapOf(
                 0 to 1.0

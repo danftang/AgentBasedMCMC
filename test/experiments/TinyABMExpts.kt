@@ -7,7 +7,7 @@ class TinyABMExpts {
 
     @Test
     fun fermionic1Timestep() {
-        val fermionic = ABMConstraints.fermionicConstraints(1, TinyABM)
+        val fermionic = ABMCMC.fermionicConstraints(1, TinyABM)
         println(fermionic)
     }
 }

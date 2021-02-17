@@ -59,20 +59,19 @@ open class Simplex<T>(
             : this(
         GridMapMatrix(xCoefficients.operators,xCoefficients.nRows+1, xCoefficients.nCols+1)
     ) {
-//        val initialSolution = xCoefficients.IPsolve(constants, DoubleArray(xCoefficients.nCols) {0.0}.asList(), "==")
         xCoefficients.copyTo(M)
         objective.copyTo(M.rows[objectiveRow])
         constants.copyTo(M.columns[bColumn])
 
         // Find initial positive solution
-        val initialSolution = xCoefficients
-            .IPsolve(constants, emptyMap<Int,T>().asVector(xCoefficients.operators), "==")
-            .asList()
-            .mapIndexedNotNull { index, value ->
-                if(value != 0.0) index else null
-            }
-
-        pivotColumns(initialSolution)
+//        val initialSolution = xCoefficients
+//            .IPsolve(constants, emptyMap<Int,T>().asVector(xCoefficients.operators), "==")
+//            .asList()
+//            .mapIndexedNotNull { index, value ->
+//                if(value != 0.0) index else null
+//            }
+//        pivotColumns(initialSolution)
+        findInitialSolution()
     }
 
     constructor(constraints: List<Constraint<T>>, objective: SparseVector<T>) : this(
@@ -104,11 +103,10 @@ open class Simplex<T>(
             this.objective[j] = x
         }
 
-        println("Constraints in M")
-        println(M)
-        println("Finding initial solution")
+//        println("Constraints in M")
+//        println(M)
+//        println("Finding initial solution")
         findInitialSolution()
-
     }
 
 
@@ -117,7 +115,9 @@ open class Simplex<T>(
     // First look for any columns that are already potentially basic
     // then pivot in the remaining rows on the first element
     // then pivot to reduce negativity until non-negative solution is found
-    fun findInitialSolution() {
+    //
+    // Returns true if a positive solution exists
+    fun findInitialSolution(): Boolean {
         for(j in 0 until bColumn) {
             if(M.columns[j].nonZeroEntries.size == 1) {
                 val i = M.columns[j].nonZeroEntries.keys.first()
@@ -134,10 +134,9 @@ open class Simplex<T>(
                pivot(i, M.rows[i].nonZeroEntries.keys.first())
             }
         }
-        println("Initial pivoted solution")
-        println(M)
-        pivotOutNegatives()
+        return pivotOutNegatives()
     }
+
 
     // Pivots until all elements of X are non-negative.
     //
@@ -154,7 +153,6 @@ open class Simplex<T>(
     //
     // returns true if a non-negative solution is found.
     fun pivotOutNegatives(): Boolean {
-        println("Pivoting out negatives")
         var negativeRows: List<MutableMapVector<T>>
         do {
             negativeRows = B.nonZeroEntries
@@ -179,8 +177,6 @@ open class Simplex<T>(
                     }
                 }
                 pivot(pivotRow!!.first, pivotColumn) // pivotRow cannot be null if bNegativeSum < 0
-                println(M)
-                println()
             }
         } while(bNegativeSum < operators.zero)
         return negativeRows.isEmpty()

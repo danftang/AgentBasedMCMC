@@ -3,6 +3,7 @@ interface CountableDomain<T> {
 
     fun toIndex(agent: T): Int
     fun toObject(index: Int): T
+
 }
 
 inline fun<reified T : Enum<T>> countableDomainOf() = object: CountableDomain<T> {

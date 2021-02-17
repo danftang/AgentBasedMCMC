@@ -1,6 +1,8 @@
+import lib.abstractAlgebra.FieldOperators
 import lib.sparseMatrix.SparseMatrix
 import lib.vector.SparseVector
 import lib.vector.asVector
+import org.apache.commons.math3.fraction.Fraction
 import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
 import kotlin.math.absoluteValue
@@ -20,32 +22,39 @@ import kotlin.random.Random
 //
 //
 //
-class SimplexMCMC<T>(
-    xCoefficients: SparseMatrix<T>,             // The A of AX=B
-    constants: SparseVector<T>,                 // The B of AX=B
-    val logPmf: (SparseVector<T>) -> Double     // The target distribution
-) : Simplex<T>(xCoefficients, constants, emptyMap<Int,T>().asVector(xCoefficients.operators)) where T: Comparable<T>, T: Number {
+open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
 
-    val fractionPenaltyK: Double          = ln(0.5)
+    val logPmf: (SparseVector<T>) -> Double
+
+    val fractionPenaltyK: Double          = -1.0
     val degeneratePivotWeight             = 0.001
     val probOfRowSwap                     = 0.01
 
     var logProbOfPivotState: Double
-    val columnPivotLimits: ArrayList<T>             // the upper limit for the value of each column (for easy identification of pivots)
-    val columnWeights: MutableCategoricalArray      // weighted sum of number of pivots in each column
-
+    val columnPivotLimits = ArrayList<T>(M.nCols - 1)      // the upper limit for the value of each column (for easy identification of pivots)
+    val columnWeights = MutableCategoricalArray(M.nCols - 1)      // weighted sum of number of pivots in each column
 
     init {
-        val x = X()
-        logProbOfPivotState = logPmf(x) + logDegeneracyProb() + logFractionPenalty(x)
-        columnPivotLimits = ArrayList(M.nCols-1)
-        columnWeights = MutableCategoricalArray(M.nCols-1)
-        for(col in 0 until M.nCols-1) {
+        for (col in 0 until M.nCols - 1) {
             columnPivotLimits.add(zero)
             updatePivotState(col)
         }
     }
 
+
+    constructor(xCoefficients: SparseMatrix<T>, constants: SparseVector<T>, logPmf: (SparseVector<T>) -> Double) :
+            super(xCoefficients, constants, emptyMap<Int, T>().asVector(xCoefficients.operators)) {
+        this.logPmf = logPmf
+        logProbOfPivotState = calcLogProbOfPivotState(X())
+    }
+
+    constructor(operators: FieldOperators<T>, constraints: List<Constraint<T>>, logPmf: (SparseVector<T>) -> Double) :
+            super(constraints, emptyMap<Int, T>().asVector(operators)) {
+        this.logPmf = logPmf
+        logProbOfPivotState = calcLogProbOfPivotState(X())
+    }
+
+    fun calcLogProbOfPivotState(x: SparseVector<T>) = logPmf(x) + logDegeneracyProb() + logFractionPenalty(x)
 
 
     // Choose a positive pivot with uniform probability
@@ -158,9 +167,16 @@ class SimplexMCMC<T>(
     }
 
 
+    // The probability of a pivot state is multiplied by this amount if the
+    // solution is not on the integer grid.
+    //
+    // Returns the L1 distance between this point and its rounding, multiplied
+    // by fractionPenaltyK
     fun logFractionPenalty(x: SparseVector<T>): Double {
-        return fractionPenaltyK * x.nonZeroEntries.values.count { it.toDouble() != it.toInt().toDouble() }
-
+        return fractionPenaltyK * x.nonZeroEntries.values.sumByDouble {
+            val xi = it.toDouble()
+            (xi - xi.roundToInt()).absoluteValue
+        }
     }
 
 
