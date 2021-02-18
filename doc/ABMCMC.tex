@@ -406,7 +406,7 @@ The proposal function for ordered pivot states is shown in algorithm \ref{propos
 \If{\Call{Bernoulli}{$\alpha$}}
   \State $r \leftarrow$ choose member of $p_1$ with uniform probability
   \State perform pivot $r$ on $(A_b',A_n',B')$
-  \State $p'_0 \leftarrow $ number of non-degenerate pivots of $(A_b',A_n',B')$
+  \State $p'_1 \leftarrow $ number of non-degenerate pivots of $(A_b',A_n',B')$
   \State $P_{f/b} \leftarrow \frac{|p'_1|}{|p_1|}$
 \ElsIf{\Call{Bernoulli}{$\beta$}}
   \State $r \leftarrow$ choose member of $p_0$ with uniform probability
@@ -424,7 +424,7 @@ The proposal function for ordered pivot states is shown in algorithm \ref{propos
 
 
 
-We now show that this assignment of probability to ordered pivot states has the property that the sum of the probabilities associated with a trajecotry is the probability of that trajectory.
+We now show that this assignment of probability to ordered pivot states has the property that the sum of the probabilities of ordered pivot states associated with a trajecotry is the probability of that trajectory.
 
 First some notation: let $\mathbb{E}(T)$ be the set of all ordered pivot states with solution $T$, let $T(S)$ be the trajectory associated with pivot state $S$, let $D(S)$ be the tuple of degenerate variables in ordered pivot state $S$, let $D_{\le n}(S)$ be the n-tuple consisting of the first $n$ elements of $D(S)$ and let
 \begin{equation}
@@ -438,9 +438,10 @@ i.e. among the members of $\mathbb{S}$ that have the degenerate variable prefix 
 
 \begin{theorem}
 If we assign the probability
-\[
+\begin{equation}
 P(S) =  \frac{(m-\sigma_{T(S)})!}{m!} \frac{P_{T(S)}}{\prod_{q=0}^{\sigma_{T(S)}-1} C(\mathbb{E}(T(S)) \mid D_{\le q}(S))}
-\]
+\label{pivotProb}
+\end{equation}
 to pivot state $S$, where $m$ is the number of constraints and $\sigma_{T}$ is the degeneracy of trajectory $T$ (i.e. $m$ minus the number of non-zero variables in $T$) then
 \[
 \sum_{S \in \mathbb{E}(T)} P(S) = P_{T}
@@ -530,7 +531,15 @@ C(\mathbb{E}(T(S)) \mid D_{\le \sigma_{T(S)} -1 - r}(S)) = \left\|C'(S, r)\right
 
 \end{proof}
 
+\subsubsection{Metropolis-Hastings on ordered pivot states}
 
+All this can now be assembled into a sampling algorithm based on Metropolis-Hastings. Starting with the constraints in the form of equation \ref{Axy}, recursively choose a non-zero element on an un-pivoted row and pivot on that element, until we reach an ordered pivot state. In general, $B$ will contain negative elements which means that the solution will not conform to the non-negative constraint. In order to find an initial positive solution let $I^- = \left\{i: B_i < 0\right\}$ be the set of rows of $B$ that are negative and pivot on the column, $j$, that minimises $\sum_{i\in I^-}A_{ij}$. Repeat until a positive solution is found (or no column has a negative sum, in which case no positive solution exists).
+
+From the initial valid pivot state, $S$, generate a proposal pivot state $S'$ and a transition probability ratio $\frac{P(S\rightarrow S')}{P(S' \rightarrow S)}$ using algorithm \ref{proposal} and accept with probability
+\[
+\alpha = \frac{P(S')}{P(S)}\frac{P(S'\rightarrow S)}{P(S \rightarrow S')}
+\]
+where the probability of a pivot state is given by algorithm \ref{probAlgorithm}.
 
 Given this, it's clear that all the necessary properties of the proposal function are fulfilled.
 

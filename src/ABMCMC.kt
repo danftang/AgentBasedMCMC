@@ -34,6 +34,7 @@ class ABMCMC<AGENT : Agent<AGENT, ACT>, ACT> : SimplexMCMC<Fraction> {
                     }
                 }
             }
+            println("Valid trajectory constraints are $constraints")
             return constraints
         }
 
@@ -68,6 +69,7 @@ class ABMCMC<AGENT : Agent<AGENT, ACT>, ACT> : SimplexMCMC<Fraction> {
                     }
                 }
             }
+            println("Continuity constraints are $constraints")
             return constraints
         }
 
@@ -101,7 +103,7 @@ class ABMCMC<AGENT : Agent<AGENT, ACT>, ACT> : SimplexMCMC<Fraction> {
             for(state in 0 until nStates) {
                 constraints.add(Constraint(coeffsByState[state],"<=", Fraction.ONE))
             }
-
+            println("Fermionic constraints are $constraints")
             return constraints
         }
 

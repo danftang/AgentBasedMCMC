@@ -15,6 +15,7 @@ class Constraint<COEFF> {
         this.constant = constant
     }
 
+
     override fun toString(): String {
         val out = StringBuilder()
         for(entry in coefficients) {

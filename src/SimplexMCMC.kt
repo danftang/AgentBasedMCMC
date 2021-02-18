@@ -2,7 +2,6 @@ import lib.abstractAlgebra.FieldOperators
 import lib.sparseMatrix.SparseMatrix
 import lib.vector.SparseVector
 import lib.vector.asVector
-import org.apache.commons.math3.fraction.Fraction
 import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
 import kotlin.math.absoluteValue
@@ -33,12 +32,14 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
     var logProbOfPivotState: Double
     val columnPivotLimits = ArrayList<T>(M.nCols - 1)      // the upper limit for the value of each column (for easy identification of pivots)
     val columnWeights = MutableCategoricalArray(M.nCols - 1)      // weighted sum of number of pivots in each column
+    var currentSample: SparseVector<T>
 
     init {
         for (col in 0 until M.nCols - 1) {
             columnPivotLimits.add(zero)
             updatePivotState(col)
         }
+        currentSample = X()
     }
 
 
@@ -57,35 +58,39 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
     fun calcLogProbOfPivotState(x: SparseVector<T>) = logPmf(x) + logDegeneracyProb() + logFractionPenalty(x)
 
 
-    // Choose a positive pivot with uniform probability
+    // Choose a pivot
     // and reject based on Metropolis-Hastings
-    // returns true if the proposal was accepted
-    fun mcmcTransition(): Boolean {
+    // returns the next sample
+    fun nextSample(): SparseVector<T> {
         if(Random.nextDouble() < probOfRowSwap) { // row swap never rejects
             swapRows(Random.nextInt(M.nRows-1), Random.nextInt(M.nRows-1))
-            return true
+            return currentSample
         }
         var proposalPivot = proposePivot()
         println("Proposal is degenerate ${isDegenerate(proposalPivot)}")
         val rejectionPivot = PivotPoint(proposalPivot.row, basicColsByRow[proposalPivot.row])
         val originalLogProbOfPivotState = logProbOfPivotState
         val originalLogProbOfTransition = ln(trasitionProb(proposalPivot))
+        val originalSample = currentSample
 //        println("Fraction of pivot-affected cols ${fractionOfAffectedColumns(proposalPivot)}")
-        pivot(proposalPivot)
-        updatePivotStates(rejectionPivot)
-        val newX = X()
-        logProbOfPivotState  = logPmf(newX) + logDegeneracyProb() + logFractionPenalty(newX)
+        mcmcPivot(proposalPivot,null,null)
         val logAcceptance =
             logProbOfPivotState + ln(trasitionProb(rejectionPivot)) - originalLogProbOfPivotState - originalLogProbOfTransition
         println("Acceptance = ${exp(logAcceptance)}")
-        return if(Random.nextDouble() >= exp(logAcceptance)) {
-            pivot(rejectionPivot)
-            updatePivotStates(proposalPivot)
-            logProbOfPivotState = originalLogProbOfPivotState
-            false
-        } else {
-            true
+        if(Random.nextDouble() >= exp(logAcceptance)) {
+            println("Rejecting")
+            mcmcPivot(rejectionPivot, originalLogProbOfPivotState, originalSample)
         }
+        return currentSample
+    }
+
+
+    fun mcmcPivot(pivot: PivotPoint, pivotedLogProb: Double? = null, pivotedSample: SparseVector<T>?=null) {
+        val reversePivot = PivotPoint(pivot.row, basicColsByRow[pivot.row])
+        super.pivot(pivot)
+        updatePivotInfo(reversePivot)
+        currentSample = pivotedSample?:X()
+        logProbOfPivotState = pivotedLogProb?:calcLogProbOfPivotState(currentSample)
     }
 
 
@@ -95,11 +100,14 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
             M.rows[row1].weightedPlusAssign(M.rows[row2], one)
             M.rows[row2].weightedPlusAssign(M.rows[row1], -one)
             M.rows[row2] *= -one
+            val basicCol1 = basicColsByRow[row1]
+            basicColsByRow[row1] = basicColsByRow[row2]
+            basicColsByRow[row2] = basicCol1
         }
     }
 
 
-    fun updatePivotStates(pivotedOut: PivotPoint) {
+    fun updatePivotInfo(pivotedOut: PivotPoint) {
         val colsToUpdate = HashSet<Int>()
         colsToUpdate.addAll(M.rows[pivotedOut.row].nonZeroEntries.keys)
         if(!B[pivotedOut.row].isZero()) {

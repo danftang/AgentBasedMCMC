@@ -199,10 +199,10 @@ class SimplexExpts {
         var lastX: SparseVector<Fraction>? = null
         for(sample in 1..10000) {
             var nRejections = 0
-            while(!simplex.mcmcTransition()) nRejections++
+//            while(!simplex.mcmcTransition()) nRejections++
 //            println("$nRejections rejections")
 //            simplex.setToZeroIfBelow(1e-4)
-            val newX = simplex.X()
+            val newX = simplex.nextSample()
             if(newX != lastX) {
                 println(newX)
                 println(simplex.M.sparsity())
