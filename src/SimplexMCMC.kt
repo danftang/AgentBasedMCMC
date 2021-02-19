@@ -2,6 +2,7 @@ import lib.abstractAlgebra.FieldOperators
 import lib.sparseMatrix.SparseMatrix
 import lib.vector.SparseVector
 import lib.vector.asVector
+import org.apache.commons.math3.util.CombinatoricsUtils
 import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
 import kotlin.math.absoluteValue
@@ -165,13 +166,17 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
     fun logDegeneracyProb(): Double {
         val possiblePivotCols = HashSet<Int>()
         var logProb = 0.0
+        var degeneracy = 0
         for(i in M.nRows-2 downTo 0) {
             if(B[i].isZero()) {
                 possiblePivotCols.addAll(M.rows[i].nonZeroEntries.keys)
                 logProb += ln(possiblePivotCols.size.toDouble())
+                ++degeneracy
             }
         }
-        return logProb
+        return logProb +
+                CombinatoricsUtils.factorialLog(basicColsByRow.size - degeneracy) -
+                CombinatoricsUtils.factorialLog(basicColsByRow.size)
     }
 
 

@@ -103,8 +103,8 @@ open class Simplex<T>(
             this.objective[j] = x
         }
 
-        println("Constraints in M")
-        println(M)
+//        println("Constraints in M")
+//        println(M)
 //        println("Finding initial solution")
         findInitialSolution()
     }
