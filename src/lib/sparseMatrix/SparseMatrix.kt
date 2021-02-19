@@ -1,14 +1,10 @@
 package lib.sparseMatrix
 
-import com.google.ortools.linearsolver.MPConstraint
-import com.google.ortools.linearsolver.MPSolver
 import lib.abstractAlgebra.FieldOperators
 import lib.vector.MutableMapVector
 import lib.vector.SparseVector
-import java.lang.IllegalArgumentException
 import kotlin.math.min
 import kotlin.math.sign
-import kotlin.system.measureTimeMillis
 
 interface SparseMatrix<T: Any>: FieldOperators<T> {
     interface Entry<T> {
@@ -53,42 +49,42 @@ interface SparseMatrix<T: Any>: FieldOperators<T> {
 // where M is this matrix
 // returns X
 //
-fun<T: Number> SparseMatrix<T>.IPsolve(B: SparseVector<T>, C: SparseVector<T>, constraintType: String = ">="): DoubleArray {
-    val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
-    val X = solver.makeIntVarArray(nCols, 0.0, Double.POSITIVE_INFINITY)
-    val constraints = Array<MPConstraint>(nRows) { solver.makeConstraint() }
-    for(entry in nonZeroEntries) {
-        constraints[entry.row].setCoefficient(X[entry.col], entry.value.toDouble())
-    }
-    for(i in 0 until nRows) {
-        when(constraintType) {
-            ">=" -> constraints[i].setBounds(B[i].toDouble(), Double.POSITIVE_INFINITY)
-            "=","==" -> constraints[i].setBounds(B[i].toDouble(), B[i].toDouble())
-            "<=" -> constraints[i].setBounds(Double.NEGATIVE_INFINITY, B[i].toDouble())
-            else -> throw(IllegalArgumentException("Unknown constraint type"))
-        }
-    }
-    val objective = solver.objective()
-    for(entry in C.nonZeroEntries) {
-        objective.setCoefficient(X[entry.key], entry.value.toDouble())
-    }
-    solver.objective().setMinimization()
-    var solveState: MPSolver.ResultStatus? = null
-    val solveTime = measureTimeMillis {
-        solveState = solver.solve()
-    }
-    println("Solved in ${solveTime}ms")
-    return if (solveState == MPSolver.ResultStatus.OPTIMAL)
-        DoubleArray(X.size) { i -> X[i].solutionValue() }
-    else
-        throw(RuntimeException(
-            when (solveState) {
-                MPSolver.ResultStatus.INFEASIBLE -> "Infeasible"
-                MPSolver.ResultStatus.UNBOUNDED -> "Unbounded"
-                else -> "Solve Error"
-            }
-        ))
-}
+//fun<T: Number> SparseMatrix<T>.IPsolve(B: SparseVector<T>, C: SparseVector<T>, constraintType: String = ">="): DoubleArray {
+//    val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
+//    val X = solver.makeIntVarArray(nCols, 0.0, Double.POSITIVE_INFINITY)
+//    val constraints = Array<MPConstraint>(nRows) { solver.makeConstraint() }
+//    for(entry in nonZeroEntries) {
+//        constraints[entry.row].setCoefficient(X[entry.col], entry.value.toDouble())
+//    }
+//    for(i in 0 until nRows) {
+//        when(constraintType) {
+//            ">=" -> constraints[i].setBounds(B[i].toDouble(), Double.POSITIVE_INFINITY)
+//            "=","==" -> constraints[i].setBounds(B[i].toDouble(), B[i].toDouble())
+//            "<=" -> constraints[i].setBounds(Double.NEGATIVE_INFINITY, B[i].toDouble())
+//            else -> throw(IllegalArgumentException("Unknown constraint type"))
+//        }
+//    }
+//    val objective = solver.objective()
+//    for(entry in C.nonZeroEntries) {
+//        objective.setCoefficient(X[entry.key], entry.value.toDouble())
+//    }
+//    solver.objective().setMinimization()
+//    var solveState: MPSolver.ResultStatus? = null
+//    val solveTime = measureTimeMillis {
+//        solveState = solver.solve()
+//    }
+//    println("Solved in ${solveTime}ms")
+//    return if (solveState == MPSolver.ResultStatus.OPTIMAL)
+//        DoubleArray(X.size) { i -> X[i].solutionValue() }
+//    else
+//        throw(RuntimeException(
+//            when (solveState) {
+//                MPSolver.ResultStatus.INFEASIBLE -> "Infeasible"
+//                MPSolver.ResultStatus.UNBOUNDED -> "Unbounded"
+//                else -> "Solve Error"
+//            }
+//        ))
+//}
 
 
 

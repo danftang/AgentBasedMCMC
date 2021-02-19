@@ -173,13 +173,6 @@
     <mapping directory="" vcs="Git" />
   </component>
   <component name="libraryTable">
-    <library name="com.google.ortools">
-      <CLASSES>
-        <root url="jar://$PROJECT_DIR$/lib/com.google.ortools.jar!/" />
-      </CLASSES>
-      <JAVADOC />
-      <SOURCES />
-    </library>
     <library name="junit:junit:4.13" type="repository">
       <properties maven-id="junit:junit:4.13" />
       <CLASSES>
@@ -246,13 +239,6 @@
         <root url="jar://$MAVEN_REPOSITORY$/org/ujmp/ujmp-gui/0.3.0/ujmp-gui-0.3.0.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/org/ujmp/ujmp-core/0.3.0/ujmp-core-0.3.0.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/org/json/json/20141113/json-20141113.jar!/" />
-      </CLASSES>
-      <JAVADOC />
-      <SOURCES />
-    </library>
-    <library name="protobuf">
-      <CLASSES>
-        <root url="jar://$PROJECT_DIR$/lib/protobuf.jar!/" />
       </CLASSES>
       <JAVADOC />
       <SOURCES />

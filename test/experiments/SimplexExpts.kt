@@ -1,22 +1,13 @@
 package experiments
 
-import ABMMatrices.twoDabmMatrix
 import Constraint
 import Simplex
-import SimplexMCMC
 import lib.abstractAlgebra.*
 import lib.sparseMatrix.GridMapMatrix
-import lib.sparseMatrix.IPsolve
-import lib.sparseMatrix.mapNonZeroEntriesTo
 import lib.vector.*
-import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution
 import org.apache.commons.math3.fraction.Fraction
 import org.junit.Test
-import java.util.*
 import kotlin.math.absoluteValue
-import kotlin.math.ln
-import kotlin.math.log
-import kotlin.math.pow
 import kotlin.random.Random
 
 // Experiments with pivoting the ABM matrix, a-la Simplex algorithm
@@ -25,7 +16,6 @@ class SimplexExpts {
     val gridSize = 32
     val timesteps = 4
     val nAgents = 30
-    val abmMatrix = twoDabmMatrix(gridSize, timesteps)
     val observations = MutableMapVector(IntOperators)
 
 
@@ -152,67 +142,6 @@ class SimplexExpts {
     }
 
 
-//    @Test
-//    fun oneDABM() {
-//        val timesteps = 5
-//        val N = 1
-//        val abmMatrix = ABMMatrices.oneDNoInteractionMatrix(timesteps, N)
-//        val observations = HashIntVector()
-//        observations[0] = -1
-//        observations[timesteps*N] = 1
-//
-////        println(abmMatrix)
-//        val simplex = Simplex(abmMatrix, observations)
-//        println(simplex)
-//        simplex.pivotRootedSourceTree()
-////        simplex.pivotAt(4,3)
-////        println(simplex)
-////        simplex.pivotAt(3,2)
-////        println(simplex)
-////        simplex.pivotAt(2,1)
-////        println(simplex)
-////        simplex.pivotAt(1,0)
-//        println(simplex)
-//        println(simplex.findAllPositivePivotCols())
-//    }
-
-
-    @Test
-    fun twoDABM() {
-
-        val fieldOperators = FractionOperators // DoubleOperators
-        val intToField: Int.()->Fraction = { Fraction(this,1) }
-//        val fieldOperators = DoubleOperators // DoubleOperators
-//        val intToField: Int.()->Double = { this.toDouble() }
-
-        val abmGridMatrix = abmMatrix.mapNonZeroEntriesTo(
-            GridMapMatrix(fieldOperators, abmMatrix.nRows, abmMatrix.nCols)) {
-            it.intToField()
-        }
-        val fieldObservations = observations.mapNonZeroEntriesTo(MutableMapVector(fieldOperators)) {
-            it.intToField()
-        }
-        val simplex = SimplexMCMC(abmGridMatrix, fieldObservations) { solution ->
-            solution.nonZeroEntries.size * ln(0.1)
-        }
-
-        var lastX: SparseVector<Fraction>? = null
-        for(sample in 1..10000) {
-            var nRejections = 0
-//            while(!simplex.mcmcTransition()) nRejections++
-//            println("$nRejections rejections")
-//            simplex.setToZeroIfBelow(1e-4)
-            val newX = simplex.nextSample()
-            if(newX != lastX) {
-                println(newX)
-                println(simplex.M.sparsity())
-                lastX = newX
-            }
-        }
-        println("Done!")
-    }
-
-
 
 //    fun Simplex<Double>.isAtIntegerSolution(): Boolean {
 //        val doubleSolution = X()
@@ -221,10 +150,10 @@ class SimplexExpts {
 //        return abmMatrix * intSolution == observations
 //    }
 
-    fun<T> Simplex<T>.isAtIntegerSolution(): Boolean where T : Comparable<T>, T: Number {
-        val intSolution = X().mapNonZeroEntriesTo(MutableMapVector(IntOperators)) { it.roundToInt() }
-        return abmMatrix * intSolution == observations
-    }
+//    fun<T> Simplex<T>.isAtIntegerSolution(): Boolean where T : Comparable<T>, T: Number {
+//        val intSolution = X().mapNonZeroEntriesTo(MutableMapVector(IntOperators)) { it.roundToInt() }
+//        return abmMatrix * intSolution == observations
+//    }
 
 
     fun Simplex<Double>.setToZeroIfBelow(smallest: Double) {

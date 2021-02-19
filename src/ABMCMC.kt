@@ -137,5 +137,36 @@ class ABMCMC<AGENT : Agent<AGENT, ACT>, ACT> : SimplexMCMC<Fraction> {
         }
 
 
+//        fun plotFeynmannDiagram(state: SparseIntVector, dynamics: HashColIntMatrix, agentPositions: Int, timesteps: Int) {
+//            val particleVectors = ArrayList<Int>() // in format (x,y,dx,dy)...
+//            val antiparticleVectors = ArrayList<Int>()
+//            for(act in state) {
+//                val array = if(act.value>0) particleVectors else antiparticleVectors
+//                val sourceLocations = ArrayList<Pair<Int,Int>>()
+//                val destinationLocations = ArrayList<Pair<Int,Int>>()
+//                for(actLocation in dynamics.columns[act.key]) {
+//                    val location = Pair(actLocation.key.rem(agentPositions), actLocation.key.div(agentPositions))
+//                    if(actLocation.value > 0) destinationLocations.add(location) else sourceLocations.add(location)
+//                }
+//                for(source in sourceLocations) {
+//                    for(dest in destinationLocations) {
+//                        array.addAll(arrayOf(source.first, source.second, dest.first-source.first, dest.second-source.second))
+//                    }
+//                }
+//            }
+//
+//            gnuplot {
+//                if(particleVectors.size > 0) {
+//                    val particleData = heredoc(particleVectors, 4)
+//                    invoke("plot [0:${agentPositions-1}][0:$timesteps] $particleData with vectors lw 2 lc rgbcolor 0xff")
+//                }
+//                if(antiparticleVectors.size > 0) {
+//                    val antiparticleData = heredoc(antiparticleVectors, 4)
+//                    invoke("replot $antiparticleData with vectors lw 1 lc rgbcolor 0xff0000")
+//                }
+//            }
+//        }
+
+
     }
 }
