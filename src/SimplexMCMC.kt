@@ -44,11 +44,11 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
     }
 
 
-    constructor(xCoefficients: SparseMatrix<T>, constants: SparseVector<T>, logPmf: (SparseVector<T>) -> Double) :
-            super(xCoefficients, constants, emptyMap<Int, T>().asVector(xCoefficients.operators)) {
-        this.logPmf = logPmf
-        logProbOfPivotState = calcLogProbOfPivotState(X())
-    }
+//    constructor(xCoefficients: SparseMatrix<T>, constants: SparseVector<T>, logPmf: (SparseVector<T>) -> Double) :
+//            super(xCoefficients, constants, emptyMap<Int, T>().asVector(xCoefficients.operators)) {
+//        this.logPmf = logPmf
+//        logProbOfPivotState = calcLogProbOfPivotState(X())
+//    }
 
     constructor(operators: FieldOperators<T>, constraints: List<Constraint<T>>, logPmf: (SparseVector<T>) -> Double) :
             super(constraints, emptyMap<Int, T>().asVector(operators)) {

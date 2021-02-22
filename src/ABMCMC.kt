@@ -3,6 +3,7 @@ import lib.unaryMinus
 import lib.plus
 import lib.minus
 import org.apache.commons.math3.fraction.Fraction
+import kotlin.random.Random
 
 class ABMCMC<AGENT : Agent<AGENT, ACT>, ACT> : SimplexMCMC<Fraction> {
 
@@ -17,6 +18,7 @@ class ABMCMC<AGENT : Agent<AGENT, ACT>, ACT> : SimplexMCMC<Fraction> {
             model: ABM<AGENT, ACT>,
             nTimesteps: Int
         ): List<Constraint<Fraction>> {
+            println("Constructing model constraints...")
             val constraints = ArrayList<Constraint<Fraction>>(model.actDomain.size*model.agentDomain.size*2)
             constraints.addAll(continuityConstraints(nTimesteps, model))
             constraints.addAll(fermionicConstraints(nTimesteps, model))
@@ -35,6 +37,7 @@ class ABMCMC<AGENT : Agent<AGENT, ACT>, ACT> : SimplexMCMC<Fraction> {
                 }
             }
 //            println("Valid trajectory constraints are $constraints")
+            println("Done")
             return constraints
         }
 

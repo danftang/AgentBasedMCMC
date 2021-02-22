@@ -4,6 +4,7 @@ import lib.sparseMatrix.SparseMatrix
 import lib.sparseMatrix.copyTo
 import lib.vector.*
 import org.apache.commons.math3.fraction.Fraction
+import java.lang.IllegalArgumentException
 import java.lang.Integer.max
 import java.lang.RuntimeException
 import java.util.AbstractMap
@@ -50,40 +51,38 @@ open class Simplex<T>(
         return x
     }
 
-    constructor(
-        xCoefficients: SparseMatrix<T>,
-        constants: SparseVector<T>,
-        objective: SparseVector<T>)
-            : this(
-        GridMapMatrix(xCoefficients.operators,xCoefficients.nRows+1, xCoefficients.nCols+1)
-    ) {
-        xCoefficients.copyTo(M)
-        objective.copyTo(M.rows[objectiveRow])
-        constants.copyTo(M.columns[bColumn])
-
-        // Find initial positive solution
-//        val initialSolution = xCoefficients
-//            .IPsolve(constants, emptyMap<Int,T>().asVector(xCoefficients.operators), "==")
-//            .asList()
-//            .mapIndexedNotNull { index, value ->
-//                if(value != 0.0) index else null
-//            }
-//        pivotColumns(initialSolution)
-        findInitialSolution()
-    }
+//    constructor(
+//        xCoefficients: SparseMatrix<T>,
+//        constants: SparseVector<T>,
+//        objective: SparseVector<T>)
+//            : this(
+//        GridMapMatrix(xCoefficients.operators,xCoefficients.nRows+1, xCoefficients.nCols+1)
+//    ) {
+//        xCoefficients.copyTo(M)
+//        objective.copyTo(M.rows[objectiveRow])
+//        constants.copyTo(M.columns[bColumn])
+//
+//        // Find initial positive solution
+////        val initialSolution = xCoefficients
+////            .IPsolve(constants, emptyMap<Int,T>().asVector(xCoefficients.operators), "==")
+////            .asList()
+////            .mapIndexedNotNull { index, value ->
+////                if(value != 0.0) index else null
+////            }
+////        pivotColumns(initialSolution)
+//        findInitialSolution()
+//    }
 
     constructor(constraints: List<Constraint<T>>, objective: SparseVector<T>) : this(
         GridMapMatrix(objective.operators, constraints.size+1, 1)
     ) {
-        val nVariables = max(
-            constraints
-                .flatMap { it.coefficients.keys }
-                .max()
-                ?:-1,
+        println("Transferring constraints to simplex tableau...")
+        val nVariables = max(constraints.numVars(),
             objective.nonZeroEntries.keys
                 .max()
-                ?:-1
-        ) + 1
+                ?.let { it + 1}
+                ?:0
+        )
         val nSlackVars = constraints.count { it.relation != "==" }
         var nextSlackVar = nVariables
         M.resize(M.nRows, nVariables + nSlackVars + 1)
@@ -101,10 +100,27 @@ open class Simplex<T>(
             this.objective[j] = x
         }
 
+        println("Finding initial solution")
+        val initialSolution = ORTools.GlopSolve(constraints)
+        // pivot in initial solution
+        for(j in initialSolution.indices) {
+            if(initialSolution[j] != 0.0) {
+                val i = M.columns[j].nonZeroEntries.keys
+                    .find { it != objectiveRow }!!
+                pivot(i,j)
+            }
+        }
+        // pivot in degenerate vars
+        for(i in basicColsByRow.indices) {
+            if(basicColsByRow[i] == -1) {
+                val j = M.rows[i].nonZeroEntries.keys.find { it != bColumn }
+                    ?:throw(IllegalArgumentException("Redundant constraint not currently handled"))
+                pivot(i,j)
+            }
+        }
 //        println("Constraints in M")
 //        println(M)
-//        println("Finding initial solution")
-        findInitialSolution()
+        println("Done")
     }
 
 
@@ -115,21 +131,25 @@ open class Simplex<T>(
     // then pivot to reduce negativity until non-negative solution is found
     //
     // Returns true if a positive solution exists
-    fun findInitialSolution(): Boolean {
+    fun findInitialSolutionWithoutORTools(): Boolean {
+        // Identify already pivoted columns
         for(j in 0 until bColumn) {
-            if(M.columns[j].nonZeroEntries.size == 1) {
-                val i = M.columns[j].nonZeroEntries.keys.first()
-                basicColsByRow[i] = j
-                M.rows[i] /= M[i,j]
-            } else if (M.columns[j].nonZeroEntries.size == 2 && !objective[j].isZero()) {
-                val i = M.columns[j].nonZeroEntries.keys.min()!!
-                basicColsByRow[i] = j
-                M.rows[i] /= M[i,j]
+            val colSize = M.columns[j].nonZeroEntries.size
+            if(colSize == 1 || (colSize == 2 && !objective[j].isZero())) {
+                M.columns[j].nonZeroEntries.keys
+                    .find { it != objectiveRow }
+                    ?.also { i ->
+                        basicColsByRow[i] = j
+                        M.rows[i] /= M[i,j]
+                    }
             }
+
         }
+
         for(i in basicColsByRow.indices) {
             if(basicColsByRow[i] < 0) {
-               pivot(i, M.rows[i].nonZeroEntries.keys.first())
+               pivot(i, M.rows[i].nonZeroEntries.keys.find { it < M.nCols-1 }?:
+               throw(IllegalArgumentException("Initialising simplex with redundant constraints: not currently supported")))
             }
         }
         return pivotOutNegatives()
@@ -137,46 +157,53 @@ open class Simplex<T>(
 
 
     // Pivots until all elements of X are non-negative.
+    // Alternatively, X-negativity (minus the sum of values of
+    // negative elements of X) is zero.
     //
     // Does this by repeatedly pivoting on the column
-    // whose sum over elements in rows with negative B is minimised
-    // until either X is non-negative or no column has a negative sum
-    // over elements in B-negative rows.
-    // This is guaranteed to get to a positive solution or prove that
-    // none exists since if no column has a negative sum then no pivot increases the
-    // sum of negative elements of X. So the sum of these elements of X must be maximised
-    // (by the Simplex algorithm), but if this is true at a negative solution then
-    // there must not exist a non-negative solution since this would have a higher
-    // sum than the maximum.
+    // whose sum over elements in rows with negative B is most negative
+    // and the row that first forces B_i to zero (from either side) as the value of this
+    // column increases.
+    // Pivoting stops when no column has a negative sum over elements in B-negative rows.
+    // At this point, either X is non-negative or no non-negative solution exists
+    // (since if no column has a negative sum then no pivot decreases X negativity,
+    // so X negativity must be minimised, by the Simplex algorithm)
+    // N.B. Pivot-loops are theoretically possible but rarely
+    // encountered in practice
     //
     // returns true if a non-negative solution is found.
     fun pivotOutNegatives(): Boolean {
-        var negativeRows: List<MutableMapVector<T>>
+        var negativeRows: List<Int>
         do {
             negativeRows = B.nonZeroEntries
                 .entries
                 .filter { it.value < operators.zero && it.key < objectiveRow }
-                .map { M.rows[it.key] }
+                .map { it.key }
             val sumOfNegativeRows = MutableMapVector(operators, HashMap())
             negativeRows.forEach {
-                sumOfNegativeRows += it
+                sumOfNegativeRows += M.rows[it]
             }
             sumOfNegativeRows.nonZeroEntries.remove(bColumn)
             val (pivotColumn, bNegativeSum) = sumOfNegativeRows.nonZeroEntries
                 .minBy { it.value }
-                ?: AbstractMap.SimpleEntry<Int, T>(0, operators.zero)
-            if (bNegativeSum < operators.zero) {
-                // find row to pivot on
-                var pivotRow: Pair<Int,T>? = null
+                ?: AbstractMap.SimpleEntry<Int, T>(0, zero)
+            if (bNegativeSum < zero) {
+                // pivot on the first row to reach zero from either +ve or -ve side
+                // this guarantees that negativity is non-increasing
+                var dXjmax: T? = null
+                var pivotRow: Int? = null
                 M.columns[pivotColumn].nonZeroEntries.forEach { (i, Mij) ->
-                    val dXj = B[i]/Mij
-                    if(i != objectiveRow && dXj > zero && (pivotRow?.let { dXj < it.second } != false)) {
-                        pivotRow = Pair(i, dXj)
+                    if (i != objectiveRow) {
+                        val dXji = B[i] / Mij
+                        if (dXji >= zero && dXji <= dXjmax ?: dXji) {
+                            dXjmax = dXji
+                            pivotRow = i
+                        }
                     }
                 }
-                pivot(pivotRow!!.first, pivotColumn) // pivotRow cannot be null if bNegativeSum < 0
+                pivot(pivotRow!!, pivotColumn) // pivotRow cannot be null if bNegativeSum < 0
             }
-        } while(bNegativeSum < operators.zero)
+        } while (bNegativeSum < operators.zero)
         return negativeRows.isEmpty()
     }
 
@@ -267,8 +294,10 @@ open class Simplex<T>(
     // if the pivot point is -ve, multiplies the pivot row by -1 to make it positive
     inline fun pivot(point: PivotPoint) = pivot(point.row, point.col)
     fun pivot(i: Int, j: Int) {
-        assert(i>=0 && i < M.nRows-1)
-        assert(j>=0 && j < M.nCols-1)
+        assert(i>=0)
+        assert(i < M.nRows-1)
+        assert(j>=0)
+        assert(j < M.nCols-1)
         var Mij = M[i,j]
 
         M.rows[i] /= Mij

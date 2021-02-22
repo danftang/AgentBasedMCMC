@@ -16,12 +16,13 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
         GIVEBIRTH
     }
 
-    var gridSize = 32
+    var gridSize = 8
 
     override val actDomain = countableDomainOf<Acts>()
 
     override val agentDomain = object: CountableDomain<PredPreyAgent> {
-        override val size = 2 * gridSize * gridSize
+        override val size: Int
+            get() = 2 * gridSize * gridSize
 
         override fun toIndex(agent: PredPreyAgent) =
             agent.x + agent.y * gridSize + if(agent.isPredator) gridSize * gridSize else 0

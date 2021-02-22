@@ -15,6 +15,7 @@ class Constraint<COEFF> {
         this.constant = constant
     }
 
+    fun numVars(): Int = coefficients.keys.max()?.let { it+1 }?:0
 
     override fun toString(): String {
         val out = StringBuilder()

@@ -138,22 +138,6 @@
     <option name="USE_PER_PROJECT_SETTINGS" value="true" />
     <code_scheme name="Project" version="173">
       <JetCodeStyleSettings>
-        <option name="PACKAGES_TO_USE_STAR_IMPORTS">
-          <value>
-            <package name="java.util" alias="false" withSubpackages="false" />
-            <package name="kotlinx.android.synthetic" alias="false" withSubpackages="true" />
-            <package name="io.ktor" alias="false" withSubpackages="true" />
-          </value>
-        </option>
-        <option name="PACKAGES_IMPORT_LAYOUT">
-          <value>
-            <package name="" alias="false" withSubpackages="true" />
-            <package name="java" alias="false" withSubpackages="true" />
-            <package name="javax" alias="false" withSubpackages="true" />
-            <package name="kotlin" alias="false" withSubpackages="true" />
-            <package name="" alias="true" withSubpackages="true" />
-          </value>
-        </option>
         <option name="CODE_STYLE_DEFAULTS" value="KOTLIN_OFFICIAL" />
       </JetCodeStyleSettings>
       <codeStyleSettings language="kotlin">
@@ -173,6 +157,13 @@
     <mapping directory="" vcs="Git" />
   </component>
   <component name="libraryTable">
+    <library name="com.google.ortools">
+      <CLASSES>
+        <root url="jar://$PROJECT_DIR$/lib/com.google.ortools.jar!/" />
+      </CLASSES>
+      <JAVADOC />
+      <SOURCES />
+    </library>
     <library name="junit:junit:4.13" type="repository">
       <properties maven-id="junit:junit:4.13" />
       <CLASSES>
@@ -239,6 +230,13 @@
         <root url="jar://$MAVEN_REPOSITORY$/org/ujmp/ujmp-gui/0.3.0/ujmp-gui-0.3.0.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/org/ujmp/ujmp-core/0.3.0/ujmp-core-0.3.0.jar!/" />
         <root url="jar://$MAVEN_REPOSITORY$/org/json/json/20141113/json-20141113.jar!/" />
+      </CLASSES>
+      <JAVADOC />
+      <SOURCES />
+    </library>
+    <library name="protobuf">
+      <CLASSES>
+        <root url="jar://$PROJECT_DIR$/lib/protobuf.jar!/" />
       </CLASSES>
       <JAVADOC />
       <SOURCES />
