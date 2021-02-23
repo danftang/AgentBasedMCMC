@@ -67,7 +67,7 @@ Suppose we have a timestepping ABM where agents have a finite number of possible
 \item An \textit{action function}, $F: \mathcal{S} \times \mathcal{A} \to \mathbb{Z}^m$, which defines the effect of an action on the world, where $F(\psi, a)$ gives a (sparse) vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $i$ that result from an agent in state $\psi$ performing act $a$ (this includes the final state of the acting agent).
 \end{itemize}
 
-As a very simple demonstration, we'll take a spatial predator-prey model where agents are either predator or prey moving about a 2-dimensional grid. In this case, the domain of actions are $\mathbb{A} = \{$move-left, move-right, move-up, move-down, give-birth, die$\}$, and the domain of agent states, $\mathcal{S}$, can be thought of as the class 
+As a very simple demonstration, we'll take a spatial predator-prey model where agents are either predator or prey moving about a 2-dimensional grid. In this case, the domain of actions are $\mathbb{A} = \{ \sigma_0=\textrm{move-left}, \sigma_1=\textrm{move-right}, \sigma_3=\textrm{move-up}, \sigma_4=\textrm{move-down}, \sigma_5=\textrm{give-birth}, \sigma_6=\textrm{die}\}$, and the domain of agent states, $\mathcal{S}$, can be thought of as the class 
 \begin{lstlisting}
 class Agent {
 	Boolean	isaPredator
@@ -75,8 +75,17 @@ class Agent {
 	Integer	yPosition
 }
 \end{lstlisting}
+To simplify our methodological explanation further, we will use a worked example of a $2\times2$ predator-prey model, with a single predator and a single prey. See Figure~\ref{fig:AB-MCMC-1}.
 
-It will be useful in the following to define an ordering of agent states, as a The ordering we choose isn't important but we choose to place agent \texttt{a} in the (\texttt{a.isaPredator*G$^2$ + a.yPositition*G + a.xPosition})$^{th}$ position, where \texttt{G} is the size of the grid.
+\begin{figure}
+	\centering
+	\resizebox{0.5\textwidth}{!}{
+		\includegraphics[scale=0.5]{figs/AB-MCMC-1}
+	}
+	\caption{An simple predator-prey example.\label{fig:AB-MCMC-1}}
+\end{figure} % Figure produced with: https://drive.google.com/drive/folders/1JGJZX9NQOmLhGuOMHrrYrgjh1cOpPBdW 
+
+It will be useful in the following to define an ordering of agent states. The ordering we choose isn't important but we choose to place agent \texttt{a} in the (\texttt{a.isaPredator*G$^2$ + a.yPositition*G + a.xPosition})$^{th}$ position, where \texttt{G} is the size of the grid.
 
 \begin{algorithm}
 \caption{Timestep of a predator/prey agent}
