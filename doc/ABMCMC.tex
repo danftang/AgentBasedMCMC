@@ -19,6 +19,7 @@
 \usepackage{algorithm}
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
+\usepackage{kbordermatrix}% http://www.hss.caltech.edu/~kcb/TeX/kbordermatrix.sty
 
 \newtheorem{theorem}{Theorem}
 \DeclareMathOperator\supp{supp}
@@ -119,7 +120,7 @@ It will be useful in the following to define an ordering of agent states. The or
 The timestep function for a predator/prey agent is shown in algorithm \ref{agentTimestep} (where we assume the grid has periodic boundary conditions so we don't need to worry about its edges). The action function encodes the results of the various actions. So, for example, the zero$^{th}$ state, $\psi_0$, corresponds to a prey ($\textrm{isaPredator}=0$) at position $(\textrm{yPositition}=0,\textrm{xPositition}=0)$, i.e. $\psi_0=[0,0,0]$. If this agent moves right (i.e. performs action $a_1$) then the result is a prey at position (1,0) (i.e. in state $\psi_1=[0,1,0]$) so $F(0,1) = \left<0,1,0...\right>$ etc.
 
 
-The following illustrates all possible states in our simple $2\times2$ model,as per Figure~\ref{fig:AB-MCMC-1}, where $\psi_2$ represents the state of the prey and $\psi_7$ represents the state of the predator:
+The following illustrates all possible states in our simple $2\times2$ model, as per Figure~\ref{fig:AB-MCMC-1}, where $\psi_2$ represents the state of the prey and $\psi_7$ represents the state of the predator:
 
 \begin{align*}
 \psi_0 &= [0, 0, 0] \\
@@ -132,9 +133,23 @@ The following illustrates all possible states in our simple $2\times2$ model,as 
 \psi_7 &= [1, 1, 1]  && \text{state of the predator} \\
 \end{align*}
 
-Let a model timestep consist of a matrix $E$ whose elements $e_{\psi a}$ are the number of agents in state $\psi$ that perform act $a$ in this timestep. Similarly, let a model trajectory be a tensor, $T$, whose elements, $T^t_{\psi a}$, are the number of agents in state $\psi$ that perform act $a$ in timestep $t$.
+Let a model timestep consist of a matrix $E$ whose elements $e_{\psi a}$ are the number of agents in state $\psi$ that perform act $a$ in this timestep. The matrix sparse; in our simple case all cells are empty except those representing the states and actions of the predator prey agents; $(\psi_2,a_2)$ and $(\psi_7,a_0)$ respectively:
 
-XXXX HERE  - add matrix E
+\[
+E = \kbordermatrix{
+    & a_0 & a_1 & a_2 & a_3 & a_4 & a_5 \\
+    \psi_0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+    \psi_1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+    \psi_2 & 0  & 0 & 1 & 0 & 0 & 0 \\
+    \psi_3 & 0 & 0 & 0 & 0 & 0 & 0 \\
+    \psi_4 & 0  & 0 & 0 & 0 & 0 & 0 \\
+    \psi_5 & 0 & 0 & 0 & 0 & 0 & 0 \\
+    \psi_6 & 0 & 0 & 0 & 0 & 0 & 0 \\
+    \psi_7 & 1 & 0 & 0 & 0 & 0 & 0 \\ 
+  }
+\]
+
+Now let a model trajectory be a tensor, $T$, whose elements, $T^t_{\psi a}$, are the number of agents in state $\psi$ that perform act $a$ in timestep $t$. I.e. in the first timestep, $t=0$, then $T^0_{\psi a} = E$, and in subsequent timesteps the trajectory consists of multiple $E$ matricies, one for each timestep.
 
 A trajectory must satisfy a number of constraints in order to be a possible trajectory of an ABM. Since the elements of a trajectory are counts, they must all be non-negative integers, we'll call this the \textit{non-negative integer constraint}
 \begin{equation}
