@@ -1,3 +1,6 @@
-interface Agent<AGENT,ACT> {
-    fun timestep(others: Map<Int,AGENT>): ACT
+import lib.collections.Multiset
+import kotlin.random.Random
+
+interface  Agent<AGENT> {
+    fun timestep(others: Multiset<AGENT>): Array<Double>
 }

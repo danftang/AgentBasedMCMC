@@ -1,34 +1,60 @@
 package experiments
 
 import ABMCMC
-import ABMCMC.Companion.validTrajectoryConstraints
 import Constraint
 import PredatorPreyABM
+import lib.collections.Multiset
 import org.apache.commons.math3.fraction.Fraction
 import org.junit.Test
+import kotlin.random.Random
 
 class PredatorPreyExpts {
 
     @Test
     fun fermionicPredPrey() {
-        val timesteps = 8
+        val nTimesteps = 8
         PredatorPreyABM.gridSize = 8
-        val observations = listOf<Constraint<Fraction>>(
-            Constraint(hashMapOf(16 to Fraction.ONE), "==", Fraction.ONE),
-            Constraint(hashMapOf(60 to Fraction.ONE), "==", Fraction.ONE)
+        val observations = generateObservations(
+            PredatorPreyABM.randomState(0.2, 0.3),
+            nTimesteps,
+            0.02
         )
+        val observationConstraints = observations.flatMap { it.constraints() }
 
-//        val startState = ORTools.GlopSolve(validTrajectoryConstraints(PredatorPreyABM, timesteps) + observations)
-//        println(startState.size)
-//        for(i in 0 until startState.size) {
-//            if(startState[i] != 0.0) println("$i -> ${startState[i]}")
-//        }
-
-        val mcmc = ABMCMC(PredatorPreyABM, timesteps, observations)
+        val mcmc = ABMCMC(PredatorPreyABM, nTimesteps, observationConstraints)
         for(sample in 1..10) {
             val sample = mcmc.nextSample()
             //println(mcmc.nextSample())
         }
 
     }
+
+    fun generateObservations(
+        startState: Multiset<PredatorPreyABM.PredPreyAgent>,
+        nTimesteps: Int,
+        pMakeObservation: Double): List<PredatorPreyABM.CompletedObservation> {
+        val trajectory = PredatorPreyABM.runABM(startState, nTimesteps)
+        val observations = ArrayList<PredatorPreyABM.CompletedObservation>(
+            (nTimesteps*PredatorPreyABM.agentDomain.size*pMakeObservation).toInt()
+        )
+        for(t in 0 until nTimesteps) {
+            for(x in 0 until PredatorPreyABM.gridSize) {
+                for(y in 0 until PredatorPreyABM.gridSize) {
+                    if(Random.nextDouble() < pMakeObservation) {
+                        observations.add(
+                            PredatorPreyABM.CompletedObservation(
+                                PredatorPreyABM.PredPreyAgent(x,y,PredatorPreyABM.AgentType.PREDATOR), t, trajectory)
+                        )
+                        observations.add(
+                            PredatorPreyABM.CompletedObservation(
+                                PredatorPreyABM.PredPreyAgent(x,y,PredatorPreyABM.AgentType.PREY), t, trajectory)
+                        )
+                    }
+                }
+            }
+        }
+        return observations
+    }
+
+
 }

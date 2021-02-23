@@ -1,3 +1,4 @@
+import lib.collections.Multiset
 import org.apache.commons.math3.fraction.Fraction
 
 object CatAndMouseABM: ABM<CatAndMouseABM.CatMouseAgent,CatAndMouseABM.Acts> {
@@ -19,13 +20,40 @@ object CatAndMouseABM: ABM<CatAndMouseABM.CatMouseAgent,CatAndMouseABM.Acts> {
         STAYPUT
     }
 
-    class CatMouseAgent(val type: AgentType, val position: AgentPosition): Agent<CatMouseAgent, Acts> {
+    class CatMouseAgent(val type: AgentType, val position: AgentPosition): Agent<CatMouseAgent> {
 
-        override fun timestep(others: Map<Int, CatMouseAgent>): Acts {
-            TODO("Not yet implemented")
+        override fun timestep(others: Multiset<CatMouseAgent>): Array<Double> {
+            val pCatMove = 0.25
+
+            return if(type == AgentType.CAT) {
+                arrayOf(pCatMove, 1.0-pCatMove)
+            } else {
+                if(others[CatMouseAgent(AgentType.CAT, position)] >= 1) {
+                    arrayOf(1.0,0.0)
+                } else {
+                    arrayOf(0.0,1.0)
+                }
+            }
         }
 
         fun toIndex() = agentDomain.toIndex(this)
+    }
+
+    class Observation(position: AgentPosition, val time: Int, trajectory: ABM.Trajectory<CatMouseAgent, Acts>) {
+        val agent = CatMouseAgent(AgentType.CAT, position)
+        val agentPresent: Boolean = trajectory.nAgents(agent, time) >= 1
+
+        fun logProb(trajectory: ABM.Trajectory<CatMouseAgent,Acts>): Double {
+            return if(trajectory.nAgents(agent, time) >= 1) 0.0 else Double.NEGATIVE_INFINITY
+        }
+
+        fun constraints(): List<Constraint<Fraction>> {
+            return if(agentPresent) {
+                listOf(Constraint(hashMapOf(agent.toIndex() to Fraction.ONE), ">=", Fraction.ONE))
+            } else {
+                listOf(Constraint(hashMapOf(agent.toIndex() to Fraction.ONE), "==", Fraction.ZERO))
+            }
+        }
     }
 
 

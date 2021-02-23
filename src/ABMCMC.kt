@@ -5,7 +5,7 @@ import lib.minus
 import org.apache.commons.math3.fraction.Fraction
 import kotlin.random.Random
 
-class ABMCMC<AGENT : Agent<AGENT, ACT>, ACT> : SimplexMCMC<Fraction> {
+class ABMCMC<AGENT : Agent<AGENT>, ACT> : SimplexMCMC<Fraction> {
 
     constructor(model: ABM<AGENT, ACT>, nTimesteps: Int, observations: List<Constraint<Fraction>>) : super(
         FractionOperators,
@@ -14,7 +14,7 @@ class ABMCMC<AGENT : Agent<AGENT, ACT>, ACT> : SimplexMCMC<Fraction> {
     )
 
     companion object {
-        fun <AGENT : Agent<AGENT, ACT>, ACT> validTrajectoryConstraints(
+        fun <AGENT : Agent<AGENT>, ACT> validTrajectoryConstraints(
             model: ABM<AGENT, ACT>,
             nTimesteps: Int
         ): List<Constraint<Fraction>> {
@@ -41,7 +41,7 @@ class ABMCMC<AGENT : Agent<AGENT, ACT>, ACT> : SimplexMCMC<Fraction> {
             return constraints
         }
 
-        fun<AGENT : Agent<AGENT, ACT>,ACT> continuityConstraints(nTimesteps: Int, abm: ABM<AGENT,ACT>): List<Constraint<Fraction>> {
+        fun<AGENT : Agent<AGENT>,ACT> continuityConstraints(nTimesteps: Int, abm: ABM<AGENT,ACT>): List<Constraint<Fraction>> {
             val nStates = abm.agentDomain.size
 //        val acts = abm.actDomain
             val nActs = abm.actDomain.size
@@ -77,7 +77,7 @@ class ABMCMC<AGENT : Agent<AGENT, ACT>, ACT> : SimplexMCMC<Fraction> {
         }
 
 
-        fun<AGENT : Agent<AGENT, ACT>,ACT> fermionicConstraints(nTimesteps: Int, abm: ABM<AGENT,ACT>): List<Constraint<Fraction>> {
+        fun<AGENT : Agent<AGENT>,ACT> fermionicConstraints(nTimesteps: Int, abm: ABM<AGENT,ACT>): List<Constraint<Fraction>> {
             val nStates = abm.agentDomain.size
             val nActs = abm.actDomain.size
             val constraints = ArrayList<Constraint<Fraction>>((nTimesteps+1)*nStates)
@@ -127,7 +127,7 @@ class ABMCMC<AGENT : Agent<AGENT, ACT>, ACT> : SimplexMCMC<Fraction> {
 
         // converts a constraint in terms of state occupation numbers into a constraint on acts
         // in a given timestep
-        fun<AGENT: Agent<AGENT,ACT>,ACT> stateConstraintToActConstraint(stateConstraint: Constraint<Fraction>, timestep: Int, abm: ABM<AGENT,ACT>): Constraint<Fraction> {
+        fun<AGENT: Agent<AGENT>,ACT> stateConstraintToActConstraint(stateConstraint: Constraint<Fraction>, timestep: Int, abm: ABM<AGENT,ACT>): Constraint<Fraction> {
             val actCoeffs = HashMap<Int,Fraction>()
             val nActs = abm.actDomain.size
             val timestepBase = abm.agentDomain.size*nActs*timestep
