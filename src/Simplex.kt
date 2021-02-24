@@ -38,6 +38,10 @@ open class Simplex<T>(
         inline get() = M.nRows-1
     val bColumn: Int
         inline get() = M.nCols-1
+    val constraintIndices: IntRange
+        inline get() = 0 until objectiveRow
+    val variableIndices: IntRange
+        inline get() = 0 until bColumn
 
     data class PivotPoint(val row: Int, val col: Int)
 
@@ -101,6 +105,17 @@ open class Simplex<T>(
         }
 
         println("Finding initial solution")
+
+        findInitialSolutionWithORTools(constraints)
+//        findInitialSolutionWithoutORTools()
+
+//        println("Constraints in M")
+//        println(M)
+        println("Done")
+    }
+
+
+    fun findInitialSolutionWithORTools(constraints: List<Constraint<T>>) {
         val initialSolution = ORTools.GlopSolve(constraints)
         // pivot in initial solution
         for(j in initialSolution.indices) {
@@ -118,41 +133,63 @@ open class Simplex<T>(
                 pivot(i,j)
             }
         }
-//        println("Constraints in M")
-//        println(M)
-        println("Done")
     }
 
-
-    // Find an initial positive pivot state from a raw set of constraints.
-    //
+    // Find an initial positive pivot state from a raw set of constraints
+    // using artificial variables.
     // First look for any columns that are already potentially basic
-    // then pivot in the remaining rows on the first element
     // then pivot to reduce negativity until non-negative solution is found
     //
     // Returns true if a positive solution exists
     fun findInitialSolutionWithoutORTools(): Boolean {
+        // ensure all B_i are positive
+        for(i in constraintIndices) {
+            if(B[i] < zero) M.rows[i] *= -one
+        }
         // Identify already pivoted columns
-        for(j in 0 until bColumn) {
+        for(j in variableIndices) {
             val colSize = M.columns[j].nonZeroEntries.size
             if(colSize == 1 || (colSize == 2 && !objective[j].isZero())) {
-                M.columns[j].nonZeroEntries.keys
-                    .find { it != objectiveRow }
-                    ?.also { i ->
+                M.columns[j].nonZeroEntries.entries
+                    .find { it.key != objectiveRow && it.value > zero }
+                    ?.also { (i, Mij) ->
                         basicColsByRow[i] = j
-                        M.rows[i] /= M[i,j]
+                        M.rows[i] /= Mij
                     }
             }
+        }
+        // create new objective
+        val originalObjective = ArrayList(objective.nonZeroEntries.entries)
+        objective.nonZeroEntries.clear()
+        for(i in constraintIndices) {
+            if(basicColsByRow[i] == -1) objective -= M.rows[i]
+        }
+        println("Doing phase I minimisation")
+        var success = greedyMinimise()
+        println("Done")
+        if(success) {
+            // pivot in any remaining (degenerate) rows
+            for(i in constraintIndices) {
+                if(basicColsByRow[i] == -1) {
+                    if(B[i] != zero) success = false
+                    M.rows[i].nonZeroEntries.entries.find { it.key != bColumn }?.also { (j,_) ->
+                        pivot(i,j)
+                    }
+                }
+            }
 
         }
-
-        for(i in basicColsByRow.indices) {
-            if(basicColsByRow[i] < 0) {
-               pivot(i, M.rows[i].nonZeroEntries.keys.find { it < M.nCols-1 }?:
-               throw(IllegalArgumentException("Initialising simplex with redundant constraints: not currently supported")))
+        // restore original objective
+        objective.nonZeroEntries.clear()
+        objective.nonZeroEntries.entries.addAll(originalObjective)
+        // update objective for current pivot state
+        for(i in constraintIndices) {
+            val j = basicColsByRow[i]
+            if(objective[j] != zero) {
+                objective -= M.rows[i]*objective[j]
             }
         }
-        return pivotOutNegatives()
+        return success
     }
 
 
@@ -207,13 +244,26 @@ open class Simplex<T>(
         return negativeRows.isEmpty()
     }
 
+    // perform simplex algorithm, pivoting on the column
+    // with the most negative value in the objective row
+    // to find the solution that minimises the objective.
+    // Returns true if the minimum was found, otherwise
+    // the solution is unbounded or no solution exists.
+    fun greedyMinimise(): Boolean {
+        while (greedyPivot()) {
+//            println(M)
+        }
+        return objective.nonZeroEntries.none { it.value < -zero }
+    }
+
+
     // perform simplex algorithm with Bland(77) ordering
-    // to find the solution that minimises the objective
-    // returns true if the minimum was found. Otherwise
-    // the solution is unbounded.
-    fun minimise(): Boolean {
+    // to find the solution that minimises the objective.
+    // Returns true if the minimum was found. Otherwise
+    // the solution is unbounded or no solution exists.
+    fun bland77minimise(): Boolean {
         while (bland77Pivot()) {
-            println(M)
+//            println(M)
         }
         return objective.nonZeroEntries.none { it.value < -zero }
     }
@@ -235,6 +285,27 @@ open class Simplex<T>(
             ?:return false
         val pivotRow = pivotableRows(pivotCol)
             .minBy { basicColsByRow[it] }
+            ?:return false
+        pivot(pivotRow, pivotCol)
+        return true
+    }
+
+
+    // Perform the next pivot on the column with the
+    // most negative value
+    // If no columns have -ve coefficient, we have reached a minimum.
+    // Then choose the row whose basic variable has the lowest (column) index
+    // from among the columns with +ve coefficient.
+    // If no columns have +ve coefficient, then the solution is unbounded
+    // Returns true if the pivot was performed
+    private fun greedyPivot(): Boolean {
+        val pivotCol = objective.nonZeroEntries.asSequence()
+            .filter { it.value < -zero && it.key != bColumn }
+            .minBy { it.value }
+            ?.key
+            ?:return false
+        val pivotRow = pivotableRows(pivotCol)
+            .firstOrNull()
             ?:return false
         pivot(pivotRow, pivotCol)
         return true

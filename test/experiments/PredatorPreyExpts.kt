@@ -12,14 +12,16 @@ class PredatorPreyExpts {
 
     @Test
     fun fermionicPredPrey() {
-        val nTimesteps = 8
-        PredatorPreyABM.gridSize = 8
-        val observations = generateObservations(
-            PredatorPreyABM.randomState(0.2, 0.3),
-            nTimesteps,
-            0.02
-        )
-        val observationConstraints = observations.flatMap { it.constraints() }
+        val nTimesteps = 4
+        PredatorPreyABM.gridSize = 4
+//        val observations = generateObservations(
+//            PredatorPreyABM.randomState(0.2, 0.3),
+//            nTimesteps,
+//            0.02
+//        )
+//        val observationConstraints = observations.flatMap { it.constraints() }
+
+        val observationConstraints = listOf<Constraint<Fraction>>()
 
         val mcmc = ABMCMC(PredatorPreyABM, nTimesteps, observationConstraints)
         for(sample in 1..10) {
