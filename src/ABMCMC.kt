@@ -2,19 +2,34 @@ import lib.abstractAlgebra.FractionOperators
 import lib.unaryMinus
 import lib.plus
 import lib.minus
+import lib.vector.SparseVector
 import org.apache.commons.math3.fraction.Fraction
-import kotlin.random.Random
 
-class ABMCMC<AGENT : Agent<AGENT>, ACT> : SimplexMCMC<Fraction> {
-
-    constructor(model: ABM<AGENT, ACT>, nTimesteps: Int, observations: List<Constraint<Fraction>>) : super(
+class ABMCMC<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(
+    val model: ABM<AGENT, ACT>,
+    nTimesteps: Int,
+    val observations: List<Observation<AGENT,ACT>>
+) {
+    val simplex: SimplexMCMC<Fraction> = SimplexMCMC(
         FractionOperators,
-        validTrajectoryConstraints(model, nTimesteps) + observations,
-        model::trajectoryLogProb
+        validTrajectoryConstraints(model, nTimesteps) + observations.flatMap { it.constraints() },
+        this::logProb
     )
 
+
+    fun logProb(X: SparseVector<Fraction>): Double {
+        val trajectory = Trajectory(model,X)
+        return trajectory.logPrior() + observations.sumByDouble { it.logLikelihood(trajectory) }
+    }
+
+
+    fun nextSample(): Trajectory<AGENT, ACT> {
+        return Trajectory(model, simplex.nextSample())
+    }
+
+
     companion object {
-        fun <AGENT : Agent<AGENT>, ACT> validTrajectoryConstraints(
+        fun <AGENT : Agent<AGENT>, ACT: Ordered<ACT>> validTrajectoryConstraints(
             model: ABM<AGENT, ACT>,
             nTimesteps: Int
         ): List<Constraint<Fraction>> {
@@ -25,8 +40,8 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT> : SimplexMCMC<Fraction> {
             for (state in 0 until model.agentDomain.size) {
                 for (act in 0 until model.actDomain.size) {
                     val timestepConstraints = model.timestepSupport(
-                        model.agentDomain.toObject(state),
-                        model.actDomain.toObject(act)
+                        model.agentDomain[state],
+                        model.actDomain[act]
                     )
                     for (t in 0 until nTimesteps) {
                         constraints.addAll(timestepConstraints
@@ -41,7 +56,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT> : SimplexMCMC<Fraction> {
             return constraints
         }
 
-        fun<AGENT : Agent<AGENT>,ACT> continuityConstraints(nTimesteps: Int, abm: ABM<AGENT,ACT>): List<Constraint<Fraction>> {
+        fun<AGENT : Agent<AGENT>,ACT: Ordered<ACT>> continuityConstraints(nTimesteps: Int, abm: ABM<AGENT,ACT>): List<Constraint<Fraction>> {
             val nStates = abm.agentDomain.size
 //        val acts = abm.actDomain
             val nActs = abm.actDomain.size
@@ -62,9 +77,9 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT> : SimplexMCMC<Fraction> {
             // now do incoming edges
             for(state in 0 until nStates) {
                 for(act in 0 until nActs) {
-                    val consequences = abm.action(abm.agentDomain.toObject(state), abm.actDomain.toObject(act))
+                    val consequences = abm.action(abm.agentDomain[state], abm.actDomain[act])
                     for((resultState, n) in consequences) {
-                        val resultIndex = abm.agentDomain.toIndex(resultState)
+                        val resultIndex = resultState.ordinal
                         for(t in 0 until nTimesteps-1) {
                             constraints[t*nStates + resultIndex]
                                 .coefficients[(t*nStates + state)*nActs + act] = Fraction(n)
@@ -77,7 +92,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT> : SimplexMCMC<Fraction> {
         }
 
 
-        fun<AGENT : Agent<AGENT>,ACT> fermionicConstraints(nTimesteps: Int, abm: ABM<AGENT,ACT>): List<Constraint<Fraction>> {
+        fun<AGENT : Agent<AGENT>,ACT: Ordered<ACT>> fermionicConstraints(nTimesteps: Int, abm: ABM<AGENT,ACT>): List<Constraint<Fraction>> {
             val nStates = abm.agentDomain.size
             val nActs = abm.actDomain.size
             val constraints = ArrayList<Constraint<Fraction>>((nTimesteps+1)*nStates)
@@ -97,9 +112,9 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT> : SimplexMCMC<Fraction> {
             for(state in 0 until nStates) {
                 val coeffBase = ((nTimesteps-1)*nStates + state)*nActs
                 for(act in 0 until nActs) {
-                    val consequences = abm.action(abm.agentDomain.toObject(state), abm.actDomain.toObject(act))
+                    val consequences = abm.action(abm.agentDomain[state], abm.actDomain[act])
                     for((resultState, n) in consequences) {
-                        coeffsByState[abm.agentDomain.toIndex(resultState)][coeffBase + act] = Fraction(n)
+                        coeffsByState[resultState.ordinal][coeffBase + act] = Fraction(n)
                     }
                 }
             }
@@ -127,7 +142,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT> : SimplexMCMC<Fraction> {
 
         // converts a constraint in terms of state occupation numbers into a constraint on acts
         // in a given timestep
-        fun<AGENT: Agent<AGENT>,ACT> stateConstraintToActConstraint(stateConstraint: Constraint<Fraction>, timestep: Int, abm: ABM<AGENT,ACT>): Constraint<Fraction> {
+        fun<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> stateConstraintToActConstraint(stateConstraint: Constraint<Fraction>, timestep: Int, abm: ABM<AGENT,ACT>): Constraint<Fraction> {
             val actCoeffs = HashMap<Int,Fraction>()
             val nActs = abm.actDomain.size
             val timestepBase = abm.agentDomain.size*nActs*timestep
@@ -140,35 +155,6 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT> : SimplexMCMC<Fraction> {
         }
 
 
-//        fun plotFeynmannDiagram(state: SparseIntVector, dynamics: HashColIntMatrix, agentPositions: Int, timesteps: Int) {
-//            val particleVectors = ArrayList<Int>() // in format (x,y,dx,dy)...
-//            val antiparticleVectors = ArrayList<Int>()
-//            for(act in state) {
-//                val array = if(act.value>0) particleVectors else antiparticleVectors
-//                val sourceLocations = ArrayList<Pair<Int,Int>>()
-//                val destinationLocations = ArrayList<Pair<Int,Int>>()
-//                for(actLocation in dynamics.columns[act.key]) {
-//                    val location = Pair(actLocation.key.rem(agentPositions), actLocation.key.div(agentPositions))
-//                    if(actLocation.value > 0) destinationLocations.add(location) else sourceLocations.add(location)
-//                }
-//                for(source in sourceLocations) {
-//                    for(dest in destinationLocations) {
-//                        array.addAll(arrayOf(source.first, source.second, dest.first-source.first, dest.second-source.second))
-//                    }
-//                }
-//            }
-//
-//            gnuplot {
-//                if(particleVectors.size > 0) {
-//                    val particleData = heredoc(particleVectors, 4)
-//                    invoke("plot [0:${agentPositions-1}][0:$timesteps] $particleData with vectors lw 2 lc rgbcolor 0xff")
-//                }
-//                if(antiparticleVectors.size > 0) {
-//                    val antiparticleData = heredoc(antiparticleVectors, 4)
-//                    invoke("replot $antiparticleData with vectors lw 1 lc rgbcolor 0xff0000")
-//                }
-//            }
-//        }
 
 
     }

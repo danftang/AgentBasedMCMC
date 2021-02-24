@@ -1,6 +1,8 @@
 import com.google.ortools.linearsolver.MPConstraint
 import com.google.ortools.linearsolver.MPSolver
 import com.google.ortools.linearsolver.MPVariable
+import lib.sparseMatrix.GridMapMatrix
+import lib.sparseMatrix.SparseMatrix
 import kotlin.system.measureTimeMillis
 
 object ORTools {
@@ -24,6 +26,29 @@ object ORTools {
         )
         val X = solver.makeNumVarArray(nVariables, 0.0, Double.POSITIVE_INFINITY)
         return ORSolve(solver, X, constraints, objective)
+    }
+
+
+    fun<T: Number> GlopSolve(tableaux: SparseMatrix<T>): DoubleArray {
+        val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING)
+        val bColumn = tableaux.nCols - 1
+        val objectiveRow = tableaux.nRows - 1
+        val X = solver.makeNumVarArray(tableaux.nCols - 1, 0.0, Double.POSITIVE_INFINITY)
+        val constraints = Array<MPConstraint>(tableaux.nRows-1) { solver.makeConstraint() }
+        val objective = solver.objective()
+        for(entry in tableaux.nonZeroEntries) {
+            if(entry.row != objectiveRow) {
+                if(entry.col != bColumn) {
+                    constraints[entry.row].setCoefficient(X[entry.col], entry.value.toDouble())
+                } else {
+                    constraints[entry.row].setBounds(entry.value.toDouble(), entry.value.toDouble())
+                }
+            } else {
+                objective.setCoefficient(X[entry.col], entry.value.toDouble())
+            }
+        }
+        solver.objective().setMinimization()
+        return doSolve(solver,X)
     }
 
 
@@ -61,6 +86,11 @@ object ORTools {
             mpObjective.setCoefficient(X[entry.key], entry.value.toDouble())
         }
         mpObjective.setMinimization()
+        return doSolve(solver, X)
+    }
+
+
+    fun doSolve(solver: MPSolver, X: Array<MPVariable>): DoubleArray {
         var solveState: MPSolver.ResultStatus
         val solveTime = measureTimeMillis {
             solveState = solver.solve()
@@ -76,6 +106,6 @@ object ORTools {
                     else -> "Solve Error"
                 }
             ))
-    }
 
+    }
 }

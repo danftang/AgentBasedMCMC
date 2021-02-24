@@ -1,6 +1,6 @@
 package lib.collections
 
-class Multiset<T>(val nonZeroEntries: MutableMap<T,Int> = HashMap()): MutableIterable<MutableMap.MutableEntry<T,Int>> {
+class Multiset<T>(val nonZeroEntries: MutableMap<T,Int> = HashMap()) { //: MutableIterable<MutableMap.MutableEntry<T,Int>> {
 
     val members: MutableSet<T>
         get() = nonZeroEntries.keys
@@ -20,8 +20,12 @@ class Multiset<T>(val nonZeroEntries: MutableMap<T,Int> = HashMap()): MutableIte
         return nonZeroEntries.getOrDefault(agent, 0)
     }
 
-    override fun iterator(): MutableIterator<MutableMap.MutableEntry<T, Int>> {
-        return nonZeroEntries.iterator()
+//    override fun iterator(): MutableIterator<MutableMap.MutableEntry<T, Int>> {
+//        return nonZeroEntries.iterator()
+//    }
+
+    override fun toString(): String {
+        return nonZeroEntries.toString()
     }
 
 

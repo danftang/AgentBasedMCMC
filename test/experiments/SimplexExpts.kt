@@ -97,7 +97,7 @@ class SimplexExpts {
         simplex.greedyMinimise()
         println("Solution is")
         println(simplex.X())
-        simplex.X().nonZeroEntries.forEach { assert(it.value > 0.0) }
+        simplex.X(true).nonZeroEntries.forEach { assert(it.value > 0.0) }
     }
 
 

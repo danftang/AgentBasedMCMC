@@ -30,6 +30,8 @@ open class Simplex<T>(
           T: Comparable<T>
 {
 
+    var firstSlackColumn: Int = M.nRows-1
+
     val B: MutableSparseVector<T>
         inline get() = M.columns[bColumn]
     val objective: MutableSparseVector<T>
@@ -46,14 +48,15 @@ open class Simplex<T>(
     data class PivotPoint(val row: Int, val col: Int)
 
 
-    fun X(): SparseVector<T> {
+    fun X(includeSlacks: Boolean=false): SparseVector<T> {
         val x = B.new()
-        for (i in 0 until objectiveRow) {
+        for (i in basicColsByRow.indices) {
             val basicCol = basicColsByRow[i]
-            x[basicCol] = B[i] / M[i, basicCol]
+            if(includeSlacks || basicCol < firstSlackColumn) x[basicCol] = B[i] / M[i, basicCol]
         }
         return x
     }
+
 
 //    constructor(
 //        xCoefficients: SparseMatrix<T>,
@@ -87,18 +90,18 @@ open class Simplex<T>(
                 ?.let { it + 1}
                 ?:0
         )
+        firstSlackColumn = nVariables
         val nSlackVars = constraints.count { it.relation != "==" }
         var nextSlackVar = nVariables
         M.resize(M.nRows, nVariables + nSlackVars + 1)
         constraints.forEachIndexed { i, constraint ->
-            constraint.coefficients.forEach { (j, x) ->
-                M[i,j] = x
-            }
+            constraint.coefficients.forEach { (j, x) -> M[i,j] = x }
+            B[i] = constraint.constant
             when(constraint.relation) {
                 ">=" -> M[i,nextSlackVar++] = -operators.one
                 "<=" -> M[i,nextSlackVar++] = operators.one
             }
-            B[i] = constraint.constant
+
         }
         objective.nonZeroEntries.forEach { (j,x) ->
             this.objective[j] = x
@@ -106,7 +109,7 @@ open class Simplex<T>(
 
         println("Finding initial solution")
 
-        findInitialSolutionWithORTools(constraints)
+        findInitialSolutionWithORTools()
 //        findInitialSolutionWithoutORTools()
 
 //        println("Constraints in M")
@@ -115,20 +118,24 @@ open class Simplex<T>(
     }
 
 
-    fun findInitialSolutionWithORTools(constraints: List<Constraint<T>>) {
-        val initialSolution = ORTools.GlopSolve(constraints)
+    fun findInitialSolutionWithORTools() {
+        val initialSolution = ORTools.GlopSolve(M)
         // pivot in initial solution
         for(j in initialSolution.indices) {
             if(initialSolution[j] != 0.0) {
+                assert(initialSolution[j] >= 0.0)
                 val i = M.columns[j].nonZeroEntries.keys
                     .find { it != objectiveRow }!!
                 pivot(i,j)
             }
         }
+
         // pivot in degenerate vars
         for(i in basicColsByRow.indices) {
             if(basicColsByRow[i] == -1) {
-                val j = M.rows[i].nonZeroEntries.keys.find { it != bColumn }
+                assert(B[i] == zero)
+                val j = M.rows[i].nonZeroEntries.keys
+                    .find { it != bColumn }
                     ?:throw(IllegalArgumentException("Redundant constraint not currently handled"))
                 pivot(i,j)
             }

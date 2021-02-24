@@ -8,10 +8,17 @@ class CatAndMouseABMExpts {
 
     @Test
     fun fermionic2Timestep() {
-        val mcmc = ABMCMC(CatAndMouseABM, 2, emptyList())
+        val observations = listOf(CatAndMouseABM.CMObservation(
+            CatAndMouseABM.CatMouseAgent(CatAndMouseABM.AgentType.CAT,CatAndMouseABM.AgentPosition.LEFT),
+            1,
+            true
+        ))
+        val mcmc = ABMCMC(CatAndMouseABM, 2, observations)
 
-        for(sample in 1..10) {
-            println(mcmc.nextSample())
+        for(sample in 1..3) {
+            val sample = mcmc.nextSample()
+            CatAndMouseABM.plot(sample)
+            println(sample)
         }
     }
 }

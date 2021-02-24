@@ -40,7 +40,7 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
             columnPivotLimits.add(zero)
             updatePivotState(col)
         }
-        currentSample = X()
+        currentSample = X(false)
     }
 
 
@@ -53,7 +53,7 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
     constructor(operators: FieldOperators<T>, constraints: List<Constraint<T>>, logPmf: (SparseVector<T>) -> Double) :
             super(constraints, emptyMap<Int, T>().asVector(operators)) {
         this.logPmf = logPmf
-        logProbOfPivotState = calcLogProbOfPivotState(X())
+        logProbOfPivotState = calcLogProbOfPivotState(X(false))
     }
 
     fun calcLogProbOfPivotState(x: SparseVector<T>) = logPmf(x) + logDegeneracyProb() + logFractionPenalty(x)
@@ -90,7 +90,7 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
         val reversePivot = PivotPoint(pivot.row, basicColsByRow[pivot.row])
         super.pivot(pivot)
         updatePivotInfo(reversePivot)
-        currentSample = pivotedSample?:X()
+        currentSample = pivotedSample?:X(false)
         logProbOfPivotState = pivotedLogProb?:calcLogProbOfPivotState(currentSample)
     }
 

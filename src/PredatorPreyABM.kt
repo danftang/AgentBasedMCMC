@@ -10,13 +10,16 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
         PREY
     }
 
-    enum class Acts {
+    enum class Acts: Ordered<Acts> {
         DIE,
         MOVELEFT,
         MOVERIGHT,
         MOVEUP,
         MOVEDOWN,
-        GIVEBIRTH
+        GIVEBIRTH;
+
+        override val domain: CountableDomain<Acts>
+            get() = enumCountableDomain()
     }
 
 
@@ -58,40 +61,39 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
                     others[PredPreyAgent(x,y.periodicDec(),type)]
 
 
-        fun toIndex() = agentDomain.toIndex(this)
-    }
+        override val ordinal: Int
+            get() = x + y * gridSize + if(type == AgentType.PREDATOR) gridSize * gridSize else 0
 
-    class Observation(val lookedFor: PredPreyAgent, val time: Int) {
+        override val domain: CountableDomain<PredPreyAgent>
+            get() = agentDomain
 
-        fun pObserveFootprints(trajectory: ABM.Trajectory<PredPreyAgent,Acts>): Double {
-            val stateAtT = trajectory[time].toABMState()
-            return if(stateAtT[lookedFor] >= 1) pObserveIfPresent else 0.0
-        }
-
-
-        companion object {
-            val pObserveIfPresent = 0.9
-        }
     }
 
 
-    class CompletedObservation(lookedFor: PredPreyAgent, time: Int, trajectory: ABM.Trajectory<PredPreyAgent, Acts>) {
-        val observation: Observation = Observation(lookedFor, time)
-        val footprintsObserved: Boolean = (Random.nextDouble() < observation.pObserveFootprints(trajectory))
+    class PPObservation(val time: Int, val lookedFor: PredPreyAgent, trajectory: Trajectory<PredPreyAgent, Acts>): Observation<PredPreyAgent, Acts> {
+        val footprintsObserved: Boolean = (Random.nextDouble() < pObserveFootprints(time, lookedFor, trajectory))
 
-        fun logProb(trajectory: ABM.Trajectory<PredPreyAgent, Acts>): Double {
+        override fun logLikelihood(trajectory: Trajectory<PredPreyAgent, Acts>): Double {
             return if(footprintsObserved) {
-                ln(observation.pObserveFootprints(trajectory))
+                ln(pObserveFootprints(time, lookedFor, trajectory))
             } else {
-                ln(1.0-observation.pObserveFootprints(trajectory))
+                ln(1.0-pObserveFootprints(time, lookedFor, trajectory))
             }
         }
 
-        fun constraints(): List<Constraint<Fraction>> {
+        override fun constraints(): List<Constraint<Fraction>> {
             return if(footprintsObserved) {
-                listOf(Constraint(hashMapOf(observation.lookedFor.toIndex() to Fraction.ONE), ">=", Fraction.ONE))
+                listOf(Constraint(hashMapOf(lookedFor.ordinal to Fraction.ONE), ">=", Fraction.ONE))
             } else {
                 emptyList()
+            }
+        }
+
+        companion object {
+            val pObserveIfPresent = 0.9
+
+            fun pObserveFootprints(time: Int, lookedFor: PredPreyAgent, trajectory: Trajectory<PredPreyAgent, Acts>): Double {
+                return if(trajectory.nAgents(time, lookedFor) >= 1) pObserveIfPresent else 0.0
             }
         }
 
@@ -99,16 +101,13 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
 
     var gridSize = 8
 
-    override val actDomain = countableDomainOf<Acts>()
+    override val actDomain = enumCountableDomain<Acts>()
 
     override val agentDomain = object: CountableDomain<PredPreyAgent> {
         override val size: Int
             get() = 2 * gridSize * gridSize
 
-        override fun toIndex(agent: PredPreyAgent) =
-            agent.x + agent.y * gridSize + if(agent.type == AgentType.PREDATOR) gridSize * gridSize else 0
-
-        override fun toObject(index: Int): PredPreyAgent {
+        override fun get(index: Int): PredPreyAgent {
             val type = if(index < gridSize*gridSize) AgentType.PREY else AgentType.PREDATOR
             val x = index.rem(gridSize)
             val y = index.rem(gridSize*gridSize) / gridSize
@@ -134,10 +133,10 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
     override fun timestepSupport(agent: PredPreyAgent, act: Acts): List<Constraint<Fraction>> {
         if(agent.type == AgentType.PREDATOR && act == Acts.GIVEBIRTH) {
             return listOf(Constraint(hashMapOf(
-                agentDomain.toIndex(PredPreyAgent(agent.x.periodicDec(),agent.y, AgentType.PREY)) to Fraction.ONE,
-                agentDomain.toIndex(PredPreyAgent(agent.x.periodicInc(),agent.y, AgentType.PREY)) to Fraction.ONE,
-                agentDomain.toIndex(PredPreyAgent(agent.x,agent.y.periodicDec(), AgentType.PREY)) to Fraction.ONE,
-                agentDomain.toIndex(PredPreyAgent(agent.x,agent.y.periodicInc(), AgentType.PREY)) to Fraction.ONE
+                PredPreyAgent(agent.x.periodicDec(),agent.y, AgentType.PREY).ordinal to Fraction.ONE,
+                PredPreyAgent(agent.x.periodicInc(),agent.y, AgentType.PREY).ordinal to Fraction.ONE,
+                PredPreyAgent(agent.x,agent.y.periodicDec(), AgentType.PREY).ordinal to Fraction.ONE,
+                PredPreyAgent(agent.x,agent.y.periodicInc(), AgentType.PREY).ordinal to Fraction.ONE
             ),">=", Fraction.ONE))
         }
         return emptyList()

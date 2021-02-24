@@ -15,13 +15,15 @@ object CatAndMouseABM: ABM<CatAndMouseABM.CatMouseAgent,CatAndMouseABM.Acts> {
         fun notHere() = if(this == LEFT) RIGHT else LEFT
     }
 
-    enum class Acts {
+    enum class Acts: Ordered<Acts> {
         MOVE,
-        STAYPUT
+        STAYPUT;
+
+        override val domain: CountableDomain<Acts>
+            get() = enumCountableDomain()
     }
 
     class CatMouseAgent(val type: AgentType, val position: AgentPosition): Agent<CatMouseAgent> {
-
         override fun timestep(others: Multiset<CatMouseAgent>): Array<Double> {
             val pCatMove = 0.25
 
@@ -36,33 +38,43 @@ object CatAndMouseABM: ABM<CatAndMouseABM.CatMouseAgent,CatAndMouseABM.Acts> {
             }
         }
 
-        fun toIndex() = agentDomain.toIndex(this)
+        override val ordinal:Int
+            get() = type.ordinal*2 + position.ordinal
+
+        override val domain: CountableDomain<CatMouseAgent>
+            get() = agentDomain
+
+        override fun toString(): String {
+            return "${type}:${position}"
+        }
     }
 
-    class Observation(position: AgentPosition, val time: Int, trajectory: ABM.Trajectory<CatMouseAgent, Acts>) {
-        val agent = CatMouseAgent(AgentType.CAT, position)
-        val agentPresent: Boolean = trajectory.nAgents(agent, time) >= 1
+    class CMObservation(val agent: CatMouseAgent, val time: Int, val agentPresent: Boolean): Observation<CatMouseAgent,Acts> {
 
-        fun logProb(trajectory: ABM.Trajectory<CatMouseAgent,Acts>): Double {
-            return if(trajectory.nAgents(agent, time) >= 1) 0.0 else Double.NEGATIVE_INFINITY
+        override fun logLikelihood(trajectory: Trajectory<CatMouseAgent, Acts>): Double {
+            return if(
+                (agentPresent && trajectory.nAgents(time, agent) >= 1) ||
+                (!agentPresent && trajectory.nAgents(time, agent) == 0)
+            ) 0.0 else Double.NEGATIVE_INFINITY
         }
 
-        fun constraints(): List<Constraint<Fraction>> {
+        override fun constraints(): List<Constraint<Fraction>> {
             return if(agentPresent) {
-                listOf(Constraint(hashMapOf(agent.toIndex() to Fraction.ONE), ">=", Fraction.ONE))
+                listOf(Constraint(hashMapOf(agent.ordinal to Fraction.ONE), ">=", Fraction.ONE))
             } else {
-                listOf(Constraint(hashMapOf(agent.toIndex() to Fraction.ONE), "==", Fraction.ZERO))
+                listOf(Constraint(hashMapOf(agent.ordinal to Fraction.ONE), "==", Fraction.ZERO))
             }
         }
     }
 
 
 
-    override val actDomain = countableDomainOf<Acts>()
+
+    override val actDomain = enumCountableDomain<Acts>()
     override val agentDomain = object: CountableDomain<CatMouseAgent> {
         override val size = 4
-        override fun toIndex(agent: CatMouseAgent) = agent.type.ordinal*2 + agent.position.ordinal
-        override fun toObject(index: Int) = CatMouseAgent(
+
+        override fun get(index: Int) = CatMouseAgent(
             AgentType.values()[index.shr(1)],
             AgentPosition.values()[index and 1]
         )
@@ -81,7 +93,7 @@ object CatAndMouseABM: ABM<CatAndMouseABM.CatMouseAgent,CatAndMouseABM.Acts> {
             AgentType.MOUSE -> when(act) {
                 Acts.MOVE -> listOf(
                     Constraint(
-                        hashMapOf(CatMouseAgent(AgentType.CAT, agent.position).toIndex() to Fraction.ONE),
+                        hashMapOf(CatMouseAgent(AgentType.CAT, agent.position).ordinal to Fraction.ONE),
                         ">=",
                         Fraction.ONE
                     )
@@ -90,4 +102,5 @@ object CatAndMouseABM: ABM<CatAndMouseABM.CatMouseAgent,CatAndMouseABM.Acts> {
             }
         }
     }
+
 }
