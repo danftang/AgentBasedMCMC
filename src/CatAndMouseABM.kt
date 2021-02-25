@@ -47,6 +47,18 @@ object CatAndMouseABM: ABM<CatAndMouseABM.CatMouseAgent,CatAndMouseABM.Acts> {
         override fun toString(): String {
             return "${type}:${position}"
         }
+
+        override fun equals(other: Any?): Boolean {
+            return if(other is CatMouseAgent) {
+                return other.type == type && other.position == position
+            } else {
+                false
+            }
+        }
+
+        override fun hashCode(): Int {
+            return type.hashCode()*2 + position.hashCode()
+        }
     }
 
     class CMObservation(val agent: CatMouseAgent, val time: Int, val agentPresent: Boolean): Observation<CatMouseAgent,Acts> {
@@ -58,16 +70,14 @@ object CatAndMouseABM: ABM<CatAndMouseABM.CatMouseAgent,CatAndMouseABM.Acts> {
             ) 0.0 else Double.NEGATIVE_INFINITY
         }
 
-        override fun constraints(): List<Constraint<Fraction>> {
+        override fun eventConstraints(): List<Constraint<Fraction>> {
             return if(agentPresent) {
-                listOf(Constraint(hashMapOf(agent.ordinal to Fraction.ONE), ">=", Fraction.ONE))
+                listOf(Constraint(hashMapOf(agent.ordinal to Fraction.ONE), ">=", Fraction.ONE).stateToEventConstraint(time))
             } else {
-                listOf(Constraint(hashMapOf(agent.ordinal to Fraction.ONE), "==", Fraction.ZERO))
+                listOf(Constraint(hashMapOf(agent.ordinal to Fraction.ONE), "==", Fraction.ZERO).stateToEventConstraint(time))
             }
         }
     }
-
-
 
 
     override val actDomain = enumCountableDomain<Acts>()
@@ -87,18 +97,25 @@ object CatAndMouseABM: ABM<CatAndMouseABM.CatMouseAgent,CatAndMouseABM.Acts> {
         }
     }
 
-    override fun timestepSupport(agent: CatMouseAgent, act: Acts): List<Constraint<Fraction>> {
-        return when(agent.type) {
+    override fun timestepEventConstraints(event: ABM.Event<CatMouseAgent, Acts>): List<Constraint<Fraction>> {
+        return when(event.agent.type) {
             AgentType.CAT   -> emptyList()
-            AgentType.MOUSE -> when(act) {
+            AgentType.MOUSE -> when(event.act) {
                 Acts.MOVE -> listOf(
                     Constraint(
-                        hashMapOf(CatMouseAgent(AgentType.CAT, agent.position).ordinal to Fraction.ONE),
+                        hashMapOf(CatMouseAgent(AgentType.CAT, event.agent.position).ordinal to Fraction.ONE),
                         ">=",
                         Fraction.ONE
-                    )
+                    ).stateToEventConstraint(event.time)
                 )
-                Acts.STAYPUT -> emptyList()
+                Acts.STAYPUT -> listOf(
+                    Constraint(
+                        hashMapOf(CatMouseAgent(AgentType.CAT, event.agent.position).ordinal to Fraction.ONE),
+                        "==",
+                        Fraction.ZERO
+                    ).stateToEventConstraint(event.time)
+
+                )
             }
         }
     }

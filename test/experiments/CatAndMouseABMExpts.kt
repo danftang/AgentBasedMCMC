@@ -2,6 +2,7 @@ package experiments
 
 import ABMCMC
 import CatAndMouseABM
+import Trajectory
 import org.junit.Test
 
 class CatAndMouseABMExpts {
@@ -15,7 +16,12 @@ class CatAndMouseABMExpts {
         ))
         val mcmc = ABMCMC(CatAndMouseABM, 2, observations)
 
-        for(sample in 1..3) {
+        val initialTrajectory = Trajectory(CatAndMouseABM, mcmc.simplex.X())
+        println("Initial Trajectory")
+        println(initialTrajectory)
+        CatAndMouseABM.plot(initialTrajectory)
+
+        for(sample in 1..6) {
             val sample = mcmc.nextSample()
             CatAndMouseABM.plot(sample)
             println(sample)

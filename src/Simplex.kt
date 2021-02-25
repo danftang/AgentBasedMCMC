@@ -1,3 +1,4 @@
+import com.google.ortools.linearsolver.MPSolver
 import lib.abstractAlgebra.*
 import lib.sparseMatrix.GridMapMatrix
 import lib.sparseMatrix.SparseMatrix
@@ -8,6 +9,7 @@ import java.lang.IllegalArgumentException
 import java.lang.Integer.max
 import java.lang.RuntimeException
 import java.util.AbstractMap
+import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 //////////////////////////////////////////////////////////////////////////
@@ -30,7 +32,7 @@ open class Simplex<T>(
           T: Comparable<T>
 {
 
-    var firstSlackColumn: Int = M.nRows-1
+    var firstSlackColumn: Int = M.nCols-1
 
     val B: MutableSparseVector<T>
         inline get() = M.columns[bColumn]
@@ -119,27 +121,34 @@ open class Simplex<T>(
 
 
     fun findInitialSolutionWithORTools() {
+//        println(M)
         val initialSolution = ORTools.GlopSolve(M)
-        // pivot in initial solution
-        for(j in initialSolution.indices) {
-            if(initialSolution[j] != 0.0) {
-                assert(initialSolution[j] >= 0.0)
-                val i = M.columns[j].nonZeroEntries.keys
-                    .find { it != objectiveRow }!!
-                pivot(i,j)
-            }
-        }
-
-        // pivot in degenerate vars
-        for(i in basicColsByRow.indices) {
-            if(basicColsByRow[i] == -1) {
-                assert(B[i] == zero)
-                val j = M.rows[i].nonZeroEntries.keys
-                    .find { it != bColumn }
-                    ?:throw(IllegalArgumentException("Redundant constraint not currently handled"))
-                pivot(i,j)
-            }
-        }
+        testSolution(initialSolution)
+        println("Pivoting-in initial solution")
+        pivotColumns(initialSolution.indices.filter { initialSolution[it] != 0.0 })
+        assert(isFeasible())
+//        // pivot in initial solution
+//        for(j in initialSolution.indices) {
+//            if(initialSolution[j] != 0.0) {
+//                assert(initialSolution[j] >= 0.0)
+//                val i = M.columns[j].nonZeroEntries.keys
+//                    .find { it != objectiveRow }!!
+//                pivot(i,j)
+//            }
+//        }
+//
+//        println("Pivoting in degenerate vars")
+//        // pivot in degenerate vars
+//        for(i in basicColsByRow.indices) {
+//            if(basicColsByRow[i] == -1) {
+//                assert(B[i] == zero)
+//                val j = M.rows[i].nonZeroEntries.keys
+//                    .find { it != bColumn }
+//                    ?:throw(IllegalArgumentException("Redundant constraint not currently handled"))
+//                pivot(i,j)
+//            }
+//        }
+        println("Initial solution ${X()}")
     }
 
     // Find an initial positive pivot state from a raw set of constraints
@@ -508,40 +517,19 @@ open class Simplex<T>(
         }
     }
 
+    fun testSolution(x: DoubleArray) {
+        for(i in 0 until objectiveRow) {
+            var Bi = 0.0
+            for(j in 0 until bColumn) {
+                Bi += M[i,j].toDouble()*x[j]
+            }
+            assert((B[i].toDouble() - Bi).absoluteValue < 1e-6)
+        }
+    }
+
+    fun isFeasible(): Boolean {
+        return B.nonZeroEntries.values.all { it > zero }
+    }
+
 }
 
-
-//fun MPSolver.toSimplex(): Simplex<Double> {
-//    val grid = GridMapMatrix<Double>(DoubleOperators,numConstraints()+1, numVariables()+1)
-//
-//    // check format
-//    constraints().forEach { constraint ->
-//        if(constraint.lb() != constraint.ub()) throw(RuntimeException("Can only do equality constraints at the moment"))
-//    }
-//    variables().forEach { variable ->
-//        if(variable.lb() != 0.0 || variable.ub() != Double.POSITIVE_INFINITY) throw(RuntimeException("Can only do positive variables for now"))
-//    }
-//
-//    constraints().forEach { constraint ->
-//        variables().forEach { variable ->
-//            val coeff = constraint.getCoefficient(variable)
-//            if(coeff != 0.0) grid[constraint.index(), variable.index()] = coeff
-//        }
-//        grid[constraint.index(), grid.nCols-1] = constraint.lb()
-//    }
-//
-//    variables().forEach { variable ->
-//        val coeff = objective().getCoefficient(variable)
-//        grid[grid.nRows-1, variable.index()] = coeff
-//    }
-//
-//    val simplex = Simplex(grid)
-//
-//    this.solve()
-//    val initialSolution = variables()
-//        .mapNotNull { if(it.solutionValue() != 0.0) it.index() else null }
-//
-//    simplex.pivotColumns(initialSolution)
-//
-//    return simplex
-//}

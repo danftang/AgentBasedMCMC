@@ -12,9 +12,9 @@ interface SparseColMatrix<T: Any>: SparseMatrix<T> {
         get() = columns.size
 
     override val nonZeroEntries: Iterable<SparseMatrix.Entry<T>>
-        get() = columns.withIndex().flatMap { (col, vector) ->
-            vector.nonZeroEntries.entries.mutableMapByRemovable { entry ->
-                CEntry(col, entry) { this.isZero() }
+        get() = columns.withIndex().flatMap { (j, col) ->
+            col.nonZeroEntries.entries.mutableMapByRemovable { entry ->
+                CEntry(j, entry) { this.isZero() }
             }
         }
 
@@ -57,6 +57,10 @@ interface SparseColMatrix<T: Any>: SparseMatrix<T> {
             } else {
                 entry.value.setValue(newValue)
             }
+        }
+
+        override fun toString(): String {
+            return "($row,$col)=$value"
         }
     }
 

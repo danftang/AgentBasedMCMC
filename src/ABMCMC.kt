@@ -12,14 +12,19 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(
 ) {
     val simplex: SimplexMCMC<Fraction> = SimplexMCMC(
         FractionOperators,
-        validTrajectoryConstraints(model, nTimesteps) + observations.flatMap { it.constraints() },
+        validTrajectoryConstraints(model, nTimesteps) +
+                observations.flatMap { it.eventConstraints() },
         this::logProb
     )
 
 
     fun logProb(X: SparseVector<Fraction>): Double {
         val trajectory = Trajectory(model,X)
-        return trajectory.logPrior() + observations.sumByDouble { it.logLikelihood(trajectory) }
+        val prior = trajectory.logPrior()
+        val likelihood = observations.sumByDouble { it.logLikelihood(trajectory) }
+        val logP = prior + likelihood
+        println("got logprob $prior + $likelihood = $logP")
+        return logP
     }
 
 
@@ -39,15 +44,9 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(
             constraints.addAll(fermionicConstraints(nTimesteps, model))
             for (state in 0 until model.agentDomain.size) {
                 for (act in 0 until model.actDomain.size) {
-                    val timestepConstraints = model.timestepSupport(
-                        model.agentDomain[state],
-                        model.actDomain[act]
-                    )
                     for (t in 0 until nTimesteps) {
-                        constraints.addAll(timestepConstraints
-                            .map { stateConstraintToActConstraint(it, t, model) }
-                            .map { fermionicXImpliesY(state, it) }
-                        )
+                        val event = ABM.Event(t, model.agentDomain[state], model.actDomain[act])
+                        constraints.addAll(fermionicXImpliesY(event.ordinal, model.timestepEventConstraints(event)))
                     }
                 }
             }
@@ -129,15 +128,33 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(
         // under the assumption that
         // 0 <= x <= 1
         // and 0 <= y_i <= 1
-        fun fermionicXImpliesY(x: Int, y: Constraint<Fraction>): Constraint<Fraction> {
-            if(y.relation == "==") TODO("Not implemented implication to equality, try splitting into two inequalities")
-            val coeffs = HashMap(y.coefficients)
-            if(y.relation == ">=") coeffs.entries.forEach { it.setValue(-it.value) }
-            var maxVal = Fraction.ZERO
-            coeffs.values.forEach { if(it > Fraction.ZERO) maxVal += it }
-            coeffs[x] = maxVal - y.constant
-            return Constraint(coeffs,"<=",maxVal)
+        // by using the identity
+        //
+        fun fermionicXImpliesY(x: Int, y: Constraint<Fraction>): List<Constraint<Fraction>> {
+            return if(y.relation == "==") {
+                fermionicXImpliesY(x, Constraint(y.coefficients,"<=",y.constant)) +
+                        fermionicXImpliesY(x, Constraint(y.coefficients,">=",y.constant))
+
+            } else {
+                val const: Fraction
+                val coeffs = if (y.relation == "<=") {
+                    const = y.constant
+                    HashMap(y.coefficients)
+                } else {
+                    const = -y.constant
+                    val negatedCoeffs = HashMap<Int,Fraction>(y.coefficients.size)
+                    y.coefficients.mapValuesTo(negatedCoeffs) { -it.value }
+                    negatedCoeffs
+                }
+                var maxVal = Fraction.ZERO
+                coeffs.values.forEach { if (it > Fraction.ZERO) maxVal += it }
+                coeffs[x] = maxVal - const
+                listOf(Constraint(coeffs, "<=", maxVal))
+            }
         }
+
+        fun fermionicXImpliesY(x: Int, y: List<Constraint<Fraction>>): List<Constraint<Fraction>> =
+            y.flatMap { fermionicXImpliesY(x, it) }
 
 
         // converts a constraint in terms of state occupation numbers into a constraint on acts

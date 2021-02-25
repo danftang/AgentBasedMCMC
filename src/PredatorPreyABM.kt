@@ -81,9 +81,9 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
             }
         }
 
-        override fun constraints(): List<Constraint<Fraction>> {
+        override fun eventConstraints(): List<Constraint<Fraction>> {
             return if(footprintsObserved) {
-                listOf(Constraint(hashMapOf(lookedFor.ordinal to Fraction.ONE), ">=", Fraction.ONE))
+                listOf(Constraint(hashMapOf(lookedFor.ordinal to Fraction.ONE), ">=", Fraction.ONE).stateToEventConstraint(time))
             } else {
                 emptyList()
             }
@@ -130,14 +130,14 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
 
     // returns a constraint in terms of state occupation numbers
     // Manually generated for now...
-    override fun timestepSupport(agent: PredPreyAgent, act: Acts): List<Constraint<Fraction>> {
-        if(agent.type == AgentType.PREDATOR && act == Acts.GIVEBIRTH) {
+    override fun timestepEventConstraints(event: ABM.Event<PredPreyAgent, Acts>): List<Constraint<Fraction>> {
+        if(event.agent.type == AgentType.PREDATOR && event.act == Acts.GIVEBIRTH) {
             return listOf(Constraint(hashMapOf(
-                PredPreyAgent(agent.x.periodicDec(),agent.y, AgentType.PREY).ordinal to Fraction.ONE,
-                PredPreyAgent(agent.x.periodicInc(),agent.y, AgentType.PREY).ordinal to Fraction.ONE,
-                PredPreyAgent(agent.x,agent.y.periodicDec(), AgentType.PREY).ordinal to Fraction.ONE,
-                PredPreyAgent(agent.x,agent.y.periodicInc(), AgentType.PREY).ordinal to Fraction.ONE
-            ),">=", Fraction.ONE))
+                PredPreyAgent(event.agent.x.periodicDec(),event.agent.y, AgentType.PREY).ordinal to Fraction.ONE,
+                PredPreyAgent(event.agent.x.periodicInc(),event.agent.y, AgentType.PREY).ordinal to Fraction.ONE,
+                PredPreyAgent(event.agent.x,event.agent.y.periodicDec(), AgentType.PREY).ordinal to Fraction.ONE,
+                PredPreyAgent(event.agent.x,event.agent.y.periodicInc(), AgentType.PREY).ordinal to Fraction.ONE
+            ),">=", Fraction.ONE).stateToEventConstraint(event.time))
         }
         return emptyList()
     }

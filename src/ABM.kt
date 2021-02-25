@@ -42,7 +42,9 @@ interface ABM<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> {
 
     fun isFermionic(): Boolean = true
     fun action(startState: AGENT, act: ACT): Map<AGENT,Int>
-    fun timestepSupport(agent: AGENT, act: ACT): List<Constraint<Fraction>> // to be generated automatically...eventually.
+
+    // returns the constraints implied by the given event
+    fun timestepEventConstraints(event: Event<AGENT,ACT>): List<Constraint<Fraction>> // to be generated automatically...eventually.
 
 
     fun runABM(startState: Multiset<AGENT>, nTimesteps: Int): Trajectory<AGENT, ACT> {
@@ -94,10 +96,27 @@ interface ABM<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> {
         return state
     }
 
+    // converts a constraint in terms of state occupation numbers into a constraint on acts
+    // in a given timestep
+//    fun stateToActConstraint(stateConstraint: Constraint<Fraction>, timestep: Int) = stateConstraint.stateToActConstraint(timestep)
+    fun Constraint<Fraction>.stateToEventConstraint(timestep: Int): Constraint<Fraction> {
+        val actCoeffs = HashMap<Int,Fraction>()
+        val nActs = actDomain.size
+        val timestepBase = agentDomain.size*nActs*timestep
+        coefficients.forEach { (state, coefficient) ->
+            for(act in 0 until nActs) {
+                actCoeffs[timestepBase + state*nActs + act] = coefficient
+            }
+        }
+        return Constraint(actCoeffs, relation, constant)
+    }
+
+
     fun Trajectory<AGENT, ACT>.nAgents(time: Int, agent: AGENT): Int {
         var count = 0
         for(act in 0 until actDomain.size) {
-            if(this[time][Pair(agent,actDomain.get(act))] >= 1) count++
+            val a = actDomain[act]
+            count += this[time][Pair(agent, a)]
         }
         return count
     }
@@ -105,8 +124,8 @@ interface ABM<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> {
     // Plots a Feynmann diagram of this trajectory, time on the y axis
     // agent state on the x axis and vectors for acts
     fun plot(trajectory: Trajectory<AGENT, ACT>) {
-        var maxX = 0
-        var maxY = 0
+        var maxX = 1
+        var maxY = 1
         val particleVectors = ArrayList<Int>()      // in format (x,y,dx,dy,colour)...
         for ((event, occupation) in trajectory.events) {
             val consequences = action(event.agent, event.act)

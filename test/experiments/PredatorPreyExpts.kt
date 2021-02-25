@@ -19,6 +19,8 @@ class PredatorPreyExpts {
         )
 
         val mcmc = ABMCMC(PredatorPreyABM, nTimesteps, observations)
+        println("Initial state is ${mcmc.simplex.X()}")
+        println("Starting sampling")
         for(sample in 1..10) {
             val sample = mcmc.nextSample()
             //println(mcmc.nextSample())
