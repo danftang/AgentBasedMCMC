@@ -56,9 +56,7 @@ object CatAndMouseABM: ABM<CatAndMouseABM.CatMouseAgent,CatAndMouseABM.Acts> {
             }
         }
 
-        override fun hashCode(): Int {
-            return type.hashCode()*2 + position.hashCode()
-        }
+        override fun hashCode() = ordinal
     }
 
     class CMObservation(val agent: CatMouseAgent, val time: Int, val agentPresent: Boolean): Observation<CatMouseAgent,Acts> {

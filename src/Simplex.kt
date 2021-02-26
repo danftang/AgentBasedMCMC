@@ -1,11 +1,7 @@
-import com.google.ortools.linearsolver.MPSolver
 import lib.abstractAlgebra.*
 import lib.sparseMatrix.GridMapMatrix
-import lib.sparseMatrix.SparseMatrix
-import lib.sparseMatrix.copyTo
 import lib.vector.*
 import org.apache.commons.math3.fraction.Fraction
-import java.lang.IllegalArgumentException
 import java.lang.Integer.max
 import java.lang.RuntimeException
 import java.util.AbstractMap
@@ -83,6 +79,21 @@ open class Simplex<T>(
 //    }
 
     constructor(constraints: List<Constraint<T>>, objective: SparseVector<T>) : this(
+        constraints,
+        objective,
+        ORTools.GlopSolve(constraints)
+//            .withIndex()
+//            .filter { it.value != 0.0 }
+//            .map { it.index }
+    ) {
+        println(B)
+        assert(isFeasible())
+    }
+
+
+    // initialBasicVars are variables that must be in the initial pivot state, but not necessarily a full
+    // piot state.
+    constructor(constraints: List<Constraint<T>>, objective: SparseVector<T>, initialBasicVars: DoubleArray) : this(
         GridMapMatrix(objective.operators, constraints.size+1, 1)
     ) {
         println("Transferring constraints to simplex tableau...")
@@ -97,25 +108,36 @@ open class Simplex<T>(
         var nextSlackVar = nVariables
         M.resize(M.nRows, nVariables + nSlackVars + 1)
         constraints.forEachIndexed { i, constraint ->
-            constraint.coefficients.forEach { (j, x) -> M[i,j] = x }
-            B[i] = constraint.constant
             when(constraint.relation) {
-                ">=" -> M[i,nextSlackVar++] = -operators.one
-                "<=" -> M[i,nextSlackVar++] = operators.one
+                ">=" -> {
+                    constraint.coefficients.forEach { (j, x) -> M[i,j] = -x }
+                    B[i] = -constraint.constant
+                }
+                "==","<=" -> {
+                    constraint.coefficients.forEach { (j, x) -> M[i,j] = x }
+                    B[i] = constraint.constant
+                }
             }
-
+            if(constraint.relation != "==") {
+                basicColsByRow[i] = nextSlackVar
+                M[i, nextSlackVar++] = operators.one
+            }
         }
         objective.nonZeroEntries.forEach { (j,x) ->
             this.objective[j] = x
         }
 
-        println("Finding initial solution")
 
-        findInitialSolutionWithORTools()
-//        findInitialSolutionWithoutORTools()
+        println("Pivoting-in initial solution")
+        val initialCols = initialBasicVars
+            .withIndex()
+            .filter { it.value != 0.0 }
+            .map { it.index }
 
-//        println("Constraints in M")
-//        println(M)
+        initialPivot(initialCols)
+
+
+
         println("Done")
     }
 
@@ -123,9 +145,9 @@ open class Simplex<T>(
     fun findInitialSolutionWithORTools() {
 //        println(M)
         val initialSolution = ORTools.GlopSolve(M)
-        testSolution(initialSolution)
+//        testSolution(initialSolution)
         println("Pivoting-in initial solution")
-        pivotColumns(initialSolution.indices.filter { initialSolution[it] != 0.0 })
+        initialPivot(initialSolution.indices.filter { initialSolution[it] != 0.0 })
         assert(isFeasible())
 //        // pivot in initial solution
 //        for(j in initialSolution.indices) {
@@ -328,22 +350,25 @@ open class Simplex<T>(
     }
 
 
-    // pivots in all non-zero columns in the supplied solution
+    // pivots in all columns in the supplied list
     // then greedily pivots in any remaining rows
-    fun pivotColumns(columnsToPivotIn: List<Int>) {
-        for(j in columnsToPivotIn) {
+    fun initialPivot(columnsToInclude: List<Int>) {
+        val canPivotRow = Array(basicColsByRow.size) { true }
+        for(j in columnsToInclude) {
             if(!isBasicColumn(j)) {
                 val pivotRow =
                     M.columns[j].nonZeroEntries
-                        .filter { it.key != objectiveRow && basicColsByRow[it.key] == -1 }
+                        .filter { it.key != objectiveRow && canPivotRow[it.key] }
                         .minBy { M.rows[it.key].nonZeroEntries.size }
 //                        .minBy { it.value.absoluteValue }
                         ?.key
-                        ?:throw(RuntimeException("Can't pivot to solution. Must be a non-extreme solution (i.e. contains loops)!"))
+                        ?:throw(RuntimeException("Can't pivot to solution. Must not be an extreme solution."))
                 pivot(pivotRow, j)
+                canPivotRow[pivotRow] = false
             }
         }
-        greedyPivotAll()
+        pivotAllUnpivoted()
+        columnsToInclude.forEach { assert( isBasicColumn(it) ) }
     }
 
 
@@ -351,12 +376,12 @@ open class Simplex<T>(
     // using a greedy algorithm:
     // for each row in turn, choose to pivot on the column with smallest
     // sparse size among all that have a +-1 in this row
-    fun greedyPivotAll() {
+    fun pivotAllUnpivoted() {
         for(pivotRow in basicColsByRow.indices) {
             if(basicColsByRow[pivotRow] == -1) {
                 val pivotCol = M.rows[pivotRow].nonZeroEntries
+                    .filter { it.key != bColumn }
                     .minBy { M.columns[it.key].nonZeroEntries.size }
-//                    .minBy { it.value.absoluteValue*1024 + M.columns[it.key].size }
                     ?.key
                     ?:throw(RuntimeException("No elements to pivot on, equations must be degenerate"))
                 pivot(pivotRow, pivotCol)
@@ -367,10 +392,14 @@ open class Simplex<T>(
     // true if this column is currently a basic variable
     fun isBasicColumn(j: Int): Boolean {
         val col = M.columns[j]
-        if(col.nonZeroEntries.size != 1) return false
-        val row = col.nonZeroEntries.entries.first().key
-        if(row == objectiveRow) return false
-        return basicColsByRow[row] == j
+        return if (col.nonZeroEntries.size > 2) {
+            false
+        } else {
+            col.nonZeroEntries.keys
+                .find { it != objectiveRow }
+                ?.let { basicColsByRow[it] == j }
+                ?:false
+        }
     }
 
 
@@ -518,18 +547,23 @@ open class Simplex<T>(
     }
 
     fun testSolution(x: DoubleArray) {
+        println("Testing solution")
         for(i in 0 until objectiveRow) {
             var Bi = 0.0
-            for(j in 0 until bColumn) {
+            for(j in x.indices) {
                 Bi += M[i,j].toDouble()*x[j]
             }
             assert((B[i].toDouble() - Bi).absoluteValue < 1e-6)
         }
+        println("Done")
     }
 
     fun isFeasible(): Boolean {
         return B.nonZeroEntries.values.all { it > zero }
     }
 
+    fun isInteger(): Boolean {
+        return B.nonZeroEntries.all { it.value.toDouble() == it.value.toInt().toDouble() }
+    }
 }
 

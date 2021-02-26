@@ -67,6 +67,14 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
         override val domain: CountableDomain<PredPreyAgent>
             get() = agentDomain
 
+        override fun equals(other: Any?): Boolean {
+            return if(other is PredPreyAgent) {
+                x == other.x && y == other.y && type == other.type
+            } else false
+        }
+
+        override fun hashCode() = ordinal
+
     }
 
 

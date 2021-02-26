@@ -23,7 +23,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(
         val prior = trajectory.logPrior()
         val likelihood = observations.sumByDouble { it.logLikelihood(trajectory) }
         val logP = prior + likelihood
-        println("got logprob $prior + $likelihood = $logP")
+//        println("got logprob $prior + $likelihood = $logP")
         return logP
     }
 

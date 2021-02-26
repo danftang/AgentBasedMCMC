@@ -4,9 +4,10 @@ import org.apache.commons.math3.fraction.Fraction
 import java.lang.StringBuilder
 import java.util.AbstractMap
 import kotlin.math.ln
+import kotlin.math.roundToInt
 
-class Trajectory<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(val timesteps: ArrayList<Multiset<Pair<AGENT, ACT>>> = ArrayList()) :
-    MutableList<Multiset<Pair<AGENT, ACT>>> by timesteps {
+class Trajectory<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(val timesteps: ArrayList<Multiset<Pair<AGENT, ACT>>> = ArrayList()) {//}:
+//    MutableList<Multiset<Pair<AGENT, ACT>>> by timesteps {
 
     val events = timesteps.asSequence()
         .mapIndexed { time, step ->
@@ -18,8 +19,12 @@ class Trajectory<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(val timesteps: ArrayLi
 
     constructor(model: ABM<AGENT,ACT>, actVector: SparseVector<Fraction>): this() {
         for((actId, occupation) in actVector.nonZeroEntries) {
-            this[model.eventDomain[actId]] = occupation.toInt()
+            this[model.eventDomain[actId]] = occupation.toDouble().roundToInt()
         }
+    }
+
+    operator fun get(time: Int): Multiset<Pair<AGENT,ACT>> {
+        return if(time < timesteps.size) timesteps[time] else Multiset(HashMap())
     }
 
     inline operator fun get(time: Int, agent: AGENT, act: ACT): Int {
@@ -50,7 +55,7 @@ class Trajectory<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(val timesteps: ArrayLi
 
     fun logPrior(): Double {
         var logP = 0.0
-        for(t in indices) {
+        for(t in timesteps.indices) {
             val state = stateAt(t)
             for((agentAct, occupation) in this[t].nonZeroEntries) {
                 val (agent, act) = agentAct

@@ -65,7 +65,7 @@ interface ABM<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> {
     // Assumes trajectory is valid
     fun logProb(trajectory: Trajectory<AGENT, ACT>): Double {
         var logProb = 0.0
-        for(time in trajectory.indices) {
+        for(time in trajectory.timesteps.indices) {
             val state = trajectory.stateAt(time)
             for((agentAct, occupation) in trajectory[time].nonZeroEntries) {
                 val (agent,act) = agentAct

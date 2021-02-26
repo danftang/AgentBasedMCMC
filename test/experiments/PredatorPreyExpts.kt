@@ -2,6 +2,7 @@ package experiments
 
 import ABMCMC
 import PredatorPreyABM
+import Trajectory
 import lib.collections.Multiset
 import org.junit.Test
 import kotlin.random.Random
@@ -11,7 +12,7 @@ class PredatorPreyExpts {
     @Test
     fun fermionicPredPrey() {
         val nTimesteps = 8
-        PredatorPreyABM.gridSize = 8
+        PredatorPreyABM.gridSize = 32
         val observations = generateObservations(
             PredatorPreyABM.randomState(0.2, 0.3),
             nTimesteps,
@@ -21,8 +22,9 @@ class PredatorPreyExpts {
         val mcmc = ABMCMC(PredatorPreyABM, nTimesteps, observations)
         println("Initial state is ${mcmc.simplex.X()}")
         println("Starting sampling")
-        for(sample in 1..10) {
+        for(sample in 1..1000) {
             val sample = mcmc.nextSample()
+            if(!mcmc.simplex.isInteger()) println("Fractional solution. Log fraction penalty = ${mcmc.simplex.logFractionPenalty(mcmc.simplex.X())}")
             //println(mcmc.nextSample())
         }
 
@@ -54,7 +56,13 @@ class PredatorPreyExpts {
                 }
             }
         }
+        checkTrajectorySatisfiesObervations(trajectory, observations)
         return observations
+    }
+
+    fun checkTrajectorySatisfiesObervations(trajectory: Trajectory<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>,
+    observations: List<PredatorPreyABM.PPObservation>) {
+        assert(observations.all { it.logLikelihood(trajectory) != Double.NEGATIVE_INFINITY })
     }
 
 

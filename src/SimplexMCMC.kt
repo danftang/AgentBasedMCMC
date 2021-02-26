@@ -5,10 +5,7 @@ import lib.vector.asVector
 import org.apache.commons.math3.util.CombinatoricsUtils
 import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
-import kotlin.math.absoluteValue
-import kotlin.math.exp
-import kotlin.math.ln
-import kotlin.math.roundToInt
+import kotlin.math.*
 import kotlin.random.Random
 
 // Adds MCMC pivoting to a Simplex so that the probability of
@@ -26,7 +23,7 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
 
     val logPmf: (SparseVector<T>) -> Double
 
-    val fractionPenaltyK: Double          = -1.0
+    val fractionPenaltyK: Double          = -4.0
     val degeneratePivotWeight             = 0.001
     val probOfRowSwap                     = 0.01
 
@@ -68,15 +65,18 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
             return currentSample
         }
         var proposalPivot = proposePivot()
-        println("Proposal is degenerate ${isDegenerate(proposalPivot)}")
+        if(isDegenerate(proposalPivot)) println("Proposal is degenerate")
         val rejectionPivot = PivotPoint(proposalPivot.row, basicColsByRow[proposalPivot.row])
         val originalLogProbOfPivotState = logProbOfPivotState
         val originalLogProbOfTransition = ln(trasitionProb(proposalPivot))
         val originalSample = currentSample
 //        println("Fraction of pivot-affected cols ${fractionOfAffectedColumns(proposalPivot)}")
         mcmcPivot(proposalPivot,null,null)
-        val logAcceptance =
-            logProbOfPivotState + ln(trasitionProb(rejectionPivot)) - originalLogProbOfPivotState - originalLogProbOfTransition
+        val logTransitionProbRatio = ln(trasitionProb(rejectionPivot)) - originalLogProbOfTransition
+        val logPivotStateRatio = if(logProbOfPivotState == Double.NEGATIVE_INFINITY &&
+            originalLogProbOfPivotState == Double.NEGATIVE_INFINITY) 0.0 else logProbOfPivotState - originalLogProbOfPivotState
+        val logAcceptance = min(logPivotStateRatio + logTransitionProbRatio,0.0)
+//        println("Log acceptance = $logProbOfPivotState + ${ln(trasitionProb(rejectionPivot))} - $originalLogProbOfPivotState - $originalLogProbOfTransition")
         println("Acceptance = ${exp(logAcceptance)}")
         if(Random.nextDouble() >= exp(logAcceptance)) {
             println("Rejecting")

@@ -173,6 +173,8 @@ class GridMap<T>(
         fun compute(key: Int, remappingFunction: (Int, T?)->T): T? {
             return this@GridMap.compute(key, col, remappingFunction)
         }
+
+        override fun toString() = entries.toString()
     }
 
     inner class RowMapView(val row: Int): AbstractMutableMap<Int,T>() {
@@ -217,6 +219,19 @@ class GridMap<T>(
         }
 
         override fun iterator() = ColIteratorWrapper(col, _columnData[col].iterator())
+
+        override fun toString(): String {
+            val out = StringBuilder()
+            val it = iterator()
+            out.append('[')
+            while(it.hasNext()) {
+                out.append(it.next().toString())
+                out.append(',')
+            }
+            out.deleteCharAt(out.lastIndex)
+            out.append(']')
+            return out.toString()
+        }
     }
 
     inner class RowEntrySet(val row: Int): AbstractMutableSet<MutableMap.MutableEntry<Int, T>>() {
