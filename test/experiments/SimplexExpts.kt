@@ -93,6 +93,7 @@ class SimplexExpts {
             1 to 1.0
         ).asDoubleVector()
         val simplex = Simplex(constraints, objective)
+        simplex.pivotToInitialSolutionWithoutORTools()
         println(simplex.M)
         simplex.greedyMinimise()
         println("Solution is")

@@ -1,9 +1,17 @@
 package experiments
 
 import ABMCMC
+import ABMCMC.Companion.validTrajectoryConstraints
 import PredatorPreyABM
+import Simplex
 import Trajectory
+import lib.abstractAlgebra.FractionOperators
 import lib.collections.Multiset
+import lib.vector.MapVector
+import lib.vector.SparseVector
+import lib.vector.asVector
+import numVars
+import org.apache.commons.math3.fraction.Fraction
 import org.junit.Test
 import kotlin.random.Random
 
@@ -18,7 +26,6 @@ class PredatorPreyExpts {
             nTimesteps,
             0.02
         )
-
         val mcmc = ABMCMC(PredatorPreyABM, nTimesteps, observations)
         println("Initial state is ${mcmc.simplex.X()}")
         println("Starting sampling")
@@ -28,6 +35,27 @@ class PredatorPreyExpts {
             //println(mcmc.nextSample())
         }
 
+    }
+
+    @Test
+    fun testORSolve() {
+        val nTimesteps = 8
+        PredatorPreyABM.gridSize = 32
+        val observations = generateObservations(
+            PredatorPreyABM.randomState(0.2, 0.3),
+            nTimesteps,
+            0.02
+        )
+        val constraints = validTrajectoryConstraints(PredatorPreyABM, nTimesteps) + observations.flatMap { it.eventConstraints() }
+        val objective = observations.flatMap { observation -> observation.eventConstraints().flatMap { it.coefficients.keys } }.associateWith { Fraction.ONE }
+        // val objective = (0 until constraints.numVars()).associateWith { Fraction.ONE }
+
+//        val simplex = Simplex(constraints, objective.asVector(FractionOperators))
+//        simplex.pivotToInitialIntegerSolution()
+//        println("Initial solution is ${simplex.X()}")
+
+        val solution = ORTools.IntegerSolve(constraints, objective)
+        println("solution is ${solution.asList()}")
     }
 
     fun generateObservations(

@@ -32,28 +32,8 @@ object ORTools {
 
     fun<T: Number> GlopSolve(tableaux: SparseMatrix<T>): DoubleArray {
         val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING)
-        val bColumn = tableaux.nCols - 1
-        val objectiveRow = tableaux.nRows - 1
         val X = solver.makeNumVarArray(tableaux.nCols - 1, 0.0, Double.POSITIVE_INFINITY)
-        val constraints = Array<MPConstraint>(tableaux.nRows-1) { solver.makeConstraint(0.0,0.0) }
-        val objective = solver.objective()
-        for(entry in tableaux.nonZeroEntries) {
-            if(entry.row != objectiveRow) {
-                if(entry.col != bColumn) {
-                    constraints[entry.row].setCoefficient(X[entry.col], entry.value.toDouble())
-                } else {
-                    constraints[entry.row].setBounds(entry.value.toDouble(), entry.value.toDouble())
-                }
-            } else {
-                objective.setCoefficient(X[entry.col], entry.value.toDouble())
-            }
-        }
-
-//        println("Solving for")
-//        println(solver.toSimplex().M)
-
-        solver.objective().setMinimization()
-        return doSolve(solver,X)
+        return ORSolve(solver, X, tableaux)
     }
 
 
@@ -64,6 +44,13 @@ object ORTools {
         )
         val X = solver.makeIntVarArray(nVariables, 0.0, Double.POSITIVE_INFINITY)
         return ORSolve(solver, X, constraints, objective)
+    }
+
+
+    fun<T: Number> IntegerSolve(tableaux: SparseMatrix<T>): DoubleArray {
+        val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
+        val X = solver.makeIntVarArray(tableaux.nCols-1, 0.0, Double.POSITIVE_INFINITY)
+        return ORSolve(solver, X, tableaux)
     }
 
 
@@ -92,6 +79,30 @@ object ORTools {
         }
         mpObjective.setMinimization()
         return doSolve(solver, X)
+    }
+
+
+    fun<T: Number> ORSolve(
+        solver: MPSolver,
+        X: Array<MPVariable>,
+        tableaux: SparseMatrix<T>): DoubleArray {
+        val bColumn = tableaux.nCols - 1
+        val objectiveRow = tableaux.nRows - 1
+        val constraints = Array<MPConstraint>(tableaux.nRows-1) { solver.makeConstraint(0.0,0.0) }
+        val objective = solver.objective()
+        for(entry in tableaux.nonZeroEntries) {
+            if(entry.row != objectiveRow) {
+                if(entry.col != bColumn) {
+                    constraints[entry.row].setCoefficient(X[entry.col], entry.value.toDouble())
+                } else {
+                    constraints[entry.row].setBounds(entry.value.toDouble(), entry.value.toDouble())
+                }
+            } else {
+                objective.setCoefficient(X[entry.col], entry.value.toDouble())
+            }
+        }
+        solver.objective().setMinimization()
+        return doSolve(solver,X)
     }
 
 

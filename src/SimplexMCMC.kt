@@ -33,6 +33,7 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
     var currentSample: SparseVector<T>
 
     init {
+        pivotToInitialIntegerSolution()
         for (col in 0 until M.nCols - 1) {
             columnPivotLimits.add(zero)
             updatePivotState(col)
@@ -124,7 +125,7 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
 
 
     fun updatePivotState(column: Int) {
-        val pivotRows = pivotableRows(column)
+        val pivotRows = pivotableRows(column,false)
         columnPivotLimits[column] = if(pivotRows.isEmpty()) zero else B[pivotRows[0]]/M[pivotRows[0],column]
         columnWeights[column] =
             if(columnPivotLimits[column] == zero)

@@ -1,5 +1,9 @@
+import lib.abstractAlgebra.FractionOperators
 import lib.collections.Multiset
+import lib.vector.MapVector
+import lib.vector.MutableMapVector
 import lib.vector.SparseVector
+import lib.vector.asVector
 import org.apache.commons.math3.fraction.Fraction
 import java.lang.StringBuilder
 import java.util.AbstractMap
@@ -63,6 +67,13 @@ class Trajectory<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(val timesteps: ArrayLi
             }
         }
         return logP
+    }
+
+
+    fun toActVector(): SparseVector<Fraction> {
+        return events
+            .associate { (event, occupation) -> Pair(event.ordinal, Fraction(occupation)) }
+            .asVector(FractionOperators)
     }
 
 

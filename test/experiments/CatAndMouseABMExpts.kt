@@ -15,6 +15,7 @@ class CatAndMouseABMExpts {
             true
         ))
         val mcmc = ABMCMC(CatAndMouseABM, 2, observations)
+        assert(mcmc.simplex.isPrimalFeasible())
 
         val initialTrajectory = Trajectory(CatAndMouseABM, mcmc.simplex.X())
         println("Initial Trajectory")
