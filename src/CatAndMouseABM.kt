@@ -1,4 +1,5 @@
 import lib.collections.Multiset
+import lib.collections.multisetOf
 import org.apache.commons.math3.fraction.Fraction
 
 object CatAndMouseABM: ABM<CatAndMouseABM.CatMouseAgent,CatAndMouseABM.Acts> {
@@ -88,10 +89,10 @@ object CatAndMouseABM: ABM<CatAndMouseABM.CatMouseAgent,CatAndMouseABM.Acts> {
         )
     }
 
-    override fun action(startState: CatMouseAgent, act: Acts): Map<CatMouseAgent, Int> {
+    override fun consequences(startState: CatMouseAgent, act: Acts): Multiset<CatMouseAgent> {
         return when(act) {
-            Acts.STAYPUT    -> mapOf(startState to 1)
-            Acts.MOVE       -> mapOf(CatMouseAgent(startState.type, startState.position.notHere()) to 1)
+            Acts.STAYPUT    -> multisetOf(startState to 1)
+            Acts.MOVE       -> multisetOf(CatMouseAgent(startState.type, startState.position.notHere()) to 1)
         }
     }
 

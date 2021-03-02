@@ -40,3 +40,14 @@ class Constraint<COEFF> {
         return out.toString()
     }
 }
+
+
+fun<COEFF: Comparable<COEFF>> Constraint<COEFF>.isSatisfiedBy(x: SparseVector<COEFF>): Boolean {
+    val lhs = coefficients.asVector(x.operators).dotProduct(x)
+    println("$lhs $relation $constant")
+    return when(relation) {
+        "<=" -> lhs <= constant
+        ">=" -> lhs >= constant
+        else -> lhs == constant
+    }
+}

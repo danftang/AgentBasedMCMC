@@ -1,4 +1,5 @@
 import lib.collections.Multiset
+import lib.collections.multisetOf
 import org.apache.commons.math3.fraction.Fraction
 import kotlin.math.ln
 import kotlin.random.Random
@@ -124,14 +125,14 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
 
     }
 
-    override fun action(startState: PredPreyAgent, act: Acts): Map<PredPreyAgent,Int> {
+    override fun consequences(startState: PredPreyAgent, act: Acts): Multiset<PredPreyAgent> {
         return when(act) {
-            Acts.DIE       -> emptyMap()
-            Acts.MOVELEFT  -> mapOf(PredPreyAgent(startState.x.periodicDec(),startState.y, startState.type) to 1)
-            Acts.MOVERIGHT -> mapOf(PredPreyAgent(startState.x.periodicInc(),startState.y, startState.type) to 1)
-            Acts.MOVEUP    -> mapOf(PredPreyAgent(startState.x,startState.y.periodicInc(), startState.type) to 1)
-            Acts.MOVEDOWN  -> mapOf(PredPreyAgent(startState.x,startState.y.periodicDec(), startState.type) to 1)
-            Acts.GIVEBIRTH -> mapOf(startState to 1, PredPreyAgent(startState.x.periodicInc(),startState.y, startState.type) to 1)
+            Acts.DIE       -> multisetOf()
+            Acts.MOVELEFT  -> multisetOf(PredPreyAgent(startState.x.periodicDec(),startState.y, startState.type) to 1)
+            Acts.MOVERIGHT -> multisetOf(PredPreyAgent(startState.x.periodicInc(),startState.y, startState.type) to 1)
+            Acts.MOVEUP    -> multisetOf(PredPreyAgent(startState.x,startState.y.periodicInc(), startState.type) to 1)
+            Acts.MOVEDOWN  -> multisetOf(PredPreyAgent(startState.x,startState.y.periodicDec(), startState.type) to 1)
+            Acts.GIVEBIRTH -> multisetOf(startState to 1, PredPreyAgent(startState.x.periodicInc(),startState.y, startState.type) to 1)
         }
     }
 

@@ -32,7 +32,6 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
     var currentSample: SparseVector<T>
 
     init {
-        pivotToInitialIntegerSolution()
         for (col in 0 until M.nCols - 1) {
             columnPivotLimits.add(zero)
             updatePivotState(col)
@@ -47,8 +46,11 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
 //        logProbOfPivotState = calcLogProbOfPivotState(X())
 //    }
 
-    constructor(operators: FieldOperators<T>, constraints: List<Constraint<T>>, logPmf: (SparseVector<T>) -> Double) :
-            super(constraints, emptyMap<Int, T>().asVector(operators), emptyMap<Int, T>().asVector(operators)) {
+    constructor(
+        constraints: List<Constraint<T>>,
+        initialSample: SparseVector<T>,
+        logPmf: (SparseVector<T>) -> Double) :
+            super(constraints, emptyMap<Int, T>().asVector(initialSample.operators), initialSample) {
         this.logPmf = logPmf
         logProbOfPivotState = calcLogProbOfPivotState(X(false))
     }

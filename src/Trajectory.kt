@@ -13,7 +13,7 @@ class Trajectory<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(val timesteps: ArrayLi
 
     val events = timesteps.asSequence()
         .mapIndexed { time, step ->
-            step.nonZeroEntries.asSequence().map { (agentAct, occupation) ->
+            step.entries.asSequence().map { (agentAct, occupation) ->
                 AbstractMap.SimpleEntry(ABM.Event(time, agentAct.first, agentAct.second), occupation)
             }
         }
@@ -48,7 +48,7 @@ class Trajectory<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(val timesteps: ArrayLi
 
     fun stateAt(time: Int): Multiset<AGENT> {
         val state = Multiset<AGENT>()
-        for((agentAct, occupation) in this[time].nonZeroEntries) {
+        for((agentAct, occupation) in this[time].entries) {
             val (agent, _) = agentAct
             state[agent] += occupation
         }
@@ -59,7 +59,7 @@ class Trajectory<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(val timesteps: ArrayLi
         var logP = 0.0
         for(t in timesteps.indices) {
             val state = stateAt(t)
-            for((agentAct, occupation) in this[t].nonZeroEntries) {
+            for((agentAct, occupation) in this[t].entries) {
                 val (agent, act) = agentAct
                 logP += occupation*ln(agent.timestep(state)[act.ordinal])
             }
@@ -68,7 +68,7 @@ class Trajectory<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(val timesteps: ArrayLi
     }
 
 
-    fun toActVector(): SparseVector<Fraction> {
+    fun toEventVector(): SparseVector<Fraction> {
         return events
             .associate { (event, occupation) -> Pair(event.ordinal, Fraction(occupation)) }
             .asVector(FractionOperators)

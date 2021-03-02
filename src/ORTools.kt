@@ -54,6 +54,16 @@ object ORTools {
     }
 
 
+    fun<T: Number> BooleanSolve(constraints: List<Constraint<T>>, objective: Map<Int,T> = emptyMap()): DoubleArray {
+        val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
+        val nVariables = Integer.max(constraints.numVars(),
+            objective.keys.max()?.let { it + 1 } ?: 0
+        )
+        val X = solver.makeBoolVarArray(nVariables)
+        return ORSolve(solver, X, constraints, objective)
+    }
+
+
     fun<T: Number> ORSolve(
         solver: MPSolver,
         X: Array<MPVariable>,

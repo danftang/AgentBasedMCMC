@@ -1,6 +1,8 @@
 package lib.sparseVector
 
+import lib.abstractAlgebra.DoubleOperators
 import lib.abstractAlgebra.FieldOperators
+import lib.abstractAlgebra.IntOperators
 
 class MutableMapVector<T>(
     val fieldOperators: FieldOperators<T>,
@@ -15,8 +17,11 @@ class MutableMapVector<T>(
     override fun equals(other: Any?) = isEqualTo(other)
 }
 
-inline fun<T: Any> MutableMap<Int,T>.asMutableVector(operators: FieldOperators<T>): MutableMapVector<T> =
+inline fun<T> MutableMap<Int,T>.asMutableVector(operators: FieldOperators<T>): MutableMapVector<T> =
     MutableMapVector(operators, this)
 
-//inline fun<T: FieldElement<T>> MutableMap<Int,T>.asMutableMapVector(apacheField: Field<T>): MutableMapVector<T> =
-//    MutableMapVector(apacheField.asFieldOperators(), this)
+inline fun MutableMap<Int,Double>.asDoubleMutableVector(): MutableMapVector<Double> =
+    MutableMapVector(DoubleOperators, this)
+
+inline fun MutableMap<Int,Int>.asIntMutableVector(): MutableMapVector<Int> =
+    MutableMapVector(IntOperators, this)

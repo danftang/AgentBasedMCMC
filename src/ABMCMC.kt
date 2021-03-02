@@ -3,23 +3,42 @@ import lib.unaryMinus
 import lib.plus
 import lib.minus
 import lib.sparseVector.SparseVector
+import lib.sparseVector.asVector
 import org.apache.commons.math3.fraction.Fraction
 
-class ABMCMC<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(
-    val model: ABM<AGENT, ACT>,
-    nTimesteps: Int,
-    val observations: List<Observation<AGENT,ACT>>
-) {
-    val simplex: SimplexMCMC<Fraction> = SimplexMCMC(
-        FractionOperators,
-        validTrajectoryConstraints(model, nTimesteps) +
-                observations.flatMap { it.eventConstraints() },
-        this::logProb
-    )
+class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
+    val simplex: SimplexMCMC<Fraction>
+    val model: ABM<AGENT, ACT>
+    val observations: List<Observation<AGENT, ACT>>
+
+    constructor(
+        model: ABM<AGENT, ACT>,
+        nTimesteps: Int,
+        observations: List<Observation<AGENT, ACT>>,
+        initialSample: SparseVector<Fraction>? = null
+    ) {
+        this.model = model
+        this.observations = observations
+        val constraints = constraints(model, nTimesteps, observations)
+        this.simplex = SimplexMCMC(
+            constraints,
+            initialSample
+                ?: run {
+                    ORTools.IntegerSolve(constraints)
+                        .withIndex()
+                        .filter { it.value != 0.0 }
+                        .associate { Pair(it.index, Fraction(it.value)) }
+                        .asVector(FractionOperators)
+                },
+            this::logProb
+        )
+        assert(simplex.isFullyPivoted())
+        assert(simplex.isPrimalFeasible())
+    }
 
 
     fun logProb(X: SparseVector<Fraction>): Double {
-        val trajectory = Trajectory(model,X)
+        val trajectory = Trajectory(model, X)
         val prior = trajectory.logPrior()
         val likelihood = observations.sumByDouble { it.logLikelihood(trajectory) }
         val logP = prior + likelihood
@@ -34,14 +53,23 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(
 
 
     companion object {
-        fun <AGENT : Agent<AGENT>, ACT: Ordered<ACT>> validTrajectoryConstraints(
+        fun <AGENT : Agent<AGENT>, ACT : Ordered<ACT>> constraints(
             model: ABM<AGENT, ACT>,
-            nTimesteps: Int
+            nTimesteps: Int,
+            observations: List<Observation<AGENT, ACT>>
+        ): List<Constraint<Fraction>> {
+            return validTrajectoryConstraints(model, nTimesteps, true) + observations.flatMap { it.eventConstraints() }
+        }
+
+        fun <AGENT : Agent<AGENT>, ACT : Ordered<ACT>> validTrajectoryConstraints(
+            model: ABM<AGENT, ACT>,
+            nTimesteps: Int,
+            fermionic: Boolean
         ): List<Constraint<Fraction>> {
             println("Constructing model constraints...")
-            val constraints = ArrayList<Constraint<Fraction>>(model.actDomain.size*model.agentDomain.size*2)
+            val constraints = ArrayList<Constraint<Fraction>>(model.actDomain.size * model.agentDomain.size * 2)
             constraints.addAll(continuityConstraints(nTimesteps, model))
-            constraints.addAll(fermionicConstraints(nTimesteps, model))
+            if(fermionic) constraints.addAll(fermionicConstraints(nTimesteps, model))
             for (state in 0 until model.agentDomain.size) {
                 for (act in 0 until model.actDomain.size) {
                     for (t in 0 until nTimesteps) {
@@ -55,32 +83,35 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(
             return constraints
         }
 
-        fun<AGENT : Agent<AGENT>,ACT: Ordered<ACT>> continuityConstraints(nTimesteps: Int, abm: ABM<AGENT,ACT>): List<Constraint<Fraction>> {
+        fun <AGENT : Agent<AGENT>, ACT : Ordered<ACT>> continuityConstraints(
+            nTimesteps: Int,
+            abm: ABM<AGENT, ACT>
+        ): List<Constraint<Fraction>> {
             val nStates = abm.agentDomain.size
 //        val acts = abm.actDomain
             val nActs = abm.actDomain.size
-            val constraints = ArrayList<Constraint<Fraction>>((nTimesteps-1)*nStates)
+            val constraints = ArrayList<Constraint<Fraction>>((nTimesteps - 1) * nStates)
 
             // first do leaving edges
-            for(t in 1 until nTimesteps) {
-                for(state in 0 until nStates) {
-                    val coeffs = HashMap<Int,Fraction>()
-                    val coeffBase = (t*nStates + state)*nActs
-                    for(act in 0 until nActs) {
+            for (t in 1 until nTimesteps) {
+                for (state in 0 until nStates) {
+                    val coeffs = HashMap<Int, Fraction>()
+                    val coeffBase = (t * nStates + state) * nActs
+                    for (act in 0 until nActs) {
                         coeffs[coeffBase + act] = Fraction(-1)
                     }
-                    constraints.add(Constraint(coeffs,"==", Fraction.ZERO))
+                    constraints.add(Constraint(coeffs, "==", Fraction.ZERO))
                 }
             }
             // now do incoming edges
-            for(state in 0 until nStates) {
-                for(act in 0 until nActs) {
-                    val consequences = abm.action(abm.agentDomain[state], abm.actDomain[act])
-                    for((resultState, n) in consequences) {
+            for (state in 0 until nStates) {
+                for (act in 0 until nActs) {
+                    val consequences = abm.consequences(abm.agentDomain[state], abm.actDomain[act])
+                    for ((resultState, n) in consequences.entries) {
                         val resultIndex = resultState.ordinal
-                        for(t in 0 until nTimesteps-1) {
-                            constraints[t*nStates + resultIndex]
-                                .coefficients[(t*nStates + state)*nActs + act] = Fraction(n)
+                        for (t in 0 until nTimesteps - 1) {
+                            constraints[t * nStates + resultIndex]
+                                .coefficients[(t * nStates + state) * nActs + act] = Fraction(n)
                         }
                     }
                 }
@@ -90,34 +121,37 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(
         }
 
 
-        fun<AGENT : Agent<AGENT>,ACT: Ordered<ACT>> fermionicConstraints(nTimesteps: Int, abm: ABM<AGENT,ACT>): List<Constraint<Fraction>> {
+        fun <AGENT : Agent<AGENT>, ACT : Ordered<ACT>> fermionicConstraints(
+            nTimesteps: Int,
+            abm: ABM<AGENT, ACT>
+        ): List<Constraint<Fraction>> {
             val nStates = abm.agentDomain.size
             val nActs = abm.actDomain.size
-            val constraints = ArrayList<Constraint<Fraction>>((nTimesteps+1)*nStates)
+            val constraints = ArrayList<Constraint<Fraction>>((nTimesteps + 1) * nStates)
 
-            for(t in 0 until nTimesteps) {
-                for(state in 0 until nStates) {
-                    val coeffs = HashMap<Int,Fraction>()
-                    val coeffBase = (t*nStates + state)*nActs
-                    for(act in 0 until nActs) {
+            for (t in 0 until nTimesteps) {
+                for (state in 0 until nStates) {
+                    val coeffs = HashMap<Int, Fraction>()
+                    val coeffBase = (t * nStates + state) * nActs
+                    for (act in 0 until nActs) {
                         coeffs[coeffBase + act] = Fraction(1)
                     }
-                    constraints.add(Constraint(coeffs,"<=", Fraction.ONE))
+                    constraints.add(Constraint(coeffs, "<=", Fraction.ONE))
                 }
             }
 
-            val coeffsByState = Array(nStates) { HashMap<Int,Fraction>() }
-            for(state in 0 until nStates) {
-                val coeffBase = ((nTimesteps-1)*nStates + state)*nActs
-                for(act in 0 until nActs) {
-                    val consequences = abm.action(abm.agentDomain[state], abm.actDomain[act])
-                    for((resultState, n) in consequences) {
+            val coeffsByState = Array(nStates) { HashMap<Int, Fraction>() }
+            for (state in 0 until nStates) {
+                val coeffBase = ((nTimesteps - 1) * nStates + state) * nActs
+                for (act in 0 until nActs) {
+                    val consequences = abm.consequences(abm.agentDomain[state], abm.actDomain[act])
+                    for ((resultState, n) in consequences.entries) {
                         coeffsByState[resultState.ordinal][coeffBase + act] = Fraction(n)
                     }
                 }
             }
-            for(state in 0 until nStates) {
-                constraints.add(Constraint(coeffsByState[state],"<=", Fraction.ONE))
+            for (state in 0 until nStates) {
+                constraints.add(Constraint(coeffsByState[state], "<=", Fraction.ONE))
             }
 //            println("Fermionic constraints are $constraints")
             return constraints
@@ -130,9 +164,9 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(
         // by using the identity
         //
         fun fermionicXImpliesY(x: Int, y: Constraint<Fraction>): List<Constraint<Fraction>> {
-            return if(y.relation == "==") {
-                fermionicXImpliesY(x, Constraint(y.coefficients,"<=",y.constant)) +
-                        fermionicXImpliesY(x, Constraint(y.coefficients,">=",y.constant))
+            return if (y.relation == "==") {
+                fermionicXImpliesY(x, Constraint(y.coefficients, "<=", y.constant)) +
+                        fermionicXImpliesY(x, Constraint(y.coefficients, ">=", y.constant))
 
             } else {
                 val const: Fraction
@@ -141,7 +175,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(
                     HashMap(y.coefficients)
                 } else {
                     const = -y.constant
-                    val negatedCoeffs = HashMap<Int,Fraction>(y.coefficients.size)
+                    val negatedCoeffs = HashMap<Int, Fraction>(y.coefficients.size)
                     y.coefficients.mapValuesTo(negatedCoeffs) { -it.value }
                     negatedCoeffs
                 }
@@ -158,19 +192,21 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(
 
         // converts a constraint in terms of state occupation numbers into a constraint on acts
         // in a given timestep
-        fun<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> stateConstraintToActConstraint(stateConstraint: Constraint<Fraction>, timestep: Int, abm: ABM<AGENT,ACT>): Constraint<Fraction> {
-            val actCoeffs = HashMap<Int,Fraction>()
+        fun <AGENT : Agent<AGENT>, ACT : Ordered<ACT>> stateConstraintToActConstraint(
+            stateConstraint: Constraint<Fraction>,
+            timestep: Int,
+            abm: ABM<AGENT, ACT>
+        ): Constraint<Fraction> {
+            val actCoeffs = HashMap<Int, Fraction>()
             val nActs = abm.actDomain.size
-            val timestepBase = abm.agentDomain.size*nActs*timestep
+            val timestepBase = abm.agentDomain.size * nActs * timestep
             stateConstraint.coefficients.forEach { (state, coefficient) ->
-                for(act in 0 until nActs) {
-                    actCoeffs[timestepBase + state*nActs + act] = coefficient
+                for (act in 0 until nActs) {
+                    actCoeffs[timestepBase + state * nActs + act] = coefficient
                 }
             }
             return Constraint(actCoeffs, stateConstraint.relation, stateConstraint.constant)
         }
-
-
 
 
     }

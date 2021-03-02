@@ -1,5 +1,9 @@
 package lib.abstractAlgebra
 
+import lib.sparseVector.MapVector
+import lib.sparseVector.MutableMapVector
+import lib.sparseVector.asVector
+
 interface FieldOperators<T>: AlgebraicOperators<T> {
     val zero: T
     val one: T
@@ -13,6 +17,8 @@ interface FieldOperators<T>: AlgebraicOperators<T> {
     fun Int.toField(): T
     fun Double.toField(): T
 
+    fun Map<Int,T>.asVector(): MapVector<T> = MapVector(this@FieldOperators, this)
+    fun MutableMap<Int,T>.asMutableVector(): MutableMapVector<T> = MutableMapVector(this@FieldOperators, this)
 //    val runtimeKClass: KClass<out T>
 
 }

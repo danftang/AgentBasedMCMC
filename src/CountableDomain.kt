@@ -1,7 +1,15 @@
-interface CountableDomain<T> {
+interface CountableDomain<T>: Iterable<T> {
     val size: Int
 
     operator fun get(index: Int): T
+
+    override fun iterator(): Iterator<T> {
+        return object: Iterator<T> {
+            var index: Int = 0
+            override fun hasNext() = index < size
+            override fun next() = get(index++)
+        }
+    }
 }
 
 inline fun<reified T : Enum<T>> enumCountableDomain() = object: CountableDomain<T> {

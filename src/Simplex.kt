@@ -88,7 +88,7 @@ open class Simplex<T>(
                 .withIndex()
                 .filter { it.value != 0.0 }
                 .associate { Pair(it.index, it.value.toField()) }
-                .asVector(objective.operators)
+                .asVector()
         }
     ) {
         println(B)
@@ -114,7 +114,9 @@ open class Simplex<T>(
         val initialNonZeroColumns = ArrayList(initialSolution.nonZeroEntries.keys)
         M.resize(M.nRows, nVariables + nSlackVars + 1)
         constraints.forEachIndexed { i, constraint ->
-            if(!constraint.slackness(initialSolution).isZero()) initialNonZeroColumns.add(nextSlackVar)
+            val slackness = constraint.slackness(initialSolution)
+            if(slackness < -zero || (constraint.relation == "==" && !slackness.isZero())) println("WARNING: initial solution is not feasible: Slackness $slackness")
+            if(!slackness.isZero()) initialNonZeroColumns.add(nextSlackVar)
             if (constraint.constant >= zero) {
                 constraint.coefficients.forEach { (j, x) -> M[i, j] = x }
                 B[i] = constraint.constant
@@ -585,6 +587,14 @@ open class Simplex<T>(
 
     fun isPrimalFeasible(): Boolean {
         return B.nonZeroEntries.values.all { it > zero }
+    }
+
+    fun isFullyPivoted(): Boolean {
+        return basicColsByRow.all { it != -1 }
+    }
+
+    fun isValid(): Boolean {
+        return isPrimalFeasible() && isFullyPivoted()
     }
 
     fun isInteger(): Boolean {
