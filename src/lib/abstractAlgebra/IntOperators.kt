@@ -19,5 +19,10 @@ interface IntOperators: FieldOperators<Int> {
     override val operators
         get() = IntOperators
 
-    companion object: IntOperators {}
+    override fun Int.toDouble(): Double = this.toDouble()
+    override fun Int.toInt(): Int = this
+    override fun Int.toField(): Int = this
+    override fun Double.toField(): Int = this.toInt()
+
+    companion object: IntOperators
 }

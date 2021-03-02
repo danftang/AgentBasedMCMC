@@ -1,8 +1,8 @@
 package lib.sparseMatrix
 
 import lib.abstractAlgebra.FieldOperators
-import lib.vector.MutableMapVector
-import lib.vector.SparseVector
+import lib.sparseVector.MutableMapVector
+import lib.sparseVector.SparseVector
 import kotlin.math.min
 import kotlin.math.sign
 

@@ -19,9 +19,10 @@ interface DoubleOperators: FieldOperators<Double> {
     override val operators
         get() = DoubleOperators
 
-    companion object: DoubleOperators {
+    override fun Double.toDouble(): Double = this
+    override fun Double.toInt(): Int = this.toInt()
+    override fun Int.toField(): Double = this.toDouble()
+    override fun Double.toField(): Double = this
 
-    }
-//    override val runtimeKClass: KClass<Double>
-//        get() = Double::class
+    companion object: DoubleOperators
 }

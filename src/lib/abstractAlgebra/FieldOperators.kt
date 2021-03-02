@@ -1,8 +1,5 @@
 package lib.abstractAlgebra
 
-import lib.vector.MutableMapVector
-import kotlin.reflect.KClass
-
 interface FieldOperators<T>: AlgebraicOperators<T> {
     val zero: T
     val one: T
@@ -11,11 +8,11 @@ interface FieldOperators<T>: AlgebraicOperators<T> {
 
     fun T.isZero(): Boolean  // ...in order to deal with the problem that -0.0 != 0.0 for boxed Doubles
 
+    fun T.toDouble(): Double
+    fun T.toInt(): Int
+    fun Int.toField(): T
+    fun Double.toField(): T
+
 //    val runtimeKClass: KClass<out T>
 
-//    operator fun T.plus(other: T): T
-//    operator fun T.minus(other: T): T
-//    operator fun T.unaryMinus(): T
-//    operator fun T.times(other: T): T
-//    operator fun T.div(other: T): T
 }

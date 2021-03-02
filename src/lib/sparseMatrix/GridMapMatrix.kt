@@ -2,9 +2,9 @@ package lib.sparseMatrix
 
 import lib.abstractAlgebra.FieldOperators
 import lib.collections.GridMap
-import lib.vector.MutableMapVector
-import lib.vector.MutableSparseVector
-import lib.vector.SparseVector
+import lib.sparseVector.MutableMapVector
+import lib.sparseVector.MutableSparseVector
+import lib.sparseVector.SparseVector
 
 class GridMapMatrix<T: Any>(override val operators: FieldOperators<T>, val gridMap: GridMap<T>): SparseRowMatrix<T>, SparseColMatrix<T>, FieldOperators<T> by operators {
     override val rows = VectorizedList(gridMap.rows)

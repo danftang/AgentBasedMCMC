@@ -1,8 +1,5 @@
 package lib.sparseMatrix
 
-import lib.vector.MutableSparseVector
-import lib.vector.SparseVector
-
 //abstract class AbstractColMatrix<T: Any>(override val nRows: Int, override val columns: MutableList<MutableSparseVector<T>>): SparseColMatrix<T> {
 //
 //    fun resize(nRows: Int, nCols: Int) {

@@ -4,7 +4,7 @@ import Constraint
 import Simplex
 import lib.abstractAlgebra.*
 import lib.sparseMatrix.GridMapMatrix
-import lib.vector.*
+import lib.sparseVector.*
 import org.apache.commons.math3.fraction.Fraction
 import org.junit.Test
 import kotlin.math.absoluteValue
@@ -93,7 +93,7 @@ class SimplexExpts {
             1 to 1.0
         ).asDoubleVector()
         val simplex = Simplex(constraints, objective)
-        simplex.pivotToInitialSolutionWithoutORTools()
+//        simplex.pivotToInitialSolutionWithoutORTools()
         println(simplex.M)
         simplex.greedyMinimise()
         println("Solution is")
@@ -105,7 +105,7 @@ class SimplexExpts {
 
     @Test
     fun fractionalMatrix() {
-        val coeffs = GridMapMatrix(FieldElementOperators(Fraction.ZERO.field),4,8)
+        val coeffs = GridMapMatrix(FractionOperators,4,8)
         coeffs[0,0] = Fraction(-2.0)
         coeffs[0,2] = Fraction(6.0)
         coeffs[0,3] = Fraction(2.0)

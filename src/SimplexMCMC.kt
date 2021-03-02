@@ -1,7 +1,6 @@
 import lib.abstractAlgebra.FieldOperators
-import lib.sparseMatrix.SparseMatrix
-import lib.vector.SparseVector
-import lib.vector.asVector
+import lib.sparseVector.SparseVector
+import lib.sparseVector.asVector
 import org.apache.commons.math3.util.CombinatoricsUtils
 import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
@@ -49,7 +48,7 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
 //    }
 
     constructor(operators: FieldOperators<T>, constraints: List<Constraint<T>>, logPmf: (SparseVector<T>) -> Double) :
-            super(constraints, emptyMap<Int, T>().asVector(operators)) {
+            super(constraints, emptyMap<Int, T>().asVector(operators), emptyMap<Int, T>().asVector(operators)) {
         this.logPmf = logPmf
         logProbOfPivotState = calcLogProbOfPivotState(X(false))
     }

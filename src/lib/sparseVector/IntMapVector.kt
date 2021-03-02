@@ -1,4 +1,4 @@
-package lib.vector
+package lib.sparseVector
 
 import lib.abstractAlgebra.IntOperators
 

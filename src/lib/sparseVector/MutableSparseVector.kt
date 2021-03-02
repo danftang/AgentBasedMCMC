@@ -1,4 +1,4 @@
-package lib.vector
+package lib.sparseVector
 
 interface MutableSparseVector<T>: SparseVector<T> {
     override val nonZeroEntries: MutableMap<Int,T>
@@ -56,7 +56,7 @@ inline fun<T> MutableSparseVector<T>.mapAssign(other: SparseVector<T>, lhsOnlyOp
         if(newVal == zero || newVal == -zero) toRemove.add(entry.key) else entry.setValue(newVal)
     }
     for(entry in other.nonZeroEntries) {
-        nonZeroEntries.compute(entry.key) { key, oldValue ->
+        nonZeroEntries.compute(entry.key) { _, oldValue ->
             if(oldValue != null) oldValue else {
                 val newVal = rhsOnlyOp(entry.value)
                 if(newVal == zero || newVal == -zero) null else newVal // TODO: Sort out the problem of -ve zero with boxed Double!!

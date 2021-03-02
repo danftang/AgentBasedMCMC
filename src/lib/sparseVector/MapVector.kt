@@ -1,7 +1,6 @@
-package lib.vector
+package lib.sparseVector
 
 import lib.abstractAlgebra.*
-import org.apache.commons.math3.Field
 import org.apache.commons.math3.FieldElement
 
 abstract class MapVector<T>(override val nonZeroEntries: Map<Int,T>) : SparseVector<T> {
@@ -17,7 +16,7 @@ fun DoubleArray.toMapVector(): MapVector<Double> = this.asSequence()
     .asDoubleVector()
 
 
-fun<T: FieldElement<T>> Array<T>.toMapVector(field: Field<T>) = this.asSequence()
+fun<T: FieldElement<T>> Array<T>.toMapVector(field: FieldOperators<T>) = this.asSequence()
     .withIndex()
     .filter { it.value != field.zero }
     .associate { Pair(it.index, it.value) }
@@ -37,7 +36,7 @@ inline fun<T> Map<Int,T>.asVector(operators: FieldOperators<T>): MapVector<T> = 
     override fun new()= MutableMapVector(operators)
 }
 
-inline fun<T: FieldElement<T>> Map<Int,T>.asVector(apacheField: Field<T>): MapVector<T> = asVector(FieldElementOperators(apacheField))
+//inline fun<T: FieldElement<T>> Map<Int,T>.asVector(apacheField: Field<T>): MapVector<T> = asVector(FieldElementOperators(apacheField))
 
 //inline fun Map<Int,DoubleFieldElement>.asDoubleFieldMapVector() = object: MapVector<DoubleFieldElement>(this@asDoubleFieldMapVector) {
 //    override fun new(): MutableSparseVector<DoubleFieldElement> {

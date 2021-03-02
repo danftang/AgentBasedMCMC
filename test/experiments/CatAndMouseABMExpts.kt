@@ -22,7 +22,7 @@ class CatAndMouseABMExpts {
         println(initialTrajectory)
         CatAndMouseABM.plot(initialTrajectory)
 
-        for(sample in 1..6) {
+        for(n in 1..6) {
             val sample = mcmc.nextSample()
             CatAndMouseABM.plot(sample)
             println(sample)

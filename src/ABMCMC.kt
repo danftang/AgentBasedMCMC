@@ -2,7 +2,7 @@ import lib.abstractAlgebra.FractionOperators
 import lib.unaryMinus
 import lib.plus
 import lib.minus
-import lib.vector.SparseVector
+import lib.sparseVector.SparseVector
 import org.apache.commons.math3.fraction.Fraction
 
 class ABMCMC<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(
@@ -62,7 +62,6 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(
             val constraints = ArrayList<Constraint<Fraction>>((nTimesteps-1)*nStates)
 
             // first do leaving edges
-            var i = 0
             for(t in 1 until nTimesteps) {
                 for(state in 0 until nStates) {
                     val coeffs = HashMap<Int,Fraction>()

@@ -1,6 +1,6 @@
 import lib.abstractAlgebra.*
 import lib.sparseMatrix.GridMapMatrix
-import lib.vector.*
+import lib.sparseVector.*
 import org.apache.commons.math3.fraction.Fraction
 import java.lang.Integer.max
 import java.lang.RuntimeException
@@ -80,22 +80,25 @@ open class Simplex<T>(
 //        findInitialSolution()
 //    }
 
-//    constructor(constraints: List<Constraint<T>>, objective: SparseVector<T>) : this(
-//        constraints,
-//        objective,
-//        ORTools.GlopSolve(constraints)
-//            .withIndex()
-//            .filter { it.value != 0.0 }
-//            .map { it.index }
-//    ) {
-//        println(B)
-//        assert(isPrimalFeasible())
-//    }
+    constructor(constraints: List<Constraint<T>>, objective: SparseVector<T>) : this(
+        constraints,
+        objective,
+        with(objective.operators) {
+            ORTools.GlopSolve(constraints)
+                .withIndex()
+                .filter { it.value != 0.0 }
+                .associate { Pair(it.index, it.value.toField()) }
+                .asVector(objective.operators)
+        }
+    ) {
+        println(B)
+        assert(isPrimalFeasible())
+    }
 
 
     // initialBasicVars are variables that must be in the initial pivot state, but not necessarily a full
     // piot state.
-    constructor(constraints: List<Constraint<T>>, objective: SparseVector<T>) : this(
+    constructor(constraints: List<Constraint<T>>, objective: SparseVector<T>, initialSolution: SparseVector<T>) : this(
         GridMapMatrix(objective.operators, constraints.size+1, 1)
     ) {
         println("Transferring constraints to simplex tableau...")
@@ -108,8 +111,10 @@ open class Simplex<T>(
         firstSlackColumn = nVariables
         val nSlackVars = constraints.count { it.relation != "==" }
         var nextSlackVar = nVariables
+        val initialNonZeroColumns = ArrayList(initialSolution.nonZeroEntries.keys)
         M.resize(M.nRows, nVariables + nSlackVars + 1)
         constraints.forEachIndexed { i, constraint ->
+            if(!constraint.slackness(initialSolution).isZero()) initialNonZeroColumns.add(nextSlackVar)
             if (constraint.constant >= zero) {
                 constraint.coefficients.forEach { (j, x) -> M[i, j] = x }
                 B[i] = constraint.constant
@@ -128,8 +133,10 @@ open class Simplex<T>(
         }
         objective.nonZeroEntries.forEach { (j,x) -> this.objective[j] = x }
 
+        println("Pivoting in initial solution")
+        initialPivot(initialNonZeroColumns)
 //        initialFeasiblePivot(initialBasicVars)
-//        println("Done")
+        println("Done")
     }
 
 

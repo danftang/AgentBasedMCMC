@@ -1,3 +1,5 @@
+import lib.sparseVector.SparseVector
+import lib.sparseVector.asVector
 import java.lang.IllegalArgumentException
 import java.lang.StringBuilder
 
@@ -16,6 +18,16 @@ class Constraint<COEFF> {
     }
 
     fun numVars(): Int = coefficients.keys.max()?.let { it+1 }?:0
+
+
+    fun slackness(values: SparseVector<COEFF>): COEFF {
+        if(relation == "==") return values.operators.zero
+        val lhs = coefficients.asVector(values.operators).dotProduct(values)
+        return with(values.operators) {
+            if (relation == "<=") constant - lhs else lhs - constant
+        }
+    }
+
 
     override fun toString(): String {
         val out = StringBuilder()

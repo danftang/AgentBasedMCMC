@@ -1,9 +1,7 @@
 import lib.abstractAlgebra.FractionOperators
 import lib.collections.Multiset
-import lib.vector.MapVector
-import lib.vector.MutableMapVector
-import lib.vector.SparseVector
-import lib.vector.asVector
+import lib.sparseVector.SparseVector
+import lib.sparseVector.asVector
 import org.apache.commons.math3.fraction.Fraction
 import java.lang.StringBuilder
 import java.util.AbstractMap

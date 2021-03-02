@@ -1,9 +1,7 @@
-package lib.vector
+package lib.sparseVector
 
-import lib.abstractAlgebra.AlgebraicOperators
 import lib.abstractAlgebra.FieldOperators
 import java.lang.RuntimeException
-import java.lang.StringBuilder
 
 
 interface SparseVector<T>: FieldOperators<T> {
@@ -55,8 +53,8 @@ interface SparseVector<T>: FieldOperators<T> {
         return if(other is SparseVector<*>) {
             if(operators != other.operators) throw(RuntimeException("Comparing vectors of different type. You probably didn't want to do that!"))
             operators == other.operators && nonZeroEntries == other.nonZeroEntries
-        } else if(other is Vector<*>) {
-            (0 until other.size).all { other[it] == this[it] }
+//        } else if(other is Vector<*>) {
+//            (0 until other.size).all { other[it] == this[it] }
         } else false
     }
 }

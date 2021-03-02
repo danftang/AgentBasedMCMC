@@ -2,8 +2,8 @@ package lib.sparseMatrix
 
 import lib.collections.RemovableEntry
 import lib.collections.mutableMapByRemovable
-import lib.vector.MutableSparseVector
-import lib.vector.SparseVector
+import lib.sparseVector.MutableSparseVector
+import lib.sparseVector.SparseVector
 
 interface SparseRowMatrix<T: Any>: SparseMatrix<T> {
     val rows: List<MutableSparseVector<T>>

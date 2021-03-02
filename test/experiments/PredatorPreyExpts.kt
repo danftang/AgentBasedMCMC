@@ -3,14 +3,8 @@ package experiments
 import ABMCMC
 import ABMCMC.Companion.validTrajectoryConstraints
 import PredatorPreyABM
-import Simplex
 import Trajectory
-import lib.abstractAlgebra.FractionOperators
 import lib.collections.Multiset
-import lib.vector.MapVector
-import lib.vector.SparseVector
-import lib.vector.asVector
-import numVars
 import org.apache.commons.math3.fraction.Fraction
 import org.junit.Test
 import kotlin.random.Random
@@ -29,7 +23,7 @@ class PredatorPreyExpts {
         val mcmc = ABMCMC(PredatorPreyABM, nTimesteps, observations)
         println("Initial state is ${mcmc.simplex.X()}")
         println("Starting sampling")
-        for(sample in 1..1000) {
+        for(n in 1..1000) {
             val sample = mcmc.nextSample()
             if(!mcmc.simplex.isInteger()) println("Fractional solution. Log fraction penalty = ${mcmc.simplex.logFractionPenalty(mcmc.simplex.X())}")
             //println(mcmc.nextSample())
