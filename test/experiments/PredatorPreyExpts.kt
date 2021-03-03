@@ -1,15 +1,14 @@
 package experiments
 
 import ABMCMC
-import ABMCMC.Companion.continuityConstraints
-import ABMCMC.Companion.fermionicConstraints
 import ABMCMC.Companion.validTrajectoryConstraints
 import Constraint
 import PredatorPreyABM
 import Trajectory
 import isSatisfiedBy
+import lib.abstractAlgebra.FractionOperators
 import lib.collections.Multiset
-import numVars
+import lib.sparseVector.emptySparseVector
 import org.apache.commons.math3.fraction.Fraction
 import org.junit.Test
 import kotlin.random.Random
@@ -18,40 +17,56 @@ class PredatorPreyExpts {
 
     @Test
     fun fermionicPredPrey() {
-        val nTimesteps = 8
+        val predatorInitialDensity = 0.02
+        val preyInitialDensity = 0.04
+        val nTimesteps = 2
         PredatorPreyABM.gridSize = 32
         val (observations, realTrajectory) = generateObservations(
-            PredatorPreyABM.randomState(0.2, 0.3),
+            PredatorPreyABM.randomFermionicState(predatorInitialDensity, preyInitialDensity),
             nTimesteps,
             0.02
         )
+        val prior = PredatorPreyABM.Prior(predatorInitialDensity, preyInitialDensity)
 
-        checkTrajectorySatisfiesObervations(realTrajectory, observations)
-//        checkTrajectorySatisfiesObervationConstraints(realTrajectory, observations)
-        println("Checking real trajectory against observation constraints")
-        checkTrajectorySatisfiesConstraints(realTrajectory, observations.flatMap { it.eventConstraints() })
-        println("Checking real trajectory is fermionic")
-        checkTrajectorySatisfiesConstraints(realTrajectory, fermionicConstraints( nTimesteps, PredatorPreyABM))
-        println("Checking real trajectory is continuous")
-        checkTrajectorySatisfiesConstraints(realTrajectory, continuityConstraints( nTimesteps, PredatorPreyABM))
+//        checkTrajectorySatisfiesObervations(realTrajectory, observations)
+////        checkTrajectorySatisfiesObervationConstraints(realTrajectory, observations)
+//        println("Checking real trajectory against observation constraints")
+//        checkTrajectorySatisfiesConstraints(realTrajectory, observations.flatMap { it.eventConstraints() })
+//        println("Checking real trajectory is fermionic")
+//        checkTrajectorySatisfiesConstraints(realTrajectory, fermionicConstraints( nTimesteps, PredatorPreyABM))
+//        println("Checking real trajectory is continuous")
+//        checkTrajectorySatisfiesConstraints(realTrajectory, continuityConstraints( nTimesteps, PredatorPreyABM))
 
-        val mcmc = ABMCMC(PredatorPreyABM, nTimesteps, observations, realTrajectory.toEventVector())
+        val mcmc = ABMCMC(PredatorPreyABM, nTimesteps, observations + prior, realTrajectory.toEventVector())
         println("Initial state is ${mcmc.simplex.X()}")
         println("Starting sampling")
-        for(n in 1..1000) {
-            val sample = mcmc.nextSample()
-            if(!mcmc.simplex.isInteger()) println("Fractional solution. Log fraction penalty = ${mcmc.simplex.logFractionPenalty(mcmc.simplex.X())}")
-            //println(mcmc.nextSample())
-        }
 
+        val expectation = mcmc.simplex.expectation(1000, emptySparseVector(FractionOperators)) { sample, sum ->
+            sample + sum
+        }
+        val expectationTrajectory = Trajectory(PredatorPreyABM, expectation)
+//        for(n in 1..10000) {
+//            val sample = mcmc.nextSample()
+//            if(!mcmc.simplex.isInteger()) println("Fractional solution. Log fraction penalty = ${mcmc.simplex.logFractionPenalty(mcmc.simplex.X())}")
+//            histogram.add(sample)
+//            //println(mcmc.nextSample())
+//        }
+
+        val plotTime = 2
+        println("Histogram at time $plotTime ${expectationTrajectory.stateAt(plotTime)}")
+        with(PredatorPreyABM) {
+            plotHeatMap(expectationTrajectory.stateAt(plotTime))
+                .replotPoints(realTrajectory.stateAt(plotTime))
+                .renderAndClose()
+        }
     }
 
     @Test
     fun testORSolve() {
         val nTimesteps = 8
-        PredatorPreyABM.gridSize = 16
+        PredatorPreyABM.gridSize = 20
         val (observations, _) = generateObservations(
-            PredatorPreyABM.randomState(0.2, 0.3),
+            PredatorPreyABM.randomFermionicState(0.2, 0.3),
             nTimesteps,
             0.02
         )
@@ -118,5 +133,6 @@ class PredatorPreyExpts {
         val eventVector = trajectory.toEventVector()
         assert(constraints.all { it.isSatisfiedBy(eventVector) })
     }
+
 
 }

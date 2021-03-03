@@ -27,6 +27,19 @@ class Multiset<T>(val entries: MutableMap<T,Int> = HashMap()) { //: MutableItera
         }
     }
 
+    operator fun times(n: Int): Multiset<T> {
+        val multiplied = Multiset<T>()
+        entries.forEach { (member, occupation) ->
+            multiplied[member] = occupation*n
+        }
+        return multiplied
+    }
+
+    operator fun timesAssign(n: Int) {
+        for(entry in entries) { entry.setValue(entry.value * n) }
+    }
+
+
 //    override fun iterator(): MutableIterator<MutableMap.MutableEntry<T, Int>> {
 //        return nonZeroEntries.iterator()
 //    }

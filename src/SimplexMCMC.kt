@@ -79,12 +79,26 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
             originalLogProbOfPivotState == Double.NEGATIVE_INFINITY) 0.0 else logProbOfPivotState - originalLogProbOfPivotState
         val logAcceptance = min(logPivotStateRatio + logTransitionProbRatio,0.0)
 //        println("Log acceptance = $logProbOfPivotState + ${ln(trasitionProb(rejectionPivot))} - $originalLogProbOfPivotState - $originalLogProbOfTransition")
-        println("Acceptance = ${exp(logAcceptance)}")
+//        println("Acceptance = ${exp(logAcceptance)}")
         if(Random.nextDouble() >= exp(logAcceptance)) {
-            println("Rejecting")
+//            println("Rejecting")
             mcmcPivot(rejectionPivot, originalLogProbOfPivotState, originalSample)
         }
         return currentSample
+    }
+
+    fun<R> expectation(nSamples: Int, initialExpectation: R, expectationAccumulator: (SparseVector<T>, R) -> R): R {
+        var e = initialExpectation
+        var oldSample: SparseVector<T>? = null
+        var rejections = 0
+        for(s in 1..nSamples) {
+            val newSample = nextSample()
+            e = expectationAccumulator(newSample, e)
+            if(oldSample === newSample) ++rejections
+            oldSample = newSample
+        }
+        println("Rejection ratio = ${rejections.toDouble()/nSamples}")
+        return e
     }
 
 

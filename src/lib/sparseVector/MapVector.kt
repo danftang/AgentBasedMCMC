@@ -35,4 +35,6 @@ fun<T: FieldElement<T>> Array<T>.toMapVector(field: FieldOperators<T>): MapVecto
 inline fun Map<Int,Double>.asDoubleVector(): MapVector<Double> = MapVector(DoubleOperators, this)
 inline fun Map<Int,Int>.asIntVector(): MapVector<Int> = MapVector(IntOperators, this)
 inline fun<T> Map<Int,T>.asVector(operators: FieldOperators<T>): MapVector<T> = MapVector(operators, this)
+inline fun<T> emptyMapVector(operators: FieldOperators<T>): MapVector<T> = MapVector(operators, emptyMap())
+inline fun<T> emptySparseVector(operators: FieldOperators<T>): SparseVector<T> = MapVector(operators, emptyMap())
 

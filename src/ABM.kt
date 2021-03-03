@@ -51,7 +51,7 @@ interface ABM<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> {
     fun fermionicRunABM(startState: Multiset<AGENT>, nTimesteps: Int): Trajectory<AGENT, ACT> {
         var t0State = startState
         var t1State: Multiset<AGENT>
-        val trajectory = Trajectory<AGENT,ACT>()
+        val trajectory = Trajectory(this)
         for(t in 0 until nTimesteps) {
             t1State = Multiset()
             for((agent, occupation) in t0State.entries) {
@@ -69,7 +69,7 @@ interface ABM<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> {
     fun nonFermionicRunABM(startState: Multiset<AGENT>, nTimesteps: Int): Trajectory<AGENT, ACT> {
         var t0State = startState
         var t1State: Multiset<AGENT>
-        val trajectory = Trajectory<AGENT,ACT>()
+        val trajectory = Trajectory(this)
         for(t in 0 until nTimesteps) {
             t1State = Multiset()
             for((agent, occupation) in t0State.entries) {
@@ -88,7 +88,7 @@ interface ABM<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> {
     // Assumes trajectory is valid
     fun logProb(trajectory: Trajectory<AGENT, ACT>): Double {
         var logProb = 0.0
-        for(time in trajectory.timesteps.indices) {
+        for(time in 0 until trajectory.nTimesteps) {
             val state = trajectory.stateAt(time)
             for((agentAct, occupation) in trajectory[time].entries) {
                 val (agent,act) = agentAct
@@ -134,15 +134,6 @@ interface ABM<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> {
     }
 
 
-    fun Multiset<Pair<AGENT,ACT>>.toABMState(): Multiset<AGENT> {
-        val state = Multiset<AGENT>()
-        for((agentAct, occupation) in entries) {
-            val (agent, _) = agentAct
-            state[agent] += occupation
-        }
-        return state
-    }
-
     // converts a constraint in terms of state occupation numbers into a constraint on acts
     // in a given timestep
 //    fun stateToActConstraint(stateConstraint: Constraint<Fraction>, timestep: Int) = stateConstraint.stateToActConstraint(timestep)
@@ -159,14 +150,6 @@ interface ABM<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> {
     }
 
 
-    fun Trajectory<AGENT, ACT>.nAgents(time: Int, agent: AGENT): Int {
-        var count = 0
-        for(act in 0 until actDomain.size) {
-            val a = actDomain[act]
-            count += this[time][Pair(agent, a)]
-        }
-        return count
-    }
 
     // Plots a Feynmann diagram of this trajectory, time on the y axis
     // agent state on the x axis and vectors for acts

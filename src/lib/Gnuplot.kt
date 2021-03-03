@@ -142,9 +142,11 @@ open class Gnuplot : Closeable {
 
     override fun close() { pipe.close() }
 
+    fun renderAndClose() { close() }
+
     // Use this to force gnuplot to plot without having to close the connection
     // e.g. to do animation
-    fun flush(): Gnuplot {
+    fun render(): Gnuplot {
         for(i in 1..250) {
             write("# fill gnuplots buffer with comments\n") // this persuades gnuplot to read its input!
         }
@@ -177,6 +179,8 @@ open class Gnuplot : Closeable {
     }
 }
 
+// The use method automatically closes the pipes when the Gnuplot object goes out of scope, so the plot is
+// rendered without having to manually flush or close.
 fun<R> gnuplot(persist : Boolean = true, pipeOutputTo : OutputStream = System.out, pipeErrTo : OutputStream = System.err, command: Gnuplot.() -> R): R {
     return Gnuplot(persist, pipeOutputTo, pipeErrTo).use {
         it.run(command)

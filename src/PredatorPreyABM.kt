@@ -1,7 +1,10 @@
+import lib.Gnuplot
 import lib.collections.Multiset
 import lib.collections.multisetOf
+import lib.gnuplot
 import org.apache.commons.math3.fraction.Fraction
 import kotlin.math.ln
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts> {
@@ -27,11 +30,11 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
     class PredPreyAgent(val x: Int, val y: Int, val type: AgentType): Agent<PredPreyAgent> {
 
         override fun timestep(others: Multiset<PredPreyAgent>): Array<Double> {
-            val pPredBirthGivenPrey = 0.1 // birth prob given prey
-            val pPredDie = 0.1 // death prob
-            val pPreyBirth = 0.1 // birth prob
-            val pPreyDie = 0.1 // death prob
-            val pPreyEatenGivenPred = 0.2 // death prob given pred
+            val pPredBirthGivenPrey = 0.5 // birth prob given prey
+            val pPredDie = 0.07 // death prob
+            val pPreyBirth = 0.06 // birth prob
+            val pPreyDie = 0.03 // death prob
+            val pPreyEatenGivenPred = 0.55 // death prob given pred
 
             val actDistribution = Array(Acts.values().size) { 0.0 }
             if(type == AgentType.PREDATOR) {
@@ -76,6 +79,10 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
 
         override fun hashCode() = ordinal
 
+        override fun toString(): String {
+            return "$type($x,$y)"
+        }
+
     }
 
 
@@ -107,6 +114,26 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
         }
 
     }
+
+
+    // Prior knowledge that the occupation of each state at time t=0 was drawn from a Binomial, expressed as an observation.
+    class Prior(val initialPredatorDensity: Double, val initialPreyDensity: Double): Observation<PredPreyAgent, Acts> {
+        override fun logLikelihood(trajectory: Trajectory<PredPreyAgent, Acts>): Double {
+            var logP = 0.0
+            var binomialLogP: Pair<Double,Double>
+            val predLogP = Pair(ln(initialPredatorDensity),ln(1.0-initialPredatorDensity))
+            val preyLogP = Pair(ln(initialPreyDensity),ln(1.0-initialPreyDensity))
+            for(agent in agentDomain) {
+                binomialLogP = if(agent.type == AgentType.PREDATOR) predLogP else preyLogP
+                logP += if(trajectory.nAgents(0,agent) > 0) binomialLogP.first else binomialLogP.second
+            }
+            return logP
+        }
+
+        override fun eventConstraints(): List<Constraint<Fraction>> = emptyList() // no states are impossible
+
+    }
+
 
     var gridSize = 8
 
@@ -155,7 +182,9 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
     fun Int.periodicInc(): Int = (this + 1).rem(gridSize)
     fun Int.periodicDec(): Int = (this + gridSize - 1).rem(gridSize)
 
-    fun randomState(pPredator: Double, pPrey: Double): Multiset<PredPreyAgent> {
+
+    // Occupation of each state is drawn from a Binomial distribution
+    fun randomFermionicState(pPredator: Double, pPrey: Double): Multiset<PredPreyAgent> {
         val state = Multiset<PredPreyAgent>()
         for(x in 0 until gridSize) {
             for(y in 0 until gridSize) {
@@ -164,6 +193,59 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
             }
         }
         return state
+    }
+
+
+    fun plotHeatMap(state: Multiset<PredPreyAgent>): Gnuplot {
+        val maxCount = state.occupationNumbers.max()?:1
+
+        val rabbitData = agentDomain.asSequence()
+            .filter { it.type == AgentType.PREY }
+            .flatMap { agent ->
+                sequenceOf<Number>(agent.x, agent.y, (state[agent]*255.0/maxCount).roundToInt(), 0, 0, 128)
+            }
+
+        val foxData = agentDomain.asSequence()
+            .filter { it.type == AgentType.PREDATOR }
+            .flatMap { agent ->
+                sequenceOf<Number>(agent.x, agent.y, 0, 0, (state[agent]*255.0/maxCount).roundToInt(), 128)
+            }
+
+//        val rabbitData =  state.entries.asSequence()
+//            .filter { it.key.type == PredatorPreyABM.AgentType.PREY }
+//            .flatMap { (agent, count) ->
+//                sequenceOf<Number>(agent.x, agent.y, (count*255.0/maxCount).roundToInt(), 0, 0, 128)
+//            }
+//
+//        val foxData = state.entries.asSequence()
+//            .filter { it.key.type == PredatorPreyABM.AgentType.PREDATOR }
+//            .flatMap { (agent, count) ->
+//                sequenceOf<Number>(agent.x, agent.y, 0, 0, (count*255.0/maxCount).roundToInt(), 128)
+//            }
+
+        val gp = Gnuplot()
+        gnuplot {  }
+        with(gp) {
+            val rData = heredoc(rabbitData,6)
+            val fData = heredoc(foxData,6)
+            invoke("plot $rData with rgbalpha")
+            invoke("replot $fData with rgbalpha")
+        }
+        return gp
+    }
+
+
+    fun Gnuplot.replotPoints(state: Multiset<PredPreyAgent>): Gnuplot {
+        val stateData = state.entries.asSequence().flatMap { (agent, _) ->
+            sequenceOf(agent.x, agent.y, if (agent.type == AgentType.PREY) 1 else 2)
+        }.toList()
+        invoke("set linetype 1 lc 'red'")
+        invoke("set linetype 2 lc 'blue'")
+        if (stateData.isNotEmpty()) {
+            val pointData = heredoc(stateData, 3)
+            invoke("replot $pointData with points pointtype 5 pointsize 0.5 lc variable")
+        }
+        return this
     }
 
 

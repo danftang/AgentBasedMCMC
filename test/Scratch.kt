@@ -1,3 +1,5 @@
+import lib.Gnuplot
+import lib.gnuplot
 import org.junit.Test
 
 class Scratch {
@@ -5,10 +7,15 @@ class Scratch {
 
     @Test
     fun stuff() {
-        println(Double.POSITIVE_INFINITY + Double.NEGATIVE_INFINITY)
-        println(Double.POSITIVE_INFINITY - Double.POSITIVE_INFINITY)
-        println(Double.NEGATIVE_INFINITY + 1.0)
-        println(1.0 - Double.NEGATIVE_INFINITY)
+//        gnuplot {
+//            invoke("plot x*x with lines")
+//        }
+
+        val gnuplot = Gnuplot()
+        with(gnuplot) {
+            invoke("plot x*x with lines")
+            close()
+        }
 
     }
 }

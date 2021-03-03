@@ -8,18 +8,30 @@ import java.util.AbstractMap
 import kotlin.math.ln
 import kotlin.math.roundToInt
 
-class Trajectory<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(val timesteps: ArrayList<Multiset<Pair<AGENT, ACT>>> = ArrayList()) {//}:
-//    MutableList<Multiset<Pair<AGENT, ACT>>> by timesteps {
+class Trajectory<AGENT : Agent<AGENT>, ACT: Ordered<ACT>> {
 
-    val events = timesteps.asSequence()
-        .mapIndexed { time, step ->
-            step.entries.asSequence().map { (agentAct, occupation) ->
-                AbstractMap.SimpleEntry(ABM.Event(time, agentAct.first, agentAct.second), occupation)
+    val model: ABM<AGENT,ACT>
+
+    val timesteps: ArrayList<Multiset<Pair<AGENT, ACT>>> = ArrayList()
+
+    val nTimesteps: Int
+        get() = timesteps.size
+
+    val events: Sequence<AbstractMap.SimpleEntry<ABM.Event<AGENT, ACT>, Int>>
+        get() = timesteps.asSequence()
+            .mapIndexed { time, step ->
+                step.entries.asSequence().map { (agentAct, occupation) ->
+                    AbstractMap.SimpleEntry(ABM.Event(time, agentAct.first, agentAct.second), occupation)
+                }
             }
-        }
-        .flatten()
+            .flatten()
 
-    constructor(model: ABM<AGENT,ACT>, actVector: SparseVector<Fraction>): this() {
+
+    constructor(model: ABM<AGENT,ACT>) {
+        this.model = model
+    }
+
+    constructor(model: ABM<AGENT,ACT>, actVector: SparseVector<Fraction>): this(model) {
         for((actId, occupation) in actVector.nonZeroEntries) {
             this[model.eventDomain[actId]] = occupation.toDouble().roundToInt()
         }
@@ -46,14 +58,40 @@ class Trajectory<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(val timesteps: ArrayLi
         set(event.time, event.agent, event.act, occupation)
     }
 
+
     fun stateAt(time: Int): Multiset<AGENT> {
         val state = Multiset<AGENT>()
-        for((agentAct, occupation) in this[time].entries) {
+        if(time > timesteps.size) return state
+        if(time == timesteps.size) {
+            return if(timesteps.isEmpty()) state else finalState()
+        }
+        for((agentAct, occupation) in timesteps[time].entries) {
             val (agent, _) = agentAct
             state[agent] += occupation
         }
         return state
     }
+
+
+    fun finalState(): Multiset<AGENT> {
+        val state = Multiset<AGENT>()
+        for((agentAct, occupation) in timesteps.last().entries) {
+            val (agent, act) = agentAct
+            state += model.consequences(agent, act) * occupation
+        }
+        return state
+
+    }
+
+    fun nAgents(time: Int, agent: AGENT): Int {
+        var count = 0
+        for(act in model.actDomain) {
+            count += this[time][Pair(agent, act)]
+        }
+        return count
+    }
+
+
 
     fun logPrior(): Double {
         var logP = 0.0
