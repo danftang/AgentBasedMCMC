@@ -1,8 +1,10 @@
+import lib.abstractAlgebra.FractionOperators
 import lib.collections.Multiset
 import lib.gnuplot
+import lib.plus
+import lib.sparseVector.MutableMapVector
 import org.apache.commons.math3.fraction.Fraction
 import java.lang.RuntimeException
-import kotlin.math.ln
 import kotlin.random.Random
 
 interface ABM<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> {
@@ -51,51 +53,38 @@ interface ABM<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> {
     fun fermionicRunABM(startState: Multiset<AGENT>, nTimesteps: Int): Trajectory<AGENT, ACT> {
         var t0State = startState
         var t1State: Multiset<AGENT>
-        val trajectory = Trajectory(this)
+        val trajectoryVector = MutableMapVector(FractionOperators)// Trajectory(this)
         for(t in 0 until nTimesteps) {
             t1State = Multiset()
             for((agent, occupation) in t0State.entries) {
                 assert(occupation == 1)
                 val act = agent.fermionicConcreteTimestep(t0State, t1State)
-                trajectory[t,agent,act] = 1
+                trajectoryVector[Event(t,agent,act).ordinal] = Fraction.ONE
                 t1State += consequences(agent,act)
             }
             t0State = t1State
         }
-        return trajectory
+        return Trajectory(this,trajectoryVector)
     }
 
 
     fun nonFermionicRunABM(startState: Multiset<AGENT>, nTimesteps: Int): Trajectory<AGENT, ACT> {
         var t0State = startState
         var t1State: Multiset<AGENT>
-        val trajectory = Trajectory(this)
+        val trajectoryVector = MutableMapVector(FractionOperators)// Trajectory(this)
+//        val trajectory = Trajectory(this)
         for(t in 0 until nTimesteps) {
             t1State = Multiset()
             for((agent, occupation) in t0State.entries) {
                 for(i in 1..occupation) {
                     val act = agent.nonFermionicConcreteTimestep(t0State)
-                    trajectory[t,agent,act] += 1
+                    trajectoryVector[Event(t,agent,act).ordinal] += Fraction.ONE
                     t1State += consequences(agent,act)
                 }
             }
             t0State = t1State
         }
-        return trajectory
-    }
-
-
-    // Assumes trajectory is valid
-    fun logProb(trajectory: Trajectory<AGENT, ACT>): Double {
-        var logProb = 0.0
-        for(time in 0 until trajectory.nTimesteps) {
-            val state = trajectory.stateAt(time)
-            for((agentAct, occupation) in trajectory[time].entries) {
-                val (agent,act) = agentAct
-                logProb += occupation*ln(agent.timestep(state)[act.ordinal])
-            }
-        }
-        return logProb
+        return Trajectory(this,trajectoryVector)
     }
 
 

@@ -1,15 +1,23 @@
 import lib.abstractAlgebra.FractionOperators
+import lib.isInteger
 import lib.unaryMinus
 import lib.plus
 import lib.minus
 import lib.sparseVector.SparseVector
 import lib.sparseVector.asVector
 import org.apache.commons.math3.fraction.Fraction
+import java.lang.Integer.max
+import kotlin.math.absoluteValue
+import kotlin.math.roundToInt
 
 class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
+
+    val fractionPenaltyK: Double          = -4.0
+
     val simplex: SimplexMCMC<Fraction>
     val model: ABM<AGENT, ACT>
     val observations: List<Observation<AGENT, ACT>>
+
 
     constructor(
         model: ABM<AGENT, ACT>,
@@ -41,16 +49,66 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
         val trajectory = Trajectory(model, X)
         val prior = trajectory.logPrior()
         val likelihood = observations.sumByDouble { it.logLikelihood(trajectory) }
-        val logP = prior + likelihood
+        val logP = prior + likelihood + logFractionPenalty(X)
 //        println("got logprob $prior + $likelihood = $logP")
         return logP
     }
 
-
-    fun nextSample(): Trajectory<AGENT, ACT> {
-        return Trajectory(model, simplex.nextSample())
+    // The probability of a pivot state is multiplied by this amount if the
+    // solution is not on the integer grid.
+    //
+    // Returns the L1 distance between this point and its rounding, multiplied
+    // by fractionPenaltyK
+    fun logFractionPenalty(x: SparseVector<Fraction>): Double {
+        return fractionPenaltyK * x.nonZeroEntries.values.sumByDouble {
+            val xi = it.toDouble()
+            (xi - xi.roundToInt()).absoluteValue
+        }
     }
 
+
+    fun nextSample(): Trajectory<AGENT,ACT> {
+        return Trajectory(model, nextSampleVector())
+    }
+
+
+    fun nextSampleVector(): SparseVector<Fraction> {
+        var integerSample: SparseVector<Fraction>
+        var attempts = 0
+        do {
+            integerSample = simplex.nextSample()
+            ++attempts
+            if(attempts.rem(10) == 0) println("stuck on fraction $attempts. Penalty is ${logFractionPenalty(integerSample)}")
+        } while(!integerSample.isInteger())
+        if(attempts > 1) println("Made $attempts attempts before getting integer sample")
+        return integerSample
+    }
+
+
+    fun<R> expectation(nSamples: Int, initialExpectation: R, expectationAccumulator: (SparseVector<Fraction>, R) -> R): R {
+        var e = initialExpectation
+        var oldSample: SparseVector<Fraction>? = null
+        var rejections = 0
+        for(s in 1..nSamples) {
+            val newSample = nextSampleVector()
+            e = expectationAccumulator(newSample, e)
+            if(oldSample === newSample) ++rejections
+            oldSample = newSample
+            if(s.rem(10) == 0) println("Got sample $s, ${largestDenominator()}, ${simplex.M.sparsity()}")
+        }
+        println("Rejection ratio = ${rejections.toDouble()/nSamples}")
+        return e
+    }
+
+
+    fun largestDenominator(): Int {
+        var maxDenom = 1
+        for(entry in simplex.M.nonZeroEntries) {
+            maxDenom = max(entry.value.denominator, maxDenom)
+            assert(entry.value != Fraction.ZERO)
+        }
+        return maxDenom
+    }
 
     companion object {
         fun <AGENT : Agent<AGENT>, ACT : Ordered<ACT>> constraints(
@@ -206,6 +264,10 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
                 }
             }
             return Constraint(actCoeffs, stateConstraint.relation, stateConstraint.constant)
+        }
+
+        fun SparseVector<Fraction>.isInteger(): Boolean {
+            return this.nonZeroEntries.all { it.value.isInteger() }
         }
 
 

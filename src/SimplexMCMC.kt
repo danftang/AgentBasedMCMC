@@ -22,8 +22,7 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
 
     val logPmf: (SparseVector<T>) -> Double
 
-    val fractionPenaltyK: Double          = -4.0
-    val degeneratePivotWeight             = 0.001
+    val degeneratePivotWeight             = 0.01
     val probOfRowSwap                     = 0.01
 
     var logProbOfPivotState: Double
@@ -55,7 +54,7 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
         logProbOfPivotState = calcLogProbOfPivotState(X(false))
     }
 
-    fun calcLogProbOfPivotState(x: SparseVector<T>) = logPmf(x) + logDegeneracyProb() + logFractionPenalty(x)
+    fun calcLogProbOfPivotState(x: SparseVector<T>) = logPmf(x) + logDegeneracyProb()
 
 
     // Choose a pivot
@@ -87,6 +86,8 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
         return currentSample
     }
 
+
+
     fun<R> expectation(nSamples: Int, initialExpectation: R, expectationAccumulator: (SparseVector<T>, R) -> R): R {
         var e = initialExpectation
         var oldSample: SparseVector<T>? = null
@@ -100,6 +101,7 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
         println("Rejection ratio = ${rejections.toDouble()/nSamples}")
         return e
     }
+
 
 
     fun mcmcPivot(pivot: PivotPoint, pivotedLogProb: Double? = null, pivotedSample: SparseVector<T>?=null) {
@@ -196,17 +198,6 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
     }
 
 
-    // The probability of a pivot state is multiplied by this amount if the
-    // solution is not on the integer grid.
-    //
-    // Returns the L1 distance between this point and its rounding, multiplied
-    // by fractionPenaltyK
-    fun logFractionPenalty(x: SparseVector<T>): Double {
-        return fractionPenaltyK * x.nonZeroEntries.values.sumByDouble {
-            val xi = it.toDouble()
-            (xi - xi.roundToInt()).absoluteValue
-        }
-    }
 
 
     /************************ TEST STUFF *********************/

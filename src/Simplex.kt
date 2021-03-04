@@ -597,8 +597,5 @@ open class Simplex<T>(
         return isPrimalFeasible() && isFullyPivoted()
     }
 
-    fun isInteger(): Boolean {
-        return B.nonZeroEntries.all { it.value.toDouble() == it.value.toInt().toDouble() }
-    }
 }
 

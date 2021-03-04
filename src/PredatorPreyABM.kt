@@ -202,13 +202,15 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
         val rabbitData = agentDomain.asSequence()
             .filter { it.type == AgentType.PREY }
             .flatMap { agent ->
-                sequenceOf<Number>(agent.x, agent.y, (state[agent]*255.0/maxCount).roundToInt(), 0, 0, 128)
+//                sequenceOf<Number>(agent.x, agent.y, (state[agent]*255.0/maxCount).roundToInt(), 0, 0, 128)
+                sequenceOf<Number>(agent.x, agent.y, (ln(state[agent]+1.0)*255.0/ln(maxCount+1.0)).roundToInt(), 0, 0, 128)
             }
 
         val foxData = agentDomain.asSequence()
             .filter { it.type == AgentType.PREDATOR }
             .flatMap { agent ->
-                sequenceOf<Number>(agent.x, agent.y, 0, 0, (state[agent]*255.0/maxCount).roundToInt(), 128)
+//                sequenceOf<Number>(agent.x, agent.y, 0, 0, (state[agent]*255.0/maxCount).roundToInt(), 128)
+                sequenceOf<Number>(agent.x, agent.y, 0, 0, (ln(state[agent]+1.0)*255.0/ln(maxCount+1.0)).roundToInt(), 128)
             }
 
 //        val rabbitData =  state.entries.asSequence()
@@ -228,7 +230,7 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
         with(gp) {
             val rData = heredoc(rabbitData,6)
             val fData = heredoc(foxData,6)
-            invoke("plot $rData with rgbalpha")
+            invoke("plot [-0.5:${gridSize-0.5}][-0.5:${gridSize-0.5}] $rData with rgbalpha")
             invoke("replot $fData with rgbalpha")
         }
         return gp

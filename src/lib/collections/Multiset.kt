@@ -51,3 +51,4 @@ class Multiset<T>(val entries: MutableMap<T,Int> = HashMap()) { //: MutableItera
 }
 
 fun<T> multisetOf(vararg nonZeroEntries: Pair<T,Int>): Multiset<T> = Multiset(hashMapOf(*nonZeroEntries))
+fun<T> emptyMultiset(): Multiset<T> = Multiset()

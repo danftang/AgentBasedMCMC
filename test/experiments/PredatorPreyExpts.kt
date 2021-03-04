@@ -19,8 +19,8 @@ class PredatorPreyExpts {
     fun fermionicPredPrey() {
         val predatorInitialDensity = 0.02
         val preyInitialDensity = 0.04
-        val nTimesteps = 2
-        PredatorPreyABM.gridSize = 32
+        val nTimesteps = 8
+        PredatorPreyABM.gridSize = 16
         val (observations, realTrajectory) = generateObservations(
             PredatorPreyABM.randomFermionicState(predatorInitialDensity, preyInitialDensity),
             nTimesteps,
@@ -37,11 +37,11 @@ class PredatorPreyExpts {
 //        println("Checking real trajectory is continuous")
 //        checkTrajectorySatisfiesConstraints(realTrajectory, continuityConstraints( nTimesteps, PredatorPreyABM))
 
-        val mcmc = ABMCMC(PredatorPreyABM, nTimesteps, observations + prior, realTrajectory.toEventVector())
+        val mcmc = ABMCMC(PredatorPreyABM, nTimesteps, observations + prior, realTrajectory.eventVector)
         println("Initial state is ${mcmc.simplex.X()}")
         println("Starting sampling")
 
-        val expectation = mcmc.simplex.expectation(1000, emptySparseVector(FractionOperators)) { sample, sum ->
+        val expectation = mcmc.expectation(5000, emptySparseVector(FractionOperators)) { sample, sum ->
             sample + sum
         }
         val expectationTrajectory = Trajectory(PredatorPreyABM, expectation)
@@ -52,7 +52,7 @@ class PredatorPreyExpts {
 //            //println(mcmc.nextSample())
 //        }
 
-        val plotTime = 2
+        val plotTime = nTimesteps
         println("Histogram at time $plotTime ${expectationTrajectory.stateAt(plotTime)}")
         with(PredatorPreyABM) {
             plotHeatMap(expectationTrajectory.stateAt(plotTime))
@@ -122,16 +122,14 @@ class PredatorPreyExpts {
 
     fun checkTrajectorySatisfiesObervationConstraints(trajectory: Trajectory<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>,
                                             observations: List<PredatorPreyABM.PPObservation>) {
-        val eventVector = trajectory.toEventVector()
-        assert(observations.all { it.eventConstraints().all { it.isSatisfiedBy(eventVector) } })
+        assert(observations.all { it.eventConstraints().all { it.isSatisfiedBy(trajectory.eventVector) } })
     }
 
 
     fun checkTrajectorySatisfiesConstraints(
         trajectory: Trajectory<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>,
         constraints: List<Constraint<Fraction>>) {
-        val eventVector = trajectory.toEventVector()
-        assert(constraints.all { it.isSatisfiedBy(eventVector) })
+        assert(constraints.all { it.isSatisfiedBy(trajectory.eventVector) })
     }
 
 
