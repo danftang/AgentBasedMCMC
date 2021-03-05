@@ -25,3 +25,8 @@ offline
 out
 src/META-INF
 *.iws
+
+# Tex junk
+*.synctex.gz
+*.out
+*.aux
