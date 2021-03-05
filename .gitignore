@@ -30,3 +30,5 @@ src/META-INF
 *.synctex.gz
 *.out
 *.aux
+*.bbl
+*.blg
