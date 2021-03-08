@@ -19,8 +19,8 @@ class PredatorPreyExpts {
     fun fermionicPredPrey() {
         val predatorInitialDensity = 0.02
         val preyInitialDensity = 0.04
-        val nTimesteps = 8
-        PredatorPreyABM.gridSize = 16
+        val nTimesteps = 4
+        PredatorPreyABM.gridSize = 8
         val (observations, realTrajectory) = generateObservations(
             PredatorPreyABM.randomFermionicState(predatorInitialDensity, preyInitialDensity),
             nTimesteps,

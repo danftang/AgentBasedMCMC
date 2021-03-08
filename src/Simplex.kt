@@ -597,5 +597,14 @@ open class Simplex<T>(
         return isPrimalFeasible() && isFullyPivoted()
     }
 
+    fun degeneracy(): Int {
+        return basicColsByRow.size - B.nonZeroEntries.size
+    }
+
+
+    fun degeneracyRatio(): Double {
+        return (basicColsByRow.size - B.nonZeroEntries.size).toDouble()/basicColsByRow.size
+    }
+
 }
 

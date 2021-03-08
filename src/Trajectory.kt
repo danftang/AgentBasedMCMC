@@ -4,6 +4,7 @@ import lib.collections.emptyMultiset
 import lib.sparseVector.SparseVector
 import lib.sparseVector.asVector
 import org.apache.commons.math3.fraction.Fraction
+import org.apache.commons.math3.util.CombinatoricsUtils
 import java.lang.StringBuilder
 import java.util.AbstractMap
 import kotlin.math.ln
@@ -65,7 +66,9 @@ class Trajectory<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(
 
 
     fun nAgents(time: Int, agent: AGENT): Int {
-        return stateTrajectory[time][agent]
+        if(time < stateTrajectory.size) return stateTrajectory[time][agent]
+        if(time == stateTrajectory.size && time != 0) return finalState[agent]
+        return 0
     }
 
 
@@ -73,7 +76,14 @@ class Trajectory<AGENT : Agent<AGENT>, ACT: Ordered<ACT>>(
         var logP = 0.0
         for((event,occupation) in events) {
             logP += occupation * ln( event.agent.timestep(stateTrajectory[event.time])[event.act.ordinal] )
+//                   - CombinatoricsUtils.factorialLog(occupation) // for non-fermionic
         }
+// Add this for non-fermionic
+//        for(state in stateTrajectory) {
+//            for((_, occupation) in state.entries) {
+//                logP += CombinatoricsUtils.factorialLog(occupation)
+//            }
+//        }
         return logP
     }
 
