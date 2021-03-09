@@ -1,0 +1,34 @@
+% !TEX root = ABMCMC.tex
+\section{Introduction}
+
+\begin{itemize}
+	\item Problem
+	\begin{itemize}
+		\item Agent-based models are often used to explain how and why systems behave in the way that they do; i.e. `generative social science'~\cite{epstein_agentbased_1999}.
+		\item With empirical models, we need to be able to find the most likely model configurations that might have generated the observations we have from the real system. In other words we need to find the model posterior. \todo[inline]{Dan: I'd like to discuss the difference in calibration v.s. finding specific trajectories}
+		\item (With simple models there might be a formal\todo{what's the word??} solution but this is rarely (if ever) the case with ABMs).
+		\item Typically this is done by running the model forward using different parameter values (calibration).
+		\item But this is very computationally expensive, even with modern, efficient calibration algorithms \cite{thiele_facilitating_2014} as many attempts to find the `correct' parameter configurations will fail, wasting resource that could have been better spent running models that may have generated realistic observations.
+		\item MCMC methods approach this problem by XXXX, but XXXX
+	\end{itemize}
+	\item Solution
+	\begin{itemize}
+		\item We propose a new MCMC method that works directly on ABMs.
+	\end{itemize}
+	\item Benefits 
+	\begin{itemize}
+		\item Computational efficiency - but why? Generates more plausible solutions?
+		\item In addition can find the most likely trajectories? (which may be interesting in their own right)
+	\end{itemize}
+	\item Experiments
+	\begin{itemize}
+		\item We test the new method .... 
+	\end{itemize}
+\end{itemize}
+
+\subsubsection*{Notes}
+
+\begin{itemize}
+	\item \cite{kennedy_bayesian_2001} makes a good argument about the weaknesses of `traditional' calibration
+\end{itemize}
+
