@@ -494,6 +494,7 @@ open class Simplex<T>(
     }
 
 
+    // Returns a list of all pivot points that maintain primal feasibility
     fun allPositivePivotPoints(): List<PivotPoint> {
         return (0 until M.nCols).asSequence()
             .filter { it != bColumn }

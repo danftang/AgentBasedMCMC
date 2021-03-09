@@ -8,16 +8,64 @@ import lib.sparseVector.asVector
 import org.apache.commons.math3.fraction.Fraction
 import java.lang.Integer.max
 import kotlin.math.absoluteValue
+import kotlin.math.exp
+import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlin.random.Random
 
 class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
 
-    val fractionPenaltyK: Double          = -5.0
+    val fractionPenaltyK: Double          = -4.0
 
     val simplex: SimplexMCMC<Fraction>
     val model: ABM<AGENT, ACT>
     val observations: List<Observation<AGENT, ACT>>
 
+
+    //////////////// Fractional vertex tests
+
+    var currentFractionalPenalty: Double
+    var nSamples = 0
+    var nRejections = 0
+    var fractionalRunLength = 0
+
+    fun fractionSample(): SparseVector<Fraction> {
+        ++nSamples
+//        val pivots = simplex.allPositivePivotPoints()
+        val pivots = if(Random.nextDouble() <= 0.9) {
+            simplex.allNonDegeneratePivots()
+        } else {
+            simplex.allNonDegeneratePivots()
+        }
+        val proposal = pivots.random()
+        if(currentFractionalPenalty == 0.0) {
+            simplex.pivot(proposal)
+            currentFractionalPenalty = logFractionPenalty(simplex.X(true))
+            if(currentFractionalPenalty != 0.0) {
+                println("$nSamples Fraction penalty = $currentFractionalPenalty")
+            }
+            return simplex.X(false)
+        }
+        ++fractionalRunLength
+        val reversePivot = Simplex.PivotPoint(proposal.row,simplex.basicColsByRow[proposal.row])
+        simplex.pivot(proposal)
+        val newFractionPenalty = logFractionPenalty(simplex.X(true))
+        val acceptance = exp(min(0.0, newFractionPenalty - currentFractionalPenalty ))
+        if(Random.nextDouble() <= acceptance) {
+            currentFractionalPenalty = newFractionPenalty
+            println("$nSamples Fraction penalty = $currentFractionalPenalty")
+            if(currentFractionalPenalty == 0.0) {
+                println("Fractional runlength was $fractionalRunLength samples")
+                fractionalRunLength = 0
+            }
+        } else {
+            println("rejecting")
+            simplex.pivot(reversePivot)
+        }
+        return simplex.X(false)
+    }
+
+    //////////////// End of fractional vertex tests
 
     constructor(
         model: ABM<AGENT, ACT>,
@@ -42,6 +90,8 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
         )
         assert(simplex.isFullyPivoted())
         assert(simplex.isPrimalFeasible())
+
+        currentFractionalPenalty = logFractionPenalty(simplex.X(true))
     }
 
 

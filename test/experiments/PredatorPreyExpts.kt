@@ -84,53 +84,63 @@ class PredatorPreyExpts {
         println("solution is ${solution.asList()}")
     }
 
-    fun generateObservations(
-        startState: Multiset<PredatorPreyABM.PredPreyAgent>,
-        nTimesteps: Int,
-        pMakeObservation: Double): Pair<List<PredatorPreyABM.PPObservation>,Trajectory<PredatorPreyABM.PredPreyAgent,PredatorPreyABM.Acts>> {
-        val trajectory = PredatorPreyABM.fermionicRunABM(startState, nTimesteps)
-        val observations = ArrayList<PredatorPreyABM.PPObservation>(
-            (nTimesteps*PredatorPreyABM.agentDomain.size*pMakeObservation).toInt()
-        )
-        for(t in 0 until nTimesteps) {
-            for(x in 0 until PredatorPreyABM.gridSize) {
-                for(y in 0 until PredatorPreyABM.gridSize) {
-                    if(Random.nextDouble() < pMakeObservation) {
-                        observations.add(
-                            PredatorPreyABM.PPObservation(
-                                t, PredatorPreyABM.PredPreyAgent(x,y,PredatorPreyABM.AgentType.PREDATOR), trajectory
+    companion object {
+
+        fun generateObservations(
+            startState: Multiset<PredatorPreyABM.PredPreyAgent>,
+            nTimesteps: Int,
+            pMakeObservation: Double
+        ): Pair<List<PredatorPreyABM.PPObservation>, Trajectory<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>> {
+            val trajectory = PredatorPreyABM.fermionicRunABM(startState, nTimesteps)
+            val observations = ArrayList<PredatorPreyABM.PPObservation>(
+                (nTimesteps * PredatorPreyABM.agentDomain.size * pMakeObservation).toInt()
+            )
+            for (t in 0 until nTimesteps) {
+                for (x in 0 until PredatorPreyABM.gridSize) {
+                    for (y in 0 until PredatorPreyABM.gridSize) {
+                        if (Random.nextDouble() < pMakeObservation) {
+                            observations.add(
+                                PredatorPreyABM.PPObservation(
+                                    t,
+                                    PredatorPreyABM.PredPreyAgent(x, y, PredatorPreyABM.AgentType.PREDATOR),
+                                    trajectory
+                                )
                             )
-                        )
-                        observations.add(
-                            PredatorPreyABM.PPObservation(
-                                t, PredatorPreyABM.PredPreyAgent(x,y,PredatorPreyABM.AgentType.PREY), trajectory
+                            observations.add(
+                                PredatorPreyABM.PPObservation(
+                                    t, PredatorPreyABM.PredPreyAgent(x, y, PredatorPreyABM.AgentType.PREY), trajectory
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }
+            checkTrajectorySatisfiesObervations(trajectory, observations)
+            return Pair(observations, trajectory)
         }
-        checkTrajectorySatisfiesObervations(trajectory, observations)
-        return Pair(observations, trajectory)
+
+        fun checkTrajectorySatisfiesObervations(
+            trajectory: Trajectory<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>,
+            observations: List<PredatorPreyABM.PPObservation>
+        ) {
+            assert(observations.all { it.logLikelihood(trajectory) != Double.NEGATIVE_INFINITY })
+        }
+
+
+        fun checkTrajectorySatisfiesObervationConstraints(
+            trajectory: Trajectory<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>,
+            observations: List<PredatorPreyABM.PPObservation>
+        ) {
+            assert(observations.all { it.eventConstraints().all { it.isSatisfiedBy(trajectory.eventVector) } })
+        }
+
+
+        fun checkTrajectorySatisfiesConstraints(
+            trajectory: Trajectory<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>,
+            constraints: List<Constraint<Fraction>>
+        ) {
+            assert(constraints.all { it.isSatisfiedBy(trajectory.eventVector) })
+        }
+
     }
-
-    fun checkTrajectorySatisfiesObervations(trajectory: Trajectory<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>,
-    observations: List<PredatorPreyABM.PPObservation>) {
-        assert(observations.all { it.logLikelihood(trajectory) != Double.NEGATIVE_INFINITY })
-    }
-
-
-    fun checkTrajectorySatisfiesObervationConstraints(trajectory: Trajectory<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>,
-                                            observations: List<PredatorPreyABM.PPObservation>) {
-        assert(observations.all { it.eventConstraints().all { it.isSatisfiedBy(trajectory.eventVector) } })
-    }
-
-
-    fun checkTrajectorySatisfiesConstraints(
-        trajectory: Trajectory<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>,
-        constraints: List<Constraint<Fraction>>) {
-        assert(constraints.all { it.isSatisfiedBy(trajectory.eventVector) })
-    }
-
-
 }
