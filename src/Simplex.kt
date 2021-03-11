@@ -566,13 +566,7 @@ open class Simplex<T>(
 
 
 
-    fun T.roundToInt(): Int {
-        return when(this) {
-            is Double -> roundToInt()
-            is Fraction -> (numerator*1.0/denominator).roundToInt()
-            else -> throw(UnsupportedOperationException("Don't know how to round a ${this.javaClass.simpleName}"))
-        }
-    }
+    fun T.roundToInt(): Int = this.toDouble().roundToInt()
 
     fun testSolution(x: DoubleArray) {
         println("Testing solution")

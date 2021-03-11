@@ -20,7 +20,7 @@ class PredatorPreyExpts {
         val predatorInitialDensity = 0.02
         val preyInitialDensity = 0.04
         val nTimesteps = 4
-        PredatorPreyABM.gridSize = 8
+        PredatorPreyABM.gridSize = 12
         val (observations, realTrajectory) = generateObservations(
             PredatorPreyABM.randomFermionicState(predatorInitialDensity, preyInitialDensity),
             nTimesteps,
@@ -41,7 +41,7 @@ class PredatorPreyExpts {
         println("Initial state is ${mcmc.simplex.X()}")
         println("Starting sampling")
 
-        val expectation = mcmc.expectation(5000, emptySparseVector(FractionOperators)) { sample, sum ->
+        val expectation = mcmc.expectation(40000, emptySparseVector(FractionOperators)) { sample, sum ->
             sample + sum
         }
         val expectationTrajectory = Trajectory(PredatorPreyABM, expectation)
