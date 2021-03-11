@@ -1,4 +1,22 @@
 % !TEX root = ABMCMC.tex
 \section{Related Research}\label{sec:background}
 
-\todo[inline]{NM to start on background section}
+\paragraph{Sampling}
+
+\todo[inline]{What are there other approaches designed to allow efficient sampling from the posterior? Why are they not appropriate for ABMs?} 
+
+\paragraph{DA \& ABM}
+
+`Live' (i.e. real-time) agent-based modelling could be transformative for many problems~\cite{swarup_live_2020}. It is unsurprising, therefore, that in recent years a literature on the application of traditional data assimilation methods to agent-based models has begun to emerge, albeit in its infancy. Although there are a reasonable number of examples of dynamic calibration, where model parameters are re-calibrated based on new data, the specific applications of \textit{data assimilation} to ABM are much rarer. ABMs have been applied to models of:
+crime~\cite{lloyd_exploring_2016};
+bus routes~\cite{kieu_dealing_2020};
+pedestrian dynamics~\cite{wang_data_2015, ward_dynamic_2016, clay_realtime_2020, malleson_simulating_2020};
+and population movement~\cite{lueck_who_2019}.
+
+\todo[inline]{Now: broadly explain the problems with those applications. I.e. these are limited because a huge amount of the posterior space is 0 probability. Rules out: rejection sampling (because so many will be rejected), MCMC with Gaussian (because again most proposals will be 0 probability); particle filtering (because particles will end up with 0 probability); Kalman Filters (Gaussian assumption not accuate for ABMs).}
+
+
+\paragraph{Simplex algorithm}
+
+\todo[inline]{Dan mentioned that a lot of the success relies on the implementation of the Simpelx algorithm; need to discuss that here? (maybe not)}
+

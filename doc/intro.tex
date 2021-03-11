@@ -1,34 +1,53 @@
 % !TEX root = ABMCMC.tex
 \section{Introduction}
 
-\begin{itemize}
-	\item Problem
-	\begin{itemize}
-		\item Agent-based models are often used to explain how and why systems behave in the way that they do; i.e. `generative social science'~\cite{epstein_agentbased_1999}.
-		\item With empirical models, we need to be able to find the most likely model configurations that might have generated the observations we have from the real system. In other words we need to find the model posterior. \todo[inline]{Dan: I'd like to discuss the difference in calibration v.s. finding specific trajectories}
-		\item (With simple models there might be a formal\todo{what's the word??} solution but this is rarely (if ever) the case with ABMs).
-		\item Typically this is done by running the model forward using different parameter values (calibration).
-		\item But this is very computationally expensive, even with modern, efficient calibration algorithms \cite{thiele_facilitating_2014} as many attempts to find the `correct' parameter configurations will fail, wasting resource that could have been better spent running models that may have generated realistic observations.
-		\item MCMC methods approach this problem by XXXX, but XXXX
-	\end{itemize}
-	\item Solution
-	\begin{itemize}
-		\item We propose a new MCMC method that works directly on ABMs.
-	\end{itemize}
-	\item Benefits 
-	\begin{itemize}
-		\item Computational efficiency - but why? Generates more plausible solutions?
-		\item In addition can find the most likely trajectories? (which may be interesting in their own right)
-	\end{itemize}
-	\item Experiments
-	\begin{itemize}
-		\item We test the new method .... 
-	\end{itemize}
-\end{itemize}
+\paragraph{Data assimilation \& ABM}
 
-\subsubsection*{Notes}
+Why we need DA for ABMs, bla bla bla.
 
-\begin{itemize}
-	\item \cite{kennedy_bayesian_2001} makes a good argument about the weaknesses of `traditional' calibration
-\end{itemize}
+\paragraph{Problem: Most trajectories are unlikely}
+
+Data assimilation works well in some circumstances -- e.g. see progress in meteorology -- but does not work well in ABMs. ABMs simulate the actions of discrete units (`agents'), each of which is typically able to choose a particular action from a large number of different possible actions at each iteration. The result is a model that can evolve in a very large number of different ways. The task that data assimilation faces is to estimate a posterior distribution by finding the model trajectories that are likely to have generated some real-world observations. However, with ABM it is very unlikely that an individual model trajectory will likely produce simulated outputs that are sufficiently similar to the real-world observations. In other words, most model trajectories will be refuted by the data. Data assimilation techniques rely on being able to generate plausible model trajectories at a reasonable rate, hence will be infeasible for most ABMs.
+
+\paragraph{The solution}
+
+We present a new approach to sampling from the posterior of an agent-based model that results in a reasonable acceptance rate. In other words, each time the ABM is executed there is a reasonable chance that the trajectory could have produced the observations (few model runs are wasted). This, in turn, makes it possible to use techniques such as Markov chain Mote Carlo (MCMC) to estimate the posterior and hence perform data assimilation. 
+
+\todo[inline]{Now a paragraph summary about how the method works (!)}
+
+\paragraph{Paper structure \& experiments}
+
+We demonstrate the new method by running experiments using a simple predator-prey system. We show that, given some new observations of predator and prey positions, the method is able to efficiently estimate the trajectories that might have produced the observations and hence reliably sample from the posterior.
+
+\todo[inline]{Paper Structure}
+
+%%Nick's old text which is more about calibration
+%\begin{itemize}
+%	\item Problem
+%	\begin{itemize}
+%		\item Agent-based models are often used to explain how and why systems behave in the way that they do; i.e. `generative social science'~\cite{epstein_agentbased_1999}.
+%		\item With empirical models, we need to be able to find the most likely model configurations that might have generated the observations we have from the real system. In other words we need to find the model posterior. \todo[inline]{Dan: I'd like to discuss the difference in calibration v.s. finding specific trajectories}
+%		\item (With simple models there might be a formal\todo{what's the word??} solution but this is rarely (if ever) the case with ABMs).
+%		\item Typically this is done by running the model forward using different parameter values (calibration).
+%		\item But this is very computationally expensive, even with modern, efficient calibration algorithms \cite{thiele_facilitating_2014} as many attempts to find the `correct' parameter configurations will fail, wasting resource that could have been better spent running models that may have generated realistic observations.
+%		\item MCMC methods approach this problem by XXXX, but XXXX
+%	\end{itemize}
+%	\item Solution
+%	\begin{itemize}
+%		\item We propose a new MCMC method that works directly on ABMs.
+%	\end{itemize}
+%	\item Benefits 
+%	\begin{itemize}
+%		\item Computational efficiency - but why? Generates more plausible solutions?
+%		\item In addition can find the most likely trajectories? (which may be interesting in their own right)
+%	\end{itemize}
+%	\item Experiments
+%	\begin{itemize}
+%		\item We test the new method .... 
+%	\end{itemize}
+%\end{itemize}
+%\subsubsection*{Notes}
+%\begin{itemize}
+%	\item \cite{kennedy_bayesian_2001} makes a good argument about the weaknesses of `traditional' calibration
+%\end{itemize}
 
