@@ -12,7 +12,7 @@ import kotlin.math.roundToInt
 
 class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
 
-    val fractionPenaltyK: Double          = -4.0
+    val fractionPenaltyK: Double          = -5.0
 
     val simplex: SimplexMCMC<Fraction>
     val model: ABM<AGENT, ACT>
@@ -49,8 +49,10 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
         val trajectory = Trajectory(model, X)
         val prior = trajectory.logPrior()
         val likelihood = observations.sumByDouble { it.logLikelihood(trajectory) }
-        val logP = prior + likelihood + logFractionPenalty(X)
-//        println("got logprob $prior + $likelihood = $logP")
+        val penalty = logFractionPenalty(X)
+        val logP = prior + likelihood + penalty
+//        if(penalty < 0.0) println("Got fractional penalty $penalty")
+//        println("prior logprob $prior likelihood logprob $likelihood fraction penalty $penalty = $logP")
         return logP
     }
 
@@ -94,7 +96,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
             e = expectationAccumulator(newSample, e)
             if(oldSample === newSample) ++rejections
             oldSample = newSample
-            if(s.rem(10) == 0) println("Got sample $s, ${largestDenominator()}, ${simplex.M.sparsity()}")
+            if(s.rem(50) == 0) println("Got sample $s, largest Numerator,Denominator ${largestNumeratorDenominator()}, Sparsity ${simplex.M.sparsity()}, Degeneracy ${simplex.degeneracyRatio()}")
         }
         println("Rejection ratio = ${rejections.toDouble()/nSamples}")
         return e
@@ -109,6 +111,18 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
         }
         return maxDenom
     }
+
+    fun largestNumeratorDenominator(): Pair<Int,Int> {
+        var maxDenom = 1
+        var maxNum = 1
+        for(entry in simplex.M.nonZeroEntries) {
+            maxDenom = max(entry.value.denominator, maxDenom)
+            maxNum = max(entry.value.numerator, maxDenom)
+            assert(entry.value != Fraction.ZERO)
+        }
+        return Pair(maxNum, maxDenom)
+    }
+
 
     companion object {
         fun <AGENT : Agent<AGENT>, ACT : Ordered<ACT>> constraints(

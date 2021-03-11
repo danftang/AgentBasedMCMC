@@ -18,17 +18,19 @@ import kotlin.random.Random
 //
 //
 //
-open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
+open class SimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Number {
 
     val logPmf: (SparseVector<T>) -> Double
 
-    val degeneratePivotWeight             = 0.01
-    val probOfRowSwap                     = 0.01
+    val degeneratePivotWeight = 0.005
+    val probOfRowSwap = 0.0
 
     var logProbOfPivotState: Double
-    val columnPivotLimits = ArrayList<T>(M.nCols - 1)      // the upper limit for the value of each column (for easy identification of pivots)
+    val columnPivotLimits =
+        ArrayList<T>(M.nCols - 1)      // the upper limit for the value of each column (for easy identification of pivots)
     val columnWeights = MutableCategoricalArray(M.nCols - 1)      // weighted sum of number of pivots in each column
     var currentSample: SparseVector<T>
+
 
     init {
         for (col in 0 until M.nCols - 1) {
@@ -48,73 +50,80 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
     constructor(
         constraints: List<Constraint<T>>,
         initialSample: SparseVector<T>,
-        logPmf: (SparseVector<T>) -> Double) :
+        logPmf: (SparseVector<T>) -> Double
+    ) :
             super(constraints, emptyMap<Int, T>().asVector(initialSample.operators), initialSample) {
         this.logPmf = logPmf
         logProbOfPivotState = calcLogProbOfPivotState(X(false))
     }
 
-    fun calcLogProbOfPivotState(x: SparseVector<T>) = logPmf(x) + logDegeneracyProb()
-
+    fun calcLogProbOfPivotState(x: SparseVector<T>): Double {
+        val pmf = logPmf(x)
+        val degeneracyP = logDegeneracyProb()
+//        println("logPmf $pmf degeneracy $degeneracyP = ${pmf+degeneracyP}")
+        return pmf + degeneracyP
+    }
 
     // Choose a pivot
     // and reject based on Metropolis-Hastings
     // returns the next sample
     fun nextSample(): SparseVector<T> {
-        if(Random.nextDouble() < probOfRowSwap) { // row swap never rejects
-            swapRows(Random.nextInt(M.nRows-1), Random.nextInt(M.nRows-1))
+        if (Random.nextDouble() < probOfRowSwap) { // row swap never rejects
+            swapRows(Random.nextInt(M.nRows - 1), Random.nextInt(M.nRows - 1))
             return currentSample
         }
         var proposalPivot = proposePivot()
-        if(isDegenerate(proposalPivot)) println("Proposal is degenerate")
+        if (isDegenerate(proposalPivot)) println("Proposal is degenerate")
         val rejectionPivot = PivotPoint(proposalPivot.row, basicColsByRow[proposalPivot.row])
         val originalLogProbOfPivotState = logProbOfPivotState
         val originalLogProbOfTransition = ln(trasitionProb(proposalPivot))
         val originalSample = currentSample
 //        println("Fraction of pivot-affected cols ${fractionOfAffectedColumns(proposalPivot)}")
-        mcmcPivot(proposalPivot,null,null)
+        mcmcPivot(proposalPivot, null, null)
         val logTransitionProbRatio = ln(trasitionProb(rejectionPivot)) - originalLogProbOfTransition
-        val logPivotStateRatio = if(logProbOfPivotState == Double.NEGATIVE_INFINITY &&
-            originalLogProbOfPivotState == Double.NEGATIVE_INFINITY) 0.0 else logProbOfPivotState - originalLogProbOfPivotState
-        val logAcceptance = min(logPivotStateRatio + logTransitionProbRatio,0.0)
+        val logPivotStateRatio = if (logProbOfPivotState == Double.NEGATIVE_INFINITY &&
+            originalLogProbOfPivotState == Double.NEGATIVE_INFINITY
+        ) 0.0 else logProbOfPivotState - originalLogProbOfPivotState
+        val logAcceptance = min(logPivotStateRatio + logTransitionProbRatio, 0.0)
 //        println("Log acceptance = $logProbOfPivotState + ${ln(trasitionProb(rejectionPivot))} - $originalLogProbOfPivotState - $originalLogProbOfTransition")
 //        println("Acceptance = ${exp(logAcceptance)}")
-        if(Random.nextDouble() >= exp(logAcceptance)) {
-//            println("Rejecting")
+        if (Random.nextDouble() >= exp(logAcceptance)) {
+//            println("Rejecting. pivot state prob ratio ${exp(logPivotStateRatio)} transition ratio ${exp(logTransitionProbRatio)}")
+//            println()
             mcmcPivot(rejectionPivot, originalLogProbOfPivotState, originalSample)
+        } else {
+//            println("Accepting. pivot state log prob ${logProbOfPivotState}")
         }
         return currentSample
     }
 
 
-
-    fun<R> expectation(nSamples: Int, initialExpectation: R, expectationAccumulator: (SparseVector<T>, R) -> R): R {
+    fun <R> expectation(nSamples: Int, initialExpectation: R, expectationAccumulator: (SparseVector<T>, R) -> R): R {
         var e = initialExpectation
         var oldSample: SparseVector<T>? = null
         var rejections = 0
-        for(s in 1..nSamples) {
+        for (s in 1..nSamples) {
             val newSample = nextSample()
             e = expectationAccumulator(newSample, e)
-            if(oldSample === newSample) ++rejections
+            if (oldSample === newSample) ++rejections
             oldSample = newSample
         }
-        println("Rejection ratio = ${rejections.toDouble()/nSamples}")
+        println("Rejection ratio = ${rejections.toDouble() / nSamples}")
         return e
     }
 
 
-
-    fun mcmcPivot(pivot: PivotPoint, pivotedLogProb: Double? = null, pivotedSample: SparseVector<T>?=null) {
+    fun mcmcPivot(pivot: PivotPoint, pivotedLogProb: Double? = null, pivotedSample: SparseVector<T>? = null) {
         val reversePivot = PivotPoint(pivot.row, basicColsByRow[pivot.row])
         super.pivot(pivot)
         updatePivotInfo(reversePivot)
-        currentSample = pivotedSample?:X(false)
-        logProbOfPivotState = pivotedLogProb?:calcLogProbOfPivotState(currentSample)
+        currentSample = pivotedSample ?: X(false)
+        logProbOfPivotState = pivotedLogProb ?: calcLogProbOfPivotState(currentSample)
     }
 
 
     fun swapRows(row1: Int, row2: Int) {
-        if(row1 != row2) { // Do swap
+        if (row1 != row2) { // Do swap
             M.rows[row2].weightedPlusAssign(M.rows[row1], -one)
             M.rows[row1].weightedPlusAssign(M.rows[row2], one)
             M.rows[row2].weightedPlusAssign(M.rows[row1], -one)
@@ -129,24 +138,24 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
     fun updatePivotInfo(pivotedOut: PivotPoint) {
         val colsToUpdate = HashSet<Int>()
         colsToUpdate.addAll(M.rows[pivotedOut.row].nonZeroEntries.keys)
-        if(!B[pivotedOut.row].isZero()) {
-            for(i in M.columns[pivotedOut.col].nonZeroEntries.keys) {
-                if(i != objectiveRow) colsToUpdate.addAll(M.rows[i].nonZeroEntries.keys)
+        if (!B[pivotedOut.row].isZero()) {
+            for (i in M.columns[pivotedOut.col].nonZeroEntries.keys) {
+                if (i != objectiveRow) colsToUpdate.addAll(M.rows[i].nonZeroEntries.keys)
             }
         }
         colsToUpdate.remove(bColumn)
-        for(j in colsToUpdate) {
+        for (j in colsToUpdate) {
             updatePivotState(j)
         }
     }
 
 
     fun updatePivotState(column: Int) {
-        val pivotRows = pivotableRows(column,false)
-        columnPivotLimits[column] = if(pivotRows.isEmpty()) zero else B[pivotRows[0]]/M[pivotRows[0],column]
+        val pivotRows = pivotableRows(column, false)
+        columnPivotLimits[column] = if (pivotRows.isEmpty()) zero else B[pivotRows[0]] / M[pivotRows[0], column]
         columnWeights[column] =
-            if(columnPivotLimits[column] == zero)
-                degeneratePivotWeight*pivotRows.size
+            if (columnPivotLimits[column] == zero)
+                degeneratePivotWeight * pivotRows.size
             else
                 pivotRows.size.toDouble()
 
@@ -158,18 +167,18 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
         val col = columnWeights.sample()
         val nPivot = Random.nextInt(nPivots(col))
         val row = M.columns[col].nonZeroEntries.asSequence()
-            .filter { it.key != objectiveRow && (B[it.key]/it.value) as Number == columnPivotLimits[col] }
+            .filter { it.key != objectiveRow && (B[it.key] / it.value) as Number == columnPivotLimits[col] }
             .drop(nPivot)
             .first()
             .key
-        return PivotPoint(row,col)
+        return PivotPoint(row, col)
     }
 
 
     // number of pivot points in given column
     fun nPivots(column: Int): Int {
-        return if(columnPivotLimits[column] == zero)
-            (columnWeights[column]/degeneratePivotWeight).roundToInt()
+        return if (columnPivotLimits[column] == zero)
+            (columnWeights[column] / degeneratePivotWeight).roundToInt()
         else
             columnWeights[column].roundToInt()
     }
@@ -185,10 +194,10 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
         val possiblePivotCols = HashSet<Int>()
         var logProb = 0.0
         var degeneracy = 0
-        for(i in M.nRows-2 downTo 0) {
-            if(B[i].isZero()) {
+        for (i in M.nRows - 2 downTo 0) {
+            if (B[i].isZero()) {
                 possiblePivotCols.addAll(M.rows[i].nonZeroEntries.keys)
-                logProb += ln(possiblePivotCols.size.toDouble())
+                logProb -= ln(possiblePivotCols.size.toDouble())
                 ++degeneracy
             }
         }
@@ -198,22 +207,20 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
     }
 
 
-
-
     /************************ TEST STUFF *********************/
 
     fun fractionOfAffectedColumns(pivot: PivotPoint): Double {
         val affectedCol = HashSet<Int>()
-        for(i in M.columns[pivot.col].nonZeroEntries.keys) {
-            for(j in M.rows[i].nonZeroEntries.keys) {
+        for (i in M.columns[pivot.col].nonZeroEntries.keys) {
+            for (j in M.rows[i].nonZeroEntries.keys) {
                 affectedCol.add(j)
             }
         }
-        return affectedCol.size*1.0/M.nCols
+        return affectedCol.size * 1.0 / M.nCols
     }
 
     fun checkConsistency() {
-        for(col in 0 until M.nCols-1) {
+        for (col in 0 until M.nCols - 1) {
             val oldLimit = columnPivotLimits[col]
             val oldWeight = columnWeights[col]
             updatePivotState(col)
@@ -222,5 +229,5 @@ open class SimplexMCMC<T> : Simplex<T> where T: Comparable<T>, T: Number {
             assert((columnWeights[col] - oldWeight).absoluteValue < 1e-9)
         }
     }
-
 }
+
