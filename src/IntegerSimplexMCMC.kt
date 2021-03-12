@@ -18,8 +18,9 @@ import kotlin.random.Random
 //
 //
 //
-// TODO: Need to ensure fractional->fractional transitions don't wander
-// TODO: to very unlikely states. Also, improve mixing by doing row swaps after all pivots?
+// TODO: Pivots tend to reduce the degeneracy probability significantly, causing
+//  high rejection ratios and problems coming out of fractional states.
+//  Could improve by doing row swaps after each pivot?
 open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Number {
 
     val logPmf: (SparseVector<T>) -> Double
@@ -27,10 +28,7 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
     // parameters
     val degeneratePivotWeight: Double       = 0.01
     val probOfRowSwap: Double               = 0.01
-    val targetFractionalProportion: Double  = 0.01
-    val fractionalPUpdateAlpha: Double      = 0.1
-    val fractionPenaltyK: Double            = -1.0
-    var fractionalLogP: Double
+    val fractionPenaltyK: Double            = -9.0
 
     // cached values
     val columnPivotLimits =
@@ -50,7 +48,7 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
         var logPX: Double                  by SettableLazy { this@IntegerSimplexMCMC.logPmf(currentSample) }
         val logFractionalPenalty: Double
         val logProbOfPivotState: Double
-            get() = logPX + logDegeneracyProb
+            get() = logPX + logDegeneracyProb + logFractionalPenalty
 
 
         constructor(logFractionalPenalty: Double) {
@@ -81,17 +79,8 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
         }
         state = Cache(0.0)
         revertState = PivotReverter(PivotPoint(0,0),state)
-        fractionalLogP = state.logProbOfPivotState + ln(trasitionProb(proposePivot())) // first guess at fractional weight
-        println("initialising fractionalLogP = $fractionalLogP")
     }
 
-
-//    fun calcLogProbOfPivotState(x: SparseVector<T>): Double {
-//        val pmf = logPmf(x)
-//        val degeneracyP = logDegeneracyProb()
-////        println("logPmf $pmf degeneracy $degeneracyP = ${pmf+degeneracyP}")
-//        return pmf + degeneracyP
-//    }
 
     // Choose a pivot
     // and reject based on Metropolis-Hastings
@@ -101,16 +90,13 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
             processRowSwapProposal(Random.nextInt(M.nRows - 1), Random.nextInt(M.nRows - 1))
         } else {
             var proposalPivot = proposePivot()
-            val proposedLogFractionalPenalty = logFractionalPenaltyAfterPivot(proposalPivot.col)
-            if (proposedLogFractionalPenalty == 0.0) {
-                processIntegerProposal(proposalPivot, proposedLogFractionalPenalty)
-            } else {
-                processFractionalProposal(proposalPivot, proposedLogFractionalPenalty)
-            }
+            processProposal(proposalPivot)
         }
         ++nSamples
-        if(state.logFractionalPenalty > 0.0) ++nFractionalSamples
-//        if(nSamples.rem(1024) == 0) updateFractionalP()
+        if(state.logFractionalPenalty != 0.0) {
+            ++nFractionalSamples
+            println("${nSamples} In fractional state. Fractional penalty ${state.logFractionalPenalty}")
+        }
         return state.currentSample
     }
 
@@ -127,61 +113,23 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
     }
 
 
-    // destination is integer
-    fun processIntegerProposal(proposalPivot: PivotPoint, proposedLogFractionalPenalty: Double) {
-//        if (isDegenerate(proposalPivot)) println("Proposal is degenerate")
-        val acceptanceDenominator = calcLogAcceptanceDenominator(proposalPivot)
-        forwardPivot(proposalPivot, proposedLogFractionalPenalty)
-        val acceptanceNumerator = state.logProbOfPivotState + ln(trasitionProb(revertState.reversePivot))
+    fun processProposal(proposalPivot: PivotPoint) {
+        val acceptanceDenominator = state.logProbOfPivotState + ln(transitionProb(proposalPivot))
+        forwardPivot(proposalPivot)
+        val acceptanceNumerator = state.logProbOfPivotState + ln(transitionProb(revertState.reversePivot))
         val logAcceptance = min(acceptanceNumerator - acceptanceDenominator, 0.0)
-//        println("Log acceptance = $logProbOfPivotState + ${ln(trasitionProb(rejectionPivot))} - $originalLogProbOfPivotState - $originalLogProbOfTransition")
-//        println("Acceptance = ${exp(logAcceptance)}")
-        // explicity accept if both numerator and denominator are -infinity
-        if (!logAcceptance.isNaN() && Random.nextDouble() >= exp(logAcceptance)) {
-//            println("Rejecting. pivot state prob ratio ${exp(logPivotStateRatio)} transition ratio ${exp(logTransitionProbRatio)}")
-//            println()
-            if(revertState.cache.logFractionalPenalty != 0.0 && state.logFractionalPenalty == 0.0) println("Rejecting fraction->integer transition with logAcceptance ${state.logPX}, ${state.logDegeneracyProb}, $acceptanceNumerator - $acceptanceDenominator = $logAcceptance")
+        if (!logAcceptance.isNaN() && Random.nextDouble() >= exp(logAcceptance)) { // explicity accept if both numerator and denominator are -infinity
+            if(revertState.cache.logFractionalPenalty != 0.0 && state.logFractionalPenalty == 0.0) {
+                println("Rejecting fraction->integer transition with denominator = ${revertState.cache.logPX} + ${revertState.cache.logDegeneracyProb} + ${revertState.cache.logFractionalPenalty} + ${acceptanceDenominator - revertState.cache.logFractionalPenalty - revertState.cache.logDegeneracyProb - revertState.cache.logPX} = $acceptanceDenominator, numerator = ${state.logPX} + ${state.logDegeneracyProb} + ${ln(transitionProb(revertState.reversePivot))} = $acceptanceNumerator, acceptance = $logAcceptance")
+            }
+            if(revertState.cache.logFractionalPenalty == 0.0 && state.logFractionalPenalty != 0.0) {
+                println("Rejecting integer->fraction transition with denominator = ${revertState.cache.logPX} + ${revertState.cache.logDegeneracyProb} + ${acceptanceDenominator - revertState.cache.logFractionalPenalty - revertState.cache.logDegeneracyProb - revertState.cache.logPX} = $acceptanceDenominator, numerator = ${state.logPX} + ${state.logDegeneracyProb} +  + ${revertState.cache.logFractionalPenalty} + ${ln(transitionProb(revertState.reversePivot))} = $acceptanceNumerator, acceptance = $logAcceptance")
+            }
             revertLastPivot()
         } else {
-//            println("Accepting. pivot state log prob ${logProbOfPivotState}")
-        }
-//        fractionalLogP = (255.0 * fractionalLogP + state.logProbOfPivotState)/256.0
-    }
-
-
-    // destination is fractional
-    fun processFractionalProposal(proposalPivot: PivotPoint, proposedLogFractionalPenalty: Double) {
-//        println("In fractional state. Best pivot is ${bestFractionalPenaltyPivot()}")
-        val logAcceptance = min(0.0,fractionalLogP + proposedLogFractionalPenalty - calcLogAcceptanceDenominator(proposalPivot))
-        if(Random.nextDouble() < exp(logAcceptance)) {
-//            println("Accepted fractional proposal with fractional penalty $proposedLogFractionalPenalty")
-            forwardPivot(proposalPivot, proposedLogFractionalPenalty)
-        } else {
-            println("Rejected proposal with fractional penalty $proposedLogFractionalPenalty")
-            if(proposedLogFractionalPenalty == 0.0) println("Rejected integer proposal from fractional state")
+            // Accept proposal
         }
     }
-
-
-    fun updateFractionalP() {
-        val observedFractionalProportion = if(nFractionalSamples != 0) nFractionalSamples.toDouble()/nSamples else 1.0/nSamples
-        fractionalLogP += ln(
-            (1.0-fractionalPUpdateAlpha) +
-                    fractionalPUpdateAlpha * targetFractionalProportion/observedFractionalProportion
-        )
-        println("Updating fractional weight. Proportion of fractional samples = ${nFractionalSamples.toDouble()/nSamples}")
-        println("New log weight = ${fractionalLogP}")
-        nSamples = 0
-        nFractionalSamples = 0
-    }
-
-
-    fun calcLogAcceptanceDenominator(proposalPivot: PivotPoint): Double =
-        if(state.logFractionalPenalty == 0.0) {
-            state.logProbOfPivotState + ln(trasitionProb(proposalPivot))
-        } else {
-            fractionalLogP + state.logFractionalPenalty
-        }
 
 
     fun nextIntegerSample(): SparseVector<T> {
@@ -292,7 +240,7 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
 
 
     // The probability of choosing this pivot as a transition
-    fun trasitionProb(pivot: PivotPoint): Double {
+    fun transitionProb(pivot: PivotPoint): Double {
         return (1.0 - probOfRowSwap) * columnWeights.P(pivot.col) / nPivots(pivot.col)
     }
 
@@ -313,41 +261,11 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
                 CombinatoricsUtils.factorialLog(basicColsByRow.size)
     }
 
-    // The probability of a pivot state is multiplied by this amount if the
-    // solution is not on the integer grid.
-    //
-    // Returns the L1 distance between this point and its rounding, multiplied
-    // by fractionPenaltyK
-//    fun logFractionProb(x: SparseVector<T>): Double {
-//        return fractionPenaltyK * x.nonZeroEntries.values.sumByDouble {
-//            val xi = it.toDouble()
-//            (xi - xi.roundToInt()).absoluteValue
-//        } + logMeanPBeta
-//    }
-
-
-//    fun SparseVector<T>.isInteger(): Boolean {
-//        return this.nonZeroEntries.all { it.value.isInteger() }
-//    }
-
-//    fun T.isInteger(): Boolean {
-//        return toDouble() == toInt().toDouble()
-//    }
 
     fun T.roundingDistance(): Double {
         return this.roundToInt() - this.toDouble()
     }
 
-
-    // returns true if pivot will result in an integer point
-    // i.e. if B - M[.,j]B[i]/M[i,j] is integer
-//    fun isIntegerPivot(pivot: PivotPoint): Boolean {
-//        val Mij = M[pivot.row,pivot.col]
-//        if(Mij as Number == one && isInIntegerState) return true // most cases
-//        val pivotDelta = B[pivot.row]/Mij
-//        return M.columns[pivot.col].nonZeroEntries.all { (B[it.key] - pivotDelta*it.value).isInteger() } &&
-//                B.nonZeroEntries.all { it.value.isInteger() || !M[it.key,pivot.col].isZero() }
-//    }
 
     fun logFractionalPenaltyAfterPivot(column: Int): Double {
         val pivotDelta = columnPivotLimits[column]
