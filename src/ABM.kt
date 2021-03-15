@@ -47,7 +47,7 @@ interface ABM<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> {
     fun consequences(startState: AGENT, act: ACT): Multiset<AGENT>
 
     // returns the constraints implied by the given event
-    fun timestepEventConstraints(event: Event<AGENT,ACT>): List<Constraint<Fraction>> // to be generated automatically...eventually.
+    fun timestepEventConstraints(event: Event<AGENT,ACT>): List<MutableConstraint<Fraction>> // to be generated automatically...eventually.
 
 
     fun fermionicRunABM(startState: Multiset<AGENT>, nTimesteps: Int): Trajectory<AGENT, ACT> {
@@ -126,7 +126,7 @@ interface ABM<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> {
     // converts a constraint in terms of state occupation numbers into a constraint on acts
     // in a given timestep
 //    fun stateToActConstraint(stateConstraint: Constraint<Fraction>, timestep: Int) = stateConstraint.stateToActConstraint(timestep)
-    fun Constraint<Fraction>.stateToEventConstraint(timestep: Int): Constraint<Fraction> {
+    fun MutableConstraint<Fraction>.stateToEventConstraint(timestep: Int): MutableConstraint<Fraction> {
         val actCoeffs = HashMap<Int,Fraction>()
         val nActs = actDomain.size
         val timestepBase = agentDomain.size*nActs*timestep
@@ -135,7 +135,7 @@ interface ABM<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> {
                 actCoeffs[timestepBase + state*nActs + act] = coefficient
             }
         }
-        return Constraint(actCoeffs, relation, constant)
+        return MutableConstraint(actCoeffs, relation, constant)
     }
 
 

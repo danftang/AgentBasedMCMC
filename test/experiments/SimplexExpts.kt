@@ -1,6 +1,6 @@
 package experiments
 
-import Constraint
+import MutableConstraint
 import Simplex
 import lib.abstractAlgebra.*
 import lib.sparseMatrix.GridMapMatrix
@@ -77,13 +77,13 @@ class SimplexExpts {
     @Test
     fun testPivotOutNegatives() {
         val constraints = listOf(
-            Constraint(hashMapOf(
+            MutableConstraint(hashMapOf(
                 0 to 1.0
             ),"<=", 2.0),
-            Constraint(hashMapOf(
+            MutableConstraint(hashMapOf(
                 1 to 1.0
             ),"<=", 2.0),
-            Constraint(hashMapOf(
+            MutableConstraint(hashMapOf(
                 0 to 1.0,
                 1 to 1.0
             ), ">=", 1.0)

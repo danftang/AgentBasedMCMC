@@ -6,6 +6,7 @@ import lib.sparseMatrix.GridMapMatrix
 import lib.sparseMatrix.SparseMatrix
 import kotlin.system.measureTimeMillis
 
+
 object ORTools {
     init {
         System.loadLibrary("jniortools")
@@ -20,7 +21,7 @@ object ORTools {
     // where M is this matrix
     // returns X
     //
-    fun<T: Number> GlopSolve(constraints: List<Constraint<T>>, objective: Map<Int,T> = emptyMap()): DoubleArray {
+    fun GlopSolve(constraints: List<Constraint<Number>>, objective: Map<Int,Number> = emptyMap()): DoubleArray {
         val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING)
         val nVariables = Integer.max(constraints.numVars(),
             objective.keys.max()?.let { it + 1 } ?: 0
@@ -37,8 +38,9 @@ object ORTools {
     }
 
 
-    fun<T: Number> IntegerSolve(constraints: List<Constraint<T>>, objective: Map<Int,T> = emptyMap()): DoubleArray {
-        val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
+    fun IntegerSolve(constraints: List<Constraint<Number>>, objective: Map<Int,Number> = emptyMap()): DoubleArray {
+//        val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
+        val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.SCIP_MIXED_INTEGER_PROGRAMMING)
         val nVariables = Integer.max(constraints.numVars(),
             objective.keys.max()?.let { it + 1 } ?: 0
         )
@@ -48,14 +50,16 @@ object ORTools {
 
 
     fun<T: Number> IntegerSolve(tableaux: SparseMatrix<T>): DoubleArray {
-        val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
+//        val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
+        val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.SCIP_MIXED_INTEGER_PROGRAMMING)
         val X = solver.makeIntVarArray(tableaux.nCols-1, 0.0, Double.POSITIVE_INFINITY)
         return ORSolve(solver, X, tableaux)
     }
 
 
-    fun<T: Number> BooleanSolve(constraints: List<Constraint<T>>, objective: Map<Int,T> = emptyMap()): DoubleArray {
-        val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
+    fun BooleanSolve(constraints: List<Constraint<Number>>, objective: Map<Int,Number> = emptyMap()): DoubleArray {
+//        val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
+        val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.SCIP_MIXED_INTEGER_PROGRAMMING)
         val nVariables = Integer.max(constraints.numVars(),
             objective.keys.max()?.let { it + 1 } ?: 0
         )
@@ -64,24 +68,12 @@ object ORTools {
     }
 
 
-    fun<T: Number> ORSolve(
+    fun ORSolve(
         solver: MPSolver,
         X: Array<MPVariable>,
-        constraints: List<Constraint<T>>,
-        objective: Map<Int,T> = emptyMap()): DoubleArray {
-        for(constraint in constraints) {
-            val mpConstraint = solver.makeConstraint()
-            for((varId, coeff) in constraint.coefficients) {
-                mpConstraint.setCoefficient(X[varId], coeff.toDouble())
-            }
-            val b = constraint.constant.toDouble()
-            when (constraint.relation) {
-                ">=" -> mpConstraint.setBounds(b, Double.POSITIVE_INFINITY)
-                "=", "==" -> mpConstraint.setBounds(b, b)
-                "<=" -> mpConstraint.setBounds(Double.NEGATIVE_INFINITY, b)
-                else -> throw(IllegalArgumentException("Unknown constraint type"))
-            }
-        }
+        constraints: List<Constraint<Number>>,
+        objective: Map<Int,Number> = emptyMap()): DoubleArray {
+        solver.setConstraints(X,constraints)
 
         val mpObjective = solver.objective()
         for (entry in objective) {
@@ -113,6 +105,43 @@ object ORTools {
         }
         solver.objective().setMinimization()
         return doSolve(solver,X)
+    }
+
+
+    fun MPSolver.setConstraints(X: Array<MPVariable>, constraints: List<Constraint<Number>>) {
+        for(constraint in constraints) {
+            val mpConstraint = makeConstraint()
+            for((varId, coeff) in constraint.coefficients) {
+                mpConstraint.setCoefficient(X[varId], coeff.toDouble())
+            }
+            val b = constraint.constant.toDouble()
+            when (constraint.relation) {
+                ">=" -> mpConstraint.setBounds(b, Double.POSITIVE_INFINITY)
+                "=", "==" -> mpConstraint.setBounds(b, b)
+                "<=" -> mpConstraint.setBounds(Double.NEGATIVE_INFINITY, b)
+                else -> throw(IllegalArgumentException("Unknown constraint type"))
+            }
+        }
+    }
+
+
+    fun MPSolver.setConstraintsWithExplicitSlacks(X: Array<MPVariable>, constraints: List<Constraint<Number>>) {
+        var nextSlack = X.lastIndex
+        var largestNonSlack = 0
+        for(constraint in constraints) {
+            val mpConstraint = makeConstraint()
+            for((varId, coeff) in constraint.coefficients) {
+                mpConstraint.setCoefficient(X[varId], coeff.toDouble())
+                if(varId > largestNonSlack) largestNonSlack = varId
+            }
+            val b = constraint.constant.toDouble()
+            when (constraint.relation) {
+                ">=" -> mpConstraint.setCoefficient(X[nextSlack--], -1.0)
+                "<=" -> mpConstraint.setCoefficient(X[nextSlack--], 1.0)
+            }
+            mpConstraint.setBounds(b, b)
+        }
+        assert(largestNonSlack == nextSlack)
     }
 
 

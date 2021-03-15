@@ -159,7 +159,7 @@
   <component name="libraryTable">
     <library name="com.google.ortools">
       <CLASSES>
-        <root url="jar://$PROJECT_DIR$/lib/com.google.ortools.jar!/" />
+        <root url="jar://$PROJECT_DIR$/ortools7.8/com.google.ortools.jar!/" />
       </CLASSES>
       <JAVADOC />
       <SOURCES />
@@ -236,7 +236,7 @@
     </library>
     <library name="protobuf">
       <CLASSES>
-        <root url="jar://$PROJECT_DIR$/lib/protobuf.jar!/" />
+        <root url="jar://$PROJECT_DIR$/ortools7.8/protobuf.jar!/" />
       </CLASSES>
       <JAVADOC />
       <SOURCES />

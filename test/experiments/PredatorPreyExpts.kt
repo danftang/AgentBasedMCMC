@@ -2,7 +2,7 @@ package experiments
 
 import ABMCMC
 import ABMCMC.Companion.validTrajectoryConstraints
-import Constraint
+import MutableConstraint
 import PredatorPreyABM
 import Trajectory
 import isSatisfiedBy
@@ -137,7 +137,7 @@ class PredatorPreyExpts {
 
         fun checkTrajectorySatisfiesConstraints(
             trajectory: Trajectory<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>,
-            constraints: List<Constraint<Fraction>>
+            constraints: List<MutableConstraint<Fraction>>
         ) {
             assert(constraints.all { it.isSatisfiedBy(trajectory.eventVector) })
         }

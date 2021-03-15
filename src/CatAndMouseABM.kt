@@ -69,11 +69,11 @@ object CatAndMouseABM: ABM<CatAndMouseABM.CatMouseAgent,CatAndMouseABM.Acts> {
             ) 0.0 else Double.NEGATIVE_INFINITY
         }
 
-        override fun eventConstraints(): List<Constraint<Fraction>> {
+        override fun eventConstraints(): List<MutableConstraint<Fraction>> {
             return if(agentPresent) {
-                listOf(Constraint(hashMapOf(agent.ordinal to Fraction.ONE), ">=", Fraction.ONE).stateToEventConstraint(time))
+                listOf(MutableConstraint(hashMapOf(agent.ordinal to Fraction.ONE), ">=", Fraction.ONE).stateToEventConstraint(time))
             } else {
-                listOf(Constraint(hashMapOf(agent.ordinal to Fraction.ONE), "==", Fraction.ZERO).stateToEventConstraint(time))
+                listOf(MutableConstraint(hashMapOf(agent.ordinal to Fraction.ONE), "==", Fraction.ZERO).stateToEventConstraint(time))
             }
         }
     }
@@ -96,19 +96,19 @@ object CatAndMouseABM: ABM<CatAndMouseABM.CatMouseAgent,CatAndMouseABM.Acts> {
         }
     }
 
-    override fun timestepEventConstraints(event: ABM.Event<CatMouseAgent, Acts>): List<Constraint<Fraction>> {
+    override fun timestepEventConstraints(event: ABM.Event<CatMouseAgent, Acts>): List<MutableConstraint<Fraction>> {
         return when(event.agent.type) {
             AgentType.CAT   -> emptyList()
             AgentType.MOUSE -> when(event.act) {
                 Acts.MOVE -> listOf(
-                    Constraint(
+                    MutableConstraint(
                         hashMapOf(CatMouseAgent(AgentType.CAT, event.agent.position).ordinal to Fraction.ONE),
                         ">=",
                         Fraction.ONE
                     ).stateToEventConstraint(event.time)
                 )
                 Acts.STAYPUT -> listOf(
-                    Constraint(
+                    MutableConstraint(
                         hashMapOf(CatMouseAgent(AgentType.CAT, event.agent.position).ordinal to Fraction.ONE),
                         "==",
                         Fraction.ZERO

@@ -16,8 +16,6 @@ import kotlin.random.Random
 // Each degeneracy state maps to a set of pivoted-in columns for the degenerate
 // rows via toPivotState(). This should be an external node on the degeneracy graph.
 //
-//
-//
 // TODO: Pivots tend to reduce the degeneracy probability significantly, causing
 //  high rejection ratios and problems coming out of fractional states.
 //  Could improve by doing row swaps after each pivot?
@@ -67,7 +65,7 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
 
 
     constructor(
-        constraints: List<Constraint<T>>,
+        constraints: List<MutableConstraint<T>>,
         initialSample: SparseVector<T>,
         logPmf: (SparseVector<T>) -> Double
     ) :

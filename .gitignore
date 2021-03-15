@@ -25,6 +25,10 @@ offline
 out
 src/META-INF
 *.iws
+lib
+ortools*
+*.ipr
+*.iml
 
 # Tex junk
 *.synctex.gz
@@ -32,3 +36,4 @@ src/META-INF
 *.aux
 *.bbl
 *.blg
+

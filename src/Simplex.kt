@@ -1,7 +1,6 @@
 import lib.abstractAlgebra.*
 import lib.sparseMatrix.GridMapMatrix
 import lib.sparseVector.*
-import org.apache.commons.math3.fraction.Fraction
 import java.lang.Integer.max
 import java.lang.RuntimeException
 import java.util.*
@@ -80,7 +79,7 @@ open class Simplex<T>(
 //        findInitialSolution()
 //    }
 
-    constructor(constraints: List<Constraint<T>>, objective: SparseVector<T>) : this(
+    constructor(constraints: List<MutableConstraint<T>>, objective: SparseVector<T>) : this(
         constraints,
         objective,
         with(objective.operators) {
@@ -98,7 +97,7 @@ open class Simplex<T>(
 
     // initialBasicVars are variables that must be in the initial pivot state, but not necessarily a full
     // piot state.
-    constructor(constraints: List<Constraint<T>>, objective: SparseVector<T>, initialSolution: SparseVector<T>) : this(
+    constructor(constraints: List<MutableConstraint<T>>, objective: SparseVector<T>, initialSolution: SparseVector<T>) : this(
         GridMapMatrix(objective.operators, constraints.size+1, 1)
     ) {
         println("Transferring constraints to simplex tableau...")
