@@ -22,3 +22,20 @@ fun<COEFF: Comparable<COEFF>> Constraint<COEFF>.isSatisfiedBy(x: SparseVector<CO
         else -> lhs == constant
     }
 }
+
+
+// returns the absolute value of the difference between lhs and rhs
+//fun<COEFF: Number> Constraint<COEFF>.slackness(values: SparseVector<COEFF>): Double {
+//    if(relation == "==") return 0.0
+//    val lhs = coefficients.asVector(values.operators).dotProduct(values).toDouble()
+//    return with(values.operators) {
+//        if (relation == "<=") constant.toDouble() - lhs else lhs - constant.toDouble()
+//    }
+//}
+
+// returns the absolute value of the difference between lhs and rhs
+fun<COEFF: Number> Constraint<COEFF>.slackness(values: Map<Int,Double>): Double {
+    if(relation == "==") return 0.0
+    val lhs = values.entries.sumByDouble { coefficients[it.key]?.toDouble()?:0.0 * it.value }
+    return if (relation == "<=") constant.toDouble() - lhs else lhs - constant.toDouble()
+}

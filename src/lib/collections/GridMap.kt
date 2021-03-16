@@ -68,11 +68,11 @@ class GridMap<T>(
     }
 
     fun addRow() {
-        _rowData.add(HashSet(4))
+        _rowData.add(HashSet())
     }
 
     fun addColumn() {
-        _columnData.add(HashMap(4))
+        _columnData.add(HashMap())
     }
 
     fun columnReassign(col: Int, remappingFunction: (T) -> T) {

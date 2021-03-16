@@ -17,14 +17,14 @@ class MutableConstraint<COEFF>: Constraint<COEFF> {
         this.constant = constant
     }
 
-    // returns the absolute velue of the difference between lhs and rhs
-    fun slackness(values: SparseVector<COEFF>): COEFF {
-        if(relation == "==") return values.operators.zero
-        val lhs = coefficients.asVector(values.operators).dotProduct(values)
-        return with(values.operators) {
-            if (relation == "<=") constant - lhs else lhs - constant
-        }
-    }
+    // returns the absolute value of the difference between lhs and rhs
+//    fun slackness(values: SparseVector<COEFF>): COEFF {
+//        if(relation == "==") return values.operators.zero
+//        val lhs = coefficients.asVector(values.operators).dotProduct(values)
+//        return with(values.operators) {
+//            if (relation == "<=") constant - lhs else lhs - constant
+//        }
+//    }
 
 
     override fun toString(): String {

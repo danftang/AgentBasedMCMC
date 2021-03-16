@@ -1,6 +1,3 @@
-import lib.collections.Removable
-import lib.collections.asMutableIterable
-import lib.collections.asSequenceOfRemovables
 import lib.collections.mutableFlatten
 import org.junit.Test
 

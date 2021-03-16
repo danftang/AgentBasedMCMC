@@ -1,4 +1,5 @@
 import lib.abstractAlgebra.*
+import lib.collections.GridMap
 import lib.sparseMatrix.GridMapMatrix
 import lib.sparseVector.*
 import java.lang.Integer.max
@@ -113,9 +114,9 @@ open class Simplex<T>(
         val initialNonZeroColumns = ArrayList(initialSolution.nonZeroEntries.keys)
         M.resize(M.nRows, nVariables + nSlackVars + 1)
         constraints.forEachIndexed { i, constraint ->
-            val slackness = constraint.slackness(initialSolution)
-            if(slackness < -zero || (constraint.relation == "==" && !slackness.isZero())) println("WARNING: initial solution is not feasible: Slackness $slackness")
-            if(!slackness.isZero()) initialNonZeroColumns.add(nextSlackVar)
+            val slackness = constraint.slackness(initialSolution.nonZeroEntries.mapValues { it.value.toDouble() })
+            if(slackness < 0.0 || (constraint.relation == "==" && slackness != 0.0)) println("WARNING: initial solution is not feasible: Slackness $slackness")
+            if(slackness != 0.0) initialNonZeroColumns.add(nextSlackVar)
             if (constraint.constant >= zero) {
                 constraint.coefficients.forEach { (j, x) -> M[i, j] = x }
                 B[i] = constraint.constant
@@ -442,14 +443,23 @@ open class Simplex<T>(
         assert(j < M.nCols-1)
         var Mij = M[i,j]
 
-        M.rows[i] /= Mij
-//        M.rowReassign(i) { it/Mij }
-        val colEntries = M.columns[j].nonZeroEntries.asSequence().filter { it.key != i }.toList()
-        val rowEntries = M.rows[i].nonZeroEntries.entries.toList()
+//        M.rows[i] /= Mij
+        M.gridMap._rowData[i].forEach { j ->
+            M.gridMap[i,j] = M.gridMap[i,j]!! / Mij
+        }
+//        val colEntries = M.columns[j].nonZeroEntries.asSequence().filter { it.key != i }.toList()
+//        val rowEntries = M.rows[i].nonZeroEntries.entries.toList()
+        val colEntries = M.gridMap._columnData[j].asSequence().filter { it.key != i }.toList()
+        val rowEntries = M.gridMap.rows[i].entries.toList()
         for(rowEntry in rowEntries) {
             for(colEntry in colEntries) {
                 val outerProd = rowEntry.value * colEntry.value
-                M.mapAssign(colEntry.key, rowEntry.key) { oldVal -> oldVal - outerProd }
+                val newVal = (M.gridMap[colEntry.key, rowEntry.key]?:zero) - outerProd
+                if(newVal.isZero())
+                    M.gridMap.remove(colEntry.key, rowEntry.key)
+                else
+                    M.gridMap[colEntry.key, rowEntry.key] = newVal
+//                M.mapAssign(colEntry.key, rowEntry.key) { oldVal -> oldVal - outerProd }
 //                M.compute(colEntry.key, rowEntry.key) { _, Mpq ->
 //                    val newVal = (Mpq?:zero) - outerProd
 //                    if(newVal == zero) null else newVal
@@ -465,7 +475,7 @@ open class Simplex<T>(
         if(isBasicColumn(j)) return emptyList()
 
         var dXjmax: T? = null
-        val limits = M.columns[j].nonZeroEntries.mapNotNull { (i, Mij) ->
+        val limits = M.gridMap._columnData[j].mapNotNull { (i, Mij) ->
             if(i != objectiveRow && (Mij > zero || (allowPivotsOnNegativeElements && B[i] <= zero))) {
                 val dXji = B[i]/Mij
                 if (dXji <= dXjmax?:dXji) dXjmax = dXji

@@ -1,6 +1,7 @@
 import com.google.ortools.linearsolver.MPSolver
 
 import ORTools.setConstraintsWithExplicitSlacks
+import com.google.ortools.linearsolver.MPObjective
 import com.google.ortools.linearsolver.MPVariable
 import org.apache.commons.math3.primes.Primes
 import java.util.HashSet
@@ -23,14 +24,14 @@ class MinimisationMCMC {
     val nVariables: Int
         get() = variables.size
 
-    val objective: ObjectiveWrapper = ObjectiveWrapper()
+    val objective: ObjectiveWrapper
 
-    inner class ObjectiveWrapper {
-        operator fun get(i: Int) = solver.objective().getCoefficient(variables[i])
-        operator fun set(i: Int, v: Double) { solver.objective().setCoefficient(variables[i], v) }
+    class ObjectiveWrapper(val mpObjective: MPObjective, val variables: Array<MPVariable>) {
+        operator fun get(i: Int) = mpObjective.getCoefficient(variables[i])
+        operator fun set(i: Int, v: Double) { mpObjective.setCoefficient(variables[i], v) }
         fun clear() {
-            solver.objective().clear()
-            solver.objective().setMinimization()
+            mpObjective.clear()
+            mpObjective.setMinimization()
         }
     }
 
@@ -44,6 +45,7 @@ class MinimisationMCMC {
 
     constructor(constraints: List<Constraint<Number>>) {
         variables = solver.makeNumVarArray(constraints.numVars()+constraints.numSlacks(), 0.0, Double.POSITIVE_INFINITY)
+        objective = ObjectiveWrapper(solver.objective(), variables)
         solver.setConstraintsWithExplicitSlacks(variables, constraints)
         currentSample = HashMap()
         println("Finding initial solution...")
