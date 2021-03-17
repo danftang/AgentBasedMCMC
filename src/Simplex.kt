@@ -1,8 +1,6 @@
 import lib.abstractAlgebra.*
 import lib.collections.GridMap
-import lib.sparseMatrix.GridMapMatrix
 import lib.sparseVector.*
-import org.apache.commons.math3.fraction.Fraction
 import java.lang.Integer.max
 import java.lang.RuntimeException
 import java.util.*
@@ -23,31 +21,54 @@ import kotlin.math.roundToInt
 // M = (A|B)
 //     (C 0)
 //////////////////////////////////////////////////////////////////////////
-open class Simplex<T>(
-    val M: GridMapMatrix<T>,
-    val basicColsByRow: IntArray = IntArray(M.nRows-1) { -1 } // -1 interpreted as artificial variable
-): FieldOperators<T> by M
+open class Simplex<T>(constraints: List<Constraint<T>>, objective: SparseVector<T>, initialSolution: SparseVector<T>)
+    : FieldOperators<T> by objective.operators
     where T: Number,
           T: Comparable<T>
 {
 
-    var firstSlackColumn: Int = M.nCols-1
+    val firstSlackColumn: Int = max(constraints.numVars(),
+        objective.nonZeroEntries.keys
+            .max()
+            ?.let { it + 1}
+            ?:0
+    )
+
+    val nVariables = firstSlackColumn + constraints.count { it.relation != "==" }
+
+    val entryMap: GridMap<T> = GridMap(constraints.size + 1, nVariables + 1)
+
+    val basicColsByRow: IntArray = IntArray(entryMap.nRows-1) { -1 } // -1 interpreted as artificial variable
+
+    val M: Matrix<T> = Matrix(entryMap, operators)
 
     val B: MutableSparseVector<T>
         inline get() = M.columns[bColumn]
     val objective: MutableSparseVector<T>
         inline get() = M.rows[objectiveRow]
     val objectiveRow: Int
-        inline get() = M.nRows-1
+        inline get() = entryMap.nRows-1
     val bColumn: Int
-        inline get() = M.nCols-1
+        inline get() = entryMap.nCols-1
     val constraintIndices: IntRange
         inline get() = 0 until objectiveRow
     val variableIndices: IntRange
         inline get() = 0 until bColumn
 
+
     data class PivotPoint(val row: Int, val col: Int)
 
+    class Matrix<T>(val mapData: GridMap<T>, val field: FieldOperators<T>): FieldOperators<T> by field {
+        val rows: List<MutableSparseVector<T>> = mapData.rows.map { it.asMutableVector() }
+        val columns: List<MutableSparseVector<T>> = mapData.columns.map { it.asMutableVector() }
+        val nRows: Int
+            get() = mapData.nRows
+        val nCols: Int
+            get() = mapData.nCols
+
+        operator fun get(row: Int, col: Int) = mapData[row,col]?:zero
+        operator fun set(row: Int, col: Int, value: T) { if(value.isZero()) mapData.remove(row,col) else mapData[row,col] = value }
+    }
 
     fun X(includeSlacks: Boolean=false): SparseVector<T> {
         val x = B.new()
@@ -99,21 +120,10 @@ open class Simplex<T>(
 
     // initialBasicVars are variables that must be in the initial pivot state, but not necessarily a full
     // piot state.
-    constructor(constraints: List<Constraint<T>>, objective: SparseVector<T>, initialSolution: SparseVector<T>) : this(
-        GridMapMatrix(objective.operators, constraints.size+1, 1)
-    ) {
+    init {
         println("Transferring constraints to simplex tableau...")
-        val nVariables = max(constraints.numVars(),
-            objective.nonZeroEntries.keys
-                .max()
-                ?.let { it + 1}
-                ?:0
-        )
-        firstSlackColumn = nVariables
-        val nSlackVars = constraints.count { it.relation != "==" }
-        var nextSlackVar = nVariables
+        var nextSlackVar = firstSlackColumn
         val initialNonZeroColumns = ArrayList(initialSolution.nonZeroEntries.keys)
-        M.resize(M.nRows, nVariables + nSlackVars + 1)
         constraints.forEachIndexed { i, constraint ->
             val slackness = constraint.slackness(initialSolution)
             if(slackness < -zero || (constraint.relation == "==" && !slackness.isZero())) println("WARNING: initial solution is not feasible: Slackness $slackness")
@@ -144,7 +154,7 @@ open class Simplex<T>(
 
 
     fun pivotToInitialSolution() {
-        val initialSolution = ORTools.GlopSolve(M)
+        val initialSolution = ORTools.GlopSolve(entryMap)
         println("Pivoting-in initial solution")
         initialPivot(initialSolution.indices.filter { initialSolution[it] != 0.0 })
         println("Initial solution ${X()}")
@@ -153,7 +163,7 @@ open class Simplex<T>(
 
     fun pivotToInitialIntegerSolution() {
         println("Finding initial integer solution")
-        val initialSolution = ORTools.IntegerSolve(M)
+        val initialSolution = ORTools.IntegerSolve(entryMap)
         println("Pivoting-in initial solution")
         initialPivot(initialSolution.indices.filter { initialSolution[it] != 0.0 })
         println("Initial solution ${X()}")
@@ -283,9 +293,8 @@ open class Simplex<T>(
     // Returns true if the minimum was found, otherwise
     // the solution is unbounded or no solution exists.
     fun greedyMinimise(): Boolean {
-        var i = 0
         while (greedyPivot()) {
-            println(i++)
+//            println(i++)
 //            println(M)
         }
         return objective.nonZeroEntries.none { it.value < -zero }
@@ -438,24 +447,31 @@ open class Simplex<T>(
     // if the pivot point is -ve, multiplies the pivot row by -1 to make it positive
     inline fun pivot(point: PivotPoint) = pivot(point.row, point.col)
     fun pivot(i: Int, j: Int) {
-        assert(i>=0)
-        assert(i < M.nRows-1)
-        assert(j>=0)
-        assert(j < M.nCols-1)
+//        assert(i>=0)
+//        assert(i < M.nRows-1)
+//        assert(j>=0)
+//        assert(j < M.nCols-1)
         var Mij = M[i,j]
 
         M.rows[i] /= Mij
-//        M.rowReassign(i) { it/Mij }
-        val colEntries = M.columns[j].nonZeroEntries.asSequence().filter { it.key != i }.toList()
-        val rowEntries = M.rows[i].nonZeroEntries.entries.toList()
-        for(rowEntry in rowEntries) {
+        val colEntries = M.columns[j].nonZeroEntries
+            .mapNotNull {
+                if(it.key != i) AbstractMap.SimpleEntry(it.key, it.value) else null
+            }
+
+        for(rowEntry in entryMap.rows[i]) {
             for(colEntry in colEntries) {
-                val outerProd = rowEntry.value * colEntry.value
-                M.mapAssign(colEntry.key, rowEntry.key) { oldVal -> oldVal - outerProd }
-//                M.compute(colEntry.key, rowEntry.key) { _, Mpq ->
-//                    val newVal = (Mpq?:zero) - outerProd
-//                    if(newVal == zero) null else newVal
+//                val newVal = (entryMap[colEntry.key, rowEntry.key]?:zero) - rowEntry.value * colEntry.value
+//                if (newVal.isZero()) {
+//                    entryMap.remove(colEntry.key, rowEntry.key)
+//                } else {
+//                    entryMap[colEntry.key, rowEntry.key] = newVal
 //                }
+                val dotProd = rowEntry.value * colEntry.value
+                entryMap.columns[rowEntry.key].compute(colEntry.key) { col, oldVal ->
+                    val newVal = (oldVal?:zero) - dotProd
+                    if(newVal.isZero()) null else newVal
+                }
             }
         }
         basicColsByRow[i] = j

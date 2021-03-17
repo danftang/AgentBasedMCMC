@@ -4,13 +4,13 @@ interface MutableSparseVector<T>: SparseVector<T> {
     override val nonZeroEntries: MutableMap<Int,T>
 
     operator fun set(index: Int, value: T){
-        if(value != zero) nonZeroEntries[index] = value else nonZeroEntries.remove(index)
+        if(value.isZero()) nonZeroEntries.remove(index) else nonZeroEntries[index] = value
     }
 
     fun mapAssign(index: Int, remappingFunction: (T)->T) {
         nonZeroEntries.compute(index) { _, oldValue ->
             val newVal = if(oldValue == null) remappingFunction(zero) else remappingFunction(oldValue)
-            if(newVal == zero) null else newVal
+            if(newVal.isZero()) null else newVal
         }
     }
 
@@ -44,7 +44,7 @@ inline fun<T> MutableSparseVector<T>.mapAssign(unaryOp: (T)->T) {
     while(iter.hasNext()) {
         val entry = iter.next()
         val newVal = unaryOp(entry.value)
-        if(newVal != zero) entry.setValue(newVal) else iter.remove()
+        if(newVal.isZero()) iter.remove() else entry.setValue(newVal)
     }
 }
 
@@ -53,13 +53,13 @@ inline fun<T> MutableSparseVector<T>.mapAssign(other: SparseVector<T>, lhsOnlyOp
     for(entry in nonZeroEntries) {
         val otherVal = other.nonZeroEntries[entry.key]
         val newVal = if(otherVal != null) binaryOp(entry.value, otherVal) else lhsOnlyOp(entry.value)
-        if(newVal == zero || newVal == -zero) toRemove.add(entry.key) else entry.setValue(newVal)
+        if(newVal.isZero()) toRemove.add(entry.key) else entry.setValue(newVal)
     }
     for(entry in other.nonZeroEntries) {
         nonZeroEntries.compute(entry.key) { _, oldValue ->
             if(oldValue != null) oldValue else {
                 val newVal = rhsOnlyOp(entry.value)
-                if(newVal == zero || newVal == -zero) null else newVal // TODO: Sort out the problem of -ve zero with boxed Double!!
+                if(newVal.isZero()) null else newVal
             }
         }
     }
