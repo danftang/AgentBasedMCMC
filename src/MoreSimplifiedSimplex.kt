@@ -1,88 +1,62 @@
-import lib.sparseMatrix.GridMapMatrix
-import lib.sparseVector.SparseVector
-import org.apache.commons.math3.linear.OpenMapRealVector
+import org.apache.commons.math3.util.OpenIntToDoubleHashMap
 import java.lang.RuntimeException
-import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
-import kotlin.collections.HashSet
+import java.util.AbstractMap
 import kotlin.math.absoluteValue
 
-class SimplifiedSimplex {
-    val columns = ArrayList<HashMap<Int,Double>>()
-    val rows = ArrayList<HashSet<Int>>()
-    var firstSlackColumn: Int
-    val basicColsByRow: IntArray
+class MoreSimplifiedSimplex(constraints: List<Constraint<Number>>, objective: Map<Int,Number>, initialSolution: Map<Int,Number>) {
+
     val epsilon = 1e-6
+    val nConstraints: Int = constraints.size
 
-    val nConstraints: Int
-        get() = rows.size-1
+    val rows = ArrayList<OpenIntToDoubleHashMap>(nConstraints + 1)
 
-    val nVariables: Int
-        get() = columns.size-1
+    var firstSlackColumn: Int = Integer.max(constraints.numVars(),
+        objective.keys
+            .max()
+            ?.let { it + 1 }
+            ?: 0
+    )
+
+    val nVariables: Int = firstSlackColumn + constraints.count { it.relation != "==" }
+
+    val basicColsByRow = IntArray(nConstraints) { -1 }
+    val basicRowsByCol = IntArray(nVariables) { -1 }
 
 
     val M: Matrix = object: Matrix {
         override fun get(i: Int, j: Int): Double {
-//            assert(i>=0)
-//            assert(i<rows.size)
-//            assert(j>=0)
-//            assert(j<columns.size)
-            return columns[j][i]?:0.0
+            return rows[i][j]
         }
 
         override fun set(i: Int, j: Int, value: Double) {
-            if(value.absoluteValue > epsilon) {
-                if (columns[j].put(i, value) == null) rows[i].add(j)
-            } else {
-                if(columns[j].remove(i) != null) rows[i].remove(j)
-            }
+            if(value.absoluteValue > epsilon) rows[i].put(j, value) else rows[i].remove(j)
         }
     }
 
-
     val B = object: Vector {
-        override fun get(i: Int) = columns.last()[i]?:0.0
+        override fun get(i: Int) = rows[i][nVariables]
 
         override fun set(i: Int, value: Double) {
-            if(value.absoluteValue > epsilon) {
-                if (columns.last().put(i, value) == null) rows[i].add(columns.lastIndex)
-            } else {
-                if(columns.last().remove(i) != null) rows[i].remove(columns.lastIndex)
-            }
+            if(value.absoluteValue > epsilon) rows[i].put(nVariables, value) else rows[i].remove(nVariables)
         }
     }
 
     val objective = object: Vector {
-        override fun get(i: Int) = columns[i][rows.lastIndex]?:0.0
+        override fun get(j: Int) = rows[nConstraints][j]
 
-        override fun set(i: Int, value: Double) {
-            if(value.absoluteValue > epsilon) {
-                if (columns[i].put(rows.lastIndex, value) == null) rows.last().add(i)
-            } else {
-                if(columns[i].remove(rows.lastIndex) != null) rows.last().remove(i)
-            }
+        override fun set(j: Int, value: Double) {
+            if(value.absoluteValue > epsilon) rows[nConstraints].put(j, value) else rows[nConstraints].remove(j)
         }
     }
 
 
-    constructor(constraints: List<Constraint<Number>>, objective: Map<Int,Number>, initialSolution: Map<Int,Number>) {
+
+    init {
         println("Transferring constraints to simplex tableau...")
-        val nVariables = Integer.max(constraints.numVars(),
-            objective.keys
-                .max()
-                ?.let { it + 1 }
-                ?: 0
-        )
-        firstSlackColumn = nVariables
-        val nSlackVars = constraints.count { it.relation != "==" }
-        var nextSlackVar = nVariables
+        var nextSlackVar = firstSlackColumn
         val initialNonZeroColumns = ArrayList(initialSolution.keys)
-        columns.ensureCapacity(nVariables + nSlackVars + 1)
-        repeat(nVariables + nSlackVars + 1) { columns.add(HashMap()) }
-        rows.ensureCapacity(constraints.size + 1)
-        repeat(constraints.size + 1) { rows.add(HashSet()) }
-        basicColsByRow = IntArray(rows.size-1) { -1 }
+        rows.ensureCapacity(nConstraints + 1)
+        repeat(nConstraints + 1) { rows.add(OpenIntToDoubleHashMap(0.0)) }
         constraints.forEachIndexed { i, constraint ->
             val slackness = constraint.slackness(initialSolution.mapValues { it.value.toDouble() })
             if(slackness < 0.0 || (constraint.relation == "==" && slackness != 0.0)) println("WARNING: initial solution is not feasible: Slackness $slackness")
@@ -105,6 +79,7 @@ class SimplifiedSimplex {
         }
         objective.forEach { (j,x) -> this.objective[j] = x.toDouble() }
 
+        println("Initial size = ${rows.sumBy {it.size()}} ")
         println("Pivoting in initial solution")
         initialPivot(initialNonZeroColumns)
         println("Done")
@@ -115,7 +90,8 @@ class SimplifiedSimplex {
         val x = HashMap<Int,Double>()
         for (i in basicColsByRow.indices) {
             val basicCol = basicColsByRow[i]
-            if(includeSlacks || basicCol < firstSlackColumn) x[basicCol] = B[i] / M[i, basicCol]
+            val Bi = B[i]
+            if((includeSlacks || basicCol < firstSlackColumn) && Bi != 0.0) x[basicCol] = B[i] / M[i, basicCol]
         }
         return x
     }
@@ -125,18 +101,16 @@ class SimplifiedSimplex {
     // then greedily pivots in any remaining rows
     fun initialPivot(columnsToInclude: List<Int>) {
         val canPivotRow = Array(basicColsByRow.size) { true }
+        var pivotRow: Int
         for(j in columnsToInclude) {
             if(!isBasicColumn(j)) {
-                val pivotRow =
-                    columns[j]
-                        .filter { it.key != rows.lastIndex && canPivotRow[it.key] }
-                        .minBy { rows[it.key].size }
-                        ?.key
-                        ?:throw(RuntimeException("Can't pivot to solution. Must not be an extreme solution."))
+                pivotRow = 0
+                while(pivotRow < nConstraints && (!canPivotRow[pivotRow] || M[pivotRow,j] == 0.0)) ++pivotRow
+                if(pivotRow == nConstraints) throw(IllegalArgumentException("Can't pivot in initial pivot"))
                 pivot(pivotRow, j)
                 canPivotRow[pivotRow] = false
             } else {
-                canPivotRow[columns[j].keys.find { it != rows.lastIndex }!!] = false
+                canPivotRow[basicRowsByCol[j]] = false
             }
         }
         pivotOutAllArtificialVariables()
@@ -153,11 +127,16 @@ class SimplifiedSimplex {
         for(pivotRow in basicColsByRow.indices) {
             if(basicColsByRow[pivotRow] == -1) {
                 val Bi = B[pivotRow]
-                val pivotCol = rows[pivotRow]
-                    .filter { it != columns.lastIndex &&  Bi/M[pivotRow,it] >= 0.0 }
-                    .minBy { columns[it].size }
-                    ?:throw(RuntimeException("No elements to pivot on."))
-                pivot(pivotRow, pivotCol)
+                val iter = rows[pivotRow].iterator()
+                if(iter.hasNext()) iter.advance()
+                while(iter.hasNext() && Bi/iter.value() <= 0.0) {
+                    iter.advance()
+                }
+                if(Bi/iter.value() >= 0.0) {
+                    pivot(pivotRow, iter.key())
+                } else {
+                    throw(RuntimeException("No elements to pivot on."))
+                }
             }
         }
     }
@@ -173,7 +152,7 @@ class SimplifiedSimplex {
     fun pivot(i: Int, j: Int) {
         var Mij = M[i,j]
 
-        val rowIndices = rows[i].toIntArray()
+        val rowIndices = rowKeys(i)
         val rowValues = Array(rowIndices.size) { m ->
             val k = rowIndices[m]
             val newRowVal = M[i,k] / Mij
@@ -181,32 +160,43 @@ class SimplifiedSimplex {
             newRowVal
         }
 
-        val colEntries = ArrayList<AbstractMap.SimpleEntry<Int,Double>>(columns[j].size - 1)
-        for(entry in columns[j]) {
-            if(entry.key != i) colEntries.add(AbstractMap.SimpleEntry(entry.key, entry.value))
-        }
-
-        for(rowEntry in rowValues.indices) {
-            for(colEntry in colEntries) {
-                M[colEntry.key, rowIndices[rowEntry]] -= rowValues[rowEntry] * colEntry.value
+        for(row in 0 until nConstraints) {
+            val rowWeight = M[row,j]
+            if(row != i && rowWeight != 0.0) {
+                for(rowEntry in rowIndices.indices) {
+                    M[row, rowIndices[rowEntry]] -= rowValues[rowEntry] * rowWeight
+                }
             }
         }
+
+        val leavingColumn = basicColsByRow[i]
+        if(leavingColumn != -1) basicRowsByCol[leavingColumn] = -1
         basicColsByRow[i] = j
+        basicRowsByCol[j] = i
     }
 
 
+    fun rowKeys(i: Int): IntArray {
+        val iter = rows[i].iterator()
+        return IntArray(rows[i].size()) {
+            iter.advance()
+            iter.key()
+        }
+    }
     // Returns the rows in column j that are
     // pivot points that maintain a positive solution
     fun pivotableRows(j: Int, allowPivotsOnNegativeElements: Boolean): List<Int> {
         if(isBasicColumn(j)) return emptyList()
 
         var dXjmax: Double? = null
-        val limits = columns[j].mapNotNull { (i, Mij) ->
-            if(i != rows.lastIndex && (Mij > 0.0 || (allowPivotsOnNegativeElements && B[i] <= 0.0))) {
+        val limits = ArrayList<Pair<Int,Double>>()
+        for(i in 0 until nConstraints) {
+            val Mij = M[i,j]
+            if(Mij > 0.0 || (allowPivotsOnNegativeElements && B[i] <= 0.0)) {
                 val dXji = B[i]/Mij
                 if (dXji <= dXjmax?:dXji) dXjmax = dXji
-                Pair(i, dXji)
-            } else null
+                limits.add(Pair(i, dXji))
+            }
         }
 
         return limits
@@ -217,15 +207,7 @@ class SimplifiedSimplex {
 
     // true if this column is currently a basic variable
     fun isBasicColumn(j: Int): Boolean {
-        val col = columns[j]
-        return if (col.size > 2) {
-            false
-        } else {
-            col.keys
-                .find { it != rows.lastIndex }
-                ?.let { basicColsByRow[it] == j }
-                ?:false
-        }
+        return basicRowsByCol[j] != -1
     }
 
 

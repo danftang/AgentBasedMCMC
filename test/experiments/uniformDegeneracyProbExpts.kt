@@ -2,6 +2,7 @@ package experiments
 
 import ABMCMC
 import MinimisationMCMC
+import MoreSimplifiedSimplex
 import PredatorPreyABM
 import Simplex
 import SimplifiedSimplex
@@ -17,8 +18,8 @@ class uniformDegeneracyProbExpts {
     fun randomWalkSparsity() {
         val predatorInitialDensity = 0.02
         val preyInitialDensity = 0.04
-        val nTimesteps = 4
-        PredatorPreyABM.gridSize = 16
+        val nTimesteps = 8
+        PredatorPreyABM.gridSize = 32
         val (observations, realTrajectory) = PredatorPreyExpts.generateObservations(
             PredatorPreyABM.randomFermionicState(predatorInitialDensity, preyInitialDensity),
             nTimesteps,
@@ -32,7 +33,7 @@ class uniformDegeneracyProbExpts {
 
         for(s in 1..5000) {
             if(s.rem(10) == 0) {
-//                println("$s sparsity = ${mcmc.simplex.M.sparsity()} size = ")
+                println("$s sparsity = ${mcmc.simplex.M.sparsity()} size = ${mcmc.simplex.M.columns.sumBy { it.nonZeroEntries.size }}")
                 println("$s")
             }
             mcmc.simplex.randomPivot()
@@ -44,8 +45,8 @@ class uniformDegeneracyProbExpts {
     fun simplifiedRandomWalkSparsity() {
         val predatorInitialDensity = 0.02
         val preyInitialDensity = 0.04
-        val nTimesteps = 4
-        PredatorPreyABM.gridSize = 16
+        val nTimesteps = 8
+        PredatorPreyABM.gridSize = 32
         val (observations, realTrajectory) = PredatorPreyExpts.generateObservations(
             PredatorPreyABM.randomFermionicState(predatorInitialDensity, preyInitialDensity),
             nTimesteps,
@@ -54,13 +55,13 @@ class uniformDegeneracyProbExpts {
         val prior = PredatorPreyABM.Prior(predatorInitialDensity, preyInitialDensity)
         val constraints = ABMCMC.constraints(PredatorPreyABM, nTimesteps, observations)
 
-        val mcmc = SimplifiedSimplex(constraints, emptyMap(), realTrajectory.eventVector.nonZeroEntries)
+        val mcmc = MoreSimplifiedSimplex(constraints, emptyMap(), realTrajectory.eventVector.nonZeroEntries)
         println("Initial state is ${mcmc.X()}")
         println("Starting sampling")
 
         for(s in 1..5000) {
             if(s.rem(10) == 0) {
-                println("$s size = ${mcmc.columns.sumBy { it.size } } / ${mcmc.columns.size * mcmc.rows.size}")
+                println("$s size = ${mcmc.rows.sumBy { it.size() } } / ${(mcmc.nConstraints+1) * (mcmc.nVariables+1) }")
 //                println("$s")
             }
             mcmc.randomPivot()
@@ -106,6 +107,16 @@ fun<T> Simplex<T>.randomPivot() where T : Comparable<T>, T: Number {
 }
 
 fun SimplifiedSimplex.randomPivot() {
+    var pivotCol: Int
+    var pivotRows: List<Int>
+    do {
+        pivotCol = Random.nextInt(nVariables)
+        pivotRows = pivotableRows(pivotCol, false)
+    } while(pivotRows.isEmpty())
+    pivot(pivotRows.random(),pivotCol)
+}
+
+fun MoreSimplifiedSimplex.randomPivot() {
     var pivotCol: Int
     var pivotRows: List<Int>
     do {
