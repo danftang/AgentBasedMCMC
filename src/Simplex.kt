@@ -1,4 +1,5 @@
 import lib.abstractAlgebra.*
+import lib.collections.GridMap
 import lib.sparseMatrix.GridMapMatrix
 import lib.sparseVector.*
 import org.apache.commons.math3.fraction.Fraction

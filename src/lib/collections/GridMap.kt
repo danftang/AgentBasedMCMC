@@ -1,7 +1,11 @@
 package lib.collections
 
+import lib.Gnuplot
+import lib.sparseMatrix.SparseColMatrix
+import lib.sparseMatrix.SparseMatrix
 import java.lang.RuntimeException
 import java.lang.StringBuilder
+import java.util.AbstractMap
 
 class GridMap<T>(
     val _columnData: ArrayList<MutableMap<Int,T>>,
@@ -14,10 +18,21 @@ class GridMap<T>(
     inline val nRows: Int
         get() = _rowData.size
 
+    val size: Int
+        get() = _columnData.sumBy { it.size }
+
     val columns: List<MutableMap<Int,T>> = ColListView()
 
     val rows: List<MutableMap<Int,T>> = RowListView()
 
+    val entries: Sequence<Map.Entry<RowCol,T>>
+        get() = _columnData.asSequence().withIndex().flatMap { column ->
+            column.value.asSequence().map { colEntry ->
+                AbstractMap.SimpleEntry(RowCol(colEntry.key, column.index), colEntry.value)
+            }
+        }
+
+    data class RowCol(val row: Int, val column: Int)
 
     constructor(): this(ArrayList<MutableMap<Int,T>>(), ArrayList<MutableSet<Int>>())
 
@@ -94,11 +109,11 @@ class GridMap<T>(
 
 
     inline fun compute(row: Int, col: Int, crossinline remappingFunction: (Int, T?)->T?): T? {
-        return _columnData[col].compute(row) { row, oldValue ->
-            val newValue = remappingFunction(row, oldValue)
+        return _columnData[col].compute(row) { rowIndex, oldValue ->
+            val newValue = remappingFunction(rowIndex, oldValue)
             if(oldValue == null) {
-                if(newValue != null) _rowData[row].add(col)
-            } else if (newValue == null) _rowData[row].remove(col)
+                if(newValue != null) _rowData[rowIndex].add(col)
+            } else if (newValue == null) _rowData[rowIndex].remove(col)
             newValue
         }
     }
