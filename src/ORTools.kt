@@ -2,6 +2,7 @@ import com.google.ortools.linearsolver.MPConstraint
 import com.google.ortools.linearsolver.MPSolver
 import com.google.ortools.linearsolver.MPVariable
 import lib.abstractAlgebra.DoubleOperators
+import lib.collections.GridMap
 import lib.sparseMatrix.GridMapMatrix
 import lib.sparseMatrix.SparseMatrix
 import kotlin.system.measureTimeMillis
@@ -30,7 +31,7 @@ object ORTools {
     }
 
 
-    fun<T: Number> GlopSolve(tableaux: SparseMatrix<T>): DoubleArray {
+    fun<T: Number> GlopSolve(tableaux: GridMap<T>): DoubleArray {
         val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING)
         val X = solver.makeNumVarArray(tableaux.nCols - 1, 0.0, Double.POSITIVE_INFINITY)
         return ORSolve(solver, X, tableaux)
@@ -47,7 +48,7 @@ object ORTools {
     }
 
 
-    fun<T: Number> IntegerSolve(tableaux: SparseMatrix<T>): DoubleArray {
+    fun<T: Number> IntegerSolve(tableaux: GridMap<T>): DoubleArray {
         val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
         val X = solver.makeIntVarArray(tableaux.nCols-1, 0.0, Double.POSITIVE_INFINITY)
         return ORSolve(solver, X, tableaux)
@@ -95,12 +96,12 @@ object ORTools {
     fun<T: Number> ORSolve(
         solver: MPSolver,
         X: Array<MPVariable>,
-        tableaux: SparseMatrix<T>): DoubleArray {
+        tableaux: GridMap<T>): DoubleArray {
         val bColumn = tableaux.nCols - 1
         val objectiveRow = tableaux.nRows - 1
         val constraints = Array<MPConstraint>(tableaux.nRows-1) { solver.makeConstraint(0.0,0.0) }
         val objective = solver.objective()
-        for(entry in tableaux.nonZeroEntries) {
+        for(entry in tableaux.entries) {
             if(entry.row != objectiveRow) {
                 if(entry.col != bColumn) {
                     constraints[entry.row].setCoefficient(X[entry.col], entry.value.toDouble())
@@ -136,39 +137,39 @@ object ORTools {
     }
 
 
-    fun MPSolver.toSimplex(): Simplex<Double> {
-        val grid = GridMapMatrix<Double>(DoubleOperators,numConstraints()+1, numVariables()+1)
-
-        // check format
-        constraints().forEach { constraint ->
-            if(constraint.lb() != constraint.ub()) throw(java.lang.RuntimeException("Can only do equality constraints at the moment"))
-        }
-        variables().forEach { variable ->
-            if(variable.lb() != 0.0 || variable.ub() != Double.POSITIVE_INFINITY) throw(java.lang.RuntimeException("Can only do positive variables for now"))
-        }
-
-        constraints().forEach { constraint ->
-            variables().forEach { variable ->
-                val coeff = constraint.getCoefficient(variable)
-                if(coeff != 0.0) grid[constraint.index(), variable.index()] = coeff
-            }
-            grid[constraint.index(), grid.nCols-1] = constraint.lb()
-        }
-
-        variables().forEach { variable ->
-            val coeff = objective().getCoefficient(variable)
-            grid[grid.nRows-1, variable.index()] = coeff
-        }
-
-        val simplex = Simplex(grid)
-
-//    this.solve()
-//    val initialSolution = variables()
-//        .mapNotNull { if(it.solutionValue() != 0.0) it.index() else null }
+//    fun MPSolver.toSimplex(): Simplex<Double> {
+//        val grid = GridMap<Double>(numConstraints()+1, numVariables()+1)
 //
-//    simplex.pivotColumns(initialSolution)
-
-        return simplex
-    }
+//        // check format
+//        constraints().forEach { constraint ->
+//            if(constraint.lb() != constraint.ub()) throw(java.lang.RuntimeException("Can only do equality constraints at the moment"))
+//        }
+//        variables().forEach { variable ->
+//            if(variable.lb() != 0.0 || variable.ub() != Double.POSITIVE_INFINITY) throw(java.lang.RuntimeException("Can only do positive variables for now"))
+//        }
+//
+//        constraints().forEach { constraint ->
+//            variables().forEach { variable ->
+//                val coeff = constraint.getCoefficient(variable)
+//                if(coeff != 0.0) grid[constraint.index(), variable.index()] = coeff
+//            }
+//            grid[constraint.index(), grid.nCols-1] = constraint.lb()
+//        }
+//
+//        variables().forEach { variable ->
+//            val coeff = objective().getCoefficient(variable)
+//            grid[grid.nRows-1, variable.index()] = coeff
+//        }
+//
+//        val simplex = Simplex(grid)
+//
+////    this.solve()
+////    val initialSolution = variables()
+////        .mapNotNull { if(it.solutionValue() != 0.0) it.index() else null }
+////
+////    simplex.pivotColumns(initialSolution)
+//
+//        return simplex
+//    }
 
 }

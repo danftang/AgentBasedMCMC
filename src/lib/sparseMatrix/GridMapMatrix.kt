@@ -14,10 +14,12 @@ class GridMapMatrix<T: Any>(override val operators: FieldOperators<T>, val gridM
 
     constructor(operators: FieldOperators<T>, nRows: Int, nCols: Int): this(operators, GridMap(nRows, nCols))
 
-    override fun get(row: Int, col: Int)        = super<SparseColMatrix>.get(row,col)
+    override operator fun get(row: Int, col: Int)        = gridMap[row,col]?:zero
     override fun times(X: SparseVector<T>)      = super<SparseColMatrix>.times(X)
-    override fun set(row: Int, col: Int, value: T) = super<SparseColMatrix>.set(row,col,value)
     override fun mapAssign(row: Int, col: Int, remappingFunction: (T) -> T) = super<SparseColMatrix>.mapAssign(row,col,remappingFunction)
+    override operator fun set(row: Int, col: Int, value: T) {
+        if(value.isZero()) gridMap.remove(row,col) else gridMap[row,col] = value
+    }
 
     fun resize(nRows: Int, nCols: Int) { gridMap.resize(nRows,nCols) }
 

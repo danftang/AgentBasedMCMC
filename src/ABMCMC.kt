@@ -7,17 +7,26 @@ import lib.sparseVector.SparseVector
 import lib.sparseVector.asVector
 import org.apache.commons.math3.fraction.Fraction
 import java.lang.Integer.max
-import kotlin.math.absoluteValue
-import kotlin.math.roundToInt
+import java.time.Instant
+import kotlin.math.ln
 
 class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
 
-    val fractionPenaltyK: Double          = -5.0
 
-    val simplex: SimplexMCMC<Fraction>
+    val simplex: IntegerSimplexMCMC<Fraction>
     val model: ABM<AGENT, ACT>
     val observations: List<Observation<AGENT, ACT>>
 
+
+    //////////////// Fractional vertex tests
+
+    var nSamples = 0
+    var nRejections = 0
+    var fractionalRunLength = 0
+
+
+
+    //////////////// End of fractional vertex tests
 
     constructor(
         model: ABM<AGENT, ACT>,
@@ -28,7 +37,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
         this.model = model
         this.observations = observations
         val constraints = constraints(model, nTimesteps, observations)
-        this.simplex = SimplexMCMC(
+        this.simplex = IntegerSimplexMCMC(
             constraints,
             initialSample
                 ?: run {
@@ -42,6 +51,8 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
         )
         assert(simplex.isFullyPivoted())
         assert(simplex.isPrimalFeasible())
+
+//        currentFractionalPenalty = logFractionPenalty(simplex.X(true))
     }
 
 
@@ -49,54 +60,38 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
         val trajectory = Trajectory(model, X)
         val prior = trajectory.logPrior()
         val likelihood = observations.sumByDouble { it.logLikelihood(trajectory) }
-        val penalty = logFractionPenalty(X)
-        val logP = prior + likelihood + penalty
+//        val penalty = logFractionPenalty(X)
+        val logP = prior + likelihood //+ penalty
 //        if(penalty < 0.0) println("Got fractional penalty $penalty")
 //        println("prior logprob $prior likelihood logprob $likelihood fraction penalty $penalty = $logP")
         return logP
     }
 
-    // The probability of a pivot state is multiplied by this amount if the
-    // solution is not on the integer grid.
-    //
-    // Returns the L1 distance between this point and its rounding, multiplied
-    // by fractionPenaltyK
-    fun logFractionPenalty(x: SparseVector<Fraction>): Double {
-        return fractionPenaltyK * x.nonZeroEntries.values.sumByDouble {
-            val xi = it.toDouble()
-            (xi - xi.roundToInt()).absoluteValue
-        }
-    }
 
 
     fun nextSample(): Trajectory<AGENT,ACT> {
-        return Trajectory(model, nextSampleVector())
+        return Trajectory(model, simplex.nextIntegerSample())
     }
 
 
-    fun nextSampleVector(): SparseVector<Fraction> {
-        var integerSample: SparseVector<Fraction>
-        var attempts = 0
-        do {
-            integerSample = simplex.nextSample()
-            ++attempts
-            if(attempts.rem(10) == 0) println("stuck on fraction $attempts. Penalty is ${logFractionPenalty(integerSample)}")
-        } while(!integerSample.isInteger())
-        if(attempts > 1) println("Made $attempts attempts before getting integer sample")
-        return integerSample
-    }
 
 
     fun<R> expectation(nSamples: Int, initialExpectation: R, expectationAccumulator: (SparseVector<Fraction>, R) -> R): R {
         var e = initialExpectation
         var oldSample: SparseVector<Fraction>? = null
         var rejections = 0
+        var lastTime = Instant.now().toEpochMilli()
         for(s in 1..nSamples) {
-            val newSample = nextSampleVector()
+            val newSample = simplex.nextIntegerSample()
             e = expectationAccumulator(newSample, e)
             if(oldSample === newSample) ++rejections
             oldSample = newSample
-            if(s.rem(50) == 0) println("Got sample $s, largest Numerator,Denominator ${largestNumeratorDenominator()}, Sparsity ${simplex.M.sparsity()}, Degeneracy ${simplex.degeneracyRatio()}")
+            if(s.rem(100) == 0) {
+                val now = Instant.now().toEpochMilli()
+                println("Got to sample $s in ${(now-lastTime)/1000.0}s largest Numerator,Denominator ${largestNumeratorDenominator()}, Size ${simplex.entryMap.size}, Degeneracy ${simplex.degeneracy()} logPiv = ${simplex.state.logProbOfPivotState} logPX = ${simplex.state.logPX}, logPDegeneracy = ${simplex.state.logDegeneracyProb}")
+                lastTime = now
+//                println(simplex.fractionalLogP - simplex.state.logPX - ln(simplex.transitionProb(simplex.proposePivot())))
+            }
         }
         println("Rejection ratio = ${rejections.toDouble()/nSamples}")
         return e
@@ -105,7 +100,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
 
     fun largestDenominator(): Int {
         var maxDenom = 1
-        for(entry in simplex.M.nonZeroEntries) {
+        for(entry in simplex.entryMap.entries) {
             maxDenom = max(entry.value.denominator, maxDenom)
             assert(entry.value != Fraction.ZERO)
         }
@@ -115,7 +110,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
     fun largestNumeratorDenominator(): Pair<Int,Int> {
         var maxDenom = 1
         var maxNum = 1
-        for(entry in simplex.M.nonZeroEntries) {
+        for(entry in simplex.entryMap.entries) {
             maxDenom = max(entry.value.denominator, maxDenom)
             maxNum = max(entry.value.numerator, maxDenom)
             assert(entry.value != Fraction.ZERO)

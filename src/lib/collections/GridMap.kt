@@ -2,26 +2,41 @@ package lib.collections
 
 import java.lang.RuntimeException
 import java.lang.StringBuilder
+import java.util.AbstractMap
 
 class GridMap<T>(
-    val _columnData: ArrayList<MutableMap<Int,T>>,
-    val _rowData: ArrayList<MutableSet<Int>>
+    private val _columnData: ArrayList<MutableMap<Int,T>>,
+    private val _rowData: ArrayList<MutableSet<Int>>
     ) {
 
-    inline val nCols: Int
+    private val columnAccessors = ArrayList<ColMapView>()
+    private val rowAccessors    = ArrayList<RowMapView>()
+
+    val nCols: Int
         get() = _columnData.size
 
-    inline val nRows: Int
+    val nRows: Int
         get() = _rowData.size
 
-    val columns: List<MutableMap<Int,T>> = ColListView()
+    val size: Int
+        get() = _rowData.sumBy { it.size }
 
-    val rows: List<MutableMap<Int,T>> = RowListView()
+    val columns: List<MutableMap<Int,T>>
+        get() = columnAccessors
 
+    val rows: List<MutableMap<Int,T>>
+        get() = rowAccessors
 
-    constructor(): this(ArrayList<MutableMap<Int,T>>(), ArrayList<MutableSet<Int>>())
+    val entries: Sequence<GridMapEntry<T>>
+        get() = _columnData.asSequence().withIndex().flatMap { column ->
+            column.value.asSequence().map { colEntry ->
+                GridMapEntry(colEntry.key, column.index, colEntry.value)
+            }
+        }
 
-    constructor(nRows: Int, nCols: Int): this(ArrayList<MutableMap<Int,T>>(nCols), ArrayList<MutableSet<Int>>(nRows)) {
+    data class GridMapEntry<T>(val row: Int, val col: Int, val value: T)
+
+    constructor(nRows: Int, nCols: Int): this(ArrayList(nCols), ArrayList(nRows)) {
         repeat(nCols) { addColumn() }
         repeat(nRows) { addRow() }
     }
@@ -38,6 +53,7 @@ class GridMap<T>(
         if(_columnData[col].remove(row) != null) _rowData[row].remove(col)
     }
 
+
 //    fun computeNonNullMapping(row: Int, col: Int, remappingFunction: (Int, T?)->T) {
 //        _columnData[col].compute(row, remappingFunction)
 //    }
@@ -46,33 +62,41 @@ class GridMap<T>(
         if(nRows > this.nRows) {
             repeat(nRows - this.nRows) { addRow() }
         } else if(nRows < this.nRows) {
-            repeat(this.nRows - nRows) {
-                val rowIndex = _rowData.lastIndex
-                _rowData[rowIndex].forEach { colIndex ->
-                    _columnData[colIndex].remove(rowIndex)
-                }
-                _rowData.removeAt(rowIndex)
-            }
+            repeat(this.nRows - nRows) { removeRow() }
         }
         if(nCols > this.nCols) {
             repeat(nCols - this.nCols) { addColumn() }
         } else if(nCols < this.nCols) {
-            repeat(this.nCols - nCols) {
-                val colIndex = _columnData.lastIndex
-                _columnData[colIndex].keys.forEach { rowIndex ->
-                    _rowData[rowIndex].remove(colIndex)
-                }
-                _columnData.removeAt(colIndex)
-            }
+            repeat(this.nCols - nCols) { removeColumn() }
         }
     }
 
     fun addRow() {
-        _rowData.add(HashSet(4))
+        _rowData.add(HashSet())
+        rowAccessors.add(RowMapView(_rowData.lastIndex))
     }
 
     fun addColumn() {
-        _columnData.add(HashMap(4))
+        _columnData.add(HashMap())
+        columnAccessors.add(ColMapView(_columnData.lastIndex))
+    }
+
+    fun removeRow() {
+        val rowIndex = _rowData.lastIndex
+        _rowData[rowIndex].forEach { colIndex ->
+            _columnData[colIndex].remove(rowIndex)
+        }
+        _rowData.removeAt(rowIndex)
+        rowAccessors.removeAt(rowIndex)
+    }
+
+    fun removeColumn() {
+        val colIndex = _columnData.lastIndex
+        _columnData[colIndex].keys.forEach { rowIndex ->
+            _rowData[rowIndex].remove(colIndex)
+        }
+        _columnData.removeAt(colIndex)
+        columnAccessors.removeAt(colIndex)
     }
 
     fun columnReassign(col: Int, remappingFunction: (T) -> T) {
@@ -83,7 +107,7 @@ class GridMap<T>(
     }
 
 
-    inline fun rowReassign(row: Int, crossinline remappingFunction: (T) -> T) {
+    fun rowReassign(row: Int, remappingFunction: (T) -> T) {
         val rowSet = _rowData[row]
         for(col in rowSet) {
             _columnData[col].compute(row) { _, oldValue ->
@@ -93,12 +117,12 @@ class GridMap<T>(
     }
 
 
-    inline fun compute(row: Int, col: Int, crossinline remappingFunction: (Int, T?)->T?): T? {
-        return _columnData[col].compute(row) { row, oldValue ->
-            val newValue = remappingFunction(row, oldValue)
+    fun compute(row: Int, col: Int, remappingFunction: (Int, T?)->T?): T? {
+        return _columnData[col].compute(row) { rowIndex, oldValue ->
+            val newValue = remappingFunction(rowIndex, oldValue)
             if(oldValue == null) {
-                if(newValue != null) _rowData[row].add(col)
-            } else if (newValue == null) _rowData[row].remove(col)
+                if(newValue != null) _rowData[rowIndex].add(col)
+            } else if (newValue == null) _rowData[rowIndex].remove(col)
             newValue
         }
     }
@@ -141,18 +165,18 @@ class GridMap<T>(
     }
 
 
-    inner class RowListView: AbstractList<MutableMap<Int,T>>() {
-        override val size: Int
-            get() = _rowData.size
-        override fun get(index: Int) = RowMapView(index)
-    }
-
-
-    inner class ColListView: AbstractList<MutableMap<Int,T>>() {
-        override val size: Int
-            get() = _columnData.size
-        override fun get(index: Int) = ColMapView(index)
-    }
+//    inner class RowListView: AbstractList<MutableMap<Int,T>>() {
+//        override val size: Int
+//            get() = _rowData.size
+//        override fun get(index: Int) = RowMapView(index)
+//    }
+//
+//
+//    inner class ColListView: AbstractList<MutableMap<Int,T>>() {
+//        override val size: Int
+//            get() = _columnData.size
+//        override fun get(index: Int) = ColMapView(index)
+//    }
 
 
     inner class ColMapView(val col: Int): MutableMap<Int, T> by _columnData[col] {
@@ -256,7 +280,7 @@ class GridMap<T>(
         override fun next(): MutableMap.MutableEntry<Int, T> {
             val underlyingEntry = underlyingIterator.next()
             lastSeenRow = underlyingEntry.key
-            assert(lastSeenRow != null)
+//            assert(lastSeenRow != null)
             return underlyingEntry
         }
 
@@ -278,7 +302,7 @@ class GridMap<T>(
         }
 
         override fun remove() {
-            _columnData[lastSeenCol?:throw(RuntimeException("Can't remove unseen item"))].remove(row)
+            _columnData[lastSeenCol?:throw(RuntimeException("Trying to remove from an iterator before calling next()"))].remove(row)
             underlyingIterator.remove()
         }
     }
