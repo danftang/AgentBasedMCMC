@@ -1,9 +1,8 @@
 import lib.SettableLazy
-import lib.abstractAlgebra.FieldOperators
-import lib.sparseMatrix.GridMapMatrix
 import lib.sparseVector.SparseVector
 import lib.sparseVector.asVector
 import org.apache.commons.math3.util.CombinatoricsUtils
+import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
 import kotlin.math.*
@@ -122,6 +121,7 @@ GridMapSimplex<T>
     fun processProposal(proposalPivot: PivotPoint) {
         val acceptanceDenominator = state.logProbOfPivotState + ln(transitionProb(proposalPivot))
         forwardPivot(proposalPivot)
+//        forwardPivotWithRowSwap(proposalPivot)
         val acceptanceNumerator = state.logProbOfPivotState + ln(transitionProb(revertState.reversePivot))
         val logAcceptance = min(acceptanceNumerator - acceptanceDenominator, 0.0)
         if (!logAcceptance.isNaN() && Random.nextDouble() >= exp(logAcceptance)) { // explicity accept if both numerator and denominator are -infinity
@@ -132,6 +132,7 @@ GridMapSimplex<T>
                 println("Rejecting integer->fraction transition with denominator = ${revertState.cache.logPX} + ${revertState.cache.logDegeneracyProb} + ${acceptanceDenominator - revertState.cache.logFractionalPenalty - revertState.cache.logDegeneracyProb - revertState.cache.logPX} = $acceptanceDenominator, numerator = ${state.logPX} + ${state.logDegeneracyProb} +  + ${revertState.cache.logFractionalPenalty} + ${ln(transitionProb(revertState.reversePivot))} = $acceptanceNumerator, acceptance = $logAcceptance")
             }
             revertLastPivot()
+//            revertLastPivotWithRowSwap()
         } else {
             // Accept proposal
         }
@@ -173,8 +174,6 @@ GridMapSimplex<T>
         updatePivotInfo(revertState.reversePivot)
         state = Cache(newLogFractionalPenalty)
     }
-
-
 
 
     fun revertLastPivot() {
@@ -289,11 +288,36 @@ GridMapSimplex<T>
 
 
     // Trying row swapping after a pivot to see if this keeps the
-    // degeneracy prob more stable
+    // degeneracy prob more stable.
+    // In row order, swap newly non-zero rows with
+    // the newly zero rows until no more swaps exist
     fun forwardPivotWithRowSwap(pivot: PivotPoint) {
-
+        val oldBKeys = B.nonZeroEntries.keys.toIntArray()
+        forwardPivot(pivot)
+        doRowSwap(oldBKeys)
     }
 
+    fun revertLastPivotWithRowSwap() {
+        val oldBKeys = B.nonZeroEntries.keys.toIntArray()
+        revertLastPivot()
+        doRowSwap(oldBKeys)
+    }
+
+    fun doRowSwap(oldBKeys: IntArray) {
+        val newBKeys = B.nonZeroEntries.keys.toIntArray()
+        oldBKeys.sort()
+        newBKeys.sort()
+        var oldIndex = 0
+        var newIndex = 0
+        var doSwap: Boolean
+        do {
+            while(oldIndex < oldBKeys.size && newBKeys.binarySearch(oldBKeys[oldIndex]) >= 0) ++oldIndex
+            while(newIndex < newBKeys.size && oldBKeys.binarySearch(newBKeys[newIndex]) >= 0) ++newIndex
+            if(oldIndex < oldBKeys.size && newIndex < newBKeys.size) swapRows(oldBKeys[oldIndex], newBKeys[newIndex])
+            ++oldIndex
+            ++newIndex
+        } while(oldIndex < oldBKeys.size && newIndex < newBKeys.size)
+    }
 
 
     fun fractionOfAffectedColumns(pivot: PivotPoint): Double {

@@ -76,19 +76,22 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
 
 
     fun<R> expectation(nSamples: Int, initialExpectation: R, expectationAccumulator: (SparseVector<Fraction>, R) -> R): R {
+        val reportEvery = 100
         var e = initialExpectation
         var oldSample: SparseVector<Fraction>? = null
         var rejections = 0
+        var lastRejections = 0
         var lastTime = Instant.now().toEpochMilli()
         for(s in 1..nSamples) {
             val newSample = simplex.nextIntegerSample()
             e = expectationAccumulator(newSample, e)
             if(oldSample === newSample) ++rejections
             oldSample = newSample
-            if(s.rem(100) == 0) {
+            if(s.rem(reportEvery) == 0) {
                 val now = Instant.now().toEpochMilli()
-                println("Got to sample $s in ${(now-lastTime)/1000.0}s largest Numerator,Denominator ${largestNumeratorDenominator()}, Size ${simplex.entryMap.size}, Degeneracy ${simplex.degeneracy()} logPiv = ${simplex.state.logProbOfPivotState} logPX = ${simplex.state.logPX}, logPDegeneracy = ${simplex.state.logDegeneracyProb}")
+                println("Got to sample $s in ${(now-lastTime)/1000.0}s rejection ${(rejections-lastRejections).toDouble()/reportEvery} largest Numerator,Denominator ${largestNumeratorDenominator()}, Size ${simplex.entryMap.size}, Degeneracy ${simplex.degeneracy()} logPiv = ${simplex.state.logProbOfPivotState} logPX = ${simplex.state.logPX}, logPDegeneracy = ${simplex.state.logDegeneracyProb}")
                 lastTime = now
+                lastRejections = rejections
 //                println(simplex.fractionalLogP - simplex.state.logPX - ln(simplex.transitionProb(simplex.proposePivot())))
             }
         }

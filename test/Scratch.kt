@@ -12,9 +12,5 @@ class Scratch {
 
     @Test
     fun stuff() {
-        val inst = Instant.now()
-        println(inst.toEpochMilli())
-        val d = Array(10000000) { sin(sqrt(it.toDouble())) }
-        println(Instant.now().toEpochMilli())
     }
 }
