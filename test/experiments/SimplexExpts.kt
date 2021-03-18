@@ -1,13 +1,10 @@
 package experiments
 
-import Constraint
-import Simplex
+import MutableConstraint
+import GridMapSimplex
 import lib.abstractAlgebra.*
-import lib.sparseMatrix.GridMapMatrix
 import lib.sparseVector.*
-import org.apache.commons.math3.fraction.Fraction
 import org.junit.Test
-import kotlin.math.absoluteValue
 import kotlin.random.Random
 
 // Experiments with pivoting the ABM matrix, a-la Simplex algorithm
@@ -38,14 +35,14 @@ class SimplexExpts {
     @Test
     fun anIntroToLinearProgrammingAndGameTheoryPage89() {
         val constraints = listOf(
-            Constraint(hashMapOf(0 to -2.0, 2 to 6.0, 3 to 2.0, 5 to -3.0, 6 to 1.0),"==", 20.0),
-            Constraint(hashMapOf(0 to -4.0, 1 to 1.0, 2 to 7.0, 3 to 1.0, 5 to -1.0),"==", 10.0),
-            Constraint(hashMapOf(2 to -5.0, 3 to 3.0, 4 to 1.0, 5 to -1.0),"==", 60.0)
+            MutableConstraint(hashMapOf(0 to -2.0, 2 to 6.0, 3 to 2.0, 5 to -3.0, 6 to 1.0),"==", 20.0),
+            MutableConstraint(hashMapOf(0 to -4.0, 1 to 1.0, 2 to 7.0, 3 to 1.0, 5 to -1.0),"==", 10.0),
+            MutableConstraint(hashMapOf(2 to -5.0, 3 to 3.0, 4 to 1.0, 5 to -1.0),"==", 60.0)
         )
 
-        val objective = hashMapOf(2 to 13.0, 3 to -6.0, 5 to 2.0).asDoubleMutableVector()
-        val initialSolution = hashMapOf(6 to 20.0, 1 to 10.0, 4 to 60.0).asDoubleMutableVector()
-        val simplex = Simplex(constraints, objective, initialSolution)
+        val objective = hashMapOf(2 to 13.0, 3 to -6.0, 5 to 2.0).asMutableDoubleVector()
+        val initialSolution = hashMapOf(6 to 20.0, 1 to 10.0, 4 to 60.0).asMutableDoubleVector()
+        val simplex = GridMapSimplex(constraints, objective, initialSolution)
         println(simplex.entryMap)
         simplex.greedyMinimise()
         println()
@@ -60,13 +57,13 @@ class SimplexExpts {
     @Test
     fun testPivotOutNegatives() {
         val constraints = listOf(
-            Constraint(hashMapOf(
+            MutableConstraint(hashMapOf(
                 0 to 1.0
             ),"<=", 2.0),
-            Constraint(hashMapOf(
+            MutableConstraint(hashMapOf(
                 1 to 1.0
             ),"<=", 2.0),
-            Constraint(hashMapOf(
+            MutableConstraint(hashMapOf(
                 0 to 1.0,
                 1 to 1.0
             ), ">=", 1.0)
@@ -75,7 +72,7 @@ class SimplexExpts {
             0 to 1.0,
             1 to 1.0
         ).asDoubleVector()
-        val simplex = Simplex(constraints, objective)
+        val simplex = GridMapSimplex(constraints, objective)
 //        simplex.pivotToInitialSolutionWithoutORTools()
         println(simplex.M)
         simplex.greedyMinimise()

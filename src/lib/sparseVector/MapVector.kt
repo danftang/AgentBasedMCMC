@@ -2,8 +2,9 @@ package lib.sparseVector
 
 import lib.abstractAlgebra.*
 import org.apache.commons.math3.FieldElement
+import org.apache.commons.math3.fraction.Fraction
 
-class MapVector<T>(val fieldOperators: FieldOperators<T>, override val nonZeroEntries: Map<Int,T>) :
+class MapVector<T>(fieldOperators: FieldOperators<T>, override val nonZeroEntries: Map<Int,T>) :
     SparseVector<T>,
     FieldOperators<T> by fieldOperators {
 
@@ -11,6 +12,17 @@ class MapVector<T>(val fieldOperators: FieldOperators<T>, override val nonZeroEn
     override fun equals(other: Any?) = isEqualTo(other)
     override fun toString() = nonZeroEntries.toString()
 }
+
+inline class DoubleMapVector(override val nonZeroEntries: Map<Int, Double>): SparseVector<Double>, DoubleOperators {
+    override fun new() = MutableDoubleMapVector(HashMap())
+}
+inline fun Map<Int,Double>.asDoubleVector(): DoubleMapVector = DoubleMapVector(this)
+
+inline class FractionMapVector(override val nonZeroEntries: Map<Int, Fraction>): SparseVector<Fraction>, FractionOperators {
+    override fun new() = MutableFractionMapVector(HashMap())
+}
+inline fun Map<Int, Fraction>.asFractionVector(): FractionMapVector = FractionMapVector(this)
+
 
 fun DoubleArray.toDoubleMapVector(): MapVector<Double> = this.asSequence()
     .withIndex()
@@ -32,7 +44,7 @@ fun<T: FieldElement<T>> Array<T>.toMapVector(field: FieldOperators<T>): MapVecto
     .asVector(field)
 
 
-inline fun Map<Int,Double>.asDoubleVector(): MapVector<Double> = MapVector(DoubleOperators, this)
+
 inline fun Map<Int,Int>.asIntVector(): MapVector<Int> = MapVector(IntOperators, this)
 inline fun<T> Map<Int,T>.asVector(operators: FieldOperators<T>): MapVector<T> = MapVector(operators, this)
 inline fun<T> emptyMapVector(operators: FieldOperators<T>): MapVector<T> = MapVector(operators, emptyMap())

@@ -1,4 +1,6 @@
 import lib.SettableLazy
+import lib.abstractAlgebra.FieldOperators
+import lib.sparseMatrix.GridMapMatrix
 import lib.sparseVector.SparseVector
 import lib.sparseVector.asVector
 import org.apache.commons.math3.util.CombinatoricsUtils
@@ -21,7 +23,11 @@ import kotlin.random.Random
 // TODO: Pivots tend to reduce the degeneracy probability significantly, causing
 //  high rejection ratios and problems coming out of fractional states.
 //  Could improve by doing row swaps after each pivot?
-open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Number {
+open class IntegerSimplexMCMC<T>:
+GridMapSimplex<T>
+//    Simplex<T,GridMapMatrix<T>>, FieldOperators<T>
+//    RowSimplex<T>, FieldOperators<T>
+ where T : Comparable<T>, T : Number {
 
     val logPmf: (SparseVector<T>) -> Double
 
@@ -67,7 +73,7 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
 
 
     constructor(
-        constraints: List<Constraint<T>>,
+        constraints: List<MutableConstraint<T>>,
         initialSample: SparseVector<T>,
         logPmf: (SparseVector<T>) -> Double
     ) :
@@ -169,6 +175,8 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
     }
 
 
+
+
     fun revertLastPivot() {
         val thisPivot = PivotPoint(revertState.reversePivot.row, basicColsByRow[revertState.reversePivot.row])
         super.pivot(revertState.reversePivot)
@@ -263,7 +271,7 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
 
 
     fun T.roundingDistance(): Double {
-        return this.roundToInt() - this.toDouble()
+        return this.toDouble().roundToInt() - this.toDouble()
     }
 
 
@@ -278,6 +286,15 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
 
 
     /************************ TEST STUFF *********************/
+
+
+    // Trying row swapping after a pivot to see if this keeps the
+    // degeneracy prob more stable
+    fun forwardPivotWithRowSwap(pivot: PivotPoint) {
+
+    }
+
+
 
     fun fractionOfAffectedColumns(pivot: PivotPoint): Double {
         val affectedCol = HashSet<Int>()
@@ -301,7 +318,7 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
     }
 
     fun bestFractionalPenaltyPivot(): Double {
-        return variableIndices
+        return (0 until M.nCols-1)
             .filter { isBasicColumn(it) }
             .map { logFractionalPenaltyAfterPivot(it) }
             .max()!!

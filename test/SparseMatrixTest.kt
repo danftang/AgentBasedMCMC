@@ -1,6 +1,7 @@
 import lib.abstractAlgebra.DoubleOperators
 import lib.abstractAlgebra.IntOperators
 import lib.sparseMatrix.GridMapMatrix
+import lib.sparseMatrix.times
 import lib.sparseVector.MutableMapVector
 import org.junit.Test
 

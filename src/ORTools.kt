@@ -1,10 +1,7 @@
 import com.google.ortools.linearsolver.MPConstraint
 import com.google.ortools.linearsolver.MPSolver
 import com.google.ortools.linearsolver.MPVariable
-import lib.abstractAlgebra.DoubleOperators
 import lib.collections.GridMap
-import lib.sparseMatrix.GridMapMatrix
-import lib.sparseMatrix.SparseMatrix
 import kotlin.system.measureTimeMillis
 
 object ORTools {
@@ -21,7 +18,7 @@ object ORTools {
     // where M is this matrix
     // returns X
     //
-    fun<T: Number> GlopSolve(constraints: List<Constraint<T>>, objective: Map<Int,T> = emptyMap()): DoubleArray {
+    fun<T: Number> GlopSolve(constraints: List<MutableConstraint<T>>, objective: Map<Int,T> = emptyMap()): DoubleArray {
         val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING)
         val nVariables = Integer.max(constraints.numVars(),
             objective.keys.max()?.let { it + 1 } ?: 0
@@ -38,7 +35,7 @@ object ORTools {
     }
 
 
-    fun<T: Number> IntegerSolve(constraints: List<Constraint<T>>, objective: Map<Int,T> = emptyMap()): DoubleArray {
+    fun<T: Number> IntegerSolve(constraints: List<MutableConstraint<T>>, objective: Map<Int,T> = emptyMap()): DoubleArray {
         val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
         val nVariables = Integer.max(constraints.numVars(),
             objective.keys.max()?.let { it + 1 } ?: 0
@@ -55,7 +52,7 @@ object ORTools {
     }
 
 
-    fun<T: Number> BooleanSolve(constraints: List<Constraint<T>>, objective: Map<Int,T> = emptyMap()): DoubleArray {
+    fun<T: Number> BooleanSolve(constraints: List<MutableConstraint<T>>, objective: Map<Int,T> = emptyMap()): DoubleArray {
         val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
         val nVariables = Integer.max(constraints.numVars(),
             objective.keys.max()?.let { it + 1 } ?: 0
@@ -68,7 +65,7 @@ object ORTools {
     fun<T: Number> ORSolve(
         solver: MPSolver,
         X: Array<MPVariable>,
-        constraints: List<Constraint<T>>,
+        constraints: List<MutableConstraint<T>>,
         objective: Map<Int,T> = emptyMap()): DoubleArray {
         for(constraint in constraints) {
             val mpConstraint = solver.makeConstraint()
