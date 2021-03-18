@@ -3,17 +3,15 @@
 
 \paragraph{Data assimilation \& ABM}
 
-Why we need DA for ABMs, bla bla bla.
+\todo[inline]{Why we need DA for ABMs, bla bla bla.}
 
 \paragraph{Problem: Most trajectories are unlikely}
 
-Data assimilation works well in some circumstances -- e.g. see progress in meteorology -- but does not work well in ABMs. ABMs simulate the actions of discrete units (`agents'), each of which is typically able to choose a particular action from a large number of different possible actions at each iteration. The result is a model that can evolve in a very large number of different ways. The task that data assimilation faces is to estimate a posterior distribution by finding the model trajectories that are likely to have generated some real-world observations. However, with ABM it is very unlikely that an individual model trajectory will likely produce simulated outputs that are sufficiently similar to the real-world observations. In other words, most model trajectories will be refuted by the data. Data assimilation techniques rely on being able to generate plausible model trajectories at a reasonable rate, hence will be infeasible for most ABMs.
+Data assimilation works well in some circumstances -- it is one of the reasons that weather forecasts have improved so dramatically in recent decades~\cite{kalnay_atmospheric_2003} -- but does not work well in ABMs. ABMs simulate the actions of discrete units (`agents'), each of which is typically able to choose a particular action from a large number of different possible actions at each iteration. The result is a model that can evolve in a very large number of different ways. The task that data assimilation faces is to estimate a posterior distribution by finding the model trajectories that are likely to have generated some real-world observations. However, with ABM it is very unlikely that an individual model trajectory will produce simulated outputs that are sufficiently similar to the real-world observations. In other words, most model trajectories will be refuted by the data. Data assimilation techniques rely on being able to generate plausible model trajectories at a reasonable rate, hence will be infeasible for most ABMs.
 
 \paragraph{The solution}
 
-We present a new approach to sampling from the posterior of an agent-based model that results in a reasonable acceptance rate. In other words, each time the ABM is executed there is a reasonable chance that the trajectory could have produced the observations (few model runs are wasted). This, in turn, makes it possible to use techniques such as Markov chain Mote Carlo (MCMC) to estimate the posterior and hence perform data assimilation. 
-
-\todo[inline]{Now a paragraph summary about how the method works (!)}
+We present a new approach to sampling from the posterior of an agent-based model that results in a reasonable acceptance rate. In other words, each time a sample (model trajectory) is drawn, there is a reasonable chance that the trajectory could have produced the observations.  This, in turn, makes it possible to use techniques such as Markov chain Mote Carlo (MCMC) to estimate the posterior and hence perform data assimilation. The new approach does not \textit{run} the ABM to generate trajectories, instead the model is formulated in such a way that plausible trajectories can be generated using robust and well established methods such as the Simplex algorithm. \todo[]{Dan does this explanation make any sense?}
 
 \paragraph{Paper structure \& experiments}
 
