@@ -1,6 +1,4 @@
 import lib.SettableLazy
-import lib.abstractAlgebra.FieldOperators
-import lib.sparseMatrix.GridMapMatrix
 import lib.sparseVector.SparseVector
 import lib.sparseVector.asVector
 import org.apache.commons.math3.util.CombinatoricsUtils
@@ -23,12 +21,7 @@ import kotlin.random.Random
 // TODO: Pivots tend to reduce the degeneracy probability significantly, causing
 //  high rejection ratios and problems coming out of fractional states.
 //  Could improve by doing row swaps after each pivot?
-open class IntegerSimplexMCMC<T>:
-GridMapSimplex<T>
-//Simplex<T>, FieldOperators<T>
-//    Simplex<T,GridMapMatrix<T>>, FieldOperators<T>
-//    RowSimplex<T>, FieldOperators<T>
- where T : Comparable<T>, T : Number {
+open class IntegerSimplexMCMC<T>: GridMapSimplex<T> where T : Comparable<T>, T : Number {
 
     val logPmf: (SparseVector<T>) -> Double
 
@@ -188,10 +181,11 @@ GridMapSimplex<T>
 
     fun swapRows(row1: Int, row2: Int) {
         if (row1 != row2) { // Do swap
-            M.rows[row2].weightedPlusAssign(M.rows[row1], -one)
-            M.rows[row1].weightedPlusAssign(M.rows[row2], one)
-            M.rows[row2].weightedPlusAssign(M.rows[row1], -one)
-            M.rows[row2].timesAssign(-one)
+            M.swapRows(row1,row2)
+//            M.rows[row2].weightedPlusAssign(M.rows[row1], -one)
+//            M.rows[row1].weightedPlusAssign(M.rows[row2], one)
+//            M.rows[row2].weightedPlusAssign(M.rows[row1], -one)
+//            M.rows[row2].timesAssign(-one)
             val basicCol1 = basicColsByRow[row1]
             basicColsByRow[row1] = basicColsByRow[row2]
             basicColsByRow[row2] = basicCol1

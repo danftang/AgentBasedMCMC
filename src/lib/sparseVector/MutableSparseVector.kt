@@ -3,15 +3,20 @@ package lib.sparseVector
 interface MutableSparseVector<T>: SparseVector<T> {
     // override val nonZeroEntries: MutableMap<Int,T>
 
-    fun remove(index: Int)
     operator fun set(index: Int, value: T)
-    fun clear()
+
+    fun setToZero()
 
     fun mapAssign(elementTransform: (T) -> T)
 
+    fun mapAssignWithIndex(transform: (Int, T) -> T)
+
+
+    // Default implementations
+    /////////////////////////////////////
     operator fun timesAssign(multiplier: T) {
         if (multiplier == one) return
-        if (multiplier == zero) clear()
+        if (multiplier == zero) setToZero()
         mapAssign { it * multiplier }
     }
 

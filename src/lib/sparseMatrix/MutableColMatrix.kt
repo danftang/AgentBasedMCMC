@@ -3,6 +3,11 @@ package lib.sparseMatrix
 import lib.sparseVector.MutableSparseVector
 
 interface MutableColMatrix<T>: ColMatrix<T>, MutableMatrix<T> {
+
+    fun setColToZero(col: Int)
+    fun mapAssignCol(col: Int, transform: (T) -> T)
+    fun mapAssignColWithIndex(col: Int, transform: (Int,T) -> T)
+
 //    override val columns: List<MutableSparseVector<T>>
 
 

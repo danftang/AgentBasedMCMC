@@ -7,6 +7,9 @@ import lib.sparseVector.SparseVector
 
 interface MutableRowMatrix<T>: RowMatrix<T>, MutableMatrix<T> {
 
+    fun setRowToZero(row: Int)
+    fun mapAssignRow(row: Int, transform: (T) -> T)
+    fun mapAssignRowWithIndex(row: Int, transform: (Int,T) -> T)
 
 //    override val rows: List<MutableSparseVector<T>>
 //    override val nonZeroEntries: Iterable<EntryMatrix.Entry<T>>

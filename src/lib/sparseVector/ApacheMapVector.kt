@@ -11,13 +11,11 @@ class ApacheMapVector(val apacheMap: OpenIntToDoubleHashMap): MutableSparseVecto
 
     override fun new(): MutableSparseVector<Double>  { return ApacheMapVector(OpenIntToDoubleHashMap(0.0)) }
 
-    override fun remove(index: Int) { apacheMap.remove(index) }
-
     override operator fun set(index: Int, value: Double) {
         apacheMap.put(index, value) // TODO: filter zeroes?
     }
 
-    override fun clear() {
+    override fun setToZero() {
         val iter = apacheMap.iterator()
         val keys = IntArray(apacheMap.size()) {
             iter.advance()
@@ -25,6 +23,7 @@ class ApacheMapVector(val apacheMap: OpenIntToDoubleHashMap): MutableSparseVecto
         }
         keys.forEach { apacheMap.remove(it) }
     }
+
 
     override fun mapAssign(elementTransform: (Double) -> Double) {
         val iter = apacheMap.iterator()
@@ -35,10 +34,20 @@ class ApacheMapVector(val apacheMap: OpenIntToDoubleHashMap): MutableSparseVecto
     }
 
 
+    override fun mapAssignWithIndex(transform: (Int, Double) -> Double) {
+        val iter = apacheMap.iterator()
+        while(iter.hasNext()) {
+            iter.advance()
+            apacheMap.put(iter.key(), transform(iter.key(),iter.value()))
+        }
+    }
+
+
     class ApacheMapWrapper(val apacheMap: OpenIntToDoubleHashMap): AbstractMap<Int,Double>() {
         override val entries: Set<Map.Entry<Int, Double>>
             get() = ApacheEntrySet(apacheMap)
     }
+
 
     class ApacheEntrySet(val apacheMap: OpenIntToDoubleHashMap): AbstractSet<Map.Entry<Int,Double>>() {
         override val size: Int
@@ -49,6 +58,7 @@ class ApacheMapVector(val apacheMap: OpenIntToDoubleHashMap): MutableSparseVecto
         }
     }
 
+
     inline class IteratorWrapper(val apacheIterator: OpenIntToDoubleHashMap.Iterator): Iterator<Map.Entry<Int, Double>> {
         override fun hasNext() = apacheIterator.hasNext()
 
@@ -58,6 +68,6 @@ class ApacheMapVector(val apacheMap: OpenIntToDoubleHashMap): MutableSparseVecto
         }
     }
 
-    class Entry(override val key: Int, override val value: Double): Map.Entry<Int,Double>
 
+    class Entry(override val key: Int, override val value: Double): Map.Entry<Int,Double>
 }

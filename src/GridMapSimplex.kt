@@ -1,8 +1,5 @@
 import lib.abstractAlgebra.*
-import lib.collections.GridMap
-import lib.sparseMatrix.GridMapMatrix
-import lib.sparseMatrix.MutableGridMatrix
-import lib.sparseMatrix.MutableSparseVectorGridMatrix
+import lib.sparseMatrix.GridMatrix
 import lib.sparseVector.*
 import java.lang.RuntimeException
 import java.util.*
@@ -33,7 +30,11 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
 
 //    val entryMap: GridMap<T> = GridMap(constraints.size + 1, firstSlackColumn + constraints.numSlacks() + 1)
 
-    val M = GridMapMatrix(objective.operators, GridMap( constraints.size + 1, firstSlackColumn + constraints.numSlacks() + 1))
+//    val M = GridMapMatrix(objective.operators, GridMap( constraints.size + 1, firstSlackColumn + constraints.numSlacks() + 1))
+
+    val M = GridMatrix(constraints.size + 1, firstSlackColumn + constraints.numSlacks() + 1) {
+        objective.new()
+    }
 
     val basicColsByRow: IntArray = IntArray(nConstraints) { -1 } // -1 interpreted as artificial variable
     val basicRowsByCol = IntArray(nVariables) { -1 }
@@ -47,10 +48,8 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
         get() = M.nRows-1
     val bColumn: Int
         get() = M.nCols-1
-    val B: MutableSparseVector<T>
-        get() = M.columns[bColumn]
-    val objective: MutableSparseVector<T>
-        get() = M.rows[objectiveRow]
+    val B: MutableSparseVector<T> = M.getMutableColView(bColumn)
+    val objective: MutableSparseVector<T> = M.getMutableRowView(objectiveRow)
 
 //    class Matrix<T>(val mapData: GridMap<T>, val field: FieldOperators<T>): FieldOperators<T> by field {
 //        val rows: List<MutableSparseVector<T>> = mapData.rows.map { it.asMutableVector() }
@@ -65,31 +64,6 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
 //    }
 
 
-    // TODO: create MutableSparseVector row and column views along these lines...
-    inner class ObjectiveView: MutableSparseVector<T>, FieldOperators<T> by operators {
-        override fun remove(index: Int) {
-            M.remove(objectiveRow, index)
-        }
-
-        override fun set(index: Int, value: T) {
-            M[objectiveRow,index] = value
-        }
-
-        override fun clear() {
-            TODO("Not yet implemented")
-        }
-
-        override fun mapAssign(elementTransform: (T) -> T) {
-            TODO("Not yet implemented")
-        }
-
-        override val nonZeroEntries: Map<Int, T>
-            get() = M.rows[objectiveRow].nonZeroEntries
-
-        override fun new(): MutableSparseVector<T> {
-            return M.rows[objectiveRow].new()
-        }
-    }
 
 
     fun X(includeSlacks: Boolean=false): SparseVector<T> {
@@ -221,7 +195,7 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
 //        }
         // create new objective
         val originalObjective = ArrayList(M.rows[objectiveRow].nonZeroEntries.entries)
-        objective.clear()
+        objective.setToZero()
         for(i in 0 until nConstraints) {
             if(basicColsByRow[i] == -1) objective -= M.rows[i]
         }
@@ -247,7 +221,7 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
 
 
     fun setObjective(entries: Iterable<Map.Entry<Int,T>>) {
-        objective.clear()
+        objective.setToZero()
         entries.forEach { (j, Cj) ->
             objective[j] = Cj
         }
@@ -479,7 +453,7 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
 //        assert(j < M.nCols-1)
         var Mij = M[i,j]
 
-        M.rows[i] /= Mij
+        M.mapAssignRow(i) { it/Mij }
         val colEntries = M.columns[j].nonZeroEntries
             .mapNotNull {
                 if(it.key != i) AbstractMap.SimpleEntry(it.key, it.value) else null

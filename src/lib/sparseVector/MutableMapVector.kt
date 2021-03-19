@@ -21,19 +21,29 @@ interface IMutableMapVector<T> : MutableSparseVector<T> {
 
 //    override fun toString() = nonZeroEntries.toString()
 //    override fun equals(other: Any?) = isEqualTo(other)
-    override fun remove(index: Int) { nonZeroEntries.remove(index) }
     override fun set(index: Int, value: T) { if(value.isZero()) nonZeroEntries.remove(index) else nonZeroEntries[index] = value }
-    override fun clear() { nonZeroEntries.clear() }
+    override fun setToZero() { nonZeroEntries.clear() }
 
 
-    override fun mapAssign(unaryOp: (T) -> T) {
+    override fun mapAssign(elementTransform: (T) -> T) {
         val iter = nonZeroEntries.iterator()
         while (iter.hasNext()) {
             val entry = iter.next()
-            val newVal = unaryOp(entry.value)
+            val newVal = elementTransform(entry.value)
             if (newVal.isZero()) iter.remove() else entry.setValue(newVal)
         }
     }
+
+
+    override fun mapAssignWithIndex(transform: (Int, T) -> T) {
+        val iter = nonZeroEntries.iterator()
+        while (iter.hasNext()) {
+            val entry = iter.next()
+            val newVal = transform(entry.key, entry.value)
+            if (newVal.isZero()) iter.remove() else entry.setValue(newVal)
+        }
+    }
+
 
     fun mapAssign(index: Int, remappingFunction: (T)->T) {
         nonZeroEntries.compute(index) { _, oldValue ->
