@@ -13,6 +13,14 @@ Data assimilation works well in some circumstances -- it is one of the reasons t
 
 We present a new approach to sampling from the posterior of an agent-based model that results in a reasonable acceptance rate. In other words, each time a sample (model trajectory) is drawn, there is a reasonable chance that the trajectory could have produced the observations.  This, in turn, makes it possible to use techniques such as Markov chain Mote Carlo (MCMC) to estimate the posterior and hence perform data assimilation. The new approach does not \textit{run} the ABM to generate trajectories, instead the model is formulated in such a way that plausible trajectories can be generated using robust and well established methods such as the Simplex algorithm. \todo[]{Dan does this explanation make any sense?}
 
+\paragraph{Applicability}
+
+\todo[inline]{Which classes and conditions of ABMs this applies for. Point to discussion for work needed to extend}
+
+\begin{itemize}
+\item Assumes fixed number of internal states and actions. Can be extended to continuous states (see  discussion)
+\end{itemize}
+
 \paragraph{Paper structure \& experiments}
 
 We demonstrate the new method by running experiments using a simple predator-prey system. We show that, given some new observations of predator and prey positions, the method is able to efficiently estimate the trajectories that might have produced the observations and hence reliably sample from the posterior.
