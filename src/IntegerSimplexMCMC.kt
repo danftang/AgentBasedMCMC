@@ -248,7 +248,7 @@ open class IntegerSimplexMCMC<T>: GridMapSimplex<T> where T : Comparable<T>, T :
     }
 
 
-    fun logDegeneracyProb(): Double {
+    fun logDegeneracyProbOld(): Double {
         val possiblePivotCols = HashSet<Int>()
         var logProb = 0.0
         var degeneracy = 0
@@ -262,6 +262,33 @@ open class IntegerSimplexMCMC<T>: GridMapSimplex<T> where T : Comparable<T>, T :
         return logProb +
                 CombinatoricsUtils.factorialLog(basicColsByRow.size - degeneracy) -
                 CombinatoricsUtils.factorialLog(basicColsByRow.size)
+    }
+
+    
+    fun logDegeneracyProb(): Double {
+        val finalElementCounts = IntArray(nConstraints) { 0 }
+        M.columns[bColumn].nonZeroEntries.keys.forEach {
+            finalElementCounts[it] = -1 // -1 signifies this is a non-degenerate row
+        }
+        var lastRow: Int
+        for(j in 0 until bColumn) {
+            lastRow = -1
+            M.columns[j].nonZeroEntries.keys.forEach {
+                if(it > lastRow && finalElementCounts[it] >= 0) lastRow = it
+            }
+            if(lastRow >= 0) finalElementCounts[lastRow] += 1
+        }
+        var sum = 0
+        var logProb = 0.0
+        for(i in finalElementCounts.size - 1 downTo 0) {
+            if(finalElementCounts[i] >= 0) {
+                sum += finalElementCounts[i]
+                if(sum > 0) logProb -= ln(sum.toDouble())
+            }
+        }
+        return logProb +
+                (CombinatoricsUtils.factorialLog(B.nonZeroEntries.size) -
+                CombinatoricsUtils.factorialLog(nConstraints))
     }
 
 
