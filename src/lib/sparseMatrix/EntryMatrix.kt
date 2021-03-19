@@ -6,19 +6,16 @@ import lib.sparseVector.SparseVector
 import kotlin.math.min
 import kotlin.math.sign
 
-interface EntryMatrix<T> {
+interface EntryMatrix<T>: Matrix<T> {
     val nonZeroEntries: Iterable<Entry<T>>
-    val nRows: Int
-    val nCols: Int
-
-    operator fun get(row: Int, col: Int): T
-
 
     interface Entry<out T> {
         val row: Int
         val col: Int
         val value: T
     }
+
+    class SimpleEntry<out T>(override val row: Int, override val col: Int, override val value: T) : Entry<T>
 }
 
 

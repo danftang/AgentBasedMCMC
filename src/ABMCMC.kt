@@ -87,7 +87,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
             oldSample = newSample
             if(s.rem(100) == 0) {
                 val now = Instant.now().toEpochMilli()
-                println("Got to sample $s in ${(now-lastTime)/1000.0}s largest Numerator,Denominator ${largestNumeratorDenominator()}, Size ${simplex.entryMap.size}, Degeneracy ${simplex.degeneracy()} logPiv = ${simplex.state.logProbOfPivotState} logPX = ${simplex.state.logPX}, logPDegeneracy = ${simplex.state.logDegeneracyProb}")
+                println("Got to sample $s in ${(now-lastTime)/1000.0}s largest Numerator,Denominator ${largestNumeratorDenominator()}, Size ${simplex.M.rows.sumBy { it.nonZeroEntries.size }}, Degeneracy ${simplex.degeneracy()} logPiv = ${simplex.state.logProbOfPivotState} logPX = ${simplex.state.logPX}, logPDegeneracy = ${simplex.state.logDegeneracyProb}")
                 lastTime = now
 //                println(simplex.fractionalLogP - simplex.state.logPX - ln(simplex.transitionProb(simplex.proposePivot())))
             }
@@ -99,7 +99,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
 
     fun largestDenominator(): Int {
         var maxDenom = 1
-        for(entry in simplex.entryMap.entries) {
+        for(entry in simplex.M.nonZeroEntries) {
             maxDenom = max(entry.value.denominator, maxDenom)
             assert(entry.value != Fraction.ZERO)
         }
@@ -109,7 +109,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
     fun largestNumeratorDenominator(): Pair<Int,Int> {
         var maxDenom = 1
         var maxNum = 1
-        for(entry in simplex.entryMap.entries) {
+        for(entry in simplex.M.nonZeroEntries) {
             maxDenom = max(entry.value.denominator, maxDenom)
             maxNum = max(entry.value.numerator, maxDenom)
             assert(entry.value != Fraction.ZERO)

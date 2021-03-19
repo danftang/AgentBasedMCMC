@@ -2,6 +2,7 @@ import com.google.ortools.linearsolver.MPConstraint
 import com.google.ortools.linearsolver.MPSolver
 import com.google.ortools.linearsolver.MPVariable
 import lib.collections.GridMap
+import lib.sparseMatrix.EntryMatrix
 import kotlin.system.measureTimeMillis
 
 object ORTools {
@@ -28,7 +29,7 @@ object ORTools {
     }
 
 
-    fun<T: Number> GlopSolve(tableaux: GridMap<T>): DoubleArray {
+    fun<T: Number> GlopSolve(tableaux: EntryMatrix<T>): DoubleArray {
         val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING)
         val X = solver.makeNumVarArray(tableaux.nCols - 1, 0.0, Double.POSITIVE_INFINITY)
         return ORSolve(solver, X, tableaux)
@@ -45,7 +46,7 @@ object ORTools {
     }
 
 
-    fun<T: Number> IntegerSolve(tableaux: GridMap<T>): DoubleArray {
+    fun<T: Number> IntegerSolve(tableaux: EntryMatrix<T>): DoubleArray {
         val solver = MPSolver("SparseSolver", MPSolver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING)
         val X = solver.makeIntVarArray(tableaux.nCols-1, 0.0, Double.POSITIVE_INFINITY)
         return ORSolve(solver, X, tableaux)
@@ -93,12 +94,12 @@ object ORTools {
     fun<T: Number> ORSolve(
         solver: MPSolver,
         X: Array<MPVariable>,
-        tableaux: GridMap<T>): DoubleArray {
+        tableaux: EntryMatrix<T>): DoubleArray {
         val bColumn = tableaux.nCols - 1
         val objectiveRow = tableaux.nRows - 1
         val constraints = Array<MPConstraint>(tableaux.nRows-1) { solver.makeConstraint(0.0,0.0) }
         val objective = solver.objective()
-        for(entry in tableaux.entries) {
+        for(entry in tableaux.nonZeroEntries) {
             if(entry.row != objectiveRow) {
                 if(entry.col != bColumn) {
                     constraints[entry.row].setCoefficient(X[entry.col], entry.value.toDouble())

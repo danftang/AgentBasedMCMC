@@ -5,9 +5,10 @@ import lib.collections.mutableMapByRemovable
 import lib.sparseVector.MutableSparseVector
 import lib.sparseVector.SparseVector
 
-interface MutableRowMatrix<T>: RowMatrix<T> {
-    override val rows: List<MutableSparseVector<T>>
+interface MutableRowMatrix<T>: RowMatrix<T>, MutableMatrix<T> {
 
+
+//    override val rows: List<MutableSparseVector<T>>
 //    override val nonZeroEntries: Iterable<EntryMatrix.Entry<T>>
 //        get() = rows.withIndex().flatMap { (row, vector) ->
 //            vector.nonZeroEntries.entries.mutableMapByRemovable { entry ->
@@ -15,14 +16,7 @@ interface MutableRowMatrix<T>: RowMatrix<T> {
 //            }
 //        }
 //
-//    override fun get(row: Int, col: Int): T {
-//        return rows[row][col]
-//    }
-//
-//    override fun set(row: Int, col: Int, value: T) {
-//        rows[row][col] = value
-//    }
-//
+
 //    override fun mapAssign(row: Int, col: Int, remappingFunction: (T) -> T) {
 //        rows[row].mapAssign(col, remappingFunction)
 //    }

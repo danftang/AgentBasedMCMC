@@ -43,7 +43,7 @@ class SimplexExpts {
         val objective = hashMapOf(2 to 13.0, 3 to -6.0, 5 to 2.0).asMutableDoubleVector()
         val initialSolution = hashMapOf(6 to 20.0, 1 to 10.0, 4 to 60.0).asMutableDoubleVector()
         val simplex = GridMapSimplex(constraints, objective, initialSolution)
-        println(simplex.entryMap)
+        println(simplex.M)
         simplex.greedyMinimise()
         println()
         val answer = simplex.X()

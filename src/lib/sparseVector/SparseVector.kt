@@ -5,12 +5,12 @@ import java.lang.RuntimeException
 
 
 interface SparseVector<T>: FieldOperators<T> {
-//    val field: Field<T>
     val nonZeroEntries: Map<Int,T>
     fun new(): MutableSparseVector<T>  // place to put results of arithmetic
 
-    // Default implementations
 
+    // Default implementations
+    /////////////////////////////////////////////////////////////
     operator fun get(index: Int): T= nonZeroEntries[index]?:zero
     operator fun plus(other: SparseVector<T>): SparseVector<T> = this.mapNonZeroEntriesTo(new(), other, { it }, { it }, { a, b -> a + b})
     operator fun minus(other: SparseVector<T>): SparseVector<T> = this.mapNonZeroEntriesTo(new(), other, { it }, { -it }, { a, b -> a - b})

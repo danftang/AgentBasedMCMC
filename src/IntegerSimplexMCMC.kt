@@ -25,6 +25,7 @@ import kotlin.random.Random
 //  Could improve by doing row swaps after each pivot?
 open class IntegerSimplexMCMC<T>:
 GridMapSimplex<T>
+//Simplex<T>, FieldOperators<T>
 //    Simplex<T,GridMapMatrix<T>>, FieldOperators<T>
 //    RowSimplex<T>, FieldOperators<T>
  where T : Comparable<T>, T : Number {
@@ -190,7 +191,7 @@ GridMapSimplex<T>
             M.rows[row2].weightedPlusAssign(M.rows[row1], -one)
             M.rows[row1].weightedPlusAssign(M.rows[row2], one)
             M.rows[row2].weightedPlusAssign(M.rows[row1], -one)
-            M.rows[row2] *= -one
+            M.rows[row2].timesAssign(-one)
             val basicCol1 = basicColsByRow[row1]
             basicColsByRow[row1] = basicColsByRow[row2]
             basicColsByRow[row2] = basicCol1

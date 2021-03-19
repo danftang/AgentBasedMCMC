@@ -2,10 +2,12 @@ import org.apache.commons.math3.util.OpenIntToDoubleHashMap
 import java.lang.RuntimeException
 import kotlin.math.absoluteValue
 
-class DoubleSimplex(constraints: List<MutableConstraint<Number>>, objective: Map<Int,Number>, initialSolution: Map<Int,Number>) {
+class RowDoubleSimplex(constraints: List<MutableConstraint<Number>>, objective: Map<Int,Number>, initialSolution: Map<Int,Number>) {
 
     val epsilon = 1e-6
     val nConstraints: Int = constraints.size
+
+    val rows = ArrayList<OpenIntToDoubleHashMap>(nConstraints + 1)
 
     var firstSlackColumn: Int = Integer.max(constraints.numVars(),
         objective.keys
@@ -15,10 +17,6 @@ class DoubleSimplex(constraints: List<MutableConstraint<Number>>, objective: Map
     )
 
     val nVariables: Int = firstSlackColumn + constraints.count { it.relation != "==" }
-
-
-    val rows = ArrayList<OpenIntToDoubleHashMap>(nConstraints + 1)
-    val cols = ArrayList<OpenIntToDoubleHashMap>(nVariables + 1)
 
     val basicColsByRow = IntArray(nConstraints) { -1 }
     val basicRowsByCol = IntArray(nVariables) { -1 }
@@ -30,7 +28,7 @@ class DoubleSimplex(constraints: List<MutableConstraint<Number>>, objective: Map
         }
 
         override fun set(i: Int, j: Int, value: Double) {
-            this@DoubleSimplex.set(i,j,value)
+            if(value.absoluteValue > epsilon) rows[i].put(j, value) else rows[i].remove(j)
         }
     }
 
@@ -38,7 +36,7 @@ class DoubleSimplex(constraints: List<MutableConstraint<Number>>, objective: Map
         override fun get(i: Int) = rows[i][nVariables]
 
         override fun set(i: Int, value: Double) {
-            this@DoubleSimplex.set(i,nVariables,value)
+            if(value.absoluteValue > epsilon) rows[i].put(nVariables, value) else rows[i].remove(nVariables)
         }
     }
 
@@ -46,7 +44,7 @@ class DoubleSimplex(constraints: List<MutableConstraint<Number>>, objective: Map
         override fun get(j: Int) = rows[nConstraints][j]
 
         override fun set(j: Int, value: Double) {
-            this@DoubleSimplex.set(nConstraints,j,value)
+            if(value.absoluteValue > epsilon) rows[nConstraints].put(j, value) else rows[nConstraints].remove(j)
         }
     }
 
@@ -58,8 +56,6 @@ class DoubleSimplex(constraints: List<MutableConstraint<Number>>, objective: Map
         val initialNonZeroColumns = ArrayList(initialSolution.keys)
         rows.ensureCapacity(nConstraints + 1)
         repeat(nConstraints + 1) { rows.add(OpenIntToDoubleHashMap(0.0)) }
-        cols.ensureCapacity(nVariables+1)
-        repeat(nVariables + 1) { cols.add(OpenIntToDoubleHashMap(0.0)) }
         constraints.forEachIndexed { i, constraint ->
             val slackness = constraint.slackness(initialSolution.mapValues { it.value.toDouble() })
             if(slackness < 0.0 || (constraint.relation == "==" && slackness != 0.0)) println("WARNING: initial solution is not feasible: Slackness $slackness")
@@ -97,16 +93,6 @@ class DoubleSimplex(constraints: List<MutableConstraint<Number>>, objective: Map
             if((includeSlacks || basicCol < firstSlackColumn) && Bi != 0.0) x[basicCol] = B[i] / M[i, basicCol]
         }
         return x
-    }
-
-    fun set(i: Int, j: Int, value: Double) {
-        if(value.absoluteValue > epsilon) {
-            rows[i].put(j, value)
-            cols[j].put(i, value)
-        } else {
-            rows[i].remove(j)
-            cols[j].remove(i)
-        }
     }
 
 
@@ -234,5 +220,6 @@ class DoubleSimplex(constraints: List<MutableConstraint<Number>>, objective: Map
         operator fun set(i: Int, j: Int, value: Double)
     }
 
+    data class PivotPoint(val row: Int, val col: Int)
 
 }

@@ -2,8 +2,8 @@ package lib.sparseMatrix
 
 import lib.sparseVector.MutableSparseVector
 
-interface MutableColMatrix<T>: ColMatrix<T> {
-    override val columns: List<MutableSparseVector<T>>
+interface MutableColMatrix<T>: ColMatrix<T>, MutableMatrix<T> {
+//    override val columns: List<MutableSparseVector<T>>
 
 
 //    override val nonZeroEntries: Iterable<EntryMatrix.Entry<T>>
@@ -93,7 +93,3 @@ interface MutableColMatrix<T>: ColMatrix<T> {
 }
 
     // number of nonZeroEntries / (nRows*nCols)
-fun <T> MutableColMatrix<T>.sparsity(): Double {
-    val nonZeroEntriesSize = columns.sumBy { it.nonZeroEntries.size }
-    return nonZeroEntriesSize.toDouble()/(nRows*nCols)
-}

@@ -2,11 +2,19 @@ package lib.sparseMatrix
 
 import lib.sparseVector.SparseVector
 
-interface RowMatrix<T> {
+interface RowMatrix<T>: Matrix<T> {
     val rows: List<SparseVector<T>>
-    val nCols: Int
-    val nRows: Int
+
+
+    // Default implementations
+    /////////////////////////////////////////
+
+    override val nRows: Int
         get() = rows.size
+//
+//    override operator fun get(row: Int, col: Int): T {
+//        return rows[row][col]
+//    }
 
 }
 

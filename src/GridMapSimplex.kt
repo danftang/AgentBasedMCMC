@@ -1,7 +1,9 @@
 import lib.abstractAlgebra.*
 import lib.collections.GridMap
+import lib.sparseMatrix.GridMapMatrix
+import lib.sparseMatrix.MutableGridMatrix
+import lib.sparseMatrix.MutableSparseVectorGridMatrix
 import lib.sparseVector.*
-import java.lang.Integer.max
 import java.lang.RuntimeException
 import java.util.*
 import kotlin.collections.ArrayList
@@ -27,49 +29,71 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
           T: Comparable<T>
 {
 
-    val firstSlackColumn: Int = max(constraints.numVars(),
-        objective.nonZeroEntries.keys
-            .max()
-            ?.let { it + 1}
-            ?:0
-    )
+    val firstSlackColumn: Int = constraints.numVars()
 
-    val nVariables = firstSlackColumn + constraints.count { it.relation != "==" }
+//    val entryMap: GridMap<T> = GridMap(constraints.size + 1, firstSlackColumn + constraints.numSlacks() + 1)
 
-    val entryMap: GridMap<T> = GridMap(constraints.size + 1, nVariables + 1)
+    val M = GridMapMatrix(objective.operators, GridMap( constraints.size + 1, firstSlackColumn + constraints.numSlacks() + 1))
 
-    val basicColsByRow: IntArray = IntArray(entryMap.nRows-1) { -1 } // -1 interpreted as artificial variable
+    val basicColsByRow: IntArray = IntArray(nConstraints) { -1 } // -1 interpreted as artificial variable
+    val basicRowsByCol = IntArray(nVariables) { -1 }
 
-    val M: Matrix<T> = Matrix(entryMap, operators)
 
-    val B: MutableSparseVector<T>
-        inline get() = M.columns[bColumn]
-    val objective: MutableSparseVector<T>
-        inline get() = M.rows[objectiveRow]
+    val nVariables: Int
+        get() = M.nCols - 1
+    val nConstraints: Int
+        get() = M.nRows - 1
     val objectiveRow: Int
-        inline get() = entryMap.nRows-1
+        get() = M.nRows-1
     val bColumn: Int
-        inline get() = entryMap.nCols-1
-    val constraintIndices: IntRange
-        inline get() = 0 until objectiveRow
-    val variableIndices: IntRange
-        inline get() = 0 until bColumn
+        get() = M.nCols-1
+    val B: MutableSparseVector<T>
+        get() = M.columns[bColumn]
+    val objective: MutableSparseVector<T>
+        get() = M.rows[objectiveRow]
+
+//    class Matrix<T>(val mapData: GridMap<T>, val field: FieldOperators<T>): FieldOperators<T> by field {
+//        val rows: List<MutableSparseVector<T>> = mapData.rows.map { it.asMutableVector() }
+//        val columns: List<MutableSparseVector<T>> = mapData.columns.map { it.asMutableVector() }
+//        val nRows: Int
+//            get() = mapData.nRows
+//        val nCols: Int
+//            get() = mapData.nCols
+//
+//        operator fun get(row: Int, col: Int) = mapData[row,col]?:zero
+//        operator fun set(row: Int, col: Int, value: T) { if(value.isZero()) mapData.remove(row,col) else mapData[row,col] = value }
+//    }
 
 
-    class Matrix<T>(val mapData: GridMap<T>, val field: FieldOperators<T>): FieldOperators<T> by field {
-        val rows: List<MutableSparseVector<T>> = mapData.rows.map { it.asMutableVector() }
-        val columns: List<MutableSparseVector<T>> = mapData.columns.map { it.asMutableVector() }
-        val nRows: Int
-            get() = mapData.nRows
-        val nCols: Int
-            get() = mapData.nCols
+    // TODO: create MutableSparseVector row and column views along these lines...
+    inner class ObjectiveView: MutableSparseVector<T>, FieldOperators<T> by operators {
+        override fun remove(index: Int) {
+            M.remove(objectiveRow, index)
+        }
 
-        operator fun get(row: Int, col: Int) = mapData[row,col]?:zero
-        operator fun set(row: Int, col: Int, value: T) { if(value.isZero()) mapData.remove(row,col) else mapData[row,col] = value }
+        override fun set(index: Int, value: T) {
+            M[objectiveRow,index] = value
+        }
+
+        override fun clear() {
+            TODO("Not yet implemented")
+        }
+
+        override fun mapAssign(elementTransform: (T) -> T) {
+            TODO("Not yet implemented")
+        }
+
+        override val nonZeroEntries: Map<Int, T>
+            get() = M.rows[objectiveRow].nonZeroEntries
+
+        override fun new(): MutableSparseVector<T> {
+            return M.rows[objectiveRow].new()
+        }
     }
 
+
     fun X(includeSlacks: Boolean=false): SparseVector<T> {
-        val x = B.new()
+        val x = M.rows[0].new()
         for (i in basicColsByRow.indices) {
             val basicCol = basicColsByRow[i]
             if(includeSlacks || basicCol < firstSlackColumn) x[basicCol] = B[i] / M[i, basicCol]
@@ -142,7 +166,10 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
                 }
             }
         }
-        objective.nonZeroEntries.forEach { (j,x) -> this.objective[j] = x }
+        objective.nonZeroEntries.forEach { (j,x) ->
+            if(j >= firstSlackColumn) throw(IllegalArgumentException("objective contains an unconstrained variable"))
+            this.objective[j] = x
+        }
 
         println("Pivoting in initial solution")
         initialPivot(initialNonZeroColumns)
@@ -152,7 +179,7 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
 
 
     fun pivotToInitialSolution() {
-        val initialSolution = ORTools.GlopSolve(entryMap)
+        val initialSolution = ORTools.GlopSolve(M)
         println("Pivoting-in initial solution")
         initialPivot(initialSolution.indices.filter { initialSolution[it] != 0.0 })
         println("Initial solution ${X()}")
@@ -161,7 +188,7 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
 
     fun pivotToInitialIntegerSolution() {
         println("Finding initial integer solution")
-        val initialSolution = ORTools.IntegerSolve(entryMap)
+        val initialSolution = ORTools.IntegerSolve(M)
         println("Pivoting-in initial solution")
         initialPivot(initialSolution.indices.filter { initialSolution[it] != 0.0 })
         println("Initial solution ${X()}")
@@ -193,9 +220,9 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
 //            }
 //        }
         // create new objective
-        val originalObjective = ArrayList(objective.nonZeroEntries.entries)
-        objective.nonZeroEntries.clear()
-        for(i in constraintIndices) {
+        val originalObjective = ArrayList(M.rows[objectiveRow].nonZeroEntries.entries)
+        objective.clear()
+        for(i in 0 until nConstraints) {
             if(basicColsByRow[i] == -1) objective -= M.rows[i]
         }
         println("Doing phase I minimisation")
@@ -203,7 +230,7 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
         println("Done")
         if(success) {
             // pivot in any remaining (degenerate) rows
-            for(i in constraintIndices) {
+            for(i in 0 until nConstraints) {
                 if(basicColsByRow[i] == -1) {
                     if(B[i] != zero) success = false
                     M.rows[i].nonZeroEntries.entries.find { it.key != bColumn }?.also { (j,_) ->
@@ -220,15 +247,15 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
 
 
     fun setObjective(entries: Iterable<Map.Entry<Int,T>>) {
-        objective.nonZeroEntries.clear()
+        objective.clear()
         entries.forEach { (j, Cj) ->
             objective[j] = Cj
         }
         // update objective for current pivot state
-        for(i in constraintIndices) {
+        for(i in 0 until nConstraints) {
             val j = basicColsByRow[i]
             if(objective[j] != zero) {
-                objective -= M.rows[i]*objective[j]
+                objective -= M.rows[i]*objective[j] // TODO: weighted plus assign
             }
         }
     }
@@ -426,15 +453,16 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
 
     // true if this column is currently a basic variable
     fun isBasicColumn(j: Int): Boolean {
-        val col = M.columns[j]
-        return if (col.nonZeroEntries.size > 2) {
-            false
-        } else {
-            col.nonZeroEntries.keys
-                .find { it != objectiveRow }
-                ?.let { basicColsByRow[it] == j }
-                ?:false
-        }
+        return basicRowsByCol[j] != -1
+//        val col = M.columns[j]
+//        return if (col.nonZeroEntries.size > 2) {
+//            false
+//        } else {
+//            col.nonZeroEntries.keys
+//                .find { it != objectiveRow }
+//                ?.let { basicColsByRow[it] == j }
+//                ?:false
+//        }
     }
 
 
@@ -457,7 +485,7 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
                 if(it.key != i) AbstractMap.SimpleEntry(it.key, it.value) else null
             }
 
-        for(rowEntry in entryMap.rows[i]) {
+        for(rowEntry in M.rows[i].nonZeroEntries) {
             for(colEntry in colEntries) {
 //                val newVal = (entryMap[colEntry.key, rowEntry.key]?:zero) - rowEntry.value * colEntry.value
 //                if (newVal.isZero()) {
@@ -465,15 +493,46 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
 //                } else {
 //                    entryMap[colEntry.key, rowEntry.key] = newVal
 //                }
-                val dotProd = rowEntry.value * colEntry.value
-                entryMap.columns[rowEntry.key].compute(colEntry.key) { col, oldVal ->
-                    val newVal = (oldVal?:zero) - dotProd
-                    if(newVal.isZero()) null else newVal
+                M[colEntry.key, rowEntry.key] -= rowEntry.value * colEntry.value
+//                val dotProd = rowEntry.value * colEntry.value
+//                M.columns[rowEntry.key].nonZeroEntries.compute(colEntry.key) { col, oldVal ->
+//                    val newVal = (oldVal?:zero) - dotProd
+//                    if(newVal.isZero()) null else newVal
+//                }
+            }
+        }
+
+        val leavingColumn = basicColsByRow[i]
+        if(leavingColumn != -1) basicRowsByCol[leavingColumn] = -1
+        basicColsByRow[i] = j
+        basicRowsByCol[j] = i
+    }
+
+    fun rowPivot(i: Int, j: Int) {
+        var Mij = M[i,j]
+
+        val rowIndices = M.rows[i].nonZeroEntries.keys.toIntArray()
+        val rowValues = rowIndices.map { k ->
+            val newRowVal = M[i,k] / Mij
+            M[i,k] = newRowVal
+            newRowVal
+        }
+
+        for(row in 0 until nConstraints) {
+            val rowWeight = M[row,j]
+            if(row != i && rowWeight != 0.0) {
+                for(rowEntry in rowIndices.indices) {
+                    M[row, rowIndices[rowEntry]] -= rowValues[rowEntry] * rowWeight
                 }
             }
         }
+
+        val leavingColumn = basicColsByRow[i]
+        if(leavingColumn != -1) basicRowsByCol[leavingColumn] = -1
         basicColsByRow[i] = j
+        basicRowsByCol[j] = i
     }
+
 
     // Returns the rows in column j that are
     // pivot points that maintain a positive solution
