@@ -19,6 +19,7 @@ class Scratch {
         m.put(1, 1234.0)
         m.put(10,456.0)
         m.put(5,4567.0)
+        m.put(2,0.0)
         println(m)
 
         var it = m.iterator()
@@ -33,20 +34,20 @@ class Scratch {
 //            m.put(it.key(), it.value()*0.5)
 //        }
 
-        val iter = m.iterator()
-        val keys = IntArray(m.size()) {
-            iter.advance()
-            iter.key()
-        }
-        keys.forEach { m.remove(it) }
-
-        println()
-        it = m.iterator()
-        while(it.hasNext()) {
-            it.advance()
-            println("${it.key()} ${it.value()}")
-        }
-
+//        val iter = m.iterator()
+//        val keys = IntArray(m.size()) {
+//            iter.advance()
+//            iter.key()
+//        }
+//        keys.forEach { m.remove(it) }
+//
+//        println()
+//        it = m.iterator()
+//        while(it.hasNext()) {
+//            it.advance()
+//            println("${it.key()} ${it.value()}")
+//        }
+//
 
 //        val v = OpenMapRealVector(15)
 //        v.setEntry(1, 1234.0)

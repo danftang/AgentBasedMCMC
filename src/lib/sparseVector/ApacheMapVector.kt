@@ -7,12 +7,18 @@ import org.apache.commons.math3.util.OpenIntToDoubleHashMap
 class ApacheMapVector(val apacheMap: OpenIntToDoubleHashMap): MutableSparseVector<Double>, DoubleOperators {
     override val nonZeroEntries: Map<Int,Double> = ApacheMapWrapper(apacheMap)
 
-    constructor(): this(OpenIntToDoubleHashMap())
+    constructor(): this(OpenIntToDoubleHashMap(0.0))
+
+    constructor(vararg init: Pair<Int,Double>): this() {
+        init.forEach {
+            set(it.first, it.second)
+        }
+    }
 
     override fun new(): MutableSparseVector<Double>  { return ApacheMapVector(OpenIntToDoubleHashMap(0.0)) }
 
     override operator fun set(index: Int, value: Double) {
-        apacheMap.put(index, value) // TODO: filter zeroes?
+        if(value.isZero()) apacheMap.remove(index) else apacheMap.put(index, value)
     }
 
     override fun setToZero() {
@@ -40,6 +46,11 @@ class ApacheMapVector(val apacheMap: OpenIntToDoubleHashMap): MutableSparseVecto
             iter.advance()
             apacheMap.put(iter.key(), transform(iter.key(),iter.value()))
         }
+    }
+
+
+    override fun toString(): String {
+        return nonZeroEntries.toString()
     }
 
 

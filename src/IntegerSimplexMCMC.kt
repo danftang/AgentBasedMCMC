@@ -248,23 +248,23 @@ open class IntegerSimplexMCMC<T>: GridMapSimplex<T> where T : Comparable<T>, T :
     }
 
 
-    fun logDegeneracyProbOld(): Double {
-        val possiblePivotCols = HashSet<Int>()
-        var logProb = 0.0
-        var degeneracy = 0
-        for (i in M.nRows - 2 downTo 0) {
-            if (B[i].isZero()) {
-                possiblePivotCols.addAll(M.rows[i].nonZeroEntries.keys)
-                logProb -= ln(possiblePivotCols.size.toDouble())
-                ++degeneracy
-            }
-        }
-        return logProb +
-                CombinatoricsUtils.factorialLog(basicColsByRow.size - degeneracy) -
-                CombinatoricsUtils.factorialLog(basicColsByRow.size)
-    }
+//    fun logDegeneracyProbOld(): Double {
+//        val possiblePivotCols = HashSet<Int>()
+//        var logProb = 0.0
+//        var degeneracy = 0
+//        for (i in M.nRows - 2 downTo 0) {
+//            if (B[i].isZero()) {
+//                possiblePivotCols.addAll(M.rows[i].nonZeroEntries.keys)
+//                logProb -= ln(possiblePivotCols.size.toDouble())
+//                ++degeneracy
+//            }
+//        }
+//        return logProb +
+//                CombinatoricsUtils.factorialLog(basicColsByRow.size - degeneracy) -
+//                CombinatoricsUtils.factorialLog(basicColsByRow.size)
+//    }
 
-    
+
     fun logDegeneracyProb(): Double {
         val finalElementCounts = IntArray(nConstraints) { 0 }
         M.columns[bColumn].nonZeroEntries.keys.forEach {

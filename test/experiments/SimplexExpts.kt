@@ -4,6 +4,7 @@ import MutableConstraint
 import GridMapSimplex
 import lib.abstractAlgebra.*
 import lib.sparseVector.*
+import org.apache.commons.math3.util.OpenIntToDoubleHashMap
 import org.junit.Test
 import kotlin.random.Random
 
@@ -40,7 +41,8 @@ class SimplexExpts {
             MutableConstraint(hashMapOf(2 to -5.0, 3 to 3.0, 4 to 1.0, 5 to -1.0),"==", 60.0)
         )
 
-        val objective = hashMapOf(2 to 13.0, 3 to -6.0, 5 to 2.0).asMutableDoubleVector()
+//        val objective = hashMapOf(2 to 13.0, 3 to -6.0, 5 to 2.0).asMutableDoubleVector()
+        val objective = ApacheMapVector(2 to 13.0, 3 to -6.0, 5 to 2.0)
         val initialSolution = hashMapOf(6 to 20.0, 1 to 10.0, 4 to 60.0).asMutableDoubleVector()
         val simplex = GridMapSimplex(constraints, objective, initialSolution)
         println(simplex.M)
