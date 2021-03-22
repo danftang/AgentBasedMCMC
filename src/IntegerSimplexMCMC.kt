@@ -28,7 +28,7 @@ open class IntegerSimplexMCMC<T>: GridMapSimplex<T> where T : Comparable<T>, T :
     // parameters
     val degeneratePivotWeight: Double       = 0.01
     val probOfRowSwap: Double               = 0.01
-    val fractionPenaltyK: Double            = -9.0
+    val fractionPenaltyK: Double            = -1.0
 
     // cached values
     val columnPivotLimits =
@@ -267,8 +267,13 @@ open class IntegerSimplexMCMC<T>: GridMapSimplex<T> where T : Comparable<T>, T :
 
     fun logDegeneracyProb(): Double {
         val finalElementCounts = IntArray(nConstraints) { 0 }
-        M.columns[bColumn].nonZeroEntries.keys.forEach {
-            finalElementCounts[it] = -1 // -1 signifies this is a non-degenerate row
+        var degeneracy = nConstraints
+        M.columns[bColumn].nonZeroEntries.forEach {
+            // TODO: ###### TEST ###### ...to see the effect of counting fractional states as degenerate in prob calculation
+            if(it.value.roundToInt() == 1) {
+                finalElementCounts[it.key] = -1
+                --degeneracy
+            } // -1 signifies this is a non-degenerate row
         }
         var lastRow: Int
         for(j in 0 until bColumn) {
@@ -287,7 +292,7 @@ open class IntegerSimplexMCMC<T>: GridMapSimplex<T> where T : Comparable<T>, T :
             }
         }
         return logProb +
-                (CombinatoricsUtils.factorialLog(B.nonZeroEntries.size) -
+                (CombinatoricsUtils.factorialLog(degeneracy) -
                 CombinatoricsUtils.factorialLog(nConstraints))
     }
 

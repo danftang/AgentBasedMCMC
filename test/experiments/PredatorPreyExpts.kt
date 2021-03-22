@@ -41,7 +41,7 @@ class PredatorPreyExpts {
         println("Initial state is ${mcmc.simplex.X()}")
         println("Starting sampling")
 
-        val expectation = mcmc.expectation(1000, emptySparseVector(FractionOperators)) { sample, sum ->
+        val expectation = mcmc.expectation(10000, emptySparseVector(FractionOperators)) { sample, sum ->
             sample + sum
         }
         val expectationTrajectory = Trajectory(PredatorPreyABM, expectation)
