@@ -56,14 +56,20 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
 
 
     fun logProb(X: SparseVector<Fraction>): Double {
-        val trajectory = Trajectory(model, X)
-        val prior = trajectory.logPrior()
-        val likelihood = observations.sumByDouble { it.logLikelihood(trajectory) }
+        if(X.isInteger()) {
+            val trajectory = Trajectory(model, X)
+            val prior = trajectory.logPrior()
+            val likelihood = observations.sumByDouble { it.logLikelihood(trajectory) }
 //        val penalty = logFractionPenalty(X)
-        val logP = prior + likelihood //+ penalty
+            val logP = prior + likelihood //+ penalty
 //        if(penalty < 0.0) println("Got fractional penalty $penalty")
 //        println("prior logprob $prior likelihood logprob $likelihood fraction penalty $penalty = $logP")
-        return logP
+            return logP
+        } else {
+            // TODO: Test for dealing with fractional states
+            return X.nonZeroEntries.values.sumByDouble { it.toDouble() * -2.4 } // -2.4 = average logprob per event
+
+        }
     }
 
 
@@ -87,7 +93,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
             oldSample = newSample
             if(s.rem(100) == 0) {
                 val now = Instant.now().toEpochMilli()
-                println("Got to sample $s in ${(now-lastTime)/1000.0}s largest Numerator,Denominator ${largestNumeratorDenominator()}, Size ${simplex.M.rows.sumBy { it.nonZeroEntries.size }}, Degeneracy ${simplex.degeneracy()} logPiv = ${simplex.state.logProbOfPivotState} logPX = ${simplex.state.logPX}, logPDegeneracy = ${simplex.state.logDegeneracyProb}")
+                println("Got to sample $s in ${(now-lastTime)/1000.0}s largest Numerator,Denominator ${largestNumeratorDenominator()}, Size ${simplex.M.rows.sumBy { it.nonZeroEntries.size }}, Degeneracy ${simplex.degeneracy()} logPiv = ${simplex.state.logProbOfPivotState} logPX = ${simplex.state.logPX}, logPDegeneracy = ${simplex.state.logDegeneracyProb} prob per event = ${simplex.state.logPX/newSample.nonZeroEntries.size}")
                 lastTime = now
 //                println(simplex.fractionalLogP - simplex.state.logPX - ln(simplex.transitionProb(simplex.proposePivot())))
             }

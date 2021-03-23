@@ -118,6 +118,7 @@ open class IntegerSimplexMCMC<T>: GridMapSimplex<T> where T : Comparable<T>, T :
         forwardPivot(proposalPivot)
         val acceptanceNumerator = state.logProbOfPivotState + ln(transitionProb(revertState.reversePivot))
         val logAcceptance = min(acceptanceNumerator - acceptanceDenominator, 0.0)
+        if(logAcceptance.isNaN()) println("NaN Acceptance $acceptanceNumerator / $acceptanceDenominator logPiv = ${state.logProbOfPivotState} transition prob = ${transitionProb(revertState.reversePivot)} columnWeight = ${columnWeights.P(revertState.reversePivot.col)} nPivots = ${nPivots(revertState.reversePivot.col)}")
         if (!logAcceptance.isNaN() && Random.nextDouble() >= exp(logAcceptance)) { // explicity accept if both numerator and denominator are -infinity
             if(revertState.cache.logFractionalPenalty != 0.0 && state.logFractionalPenalty == 0.0) {
                 println("Rejecting fraction->integer transition with denominator = ${revertState.cache.logPX} + ${revertState.cache.logDegeneracyProb} + ${revertState.cache.logFractionalPenalty} + ${acceptanceDenominator - revertState.cache.logFractionalPenalty - revertState.cache.logDegeneracyProb - revertState.cache.logPX} = $acceptanceDenominator, numerator = ${state.logPX} + ${state.logDegeneracyProb} + ${ln(transitionProb(revertState.reversePivot))} = $acceptanceNumerator, acceptance = $logAcceptance")
@@ -162,8 +163,14 @@ open class IntegerSimplexMCMC<T>: GridMapSimplex<T> where T : Comparable<T>, T :
 
 
     fun forwardPivot(pivot: PivotPoint, newLogFractionalPenalty: Double = logFractionalPenaltyAfterPivot(pivot.col)) {
+//        println("Doing forward pivot on ${pivot.row}, ${pivot.col} ${M[pivot.row, pivot.col]}")
         revertState = PivotReverter(PivotPoint(pivot.row, basicColsByRow[pivot.row]), state)
+        assert(!isBasicColumn(pivot.col)) // TODO: Trying to pivot on a basic col
+        assert(basicColsByRow[pivot.row] != pivot.col)
         super.pivot(pivot)
+//        println("Pivotable rows = ${pivotableRows(revertState.reversePivot.col,false)}")
+//        println("column = ${M.columns[revertState.reversePivot.col].nonZeroEntries}")
+        assert(pivotableRows(revertState.reversePivot.col,false).contains(revertState.reversePivot.row))
         updatePivotInfo(revertState.reversePivot)
         state = Cache(newLogFractionalPenalty)
     }
@@ -189,6 +196,8 @@ open class IntegerSimplexMCMC<T>: GridMapSimplex<T> where T : Comparable<T>, T :
             val basicCol1 = basicColsByRow[row1]
             basicColsByRow[row1] = basicColsByRow[row2]
             basicColsByRow[row2] = basicCol1
+            basicRowsByCol[basicColsByRow[row1]] = row1
+            basicRowsByCol[basicColsByRow[row2]] = row2
         }
     }
 
@@ -209,14 +218,17 @@ open class IntegerSimplexMCMC<T>: GridMapSimplex<T> where T : Comparable<T>, T :
 
 
     fun updatePivotState(column: Int) {
-        val pivotRows = pivotableRows(column, false)
-        columnPivotLimits[column] = if (pivotRows.isEmpty()) zero else B[pivotRows[0]] / M[pivotRows[0], column]
-        columnWeights[column] =
-            if (columnPivotLimits[column] == zero)
-                degeneratePivotWeight * pivotRows.size
-            else
-                pivotRows.size.toDouble()
-
+        if(isBasicColumn(column)) {
+            columnWeights[column] = 0.0
+        } else {
+            val pivotRows = pivotableRows(column, false)
+            columnPivotLimits[column] = if (pivotRows.isEmpty()) zero else B[pivotRows[0]] / M[pivotRows[0], column]
+            columnWeights[column] =
+                if (columnPivotLimits[column] == zero)
+                    degeneratePivotWeight * pivotRows.size
+                else
+                    pivotRows.size.toDouble()
+        }
     }
 
 
@@ -225,7 +237,7 @@ open class IntegerSimplexMCMC<T>: GridMapSimplex<T> where T : Comparable<T>, T :
         val col = columnWeights.sample()
         val nPivot = Random.nextInt(nPivots(col))
         val row = M.columns[col].nonZeroEntries.asSequence()
-            .filter { it.key != objectiveRow && (B[it.key] / it.value) as Number == columnPivotLimits[col] }
+            .filter { it.key != objectiveRow && it.value > zero && (B[it.key] / it.value) as Number == columnPivotLimits[col] }
             .drop(nPivot)
             .first()
             .key
@@ -270,7 +282,7 @@ open class IntegerSimplexMCMC<T>: GridMapSimplex<T> where T : Comparable<T>, T :
         var degeneracy = nConstraints
         M.columns[bColumn].nonZeroEntries.forEach {
             // TODO: ###### TEST ###### ...to see the effect of counting fractional states as degenerate in prob calculation
-            if(it.value.roundToInt() == 1) {
+            if((it.value.toDouble() + if(it.key >= firstSlackColumn) 1e-6 else 0.0).roundToInt() == 1) {
                 finalElementCounts[it.key] = -1
                 --degeneracy
             } // -1 signifies this is a non-degenerate row
@@ -313,13 +325,6 @@ open class IntegerSimplexMCMC<T>: GridMapSimplex<T> where T : Comparable<T>, T :
 
 
     /************************ TEST STUFF *********************/
-
-
-    // Trying row swapping after a pivot to see if this keeps the
-    // degeneracy prob more stable
-    fun forwardPivotWithRowSwap(pivot: PivotPoint) {
-
-    }
 
 
 

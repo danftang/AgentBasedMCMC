@@ -128,7 +128,7 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
                 constraint.coefficients.forEach { (j, x) -> M[i, j] = x }
                 B[i] = constraint.constant
                 when (constraint.relation) {
-                    "<=" -> { basicColsByRow[i] = nextSlackVar; M[i, nextSlackVar++] = one }
+                    "<=" -> { basicColsByRow[i] = nextSlackVar; basicRowsByCol[nextSlackVar] = i; M[i, nextSlackVar++] = one }
                     ">=" -> { M[i, nextSlackVar++] = -one }
                 }
             } else {
@@ -136,7 +136,7 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
                 B[i] = -constraint.constant
                 when (constraint.relation) {
                     "<=" -> { M[i, nextSlackVar++] = -one }
-                    ">=" -> { basicColsByRow[i] = nextSlackVar; M[i, nextSlackVar++] = one }
+                    ">=" -> { basicColsByRow[i] = nextSlackVar; basicRowsByCol[nextSlackVar] = i; M[i, nextSlackVar++] = one }
                 }
             }
         }
@@ -447,10 +447,11 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
     // if the pivot point is -ve, multiplies the pivot row by -1 to make it positive
     inline fun pivot(point: PivotPoint) = pivot(point.row, point.col)
     fun pivot(i: Int, j: Int) {
-//        assert(i>=0)
-//        assert(i < M.nRows-1)
-//        assert(j>=0)
-//        assert(j < M.nCols-1)
+        assert(i>=0)
+        assert(i < M.nRows-1)
+        assert(j>=0)
+        assert(j < M.nCols-1)
+        assert(!isBasicColumn(j))
         var Mij = M[i,j]
 
         M.mapAssignRow(i) { it/Mij }
@@ -482,36 +483,39 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
         basicRowsByCol[j] = i
     }
 
-    fun rowPivot(i: Int, j: Int) {
-        var Mij = M[i,j]
-
-        val rowIndices = M.rows[i].nonZeroEntries.keys.toIntArray()
-        val rowValues = rowIndices.map { k ->
-            val newRowVal = M[i,k] / Mij
-            M[i,k] = newRowVal
-            newRowVal
-        }
-
-        for(row in 0 until nConstraints) {
-            val rowWeight = M[row,j]
-            if(row != i && rowWeight != 0.0) {
-                for(rowEntry in rowIndices.indices) {
-                    M[row, rowIndices[rowEntry]] -= rowValues[rowEntry] * rowWeight
-                }
-            }
-        }
-
-        val leavingColumn = basicColsByRow[i]
-        if(leavingColumn != -1) basicRowsByCol[leavingColumn] = -1
-        basicColsByRow[i] = j
-        basicRowsByCol[j] = i
-    }
+//    fun rowPivot(i: Int, j: Int) {
+//        var Mij = M[i,j]
+//
+//        val rowIndices = M.rows[i].nonZeroEntries.keys.toIntArray()
+//        val rowValues = rowIndices.map { k ->
+//            val newRowVal = M[i,k] / Mij
+//            M[i,k] = newRowVal
+//            newRowVal
+//        }
+//
+//        for(row in 0 until nConstraints) {
+//            val rowWeight = M[row,j]
+//            if(row != i && rowWeight != 0.0) {
+//                for(rowEntry in rowIndices.indices) {
+//                    M[row, rowIndices[rowEntry]] -= rowValues[rowEntry] * rowWeight
+//                }
+//            }
+//        }
+//
+//        val leavingColumn = basicColsByRow[i]
+//        if(leavingColumn != -1) basicRowsByCol[leavingColumn] = -1
+//        basicColsByRow[i] = j
+//        basicRowsByCol[j] = i
+//    }
 
 
     // Returns the rows in column j that are
     // pivot points that maintain a positive solution
     fun pivotableRows(j: Int, allowPivotsOnNegativeElements: Boolean): List<Int> {
-        if(isBasicColumn(j)) return emptyList()
+        if(isBasicColumn(j)) {
+//            println("Warning: getting pivotable rows of a basic column")
+            return emptyList()
+        }
 
         var dXjmax: T? = null
         val limits = M.columns[j].nonZeroEntries.mapNotNull { (i, Mij) ->
