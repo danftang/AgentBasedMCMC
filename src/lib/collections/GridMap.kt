@@ -53,6 +53,11 @@ class GridMap<T>(
         if(_columnData[col].remove(row) != null) _rowData[row].remove(col)
     }
 
+    fun clear() {
+        for(colMap in _columnData) colMap.clear()
+        for(rowMap in _rowData) rowMap.clear()
+    }
+
 
 //    fun computeNonNullMapping(row: Int, col: Int, remappingFunction: (Int, T?)->T) {
 //        _columnData[col].compute(row, remappingFunction)
@@ -126,6 +131,21 @@ class GridMap<T>(
             newValue
         }
     }
+
+    fun swapRows(row1: Int, row2: Int) {
+        for(entry in rows[row1]) {
+            columns[entry.key][row2] = entry.value
+            columns[entry.key].remove(row1)
+        }
+        for(entry in rows[row2]) {
+            columns[entry.key][row1] = entry.value
+            if(!rows[row1].containsKey(entry.key)) columns[entry.key].remove(row2)
+        }
+        val tmpRow = _rowData[row1]
+        _rowData[row1] = _rowData[row2]
+        _rowData[row2] = tmpRow
+    }
+
 
 //    fun merge(row: Int, col: Int, value: T, remappingFunction: (T,T)->T?) {
 //        _columnData[col].compute(row) { row, oldValue ->

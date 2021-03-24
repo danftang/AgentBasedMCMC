@@ -2,7 +2,7 @@ package experiments
 
 import ABMCMC
 import ABMCMC.Companion.validTrajectoryConstraints
-import Constraint
+import MutableConstraint
 import PredatorPreyABM
 import Trajectory
 import isSatisfiedBy
@@ -41,7 +41,7 @@ class PredatorPreyExpts {
         println("Initial state is ${mcmc.simplex.X()}")
         println("Starting sampling")
 
-        val expectation = mcmc.expectation(8000, emptySparseVector(FractionOperators)) { sample, sum ->
+        val expectation = mcmc.expectation(5000, emptySparseVector(FractionOperators)) { sample, sum ->
             sample + sum
         }
         val expectationTrajectory = Trajectory(PredatorPreyABM, expectation)
@@ -60,6 +60,12 @@ class PredatorPreyExpts {
                 .renderAndClose()
         }
     }
+
+
+    fun testDoubleSimplex() {
+
+    }
+
 
     @Test
     fun testORSolve() {
@@ -137,7 +143,7 @@ class PredatorPreyExpts {
 
         fun checkTrajectorySatisfiesConstraints(
             trajectory: Trajectory<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>,
-            constraints: List<Constraint<Fraction>>
+            constraints: List<MutableConstraint<Fraction>>
         ) {
             assert(constraints.all { it.isSatisfiedBy(trajectory.eventVector) })
         }

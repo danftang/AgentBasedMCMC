@@ -1,13 +1,11 @@
-import lib.sparseMatrix.ColMatrix
 import lib.sparseMatrix.MutableColMatrix
 import lib.sparseMatrix.MutableRowMatrix
-import lib.sparseMatrix.RowMatrix
 import lib.sparseVector.MutableSparseVector
 import lib.sparseVector.SparseVector
 
-interface Simplex<T> {
-    val M: Tableaux<T>
+interface RowSimplex<T> {
     val basicColsByRow: IntArray
+    val M: MutableRowMatrix<T>
     val B: MutableSparseVector<T>
 
     val objectiveRow: Int
@@ -20,3 +18,4 @@ interface Simplex<T> {
     fun pivotableRows(j: Int, allowPivotsOnNegativeElements: Boolean): List<Int>
 
 }
+

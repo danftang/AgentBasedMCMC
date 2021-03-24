@@ -1,44 +1,15 @@
 import lib.sparseVector.SparseVector
 import lib.sparseVector.asVector
-import java.lang.IllegalArgumentException
-import java.lang.StringBuilder
 
-class Constraint<COEFF> {
-    val coefficients: MutableMap<Int, COEFF>
+interface Constraint<out COEFF> {
+    val coefficients: Map<Int, COEFF>
     val relation: String
     val constant: COEFF
-
-    constructor(coefficients: MutableMap<Int, COEFF>, relation: String, constant: COEFF) {
-        this.coefficients = coefficients
-        this.relation = when(relation) {
-            "==", "<=", ">=" -> relation
-            else -> throw(IllegalArgumentException("Relation should be one of '==','<=' or '>='"))
-        }
-        this.constant = constant
-    }
 
     fun numVars(): Int = coefficients.keys.max()?.let { it+1 }?:0
 
 
-    fun slackness(values: SparseVector<COEFF>): COEFF {
-        if(relation == "==") return values.operators.zero
-        val lhs = coefficients.asVector(values.operators).dotProduct(values)
-        return with(values.operators) {
-            if (relation == "<=") constant - lhs else lhs - constant
-        }
-    }
 
-
-    override fun toString(): String {
-        val out = StringBuilder()
-        for(entry in coefficients) {
-            out.append(" ${entry.value}x_${entry.key} +")
-        }
-        if(out.lastIndex > 0) out.deleteCharAt(out.lastIndex)
-        out.append(" $relation ")
-        out.append(constant.toString())
-        return out.toString()
-    }
 }
 
 
@@ -50,4 +21,21 @@ fun<COEFF: Comparable<COEFF>> Constraint<COEFF>.isSatisfiedBy(x: SparseVector<CO
         ">=" -> lhs >= constant
         else -> lhs == constant
     }
+}
+
+
+// returns the absolute value of the difference between lhs and rhs
+//fun<COEFF: Number> Constraint<COEFF>.slackness(values: SparseVector<COEFF>): Double {
+//    if(relation == "==") return 0.0
+//    val lhs = coefficients.asVector(values.operators).dotProduct(values).toDouble()
+//    return with(values.operators) {
+//        if (relation == "<=") constant.toDouble() - lhs else lhs - constant.toDouble()
+//    }
+//}
+
+// returns the absolute value of the difference between lhs and rhs
+fun<COEFF: Number> Constraint<COEFF>.slackness(values: Map<Int,Double>): Double {
+    if(relation == "==") return 0.0
+    val lhs = values.entries.sumByDouble { coefficients[it.key]?.toDouble()?:0.0 * it.value }
+    return if (relation == "<=") constant.toDouble() - lhs else lhs - constant.toDouble()
 }

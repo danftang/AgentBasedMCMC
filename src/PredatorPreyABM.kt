@@ -97,9 +97,9 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
             }
         }
 
-        override fun eventConstraints(): List<Constraint<Fraction>> {
+        override fun eventConstraints(): List<MutableConstraint<Fraction>> {
             return if(footprintsObserved) {
-                listOf(Constraint(hashMapOf(lookedFor.ordinal to Fraction.ONE), ">=", Fraction.ONE).stateToEventConstraint(time))
+                listOf(MutableConstraint(hashMapOf(lookedFor.ordinal to Fraction.ONE), ">=", Fraction.ONE).stateToEventConstraint(time))
             } else {
                 emptyList()
             }
@@ -130,7 +130,7 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
             return logP
         }
 
-        override fun eventConstraints(): List<Constraint<Fraction>> = emptyList() // no states are impossible
+        override fun eventConstraints(): List<MutableConstraint<Fraction>> = emptyList() // no states are impossible
 
     }
 
@@ -166,9 +166,9 @@ object PredatorPreyABM: ABM<PredatorPreyABM.PredPreyAgent, PredatorPreyABM.Acts>
 
     // returns a constraint in terms of state occupation numbers
     // Manually generated for now...
-    override fun timestepEventConstraints(event: ABM.Event<PredPreyAgent, Acts>): List<Constraint<Fraction>> {
+    override fun timestepEventConstraints(event: ABM.Event<PredPreyAgent, Acts>): List<MutableConstraint<Fraction>> {
         if(event.agent.type == AgentType.PREDATOR && event.act == Acts.GIVEBIRTH) {
-            return listOf(Constraint(hashMapOf(
+            return listOf(MutableConstraint(hashMapOf(
                 PredPreyAgent(event.agent.x.periodicDec(),event.agent.y, AgentType.PREY).ordinal to Fraction.ONE,
                 PredPreyAgent(event.agent.x.periodicInc(),event.agent.y, AgentType.PREY).ordinal to Fraction.ONE,
                 PredPreyAgent(event.agent.x,event.agent.y.periodicDec(), AgentType.PREY).ordinal to Fraction.ONE,

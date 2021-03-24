@@ -372,7 +372,7 @@ To solve this problem in a computationally efficient way we introduce the concep
 	\State $r \leftarrow r + 1$
   \EndIf
 \EndFor
-\State \Return $\frac{P_d P_T(|B|-\sigma)!}{|B|!}$
+\State \Return $\frac{P_d P_T\sigma!}{|B|!}$
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
@@ -425,7 +425,7 @@ i.e. among the members of $\mathbb{S}$ that have the degenerate variable prefix 
 \begin{theorem}
 If we assign the probability
 \begin{equation}
-P(S) =  \frac{(m-\sigma_{T(S)})!}{m!} \frac{P_{T(S)}}{\prod_{q=0}^{\sigma_{T(S)}-1} C(\mathbb{E}(T(S)) \mid D_{\le q}(S))}
+P(S) =  \frac{\sigma_{T(S)}!}{m!} \frac{P_{T(S)}}{\prod_{q=0}^{\sigma_{T(S)}-1} C(\mathbb{E}(T(S)) \mid D_{\le q}(S))}
 \label{pivotProb}
 \end{equation}
 to pivot state $S$, where $m$ is the number of constraints and $\sigma_{T}$ is the degeneracy of trajectory $T$ (i.e. $m$ minus the number of non-zero variables in $T$) then
@@ -437,10 +437,10 @@ to pivot state $S$, where $m$ is the number of constraints and $\sigma_{T}$ is t
 Expanding the sum over degenerate states
 \[
 \sum_{S \in \mathbb{E}(T)} P(S) =
-P_T \frac{(m-\sigma_T)!}{m!} \sum_{S \in \mathbb{E}(T)} \frac{1}{\prod_{q=0}^{\sigma_T-1} C(\mathbb{E}(T) \mid D_{\le q}(S))}
+P_T \frac{\sigma_T!}{m!} \sum_{S \in \mathbb{E}(T)} \frac{1}{\prod_{q=0}^{\sigma_T-1} C(\mathbb{E}(T) \mid D_{\le q}(S))}
 \]
 
-Notice first that all pivot states with the same $\sigma_T$-tuple of degenerate variables, $D(S)$, have the same probability. There are exactly $\frac{m!}{(m-\sigma_T)!}$ ordered pivot states with a given $D(S)$, corresponding to the different placings of the $m-\sigma_T$ non-degenerate basic variables among the $m$ possible positions. So, if we let
+Notice first that all pivot states with the same $\sigma_T$-tuple of degenerate variables, $D(S)$, have the same probability. There are exactly $\frac{m!}{\sigma_T!}$ ordered pivot states with a given $D(S)$, corresponding to the different placings of the $m-\sigma_T$ non-degenerate basic variables among the $m$ possible positions. So, if we let
 \[
 \mathbb{D}(T) = \left\{ D(S) : S \in \mathbb{E}(T) \right\}
 \]
@@ -489,14 +489,14 @@ we can now use the same argument again to reduce the upper bound of $q$ iterativ
 \begin{theorem}
 Algorithm \ref{probAlgorithm} assigns a probability
 \[
-P(S) =  \frac{(m-\sigma_{T(S)})!}{m!} \frac{P_{T(S)}}{\prod_{q=0}^{\sigma_{T(S)}-1} C(\mathbb{E}(T(S)) \mid D_{\le q}(S))}
+P(S) =  \frac{\sigma_{T(S)}!}{m!} \frac{P_{T(S)}}{\prod_{q=0}^{\sigma_{T(S)}-1} C(\mathbb{E}(T(S)) \mid D_{\le q}(S))}
 \]
 to pivot state $S$
 \end{theorem}
 \begin{proof}
 By inspection of the algorithm, it can be seen that the algorithm assigns probability 
 \[
-P(S) =  \frac{(m-\sigma_{T(S)})!}{m!} \frac{P_{T(S)}}{\prod_{r=0}^{\sigma_{T(S)}-1} \left(\left\|C'(S, r)\right\| + r + 1\right)}
+P(S) =  \frac{\sigma_{T(S)}!}{m!} \frac{P_{T(S)}}{\prod_{r=0}^{\sigma_{T(S)}-1} \left(\left\|C'(S, r)\right\| + r + 1\right)}
 \]
 where
 \[

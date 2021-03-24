@@ -8,7 +8,6 @@ import lib.sparseVector.asVector
 import org.apache.commons.math3.fraction.Fraction
 import java.lang.Integer.max
 import java.time.Instant
-import kotlin.math.ln
 
 class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
 
@@ -57,14 +56,20 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
 
 
     fun logProb(X: SparseVector<Fraction>): Double {
-        val trajectory = Trajectory(model, X)
-        val prior = trajectory.logPrior()
-        val likelihood = observations.sumByDouble { it.logLikelihood(trajectory) }
+        if(X.isInteger()) {
+            val trajectory = Trajectory(model, X)
+            val prior = trajectory.logPrior()
+            val likelihood = observations.sumByDouble { it.logLikelihood(trajectory) }
 //        val penalty = logFractionPenalty(X)
-        val logP = prior + likelihood //+ penalty
+            val logP = prior + likelihood //+ penalty
 //        if(penalty < 0.0) println("Got fractional penalty $penalty")
 //        println("prior logprob $prior likelihood logprob $likelihood fraction penalty $penalty = $logP")
-        return logP
+            return logP
+        } else {
+            // TODO: Test for dealing with fractional states
+            return X.nonZeroEntries.values.sumByDouble { it.toDouble() * -2.4 } // -2.4 = average logprob per event
+
+        }
     }
 
 
@@ -88,7 +93,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
             oldSample = newSample
             if(s.rem(100) == 0) {
                 val now = Instant.now().toEpochMilli()
-                println("Got to sample $s in ${(now-lastTime)/1000.0}s largest Numerator,Denominator ${largestNumeratorDenominator()}, Size ${simplex.entryMap.size}, Degeneracy ${simplex.degeneracy()} logPiv = ${simplex.state.logProbOfPivotState} logPX = ${simplex.state.logPX}, logPDegeneracy = ${simplex.state.logDegeneracyProb}")
+                println("Got to sample $s in ${(now-lastTime)/1000.0}s largest Numerator,Denominator ${largestNumeratorDenominator()}, Size ${simplex.M.rows.sumBy { it.nonZeroEntries.size }}, Degeneracy ${simplex.degeneracy()} logPiv = ${simplex.state.logProbOfPivotState} logPX = ${simplex.state.logPX}, logPDegeneracy = ${simplex.state.logDegeneracyProb} prob per event = ${simplex.state.logPX/newSample.nonZeroEntries.size}")
                 lastTime = now
 //                println(simplex.fractionalLogP - simplex.state.logPX - ln(simplex.transitionProb(simplex.proposePivot())))
             }
@@ -100,7 +105,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
 
     fun largestDenominator(): Int {
         var maxDenom = 1
-        for(entry in simplex.entryMap.entries) {
+        for(entry in simplex.M.nonZeroEntries) {
             maxDenom = max(entry.value.denominator, maxDenom)
             assert(entry.value != Fraction.ZERO)
         }
@@ -110,7 +115,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
     fun largestNumeratorDenominator(): Pair<Int,Int> {
         var maxDenom = 1
         var maxNum = 1
-        for(entry in simplex.entryMap.entries) {
+        for(entry in simplex.M.nonZeroEntries) {
             maxDenom = max(entry.value.denominator, maxDenom)
             maxNum = max(entry.value.numerator, maxDenom)
             assert(entry.value != Fraction.ZERO)
@@ -124,7 +129,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
             model: ABM<AGENT, ACT>,
             nTimesteps: Int,
             observations: List<Observation<AGENT, ACT>>
-        ): List<Constraint<Fraction>> {
+        ): List<MutableConstraint<Fraction>> {
             return validTrajectoryConstraints(model, nTimesteps, true) + observations.flatMap { it.eventConstraints() }
         }
 
@@ -132,9 +137,9 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
             model: ABM<AGENT, ACT>,
             nTimesteps: Int,
             fermionic: Boolean
-        ): List<Constraint<Fraction>> {
+        ): List<MutableConstraint<Fraction>> {
             println("Constructing model constraints...")
-            val constraints = ArrayList<Constraint<Fraction>>(model.actDomain.size * model.agentDomain.size * 2)
+            val constraints = ArrayList<MutableConstraint<Fraction>>(model.actDomain.size * model.agentDomain.size * 2)
             constraints.addAll(continuityConstraints(nTimesteps, model))
             if(fermionic) constraints.addAll(fermionicConstraints(nTimesteps, model))
             for (state in 0 until model.agentDomain.size) {
@@ -153,11 +158,11 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
         fun <AGENT : Agent<AGENT>, ACT : Ordered<ACT>> continuityConstraints(
             nTimesteps: Int,
             abm: ABM<AGENT, ACT>
-        ): List<Constraint<Fraction>> {
+        ): List<MutableConstraint<Fraction>> {
             val nStates = abm.agentDomain.size
 //        val acts = abm.actDomain
             val nActs = abm.actDomain.size
-            val constraints = ArrayList<Constraint<Fraction>>((nTimesteps - 1) * nStates)
+            val constraints = ArrayList<MutableConstraint<Fraction>>((nTimesteps - 1) * nStates)
 
             // first do leaving edges
             for (t in 1 until nTimesteps) {
@@ -167,7 +172,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
                     for (act in 0 until nActs) {
                         coeffs[coeffBase + act] = Fraction(-1)
                     }
-                    constraints.add(Constraint(coeffs, "==", Fraction.ZERO))
+                    constraints.add(MutableConstraint(coeffs, "==", Fraction.ZERO))
                 }
             }
             // now do incoming edges
@@ -191,10 +196,10 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
         fun <AGENT : Agent<AGENT>, ACT : Ordered<ACT>> fermionicConstraints(
             nTimesteps: Int,
             abm: ABM<AGENT, ACT>
-        ): List<Constraint<Fraction>> {
+        ): List<MutableConstraint<Fraction>> {
             val nStates = abm.agentDomain.size
             val nActs = abm.actDomain.size
-            val constraints = ArrayList<Constraint<Fraction>>((nTimesteps + 1) * nStates)
+            val constraints = ArrayList<MutableConstraint<Fraction>>((nTimesteps + 1) * nStates)
 
             for (t in 0 until nTimesteps) {
                 for (state in 0 until nStates) {
@@ -203,7 +208,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
                     for (act in 0 until nActs) {
                         coeffs[coeffBase + act] = Fraction(1)
                     }
-                    constraints.add(Constraint(coeffs, "<=", Fraction.ONE))
+                    constraints.add(MutableConstraint(coeffs, "<=", Fraction.ONE))
                 }
             }
 
@@ -218,7 +223,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
                 }
             }
             for (state in 0 until nStates) {
-                constraints.add(Constraint(coeffsByState[state], "<=", Fraction.ONE))
+                constraints.add(MutableConstraint(coeffsByState[state], "<=", Fraction.ONE))
             }
 //            println("Fermionic constraints are $constraints")
             return constraints
@@ -230,10 +235,10 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
         // and 0 <= y_i <= 1
         // by using the identity
         //
-        fun fermionicXImpliesY(x: Int, y: Constraint<Fraction>): List<Constraint<Fraction>> {
+        fun fermionicXImpliesY(x: Int, y: MutableConstraint<Fraction>): List<MutableConstraint<Fraction>> {
             return if (y.relation == "==") {
-                fermionicXImpliesY(x, Constraint(y.coefficients, "<=", y.constant)) +
-                        fermionicXImpliesY(x, Constraint(y.coefficients, ">=", y.constant))
+                fermionicXImpliesY(x, MutableConstraint(y.coefficients, "<=", y.constant)) +
+                        fermionicXImpliesY(x, MutableConstraint(y.coefficients, ">=", y.constant))
 
             } else {
                 val const: Fraction
@@ -249,21 +254,21 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
                 var maxVal = Fraction.ZERO
                 coeffs.values.forEach { if (it > Fraction.ZERO) maxVal += it }
                 coeffs[x] = maxVal - const
-                listOf(Constraint(coeffs, "<=", maxVal))
+                listOf(MutableConstraint(coeffs, "<=", maxVal))
             }
         }
 
-        fun fermionicXImpliesY(x: Int, y: List<Constraint<Fraction>>): List<Constraint<Fraction>> =
+        fun fermionicXImpliesY(x: Int, y: List<MutableConstraint<Fraction>>): List<MutableConstraint<Fraction>> =
             y.flatMap { fermionicXImpliesY(x, it) }
 
 
         // converts a constraint in terms of state occupation numbers into a constraint on acts
         // in a given timestep
         fun <AGENT : Agent<AGENT>, ACT : Ordered<ACT>> stateConstraintToActConstraint(
-            stateConstraint: Constraint<Fraction>,
+            stateConstraint: MutableConstraint<Fraction>,
             timestep: Int,
             abm: ABM<AGENT, ACT>
-        ): Constraint<Fraction> {
+        ): MutableConstraint<Fraction> {
             val actCoeffs = HashMap<Int, Fraction>()
             val nActs = abm.actDomain.size
             val timestepBase = abm.agentDomain.size * nActs * timestep
@@ -272,7 +277,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
                     actCoeffs[timestepBase + state * nActs + act] = coefficient
                 }
             }
-            return Constraint(actCoeffs, stateConstraint.relation, stateConstraint.constant)
+            return MutableConstraint(actCoeffs, stateConstraint.relation, stateConstraint.constant)
         }
 
         fun SparseVector<Fraction>.isInteger(): Boolean {

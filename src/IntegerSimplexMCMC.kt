@@ -21,14 +21,14 @@ import kotlin.random.Random
 // TODO: Pivots tend to reduce the degeneracy probability significantly, causing
 //  high rejection ratios and problems coming out of fractional states.
 //  Could improve by doing row swaps after each pivot?
-open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Number {
+open class IntegerSimplexMCMC<T>: GridMapSimplex<T> where T : Comparable<T>, T : Number {
 
     val logPmf: (SparseVector<T>) -> Double
 
     // parameters
     val degeneratePivotWeight: Double       = 0.01
     val probOfRowSwap: Double               = 0.01
-    val fractionPenaltyK: Double            = -9.0
+    val fractionPenaltyK: Double            = -1.0
 
     // cached values
     val columnPivotLimits =
@@ -67,7 +67,7 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
 
 
     constructor(
-        constraints: List<Constraint<T>>,
+        constraints: List<MutableConstraint<T>>,
         initialSample: SparseVector<T>,
         logPmf: (SparseVector<T>) -> Double
     ) :
@@ -118,6 +118,7 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
         forwardPivot(proposalPivot)
         val acceptanceNumerator = state.logProbOfPivotState + ln(transitionProb(revertState.reversePivot))
         val logAcceptance = min(acceptanceNumerator - acceptanceDenominator, 0.0)
+        if(logAcceptance.isNaN()) println("NaN Acceptance $acceptanceNumerator / $acceptanceDenominator logPiv = ${state.logProbOfPivotState} transition prob = ${transitionProb(revertState.reversePivot)} columnWeight = ${columnWeights.P(revertState.reversePivot.col)} nPivots = ${nPivots(revertState.reversePivot.col)}")
         if (!logAcceptance.isNaN() && Random.nextDouble() >= exp(logAcceptance)) { // explicity accept if both numerator and denominator are -infinity
             if(revertState.cache.logFractionalPenalty != 0.0 && state.logFractionalPenalty == 0.0) {
                 println("Rejecting fraction->integer transition with denominator = ${revertState.cache.logPX} + ${revertState.cache.logDegeneracyProb} + ${revertState.cache.logFractionalPenalty} + ${acceptanceDenominator - revertState.cache.logFractionalPenalty - revertState.cache.logDegeneracyProb - revertState.cache.logPX} = $acceptanceDenominator, numerator = ${state.logPX} + ${state.logDegeneracyProb} + ${ln(transitionProb(revertState.reversePivot))} = $acceptanceNumerator, acceptance = $logAcceptance")
@@ -162,11 +163,19 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
 
 
     fun forwardPivot(pivot: PivotPoint, newLogFractionalPenalty: Double = logFractionalPenaltyAfterPivot(pivot.col)) {
+//        println("Doing forward pivot on ${pivot.row}, ${pivot.col} ${M[pivot.row, pivot.col]}")
         revertState = PivotReverter(PivotPoint(pivot.row, basicColsByRow[pivot.row]), state)
+        assert(!isBasicColumn(pivot.col)) // TODO: Trying to pivot on a basic col
+        assert(basicColsByRow[pivot.row] != pivot.col)
         super.pivot(pivot)
+//        println("Pivotable rows = ${pivotableRows(revertState.reversePivot.col,false)}")
+//        println("column = ${M.columns[revertState.reversePivot.col].nonZeroEntries}")
+        assert(pivotableRows(revertState.reversePivot.col,false).contains(revertState.reversePivot.row))
         updatePivotInfo(revertState.reversePivot)
         state = Cache(newLogFractionalPenalty)
     }
+
+
 
 
     fun revertLastPivot() {
@@ -179,13 +188,16 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
 
     fun swapRows(row1: Int, row2: Int) {
         if (row1 != row2) { // Do swap
-            M.rows[row2].weightedPlusAssign(M.rows[row1], -one)
-            M.rows[row1].weightedPlusAssign(M.rows[row2], one)
-            M.rows[row2].weightedPlusAssign(M.rows[row1], -one)
-            M.rows[row2] *= -one
+            M.swapRows(row1,row2)
+//            M.rows[row2].weightedPlusAssign(M.rows[row1], -one)
+//            M.rows[row1].weightedPlusAssign(M.rows[row2], one)
+//            M.rows[row2].weightedPlusAssign(M.rows[row1], -one)
+//            M.rows[row2].timesAssign(-one)
             val basicCol1 = basicColsByRow[row1]
             basicColsByRow[row1] = basicColsByRow[row2]
             basicColsByRow[row2] = basicCol1
+            basicRowsByCol[basicColsByRow[row1]] = row1
+            basicRowsByCol[basicColsByRow[row2]] = row2
         }
     }
 
@@ -206,14 +218,17 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
 
 
     fun updatePivotState(column: Int) {
-        val pivotRows = pivotableRows(column, false)
-        columnPivotLimits[column] = if (pivotRows.isEmpty()) zero else B[pivotRows[0]] / M[pivotRows[0], column]
-        columnWeights[column] =
-            if (columnPivotLimits[column] == zero)
-                degeneratePivotWeight * pivotRows.size
-            else
-                pivotRows.size.toDouble()
-
+        if(isBasicColumn(column)) {
+            columnWeights[column] = 0.0
+        } else {
+            val pivotRows = pivotableRows(column, false)
+            columnPivotLimits[column] = if (pivotRows.isEmpty()) zero else B[pivotRows[0]] / M[pivotRows[0], column]
+            columnWeights[column] =
+                if (columnPivotLimits[column] == zero)
+                    degeneratePivotWeight * pivotRows.size
+                else
+                    pivotRows.size.toDouble()
+        }
     }
 
 
@@ -222,7 +237,7 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
         val col = columnWeights.sample()
         val nPivot = Random.nextInt(nPivots(col))
         val row = M.columns[col].nonZeroEntries.asSequence()
-            .filter { it.key != objectiveRow && (B[it.key] / it.value) as Number == columnPivotLimits[col] }
+            .filter { it.key != objectiveRow && it.value > zero && (B[it.key] / it.value) as Number == columnPivotLimits[col] }
             .drop(nPivot)
             .first()
             .key
@@ -245,25 +260,57 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
     }
 
 
+//    fun logDegeneracyProbOld(): Double {
+//        val possiblePivotCols = HashSet<Int>()
+//        var logProb = 0.0
+//        var degeneracy = 0
+//        for (i in M.nRows - 2 downTo 0) {
+//            if (B[i].isZero()) {
+//                possiblePivotCols.addAll(M.rows[i].nonZeroEntries.keys)
+//                logProb -= ln(possiblePivotCols.size.toDouble())
+//                ++degeneracy
+//            }
+//        }
+//        return logProb +
+//                CombinatoricsUtils.factorialLog(basicColsByRow.size - degeneracy) -
+//                CombinatoricsUtils.factorialLog(basicColsByRow.size)
+//    }
+
+
     fun logDegeneracyProb(): Double {
-        val possiblePivotCols = HashSet<Int>()
+        val finalElementCounts = IntArray(nConstraints) { 0 }
+        var degeneracy = nConstraints
+        M.columns[bColumn].nonZeroEntries.forEach {
+            // TODO: ###### TEST ###### ...to see the effect of counting fractional states as degenerate in prob calculation
+            if((it.value.toDouble() + if(it.key >= firstSlackColumn) 1e-6 else 0.0).roundToInt() == 1) {
+                finalElementCounts[it.key] = -1
+                --degeneracy
+            } // -1 signifies this is a non-degenerate row
+        }
+        var lastRow: Int
+        for(j in 0 until bColumn) {
+            lastRow = -1
+            M.columns[j].nonZeroEntries.keys.forEach {
+                if(it > lastRow && finalElementCounts[it] >= 0) lastRow = it
+            }
+            if(lastRow >= 0) finalElementCounts[lastRow] += 1
+        }
+        var sum = 0
         var logProb = 0.0
-        var degeneracy = 0
-        for (i in M.nRows - 2 downTo 0) {
-            if (B[i].isZero()) {
-                possiblePivotCols.addAll(M.rows[i].nonZeroEntries.keys)
-                logProb -= ln(possiblePivotCols.size.toDouble())
-                ++degeneracy
+        for(i in finalElementCounts.size - 1 downTo 0) {
+            if(finalElementCounts[i] >= 0) {
+                sum += finalElementCounts[i]
+                if(sum > 0) logProb -= ln(sum.toDouble())
             }
         }
         return logProb +
-                CombinatoricsUtils.factorialLog(basicColsByRow.size - degeneracy) -
-                CombinatoricsUtils.factorialLog(basicColsByRow.size)
+                (CombinatoricsUtils.factorialLog(degeneracy) -
+                CombinatoricsUtils.factorialLog(nConstraints))
     }
 
 
     fun T.roundingDistance(): Double {
-        return this.roundToInt() - this.toDouble()
+        return this.toDouble().roundToInt() - this.toDouble()
     }
 
 
@@ -278,6 +325,8 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
 
 
     /************************ TEST STUFF *********************/
+
+
 
     fun fractionOfAffectedColumns(pivot: PivotPoint): Double {
         val affectedCol = HashSet<Int>()
@@ -301,7 +350,7 @@ open class IntegerSimplexMCMC<T> : Simplex<T> where T : Comparable<T>, T : Numbe
     }
 
     fun bestFractionalPenaltyPivot(): Double {
-        return variableIndices
+        return (0 until M.nCols-1)
             .filter { isBasicColumn(it) }
             .map { logFractionalPenaltyAfterPivot(it) }
             .max()!!

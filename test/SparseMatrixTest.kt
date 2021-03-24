@@ -1,18 +1,17 @@
 import lib.abstractAlgebra.DoubleOperators
 import lib.abstractAlgebra.IntOperators
-import lib.sparseMatrix.GridMapMatrix
+import lib.sparseMatrix.GridMatrix
+import lib.sparseMatrix.times
 import lib.sparseVector.MutableMapVector
+import lib.sparseVector.asMutableDoubleVector
+import lib.sparseVector.asMutableIntVector
 import org.junit.Test
 
 class SparseMatrixTest {
 
-//    init {
-//        System.loadLibrary("jniortools")
-//    }
-
     @Test
     fun multiplicationTest() {
-        val M = GridMapMatrix(IntOperators,3,3)
+        val M = GridMatrix(3,3) { HashMap<Int,Int>().asMutableIntVector() }
         M[0,0] = 2
         M[1,0] = 3
         M[0,2] = 4
@@ -21,13 +20,17 @@ class SparseMatrixTest {
         val V = MutableMapVector(IntOperators)
         V[0] = 2
         V[2] = -1
-        println(M * V)
+        val MV = M * V
+        println(MV)
+        assert(MV[0] == 0)
+        assert(MV[1] == 6)
+        assert(MV[2] == -1)
     }
 
     @Test
     fun multiplicationTestDouble() {
         println(-1.0*0.0 == DoubleOperators.zero)
-        val M = GridMapMatrix(DoubleOperators,3,3)
+        val M = GridMatrix(3,3) { HashMap<Int,Double>().asMutableDoubleVector() }
         M[0,0] = 2.0
         M[1,0] = 3.0
         M[0,2] = 4.0
@@ -36,7 +39,11 @@ class SparseMatrixTest {
         val V = MutableMapVector(DoubleOperators)
         V[0] = 2.0
         V[2] = -1.0
-        println(M * V)
+        val MV = M * V
+        println(MV)
+        assert(MV[0] == 0.0)
+        assert(MV[1] == 6.0)
+        assert(MV[2] == -1.0)
     }
 
 //    @Test
