@@ -1,15 +1,9 @@
 % !TEX root = ABMCMC.tex
 \section{Related Research}\label{sec:background}
 
-\paragraph{Intro to DA}
+\paragraph{Intro to DA \& ABM}
 
-\todo[inline]{Do we need a paragraph to very briefly explain how DA works? Basically predict, update, and the posterior}
-
-\paragraph{Sampling}
-
-\todo[inline]{What are there other approaches designed to allow efficient sampling from the posterior? Why are they not appropriate for ABMs?} 
-
-\paragraph{DA \& ABM}
+Data assimilation (DA) is a technique that has been widely used in the physical sciences -- such as meteorology~\cite{kalnay_atmospheric_2003}, oceanography~\cite{bertino_sequential_2003} and the earth sciences more broadly~\cite{reichle_data_2008} -- as a means of optimising a model state in real time as new observations are drawn from the target system. This approach differs from typical calibration approaches that search for a single set of optimal model parameter values because even a well-calibrated model of a complex system will diverge from reality~\cite{ward_dynamic_2016}. Instead, DA algorithms attempt to constrain the model's \textit{continued evolution} to observations of the real world~\cite{evans_uncertainty_2012}. 
 
 `Live' (i.e. real-time) agent-based modelling could be transformative for many problems~\cite{swarup_live_2020}. It is unsurprising, therefore, that in recent years a literature on the application of traditional data assimilation (DA) methods to agent-based models (ABMs) has begun to emerge. Although there are a reasonable number of examples of dynamic calibration, where model parameters are re-calibrated based on new data, the specific applications of DA to ABMs are much rarer. Examples of data assimilation using well known DA methods -- such as Particle Filters and variants of the Kalman Filter -- applied to ABMs include modelling:
 crime~\cite{lloyd_exploring_2016};
@@ -17,12 +11,15 @@ bus routes~\cite{kieu_dealing_2020};
 pedestrian dynamics~\cite{wang_data_2015, ward_dynamic_2016, clay_realtime_2020, malleson_simulating_2020};
 and population movement~\cite{lueck_who_2019}. 
 
-However, the use of standard DA techniques to ABMs faces a significant challenge. DA algorithms were designed for use in modelling physical systems~\cite{lewis_dynamic_2006}, such as the climate or bodies of water, that are largely driven by partial differential equations. In the short term, models are unlikely to diverge far from the real system, so success has been found with ensemble DA methods that rely on being able to generate plausible model trajectories that support the posterior. With these models it is relatively unlikely that a model trajectory would need to be discarded.
-This is not the case with agent-based models, however, where the chance that a single model trajectory might plausibly have created some real-world observations is often 0; in many cases a single decision made by an agent might render the entire trajectory implausible. Hence the application of traditional DA algorithms will result in large numbers of `wasted' model runs that create implausible trajectories that are subsequently refuted by the data. 
-
-\todo[inline]{Need any more? What might an argumentative reviewer complain about?}
+However, the use of standard DA techniques to ABMs faces a significant challenge. DA algorithms typically consist of \textit{predict} and \textit{update} steps. In the predict step, a model of the system is simulated forwards to create a prior estimate of the current system state. In the update step, observations from the real system are incorporated to create a posterior estimate. By combining model estimates with observational data, ``all the available information''~\cite{talagrand_use_1991} can be used, so the posterior estimate should be a more accurate reflection of the current \textit{true} state than the model predictions or observations in isolation. However, estimating the posterior distribution in the context of agent-based modelling is extremely challenging. 
+DA algorithms were designed for use in modelling physical systems~\cite{lewis_dynamic_2006} that are largely driven by partial differential equations. In the short term, models are unlikely to diverge far from the real system, so success has been found with ensemble DA methods that rely on being able to generate plausible model trajectories that support the posterior. With these models it is relatively unlikely that a model trajectory would need to be discarded (even \textit{unlikely} trajectories might be plausible).
+This is not the case with agent-based models, where the chance that a single model trajectory might plausibly have created some real-world observations is often 0; in many cases a single decision made by an agent might render the entire trajectory implausible. Hence the application of traditional DA algorithms will result in large numbers of `wasted' model runs that create implausible trajectories that are subsequently refuted by the data. Therefore, rather than relying on traditional ensemble DA methods, a new approach is needed to efficiently generate agent-based model samples in order to estimate the posterior. 
 
 % Could go into detail about specific methods but probably not necessary.  E.g. Rules out: rejection sampling (because so many will be rejected), MCMC with Gaussian (because again most proposals will be 0 probability); particle filtering (because particles will end up with 0 probability); Kalman Filters (Gaussian assumption not accuate for ABMs).
+
+\paragraph{Sampling}
+
+\todo[inline]{What are there other approaches designed to allow efficient sampling from the posterior? Why are they not appropriate for ABMs?} 
 
 
 \paragraph{Simplex algorithm}
