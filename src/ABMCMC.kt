@@ -67,7 +67,7 @@ class ABMCMC<AGENT : Agent<AGENT>, ACT : Ordered<ACT>> {
             return logP
         } else {
             // TODO: Test for dealing with fractional states
-            return X.nonZeroEntries.values.sumByDouble { it.toDouble() * -2.4 } // -2.4 = average logprob per event
+            return X.nonZeroEntries.values.sumByDouble { it.toDouble() * -2.2 } // constant = average logprob per event
 
         }
     }

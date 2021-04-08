@@ -109,7 +109,7 @@ open class GridMapSimplex<T>(constraints: List<MutableConstraint<T>>, objective:
                 .asVector()
         }
     ) {
-        println(B)
+//        println(B)
         assert(isPrimalFeasible())
     }
 

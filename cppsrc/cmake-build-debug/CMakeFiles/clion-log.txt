@@ -1,0 +1,4 @@
+/home/daniel/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/202.8194.17/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=/usr/bin/clang++-11 -G "CodeBlocks - Unix Makefiles" /home/daniel/CLionProjects/glpkTest
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/daniel/CLionProjects/glpkTest/cmake-build-debug

@@ -1,0 +1,948 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="glpkTest"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="clang"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/daniel/CLionProjects/glpkTest/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/daniel/CLionProjects/glpkTest/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/daniel/CLionProjects/glpkTest/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="glpkTest">
+				<Option output="/home/daniel/CLionProjects/glpkTest/cmake-build-debug/glpkTest" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/daniel/CLionProjects/glpkTest/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="clang"/>
+				<Compiler>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/amd"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/api"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/bflib"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/colamd"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/draft"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/env"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/intopt"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/minisat"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/misc"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/mpl"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/npp"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/proxy"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/simplex"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/zlib"/>
+					<Add directory="/usr/bin/../lib/gcc/x86_64-linux-gnu/7.5.0/../../../../include/c++/7.5.0"/>
+					<Add directory="/usr/bin/../lib/gcc/x86_64-linux-gnu/7.5.0/../../../../include/x86_64-linux-gnu/c++/7.5.0"/>
+					<Add directory="/usr/bin/../lib/gcc/x86_64-linux-gnu/7.5.0/../../../../include/c++/7.5.0/backward"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/llvm-11/lib/clang/11.1.0/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 glpkTest"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="glpkTest/fast">
+				<Option output="/home/daniel/CLionProjects/glpkTest/cmake-build-debug/glpkTest" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/daniel/CLionProjects/glpkTest/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="clang"/>
+				<Compiler>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/amd"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/api"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/bflib"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/colamd"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/draft"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/env"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/intopt"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/minisat"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/misc"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/mpl"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/npp"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/proxy"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/simplex"/>
+					<Add directory="/home/daniel/CLionProjects/glpkTest/glpk/zlib"/>
+					<Add directory="/usr/bin/../lib/gcc/x86_64-linux-gnu/7.5.0/../../../../include/c++/7.5.0"/>
+					<Add directory="/usr/bin/../lib/gcc/x86_64-linux-gnu/7.5.0/../../../../include/x86_64-linux-gnu/c++/7.5.0"/>
+					<Add directory="/usr/bin/../lib/gcc/x86_64-linux-gnu/7.5.0/../../../../include/c++/7.5.0/backward"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/llvm-11/lib/clang/11.1.0/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 glpkTest/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/daniel/CLionProjects/glpkTest/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/MyClass.cpp">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/MyClass.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/amd/amd.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/amd/amd_1.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/amd/amd_2.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/amd/amd_aat.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/amd/amd_control.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/amd/amd_defaults.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/amd/amd_dump.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/amd/amd_info.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/amd/amd_internal.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/amd/amd_order.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/amd/amd_post_tree.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/amd/amd_postorder.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/amd/amd_preprocess.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/amd/amd_valid.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/advbas.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/asnhall.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/asnlp.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/asnokalg.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/ckasn.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/ckcnf.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/cplex.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/cpp.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/cpxbas.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/graph.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/gridgen.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/intfeas1.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/maxffalg.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/maxflp.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/mcflp.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/mcfokalg.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/mcfrelax.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/minisat1.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/mpl.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/mps.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/netgen.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/npp.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/pript.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/prmip.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/prob.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/prob1.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/prob2.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/prob3.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/prob4.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/prob5.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/prrngs.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/prsol.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/rdasn.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/rdcc.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/rdcnf.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/rdipt.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/rdmaxf.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/rdmcf.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/rdmip.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/rdprob.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/rdsol.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/rmfgen.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/strong.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/topsort.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/wcliqex.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/weak.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/wrasn.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/wrcc.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/wrcnf.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/wript.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/wrmaxf.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/wrmcf.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/wrmip.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/wrprob.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/api/wrsol.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/btf.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/btf.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/btfint.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/btfint.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/fhv.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/fhv.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/fhvint.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/fhvint.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/ifu.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/ifu.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/luf.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/luf.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/lufint.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/lufint.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/scf.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/scf.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/scfint.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/scfint.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/sgf.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/sgf.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/sva.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/bflib/sva.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/colamd/colamd.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/colamd/colamd.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/bfd.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/bfd.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/bfx.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/bfx.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/draft.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpapi06.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpapi07.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpapi08.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpapi09.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpapi10.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpapi12.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpapi13.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpios01.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpios02.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpios03.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpios07.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpios09.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpios11.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpios12.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpipm.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpipm.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpmat.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpmat.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpscl.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpssx.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpssx01.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/glpssx02.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/ios.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/lux.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/draft/lux.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/env/alloc.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/env/dlsup.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/env/env.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/env/env.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/env/error.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/env/stdc.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/env/stdc.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/env/stdout.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/env/stream.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/env/time.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/env/tls.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/intopt/cfg.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/intopt/cfg.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/intopt/cfg1.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/intopt/cfg2.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/intopt/clqcut.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/intopt/covgen.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/intopt/fpump.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/intopt/gmicut.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/intopt/gmigen.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/intopt/mirgen.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/intopt/spv.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/intopt/spv.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/minisat/minisat.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/minisat/minisat.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/avl.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/avl.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/bignum.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/bignum.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/dimacs.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/dimacs.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/dmp.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/dmp.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/ffalg.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/ffalg.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/fp2rat.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/fvs.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/fvs.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/gcd.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/hbm.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/hbm.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/jd.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/jd.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/keller.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/keller.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/ks.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/ks.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/mc13d.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/mc13d.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/mc21a.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/mc21a.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/misc.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/mt1.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/mt1.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/mygmp.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/mygmp.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/okalg.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/okalg.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/qmd.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/qmd.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/relax4.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/relax4.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/rgr.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/rgr.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/rng.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/rng.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/rng1.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/round2n.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/spm.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/spm.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/str2int.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/str2num.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/strspx.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/strtrim.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/triang.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/triang.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/wclique.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/wclique.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/wclique1.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/misc/wclique1.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/mpl/mpl.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/mpl/mpl1.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/mpl/mpl2.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/mpl/mpl3.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/mpl/mpl4.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/mpl/mpl5.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/mpl/mpl6.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/mpl/mplsql.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/mpl/mplsql.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/npp/npp.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/npp/npp1.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/npp/npp2.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/npp/npp3.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/npp/npp4.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/npp/npp5.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/npp/npp6.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/proxy/proxy.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/proxy/proxy.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/proxy/proxy1.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/simplex.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spxat.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spxat.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spxchuzc.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spxchuzc.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spxchuzr.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spxchuzr.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spxlp.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spxlp.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spxnt.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spxnt.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spxprim.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spxprob.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spxprob.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spychuzc.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spychuzc.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spychuzr.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spychuzr.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/simplex/spydual.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/adler32.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/compress.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/crc32.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/crc32.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/deflate.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/deflate.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/gzclose.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/gzguts.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/gzlib.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/gzread.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/gzwrite.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/inffast.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/inffast.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/inffixed.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/inflate.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/inflate.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/inftrees.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/inftrees.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/trees.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/trees.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/uncompr.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/zconf.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/zio.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/zio.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/zlib.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/zutil.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/zlib/zutil.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpkExtensions.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpkExtensions.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/main.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/test/MyTestClass.c">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/test/MyTestClass.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
