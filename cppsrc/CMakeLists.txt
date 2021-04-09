@@ -11,8 +11,4 @@ file(GLOB GLPK_SOURCES
         glpk/*/*.h
         glpk/*/*.c)
 
-file(GLOB TEST_SOURCES
-        test/*.c
-        test/*.h)
-
-add_executable(glpkTest main.c MyClass.cpp MyClass.h ${GLPK_SOURCES} ${TEST_SOURCES} glpkExtensions.c glpkExtensions.h)
+add_executable(glpkTest main.cpp ${GLPK_SOURCES} glpkExtensions.c glpkExtensions.h GlpProb.cpp GlpProb.h SparseVec.cpp SparseVec.h)

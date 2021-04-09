@@ -1512,10 +1512,17 @@ CMakeFiles/glpkTest.dir/glpkExtensions.c.o
  ../glpk/simplex/spxprob.h
  /home/daniel/CLionProjects/glpkTest/glpkExtensions.c
  /home/daniel/CLionProjects/glpkTest/glpkExtensions.h
-CMakeFiles/glpkTest.dir/main.c.o
+CMakeFiles/glpkTest.dir/GlpProb.cpp.o
+ ../glpk/glpk.h
+ /home/daniel/CLionProjects/glpkTest/GlpProb.cpp
+ /home/daniel/CLionProjects/glpkTest/GlpProb.h
+ /home/daniel/CLionProjects/glpkTest/SparseVec.h
+CMakeFiles/glpkTest.dir/SparseVec.cpp.o
+ /home/daniel/CLionProjects/glpkTest/SparseVec.cpp
+ /home/daniel/CLionProjects/glpkTest/SparseVec.h
+CMakeFiles/glpkTest.dir/main.cpp.o
  ../glpk/api/prob.h
  ../glpk/draft/bfd.h
- ../glpk/env/env.h
  ../glpk/env/stdc.h
  ../glpk/glpk.h
  ../glpk/misc/avl.h
@@ -1523,11 +1530,7 @@ CMakeFiles/glpkTest.dir/main.c.o
  ../glpk/misc/fvs.h
  ../glpk/simplex/spxlp.h
  ../glpk/simplex/spxprob.h
+ /home/daniel/CLionProjects/glpkTest/GlpProb.h
+ /home/daniel/CLionProjects/glpkTest/SparseVec.h
  /home/daniel/CLionProjects/glpkTest/glpkExtensions.h
- /home/daniel/CLionProjects/glpkTest/main.c
-CMakeFiles/glpkTest.dir/test/MyTestClass.c.o
- /home/daniel/CLionProjects/glpkTest/test/MyTestClass.c
- /home/daniel/CLionProjects/glpkTest/test/MyTestClass.h
-CMakeFiles/glpkTest.dir/MyClass.cpp.o
- /home/daniel/CLionProjects/glpkTest/MyClass.cpp
- /home/daniel/CLionProjects/glpkTest/MyClass.h
+ /home/daniel/CLionProjects/glpkTest/main.cpp

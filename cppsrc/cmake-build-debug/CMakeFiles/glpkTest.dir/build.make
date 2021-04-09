@@ -77,35 +77,22 @@ include CMakeFiles/glpkTest.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/glpkTest.dir/flags.make
 
-CMakeFiles/glpkTest.dir/main.c.o: CMakeFiles/glpkTest.dir/flags.make
-CMakeFiles/glpkTest.dir/main.c.o: ../main.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/glpkTest.dir/main.c.o"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/main.c.o   -c /home/daniel/CLionProjects/glpkTest/main.c
+CMakeFiles/glpkTest.dir/main.cpp.o: CMakeFiles/glpkTest.dir/flags.make
+CMakeFiles/glpkTest.dir/main.cpp.o: ../main.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/glpkTest.dir/main.cpp.o"
+	/usr/bin/clang++-11  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/glpkTest.dir/main.cpp.o -c /home/daniel/CLionProjects/glpkTest/main.cpp
 
-CMakeFiles/glpkTest.dir/main.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/glpkTest.dir/main.c.i"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/daniel/CLionProjects/glpkTest/main.c > CMakeFiles/glpkTest.dir/main.c.i
+CMakeFiles/glpkTest.dir/main.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/glpkTest.dir/main.cpp.i"
+	/usr/bin/clang++-11 $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/daniel/CLionProjects/glpkTest/main.cpp > CMakeFiles/glpkTest.dir/main.cpp.i
 
-CMakeFiles/glpkTest.dir/main.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/glpkTest.dir/main.c.s"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/daniel/CLionProjects/glpkTest/main.c -o CMakeFiles/glpkTest.dir/main.c.s
-
-CMakeFiles/glpkTest.dir/MyClass.cpp.o: CMakeFiles/glpkTest.dir/flags.make
-CMakeFiles/glpkTest.dir/MyClass.cpp.o: ../MyClass.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/glpkTest.dir/MyClass.cpp.o"
-	/usr/bin/clang++-11  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/glpkTest.dir/MyClass.cpp.o -c /home/daniel/CLionProjects/glpkTest/MyClass.cpp
-
-CMakeFiles/glpkTest.dir/MyClass.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/glpkTest.dir/MyClass.cpp.i"
-	/usr/bin/clang++-11 $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/daniel/CLionProjects/glpkTest/MyClass.cpp > CMakeFiles/glpkTest.dir/MyClass.cpp.i
-
-CMakeFiles/glpkTest.dir/MyClass.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/glpkTest.dir/MyClass.cpp.s"
-	/usr/bin/clang++-11 $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/daniel/CLionProjects/glpkTest/MyClass.cpp -o CMakeFiles/glpkTest.dir/MyClass.cpp.s
+CMakeFiles/glpkTest.dir/main.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/glpkTest.dir/main.cpp.s"
+	/usr/bin/clang++-11 $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/daniel/CLionProjects/glpkTest/main.cpp -o CMakeFiles/glpkTest.dir/main.cpp.s
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_1.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/amd/amd_1.c.o: ../glpk/amd/amd_1.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_1.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_1.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/amd/amd_1.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/amd/amd_1.c
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_1.c.i: cmake_force
@@ -118,7 +105,7 @@ CMakeFiles/glpkTest.dir/glpk/amd/amd_1.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_2.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/amd/amd_2.c.o: ../glpk/amd/amd_2.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_2.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_2.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/amd/amd_2.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/amd/amd_2.c
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_2.c.i: cmake_force
@@ -131,7 +118,7 @@ CMakeFiles/glpkTest.dir/glpk/amd/amd_2.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_aat.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/amd/amd_aat.c.o: ../glpk/amd/amd_aat.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_aat.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_aat.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/amd/amd_aat.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/amd/amd_aat.c
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_aat.c.i: cmake_force
@@ -144,7 +131,7 @@ CMakeFiles/glpkTest.dir/glpk/amd/amd_aat.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_control.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/amd/amd_control.c.o: ../glpk/amd/amd_control.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_control.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_control.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/amd/amd_control.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/amd/amd_control.c
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_control.c.i: cmake_force
@@ -157,7 +144,7 @@ CMakeFiles/glpkTest.dir/glpk/amd/amd_control.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_defaults.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/amd/amd_defaults.c.o: ../glpk/amd/amd_defaults.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_defaults.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_defaults.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/amd/amd_defaults.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/amd/amd_defaults.c
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_defaults.c.i: cmake_force
@@ -170,7 +157,7 @@ CMakeFiles/glpkTest.dir/glpk/amd/amd_defaults.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_dump.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/amd/amd_dump.c.o: ../glpk/amd/amd_dump.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_dump.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_dump.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/amd/amd_dump.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/amd/amd_dump.c
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_dump.c.i: cmake_force
@@ -183,7 +170,7 @@ CMakeFiles/glpkTest.dir/glpk/amd/amd_dump.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_info.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/amd/amd_info.c.o: ../glpk/amd/amd_info.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_info.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_info.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/amd/amd_info.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/amd/amd_info.c
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_info.c.i: cmake_force
@@ -196,7 +183,7 @@ CMakeFiles/glpkTest.dir/glpk/amd/amd_info.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_order.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/amd/amd_order.c.o: ../glpk/amd/amd_order.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_order.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_order.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/amd/amd_order.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/amd/amd_order.c
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_order.c.i: cmake_force
@@ -209,7 +196,7 @@ CMakeFiles/glpkTest.dir/glpk/amd/amd_order.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_post_tree.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/amd/amd_post_tree.c.o: ../glpk/amd/amd_post_tree.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_post_tree.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_post_tree.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/amd/amd_post_tree.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/amd/amd_post_tree.c
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_post_tree.c.i: cmake_force
@@ -222,7 +209,7 @@ CMakeFiles/glpkTest.dir/glpk/amd/amd_post_tree.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_postorder.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/amd/amd_postorder.c.o: ../glpk/amd/amd_postorder.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_postorder.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_postorder.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/amd/amd_postorder.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/amd/amd_postorder.c
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_postorder.c.i: cmake_force
@@ -235,7 +222,7 @@ CMakeFiles/glpkTest.dir/glpk/amd/amd_postorder.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_preprocess.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/amd/amd_preprocess.c.o: ../glpk/amd/amd_preprocess.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_preprocess.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_preprocess.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/amd/amd_preprocess.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/amd/amd_preprocess.c
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_preprocess.c.i: cmake_force
@@ -248,7 +235,7 @@ CMakeFiles/glpkTest.dir/glpk/amd/amd_preprocess.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_valid.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/amd/amd_valid.c.o: ../glpk/amd/amd_valid.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_valid.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building C object CMakeFiles/glpkTest.dir/glpk/amd/amd_valid.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/amd/amd_valid.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/amd/amd_valid.c
 
 CMakeFiles/glpkTest.dir/glpk/amd/amd_valid.c.i: cmake_force
@@ -261,7 +248,7 @@ CMakeFiles/glpkTest.dir/glpk/amd/amd_valid.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/advbas.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/advbas.c.o: ../glpk/api/advbas.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building C object CMakeFiles/glpkTest.dir/glpk/api/advbas.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building C object CMakeFiles/glpkTest.dir/glpk/api/advbas.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/advbas.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/advbas.c
 
 CMakeFiles/glpkTest.dir/glpk/api/advbas.c.i: cmake_force
@@ -274,7 +261,7 @@ CMakeFiles/glpkTest.dir/glpk/api/advbas.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/asnhall.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/asnhall.c.o: ../glpk/api/asnhall.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building C object CMakeFiles/glpkTest.dir/glpk/api/asnhall.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building C object CMakeFiles/glpkTest.dir/glpk/api/asnhall.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/asnhall.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/asnhall.c
 
 CMakeFiles/glpkTest.dir/glpk/api/asnhall.c.i: cmake_force
@@ -287,7 +274,7 @@ CMakeFiles/glpkTest.dir/glpk/api/asnhall.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/asnlp.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/asnlp.c.o: ../glpk/api/asnlp.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building C object CMakeFiles/glpkTest.dir/glpk/api/asnlp.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building C object CMakeFiles/glpkTest.dir/glpk/api/asnlp.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/asnlp.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/asnlp.c
 
 CMakeFiles/glpkTest.dir/glpk/api/asnlp.c.i: cmake_force
@@ -300,7 +287,7 @@ CMakeFiles/glpkTest.dir/glpk/api/asnlp.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/asnokalg.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/asnokalg.c.o: ../glpk/api/asnokalg.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building C object CMakeFiles/glpkTest.dir/glpk/api/asnokalg.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building C object CMakeFiles/glpkTest.dir/glpk/api/asnokalg.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/asnokalg.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/asnokalg.c
 
 CMakeFiles/glpkTest.dir/glpk/api/asnokalg.c.i: cmake_force
@@ -313,7 +300,7 @@ CMakeFiles/glpkTest.dir/glpk/api/asnokalg.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/ckasn.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/ckasn.c.o: ../glpk/api/ckasn.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building C object CMakeFiles/glpkTest.dir/glpk/api/ckasn.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building C object CMakeFiles/glpkTest.dir/glpk/api/ckasn.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/ckasn.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/ckasn.c
 
 CMakeFiles/glpkTest.dir/glpk/api/ckasn.c.i: cmake_force
@@ -326,7 +313,7 @@ CMakeFiles/glpkTest.dir/glpk/api/ckasn.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/ckcnf.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/ckcnf.c.o: ../glpk/api/ckcnf.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building C object CMakeFiles/glpkTest.dir/glpk/api/ckcnf.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building C object CMakeFiles/glpkTest.dir/glpk/api/ckcnf.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/ckcnf.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/ckcnf.c
 
 CMakeFiles/glpkTest.dir/glpk/api/ckcnf.c.i: cmake_force
@@ -339,7 +326,7 @@ CMakeFiles/glpkTest.dir/glpk/api/ckcnf.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/cplex.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/cplex.c.o: ../glpk/api/cplex.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building C object CMakeFiles/glpkTest.dir/glpk/api/cplex.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building C object CMakeFiles/glpkTest.dir/glpk/api/cplex.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/cplex.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/cplex.c
 
 CMakeFiles/glpkTest.dir/glpk/api/cplex.c.i: cmake_force
@@ -352,7 +339,7 @@ CMakeFiles/glpkTest.dir/glpk/api/cplex.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/cpp.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/cpp.c.o: ../glpk/api/cpp.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building C object CMakeFiles/glpkTest.dir/glpk/api/cpp.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building C object CMakeFiles/glpkTest.dir/glpk/api/cpp.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/cpp.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/cpp.c
 
 CMakeFiles/glpkTest.dir/glpk/api/cpp.c.i: cmake_force
@@ -365,7 +352,7 @@ CMakeFiles/glpkTest.dir/glpk/api/cpp.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/cpxbas.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/cpxbas.c.o: ../glpk/api/cpxbas.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building C object CMakeFiles/glpkTest.dir/glpk/api/cpxbas.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building C object CMakeFiles/glpkTest.dir/glpk/api/cpxbas.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/cpxbas.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/cpxbas.c
 
 CMakeFiles/glpkTest.dir/glpk/api/cpxbas.c.i: cmake_force
@@ -378,7 +365,7 @@ CMakeFiles/glpkTest.dir/glpk/api/cpxbas.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/graph.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/graph.c.o: ../glpk/api/graph.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building C object CMakeFiles/glpkTest.dir/glpk/api/graph.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building C object CMakeFiles/glpkTest.dir/glpk/api/graph.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/graph.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/graph.c
 
 CMakeFiles/glpkTest.dir/glpk/api/graph.c.i: cmake_force
@@ -391,7 +378,7 @@ CMakeFiles/glpkTest.dir/glpk/api/graph.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/gridgen.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/gridgen.c.o: ../glpk/api/gridgen.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building C object CMakeFiles/glpkTest.dir/glpk/api/gridgen.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building C object CMakeFiles/glpkTest.dir/glpk/api/gridgen.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/gridgen.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/gridgen.c
 
 CMakeFiles/glpkTest.dir/glpk/api/gridgen.c.i: cmake_force
@@ -404,7 +391,7 @@ CMakeFiles/glpkTest.dir/glpk/api/gridgen.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/intfeas1.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/intfeas1.c.o: ../glpk/api/intfeas1.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building C object CMakeFiles/glpkTest.dir/glpk/api/intfeas1.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building C object CMakeFiles/glpkTest.dir/glpk/api/intfeas1.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/intfeas1.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/intfeas1.c
 
 CMakeFiles/glpkTest.dir/glpk/api/intfeas1.c.i: cmake_force
@@ -417,7 +404,7 @@ CMakeFiles/glpkTest.dir/glpk/api/intfeas1.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/maxffalg.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/maxffalg.c.o: ../glpk/api/maxffalg.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building C object CMakeFiles/glpkTest.dir/glpk/api/maxffalg.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building C object CMakeFiles/glpkTest.dir/glpk/api/maxffalg.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/maxffalg.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/maxffalg.c
 
 CMakeFiles/glpkTest.dir/glpk/api/maxffalg.c.i: cmake_force
@@ -430,7 +417,7 @@ CMakeFiles/glpkTest.dir/glpk/api/maxffalg.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/maxflp.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/maxflp.c.o: ../glpk/api/maxflp.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building C object CMakeFiles/glpkTest.dir/glpk/api/maxflp.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building C object CMakeFiles/glpkTest.dir/glpk/api/maxflp.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/maxflp.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/maxflp.c
 
 CMakeFiles/glpkTest.dir/glpk/api/maxflp.c.i: cmake_force
@@ -443,7 +430,7 @@ CMakeFiles/glpkTest.dir/glpk/api/maxflp.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/mcflp.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/mcflp.c.o: ../glpk/api/mcflp.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building C object CMakeFiles/glpkTest.dir/glpk/api/mcflp.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building C object CMakeFiles/glpkTest.dir/glpk/api/mcflp.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/mcflp.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/mcflp.c
 
 CMakeFiles/glpkTest.dir/glpk/api/mcflp.c.i: cmake_force
@@ -456,7 +443,7 @@ CMakeFiles/glpkTest.dir/glpk/api/mcflp.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/mcfokalg.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/mcfokalg.c.o: ../glpk/api/mcfokalg.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building C object CMakeFiles/glpkTest.dir/glpk/api/mcfokalg.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building C object CMakeFiles/glpkTest.dir/glpk/api/mcfokalg.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/mcfokalg.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/mcfokalg.c
 
 CMakeFiles/glpkTest.dir/glpk/api/mcfokalg.c.i: cmake_force
@@ -469,7 +456,7 @@ CMakeFiles/glpkTest.dir/glpk/api/mcfokalg.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/mcfrelax.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/mcfrelax.c.o: ../glpk/api/mcfrelax.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building C object CMakeFiles/glpkTest.dir/glpk/api/mcfrelax.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building C object CMakeFiles/glpkTest.dir/glpk/api/mcfrelax.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/mcfrelax.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/mcfrelax.c
 
 CMakeFiles/glpkTest.dir/glpk/api/mcfrelax.c.i: cmake_force
@@ -482,7 +469,7 @@ CMakeFiles/glpkTest.dir/glpk/api/mcfrelax.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/minisat1.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/minisat1.c.o: ../glpk/api/minisat1.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building C object CMakeFiles/glpkTest.dir/glpk/api/minisat1.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building C object CMakeFiles/glpkTest.dir/glpk/api/minisat1.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/minisat1.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/minisat1.c
 
 CMakeFiles/glpkTest.dir/glpk/api/minisat1.c.i: cmake_force
@@ -495,7 +482,7 @@ CMakeFiles/glpkTest.dir/glpk/api/minisat1.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/mpl.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/mpl.c.o: ../glpk/api/mpl.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Building C object CMakeFiles/glpkTest.dir/glpk/api/mpl.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building C object CMakeFiles/glpkTest.dir/glpk/api/mpl.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/mpl.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/mpl.c
 
 CMakeFiles/glpkTest.dir/glpk/api/mpl.c.i: cmake_force
@@ -508,7 +495,7 @@ CMakeFiles/glpkTest.dir/glpk/api/mpl.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/mps.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/mps.c.o: ../glpk/api/mps.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Building C object CMakeFiles/glpkTest.dir/glpk/api/mps.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Building C object CMakeFiles/glpkTest.dir/glpk/api/mps.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/mps.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/mps.c
 
 CMakeFiles/glpkTest.dir/glpk/api/mps.c.i: cmake_force
@@ -521,7 +508,7 @@ CMakeFiles/glpkTest.dir/glpk/api/mps.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/netgen.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/netgen.c.o: ../glpk/api/netgen.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Building C object CMakeFiles/glpkTest.dir/glpk/api/netgen.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Building C object CMakeFiles/glpkTest.dir/glpk/api/netgen.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/netgen.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/netgen.c
 
 CMakeFiles/glpkTest.dir/glpk/api/netgen.c.i: cmake_force
@@ -534,7 +521,7 @@ CMakeFiles/glpkTest.dir/glpk/api/netgen.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/npp.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/npp.c.o: ../glpk/api/npp.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Building C object CMakeFiles/glpkTest.dir/glpk/api/npp.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Building C object CMakeFiles/glpkTest.dir/glpk/api/npp.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/npp.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/npp.c
 
 CMakeFiles/glpkTest.dir/glpk/api/npp.c.i: cmake_force
@@ -547,7 +534,7 @@ CMakeFiles/glpkTest.dir/glpk/api/npp.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/pript.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/pript.c.o: ../glpk/api/pript.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Building C object CMakeFiles/glpkTest.dir/glpk/api/pript.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Building C object CMakeFiles/glpkTest.dir/glpk/api/pript.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/pript.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/pript.c
 
 CMakeFiles/glpkTest.dir/glpk/api/pript.c.i: cmake_force
@@ -560,7 +547,7 @@ CMakeFiles/glpkTest.dir/glpk/api/pript.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/prmip.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/prmip.c.o: ../glpk/api/prmip.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Building C object CMakeFiles/glpkTest.dir/glpk/api/prmip.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Building C object CMakeFiles/glpkTest.dir/glpk/api/prmip.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/prmip.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/prmip.c
 
 CMakeFiles/glpkTest.dir/glpk/api/prmip.c.i: cmake_force
@@ -573,7 +560,7 @@ CMakeFiles/glpkTest.dir/glpk/api/prmip.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/prob1.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/prob1.c.o: ../glpk/api/prob1.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_39) "Building C object CMakeFiles/glpkTest.dir/glpk/api/prob1.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Building C object CMakeFiles/glpkTest.dir/glpk/api/prob1.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/prob1.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/prob1.c
 
 CMakeFiles/glpkTest.dir/glpk/api/prob1.c.i: cmake_force
@@ -586,7 +573,7 @@ CMakeFiles/glpkTest.dir/glpk/api/prob1.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/prob2.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/prob2.c.o: ../glpk/api/prob2.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_40) "Building C object CMakeFiles/glpkTest.dir/glpk/api/prob2.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_39) "Building C object CMakeFiles/glpkTest.dir/glpk/api/prob2.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/prob2.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/prob2.c
 
 CMakeFiles/glpkTest.dir/glpk/api/prob2.c.i: cmake_force
@@ -599,7 +586,7 @@ CMakeFiles/glpkTest.dir/glpk/api/prob2.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/prob3.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/prob3.c.o: ../glpk/api/prob3.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_41) "Building C object CMakeFiles/glpkTest.dir/glpk/api/prob3.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_40) "Building C object CMakeFiles/glpkTest.dir/glpk/api/prob3.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/prob3.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/prob3.c
 
 CMakeFiles/glpkTest.dir/glpk/api/prob3.c.i: cmake_force
@@ -612,7 +599,7 @@ CMakeFiles/glpkTest.dir/glpk/api/prob3.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/prob4.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/prob4.c.o: ../glpk/api/prob4.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_42) "Building C object CMakeFiles/glpkTest.dir/glpk/api/prob4.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_41) "Building C object CMakeFiles/glpkTest.dir/glpk/api/prob4.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/prob4.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/prob4.c
 
 CMakeFiles/glpkTest.dir/glpk/api/prob4.c.i: cmake_force
@@ -625,7 +612,7 @@ CMakeFiles/glpkTest.dir/glpk/api/prob4.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/prob5.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/prob5.c.o: ../glpk/api/prob5.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_43) "Building C object CMakeFiles/glpkTest.dir/glpk/api/prob5.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_42) "Building C object CMakeFiles/glpkTest.dir/glpk/api/prob5.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/prob5.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/prob5.c
 
 CMakeFiles/glpkTest.dir/glpk/api/prob5.c.i: cmake_force
@@ -638,7 +625,7 @@ CMakeFiles/glpkTest.dir/glpk/api/prob5.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/prrngs.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/prrngs.c.o: ../glpk/api/prrngs.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_44) "Building C object CMakeFiles/glpkTest.dir/glpk/api/prrngs.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_43) "Building C object CMakeFiles/glpkTest.dir/glpk/api/prrngs.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/prrngs.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/prrngs.c
 
 CMakeFiles/glpkTest.dir/glpk/api/prrngs.c.i: cmake_force
@@ -651,7 +638,7 @@ CMakeFiles/glpkTest.dir/glpk/api/prrngs.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/prsol.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/prsol.c.o: ../glpk/api/prsol.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_45) "Building C object CMakeFiles/glpkTest.dir/glpk/api/prsol.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_44) "Building C object CMakeFiles/glpkTest.dir/glpk/api/prsol.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/prsol.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/prsol.c
 
 CMakeFiles/glpkTest.dir/glpk/api/prsol.c.i: cmake_force
@@ -664,7 +651,7 @@ CMakeFiles/glpkTest.dir/glpk/api/prsol.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/rdasn.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/rdasn.c.o: ../glpk/api/rdasn.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_46) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdasn.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_45) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdasn.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/rdasn.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/rdasn.c
 
 CMakeFiles/glpkTest.dir/glpk/api/rdasn.c.i: cmake_force
@@ -677,7 +664,7 @@ CMakeFiles/glpkTest.dir/glpk/api/rdasn.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/rdcc.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/rdcc.c.o: ../glpk/api/rdcc.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_47) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdcc.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_46) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdcc.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/rdcc.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/rdcc.c
 
 CMakeFiles/glpkTest.dir/glpk/api/rdcc.c.i: cmake_force
@@ -690,7 +677,7 @@ CMakeFiles/glpkTest.dir/glpk/api/rdcc.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/rdcnf.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/rdcnf.c.o: ../glpk/api/rdcnf.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_48) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdcnf.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_47) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdcnf.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/rdcnf.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/rdcnf.c
 
 CMakeFiles/glpkTest.dir/glpk/api/rdcnf.c.i: cmake_force
@@ -703,7 +690,7 @@ CMakeFiles/glpkTest.dir/glpk/api/rdcnf.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/rdipt.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/rdipt.c.o: ../glpk/api/rdipt.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_49) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdipt.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_48) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdipt.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/rdipt.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/rdipt.c
 
 CMakeFiles/glpkTest.dir/glpk/api/rdipt.c.i: cmake_force
@@ -716,7 +703,7 @@ CMakeFiles/glpkTest.dir/glpk/api/rdipt.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/rdmaxf.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/rdmaxf.c.o: ../glpk/api/rdmaxf.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_50) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdmaxf.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_49) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdmaxf.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/rdmaxf.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/rdmaxf.c
 
 CMakeFiles/glpkTest.dir/glpk/api/rdmaxf.c.i: cmake_force
@@ -729,7 +716,7 @@ CMakeFiles/glpkTest.dir/glpk/api/rdmaxf.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/rdmcf.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/rdmcf.c.o: ../glpk/api/rdmcf.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_51) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdmcf.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_50) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdmcf.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/rdmcf.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/rdmcf.c
 
 CMakeFiles/glpkTest.dir/glpk/api/rdmcf.c.i: cmake_force
@@ -742,7 +729,7 @@ CMakeFiles/glpkTest.dir/glpk/api/rdmcf.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/rdmip.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/rdmip.c.o: ../glpk/api/rdmip.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_52) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdmip.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_51) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdmip.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/rdmip.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/rdmip.c
 
 CMakeFiles/glpkTest.dir/glpk/api/rdmip.c.i: cmake_force
@@ -755,7 +742,7 @@ CMakeFiles/glpkTest.dir/glpk/api/rdmip.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/rdprob.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/rdprob.c.o: ../glpk/api/rdprob.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_53) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdprob.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_52) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdprob.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/rdprob.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/rdprob.c
 
 CMakeFiles/glpkTest.dir/glpk/api/rdprob.c.i: cmake_force
@@ -768,7 +755,7 @@ CMakeFiles/glpkTest.dir/glpk/api/rdprob.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/rdsol.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/rdsol.c.o: ../glpk/api/rdsol.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_54) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdsol.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_53) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rdsol.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/rdsol.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/rdsol.c
 
 CMakeFiles/glpkTest.dir/glpk/api/rdsol.c.i: cmake_force
@@ -781,7 +768,7 @@ CMakeFiles/glpkTest.dir/glpk/api/rdsol.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/rmfgen.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/rmfgen.c.o: ../glpk/api/rmfgen.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_55) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rmfgen.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_54) "Building C object CMakeFiles/glpkTest.dir/glpk/api/rmfgen.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/rmfgen.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/rmfgen.c
 
 CMakeFiles/glpkTest.dir/glpk/api/rmfgen.c.i: cmake_force
@@ -794,7 +781,7 @@ CMakeFiles/glpkTest.dir/glpk/api/rmfgen.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/strong.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/strong.c.o: ../glpk/api/strong.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_56) "Building C object CMakeFiles/glpkTest.dir/glpk/api/strong.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_55) "Building C object CMakeFiles/glpkTest.dir/glpk/api/strong.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/strong.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/strong.c
 
 CMakeFiles/glpkTest.dir/glpk/api/strong.c.i: cmake_force
@@ -807,7 +794,7 @@ CMakeFiles/glpkTest.dir/glpk/api/strong.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/topsort.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/topsort.c.o: ../glpk/api/topsort.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_57) "Building C object CMakeFiles/glpkTest.dir/glpk/api/topsort.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_56) "Building C object CMakeFiles/glpkTest.dir/glpk/api/topsort.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/topsort.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/topsort.c
 
 CMakeFiles/glpkTest.dir/glpk/api/topsort.c.i: cmake_force
@@ -820,7 +807,7 @@ CMakeFiles/glpkTest.dir/glpk/api/topsort.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/wcliqex.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/wcliqex.c.o: ../glpk/api/wcliqex.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_58) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wcliqex.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_57) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wcliqex.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/wcliqex.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/wcliqex.c
 
 CMakeFiles/glpkTest.dir/glpk/api/wcliqex.c.i: cmake_force
@@ -833,7 +820,7 @@ CMakeFiles/glpkTest.dir/glpk/api/wcliqex.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/weak.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/weak.c.o: ../glpk/api/weak.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_59) "Building C object CMakeFiles/glpkTest.dir/glpk/api/weak.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_58) "Building C object CMakeFiles/glpkTest.dir/glpk/api/weak.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/weak.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/weak.c
 
 CMakeFiles/glpkTest.dir/glpk/api/weak.c.i: cmake_force
@@ -846,7 +833,7 @@ CMakeFiles/glpkTest.dir/glpk/api/weak.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/wrasn.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/wrasn.c.o: ../glpk/api/wrasn.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_60) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wrasn.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_59) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wrasn.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/wrasn.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/wrasn.c
 
 CMakeFiles/glpkTest.dir/glpk/api/wrasn.c.i: cmake_force
@@ -859,7 +846,7 @@ CMakeFiles/glpkTest.dir/glpk/api/wrasn.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/wrcc.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/wrcc.c.o: ../glpk/api/wrcc.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_61) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wrcc.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_60) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wrcc.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/wrcc.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/wrcc.c
 
 CMakeFiles/glpkTest.dir/glpk/api/wrcc.c.i: cmake_force
@@ -872,7 +859,7 @@ CMakeFiles/glpkTest.dir/glpk/api/wrcc.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/wrcnf.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/wrcnf.c.o: ../glpk/api/wrcnf.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_62) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wrcnf.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_61) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wrcnf.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/wrcnf.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/wrcnf.c
 
 CMakeFiles/glpkTest.dir/glpk/api/wrcnf.c.i: cmake_force
@@ -885,7 +872,7 @@ CMakeFiles/glpkTest.dir/glpk/api/wrcnf.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/wript.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/wript.c.o: ../glpk/api/wript.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_63) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wript.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_62) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wript.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/wript.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/wript.c
 
 CMakeFiles/glpkTest.dir/glpk/api/wript.c.i: cmake_force
@@ -898,7 +885,7 @@ CMakeFiles/glpkTest.dir/glpk/api/wript.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/wrmaxf.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/wrmaxf.c.o: ../glpk/api/wrmaxf.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_64) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wrmaxf.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_63) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wrmaxf.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/wrmaxf.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/wrmaxf.c
 
 CMakeFiles/glpkTest.dir/glpk/api/wrmaxf.c.i: cmake_force
@@ -911,7 +898,7 @@ CMakeFiles/glpkTest.dir/glpk/api/wrmaxf.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/wrmcf.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/wrmcf.c.o: ../glpk/api/wrmcf.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_65) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wrmcf.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_64) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wrmcf.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/wrmcf.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/wrmcf.c
 
 CMakeFiles/glpkTest.dir/glpk/api/wrmcf.c.i: cmake_force
@@ -924,7 +911,7 @@ CMakeFiles/glpkTest.dir/glpk/api/wrmcf.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/wrmip.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/wrmip.c.o: ../glpk/api/wrmip.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_66) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wrmip.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_65) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wrmip.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/wrmip.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/wrmip.c
 
 CMakeFiles/glpkTest.dir/glpk/api/wrmip.c.i: cmake_force
@@ -937,7 +924,7 @@ CMakeFiles/glpkTest.dir/glpk/api/wrmip.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/wrprob.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/wrprob.c.o: ../glpk/api/wrprob.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_67) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wrprob.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_66) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wrprob.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/wrprob.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/wrprob.c
 
 CMakeFiles/glpkTest.dir/glpk/api/wrprob.c.i: cmake_force
@@ -950,7 +937,7 @@ CMakeFiles/glpkTest.dir/glpk/api/wrprob.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/api/wrsol.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/api/wrsol.c.o: ../glpk/api/wrsol.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_68) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wrsol.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_67) "Building C object CMakeFiles/glpkTest.dir/glpk/api/wrsol.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/api/wrsol.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/api/wrsol.c
 
 CMakeFiles/glpkTest.dir/glpk/api/wrsol.c.i: cmake_force
@@ -963,7 +950,7 @@ CMakeFiles/glpkTest.dir/glpk/api/wrsol.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/bflib/btf.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/bflib/btf.c.o: ../glpk/bflib/btf.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_69) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/btf.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_68) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/btf.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/bflib/btf.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/bflib/btf.c
 
 CMakeFiles/glpkTest.dir/glpk/bflib/btf.c.i: cmake_force
@@ -976,7 +963,7 @@ CMakeFiles/glpkTest.dir/glpk/bflib/btf.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/bflib/btfint.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/bflib/btfint.c.o: ../glpk/bflib/btfint.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_70) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/btfint.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_69) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/btfint.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/bflib/btfint.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/bflib/btfint.c
 
 CMakeFiles/glpkTest.dir/glpk/bflib/btfint.c.i: cmake_force
@@ -989,7 +976,7 @@ CMakeFiles/glpkTest.dir/glpk/bflib/btfint.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/bflib/fhv.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/bflib/fhv.c.o: ../glpk/bflib/fhv.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_71) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/fhv.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_70) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/fhv.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/bflib/fhv.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/bflib/fhv.c
 
 CMakeFiles/glpkTest.dir/glpk/bflib/fhv.c.i: cmake_force
@@ -1002,7 +989,7 @@ CMakeFiles/glpkTest.dir/glpk/bflib/fhv.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/bflib/fhvint.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/bflib/fhvint.c.o: ../glpk/bflib/fhvint.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_72) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/fhvint.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_71) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/fhvint.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/bflib/fhvint.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/bflib/fhvint.c
 
 CMakeFiles/glpkTest.dir/glpk/bflib/fhvint.c.i: cmake_force
@@ -1015,7 +1002,7 @@ CMakeFiles/glpkTest.dir/glpk/bflib/fhvint.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/bflib/ifu.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/bflib/ifu.c.o: ../glpk/bflib/ifu.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_73) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/ifu.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_72) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/ifu.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/bflib/ifu.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/bflib/ifu.c
 
 CMakeFiles/glpkTest.dir/glpk/bflib/ifu.c.i: cmake_force
@@ -1028,7 +1015,7 @@ CMakeFiles/glpkTest.dir/glpk/bflib/ifu.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/bflib/luf.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/bflib/luf.c.o: ../glpk/bflib/luf.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_74) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/luf.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_73) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/luf.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/bflib/luf.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/bflib/luf.c
 
 CMakeFiles/glpkTest.dir/glpk/bflib/luf.c.i: cmake_force
@@ -1041,7 +1028,7 @@ CMakeFiles/glpkTest.dir/glpk/bflib/luf.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/bflib/lufint.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/bflib/lufint.c.o: ../glpk/bflib/lufint.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_75) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/lufint.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_74) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/lufint.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/bflib/lufint.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/bflib/lufint.c
 
 CMakeFiles/glpkTest.dir/glpk/bflib/lufint.c.i: cmake_force
@@ -1054,7 +1041,7 @@ CMakeFiles/glpkTest.dir/glpk/bflib/lufint.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/bflib/scf.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/bflib/scf.c.o: ../glpk/bflib/scf.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_76) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/scf.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_75) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/scf.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/bflib/scf.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/bflib/scf.c
 
 CMakeFiles/glpkTest.dir/glpk/bflib/scf.c.i: cmake_force
@@ -1067,7 +1054,7 @@ CMakeFiles/glpkTest.dir/glpk/bflib/scf.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/bflib/scfint.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/bflib/scfint.c.o: ../glpk/bflib/scfint.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_77) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/scfint.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_76) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/scfint.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/bflib/scfint.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/bflib/scfint.c
 
 CMakeFiles/glpkTest.dir/glpk/bflib/scfint.c.i: cmake_force
@@ -1080,7 +1067,7 @@ CMakeFiles/glpkTest.dir/glpk/bflib/scfint.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/bflib/sgf.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/bflib/sgf.c.o: ../glpk/bflib/sgf.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_78) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/sgf.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_77) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/sgf.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/bflib/sgf.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/bflib/sgf.c
 
 CMakeFiles/glpkTest.dir/glpk/bflib/sgf.c.i: cmake_force
@@ -1093,7 +1080,7 @@ CMakeFiles/glpkTest.dir/glpk/bflib/sgf.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/bflib/sva.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/bflib/sva.c.o: ../glpk/bflib/sva.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_79) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/sva.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_78) "Building C object CMakeFiles/glpkTest.dir/glpk/bflib/sva.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/bflib/sva.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/bflib/sva.c
 
 CMakeFiles/glpkTest.dir/glpk/bflib/sva.c.i: cmake_force
@@ -1106,7 +1093,7 @@ CMakeFiles/glpkTest.dir/glpk/bflib/sva.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/colamd/colamd.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/colamd/colamd.c.o: ../glpk/colamd/colamd.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_80) "Building C object CMakeFiles/glpkTest.dir/glpk/colamd/colamd.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_79) "Building C object CMakeFiles/glpkTest.dir/glpk/colamd/colamd.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/colamd/colamd.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/colamd/colamd.c
 
 CMakeFiles/glpkTest.dir/glpk/colamd/colamd.c.i: cmake_force
@@ -1119,7 +1106,7 @@ CMakeFiles/glpkTest.dir/glpk/colamd/colamd.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/bfd.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/bfd.c.o: ../glpk/draft/bfd.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_81) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/bfd.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_80) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/bfd.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/bfd.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/bfd.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/bfd.c.i: cmake_force
@@ -1132,7 +1119,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/bfd.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/bfx.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/bfx.c.o: ../glpk/draft/bfx.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_82) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/bfx.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_81) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/bfx.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/bfx.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/bfx.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/bfx.c.i: cmake_force
@@ -1145,7 +1132,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/bfx.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi06.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi06.c.o: ../glpk/draft/glpapi06.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_83) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpapi06.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_82) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpapi06.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpapi06.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpapi06.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi06.c.i: cmake_force
@@ -1158,7 +1145,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpapi06.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi07.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi07.c.o: ../glpk/draft/glpapi07.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_84) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpapi07.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_83) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpapi07.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpapi07.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpapi07.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi07.c.i: cmake_force
@@ -1171,7 +1158,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpapi07.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi08.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi08.c.o: ../glpk/draft/glpapi08.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_85) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpapi08.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_84) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpapi08.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpapi08.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpapi08.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi08.c.i: cmake_force
@@ -1184,7 +1171,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpapi08.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi09.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi09.c.o: ../glpk/draft/glpapi09.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_86) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpapi09.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_85) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpapi09.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpapi09.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpapi09.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi09.c.i: cmake_force
@@ -1197,7 +1184,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpapi09.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi10.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi10.c.o: ../glpk/draft/glpapi10.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_87) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpapi10.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_86) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpapi10.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpapi10.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpapi10.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi10.c.i: cmake_force
@@ -1210,7 +1197,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpapi10.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi12.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi12.c.o: ../glpk/draft/glpapi12.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_88) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpapi12.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_87) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpapi12.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpapi12.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpapi12.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi12.c.i: cmake_force
@@ -1223,7 +1210,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpapi12.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi13.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi13.c.o: ../glpk/draft/glpapi13.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_89) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpapi13.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_88) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpapi13.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpapi13.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpapi13.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpapi13.c.i: cmake_force
@@ -1236,7 +1223,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpapi13.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpios01.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpios01.c.o: ../glpk/draft/glpios01.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_90) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpios01.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_89) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpios01.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpios01.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpios01.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpios01.c.i: cmake_force
@@ -1249,7 +1236,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpios01.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpios02.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpios02.c.o: ../glpk/draft/glpios02.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_91) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpios02.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_90) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpios02.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpios02.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpios02.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpios02.c.i: cmake_force
@@ -1262,7 +1249,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpios02.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpios03.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpios03.c.o: ../glpk/draft/glpios03.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_92) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpios03.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_91) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpios03.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpios03.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpios03.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpios03.c.i: cmake_force
@@ -1275,7 +1262,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpios03.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpios07.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpios07.c.o: ../glpk/draft/glpios07.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_93) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpios07.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_92) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpios07.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpios07.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpios07.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpios07.c.i: cmake_force
@@ -1288,7 +1275,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpios07.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpios09.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpios09.c.o: ../glpk/draft/glpios09.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_94) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpios09.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_93) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpios09.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpios09.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpios09.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpios09.c.i: cmake_force
@@ -1301,7 +1288,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpios09.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpios11.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpios11.c.o: ../glpk/draft/glpios11.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_95) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpios11.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_94) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpios11.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpios11.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpios11.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpios11.c.i: cmake_force
@@ -1314,7 +1301,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpios11.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpios12.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpios12.c.o: ../glpk/draft/glpios12.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_96) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpios12.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_95) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpios12.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpios12.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpios12.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpios12.c.i: cmake_force
@@ -1327,7 +1314,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpios12.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpipm.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpipm.c.o: ../glpk/draft/glpipm.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_97) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpipm.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_96) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpipm.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpipm.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpipm.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpipm.c.i: cmake_force
@@ -1340,7 +1327,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpipm.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpmat.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpmat.c.o: ../glpk/draft/glpmat.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_98) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpmat.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_97) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpmat.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpmat.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpmat.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpmat.c.i: cmake_force
@@ -1353,7 +1340,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpmat.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpscl.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpscl.c.o: ../glpk/draft/glpscl.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_99) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpscl.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_98) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpscl.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpscl.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpscl.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpscl.c.i: cmake_force
@@ -1366,7 +1353,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpscl.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpssx01.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpssx01.c.o: ../glpk/draft/glpssx01.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_100) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpssx01.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_99) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpssx01.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpssx01.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpssx01.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpssx01.c.i: cmake_force
@@ -1379,7 +1366,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpssx01.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpssx02.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/glpssx02.c.o: ../glpk/draft/glpssx02.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_101) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpssx02.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_100) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/glpssx02.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/glpssx02.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/glpssx02.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/glpssx02.c.i: cmake_force
@@ -1392,7 +1379,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/glpssx02.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/draft/lux.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/draft/lux.c.o: ../glpk/draft/lux.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_102) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/lux.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_101) "Building C object CMakeFiles/glpkTest.dir/glpk/draft/lux.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/draft/lux.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/draft/lux.c
 
 CMakeFiles/glpkTest.dir/glpk/draft/lux.c.i: cmake_force
@@ -1405,7 +1392,7 @@ CMakeFiles/glpkTest.dir/glpk/draft/lux.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/env/alloc.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/env/alloc.c.o: ../glpk/env/alloc.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_103) "Building C object CMakeFiles/glpkTest.dir/glpk/env/alloc.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_102) "Building C object CMakeFiles/glpkTest.dir/glpk/env/alloc.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/env/alloc.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/env/alloc.c
 
 CMakeFiles/glpkTest.dir/glpk/env/alloc.c.i: cmake_force
@@ -1418,7 +1405,7 @@ CMakeFiles/glpkTest.dir/glpk/env/alloc.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/env/dlsup.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/env/dlsup.c.o: ../glpk/env/dlsup.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_104) "Building C object CMakeFiles/glpkTest.dir/glpk/env/dlsup.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_103) "Building C object CMakeFiles/glpkTest.dir/glpk/env/dlsup.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/env/dlsup.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/env/dlsup.c
 
 CMakeFiles/glpkTest.dir/glpk/env/dlsup.c.i: cmake_force
@@ -1431,7 +1418,7 @@ CMakeFiles/glpkTest.dir/glpk/env/dlsup.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/env/env.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/env/env.c.o: ../glpk/env/env.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_105) "Building C object CMakeFiles/glpkTest.dir/glpk/env/env.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_104) "Building C object CMakeFiles/glpkTest.dir/glpk/env/env.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/env/env.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/env/env.c
 
 CMakeFiles/glpkTest.dir/glpk/env/env.c.i: cmake_force
@@ -1444,7 +1431,7 @@ CMakeFiles/glpkTest.dir/glpk/env/env.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/env/error.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/env/error.c.o: ../glpk/env/error.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_106) "Building C object CMakeFiles/glpkTest.dir/glpk/env/error.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_105) "Building C object CMakeFiles/glpkTest.dir/glpk/env/error.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/env/error.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/env/error.c
 
 CMakeFiles/glpkTest.dir/glpk/env/error.c.i: cmake_force
@@ -1457,7 +1444,7 @@ CMakeFiles/glpkTest.dir/glpk/env/error.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/env/stdc.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/env/stdc.c.o: ../glpk/env/stdc.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_107) "Building C object CMakeFiles/glpkTest.dir/glpk/env/stdc.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_106) "Building C object CMakeFiles/glpkTest.dir/glpk/env/stdc.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/env/stdc.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/env/stdc.c
 
 CMakeFiles/glpkTest.dir/glpk/env/stdc.c.i: cmake_force
@@ -1470,7 +1457,7 @@ CMakeFiles/glpkTest.dir/glpk/env/stdc.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/env/stdout.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/env/stdout.c.o: ../glpk/env/stdout.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_108) "Building C object CMakeFiles/glpkTest.dir/glpk/env/stdout.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_107) "Building C object CMakeFiles/glpkTest.dir/glpk/env/stdout.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/env/stdout.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/env/stdout.c
 
 CMakeFiles/glpkTest.dir/glpk/env/stdout.c.i: cmake_force
@@ -1483,7 +1470,7 @@ CMakeFiles/glpkTest.dir/glpk/env/stdout.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/env/stream.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/env/stream.c.o: ../glpk/env/stream.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_109) "Building C object CMakeFiles/glpkTest.dir/glpk/env/stream.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_108) "Building C object CMakeFiles/glpkTest.dir/glpk/env/stream.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/env/stream.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/env/stream.c
 
 CMakeFiles/glpkTest.dir/glpk/env/stream.c.i: cmake_force
@@ -1496,7 +1483,7 @@ CMakeFiles/glpkTest.dir/glpk/env/stream.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/env/time.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/env/time.c.o: ../glpk/env/time.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_110) "Building C object CMakeFiles/glpkTest.dir/glpk/env/time.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_109) "Building C object CMakeFiles/glpkTest.dir/glpk/env/time.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/env/time.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/env/time.c
 
 CMakeFiles/glpkTest.dir/glpk/env/time.c.i: cmake_force
@@ -1509,7 +1496,7 @@ CMakeFiles/glpkTest.dir/glpk/env/time.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/env/tls.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/env/tls.c.o: ../glpk/env/tls.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_111) "Building C object CMakeFiles/glpkTest.dir/glpk/env/tls.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_110) "Building C object CMakeFiles/glpkTest.dir/glpk/env/tls.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/env/tls.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/env/tls.c
 
 CMakeFiles/glpkTest.dir/glpk/env/tls.c.i: cmake_force
@@ -1522,7 +1509,7 @@ CMakeFiles/glpkTest.dir/glpk/env/tls.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/intopt/cfg.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/intopt/cfg.c.o: ../glpk/intopt/cfg.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_112) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/cfg.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_111) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/cfg.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/intopt/cfg.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/intopt/cfg.c
 
 CMakeFiles/glpkTest.dir/glpk/intopt/cfg.c.i: cmake_force
@@ -1535,7 +1522,7 @@ CMakeFiles/glpkTest.dir/glpk/intopt/cfg.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/intopt/cfg1.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/intopt/cfg1.c.o: ../glpk/intopt/cfg1.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_113) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/cfg1.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_112) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/cfg1.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/intopt/cfg1.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/intopt/cfg1.c
 
 CMakeFiles/glpkTest.dir/glpk/intopt/cfg1.c.i: cmake_force
@@ -1548,7 +1535,7 @@ CMakeFiles/glpkTest.dir/glpk/intopt/cfg1.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/intopt/cfg2.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/intopt/cfg2.c.o: ../glpk/intopt/cfg2.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_114) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/cfg2.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_113) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/cfg2.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/intopt/cfg2.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/intopt/cfg2.c
 
 CMakeFiles/glpkTest.dir/glpk/intopt/cfg2.c.i: cmake_force
@@ -1561,7 +1548,7 @@ CMakeFiles/glpkTest.dir/glpk/intopt/cfg2.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/intopt/clqcut.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/intopt/clqcut.c.o: ../glpk/intopt/clqcut.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_115) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/clqcut.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_114) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/clqcut.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/intopt/clqcut.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/intopt/clqcut.c
 
 CMakeFiles/glpkTest.dir/glpk/intopt/clqcut.c.i: cmake_force
@@ -1574,7 +1561,7 @@ CMakeFiles/glpkTest.dir/glpk/intopt/clqcut.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/intopt/covgen.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/intopt/covgen.c.o: ../glpk/intopt/covgen.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_116) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/covgen.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_115) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/covgen.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/intopt/covgen.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/intopt/covgen.c
 
 CMakeFiles/glpkTest.dir/glpk/intopt/covgen.c.i: cmake_force
@@ -1587,7 +1574,7 @@ CMakeFiles/glpkTest.dir/glpk/intopt/covgen.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/intopt/fpump.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/intopt/fpump.c.o: ../glpk/intopt/fpump.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_117) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/fpump.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_116) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/fpump.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/intopt/fpump.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/intopt/fpump.c
 
 CMakeFiles/glpkTest.dir/glpk/intopt/fpump.c.i: cmake_force
@@ -1600,7 +1587,7 @@ CMakeFiles/glpkTest.dir/glpk/intopt/fpump.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/intopt/gmicut.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/intopt/gmicut.c.o: ../glpk/intopt/gmicut.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_118) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/gmicut.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_117) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/gmicut.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/intopt/gmicut.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/intopt/gmicut.c
 
 CMakeFiles/glpkTest.dir/glpk/intopt/gmicut.c.i: cmake_force
@@ -1613,7 +1600,7 @@ CMakeFiles/glpkTest.dir/glpk/intopt/gmicut.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/intopt/gmigen.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/intopt/gmigen.c.o: ../glpk/intopt/gmigen.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_119) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/gmigen.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_118) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/gmigen.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/intopt/gmigen.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/intopt/gmigen.c
 
 CMakeFiles/glpkTest.dir/glpk/intopt/gmigen.c.i: cmake_force
@@ -1626,7 +1613,7 @@ CMakeFiles/glpkTest.dir/glpk/intopt/gmigen.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/intopt/mirgen.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/intopt/mirgen.c.o: ../glpk/intopt/mirgen.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_120) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/mirgen.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_119) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/mirgen.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/intopt/mirgen.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/intopt/mirgen.c
 
 CMakeFiles/glpkTest.dir/glpk/intopt/mirgen.c.i: cmake_force
@@ -1639,7 +1626,7 @@ CMakeFiles/glpkTest.dir/glpk/intopt/mirgen.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/intopt/spv.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/intopt/spv.c.o: ../glpk/intopt/spv.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_121) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/spv.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_120) "Building C object CMakeFiles/glpkTest.dir/glpk/intopt/spv.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/intopt/spv.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/intopt/spv.c
 
 CMakeFiles/glpkTest.dir/glpk/intopt/spv.c.i: cmake_force
@@ -1652,7 +1639,7 @@ CMakeFiles/glpkTest.dir/glpk/intopt/spv.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/minisat/minisat.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/minisat/minisat.c.o: ../glpk/minisat/minisat.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_122) "Building C object CMakeFiles/glpkTest.dir/glpk/minisat/minisat.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_121) "Building C object CMakeFiles/glpkTest.dir/glpk/minisat/minisat.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/minisat/minisat.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/minisat/minisat.c
 
 CMakeFiles/glpkTest.dir/glpk/minisat/minisat.c.i: cmake_force
@@ -1665,7 +1652,7 @@ CMakeFiles/glpkTest.dir/glpk/minisat/minisat.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/avl.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/avl.c.o: ../glpk/misc/avl.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_123) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/avl.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_122) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/avl.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/avl.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/avl.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/avl.c.i: cmake_force
@@ -1678,7 +1665,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/avl.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/bignum.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/bignum.c.o: ../glpk/misc/bignum.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_124) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/bignum.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_123) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/bignum.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/bignum.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/bignum.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/bignum.c.i: cmake_force
@@ -1691,7 +1678,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/bignum.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/dimacs.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/dimacs.c.o: ../glpk/misc/dimacs.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_125) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/dimacs.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_124) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/dimacs.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/dimacs.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/dimacs.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/dimacs.c.i: cmake_force
@@ -1704,7 +1691,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/dimacs.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/dmp.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/dmp.c.o: ../glpk/misc/dmp.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_126) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/dmp.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_125) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/dmp.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/dmp.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/dmp.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/dmp.c.i: cmake_force
@@ -1717,7 +1704,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/dmp.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/ffalg.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/ffalg.c.o: ../glpk/misc/ffalg.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_127) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/ffalg.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_126) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/ffalg.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/ffalg.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/ffalg.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/ffalg.c.i: cmake_force
@@ -1730,7 +1717,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/ffalg.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/fp2rat.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/fp2rat.c.o: ../glpk/misc/fp2rat.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_128) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/fp2rat.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_127) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/fp2rat.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/fp2rat.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/fp2rat.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/fp2rat.c.i: cmake_force
@@ -1743,7 +1730,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/fp2rat.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/fvs.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/fvs.c.o: ../glpk/misc/fvs.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_129) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/fvs.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_128) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/fvs.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/fvs.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/fvs.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/fvs.c.i: cmake_force
@@ -1756,7 +1743,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/fvs.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/gcd.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/gcd.c.o: ../glpk/misc/gcd.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_130) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/gcd.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_129) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/gcd.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/gcd.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/gcd.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/gcd.c.i: cmake_force
@@ -1769,7 +1756,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/gcd.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/hbm.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/hbm.c.o: ../glpk/misc/hbm.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_131) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/hbm.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_130) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/hbm.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/hbm.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/hbm.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/hbm.c.i: cmake_force
@@ -1782,7 +1769,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/hbm.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/jd.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/jd.c.o: ../glpk/misc/jd.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_132) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/jd.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_131) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/jd.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/jd.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/jd.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/jd.c.i: cmake_force
@@ -1795,7 +1782,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/jd.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/keller.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/keller.c.o: ../glpk/misc/keller.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_133) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/keller.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_132) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/keller.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/keller.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/keller.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/keller.c.i: cmake_force
@@ -1808,7 +1795,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/keller.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/ks.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/ks.c.o: ../glpk/misc/ks.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_134) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/ks.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_133) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/ks.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/ks.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/ks.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/ks.c.i: cmake_force
@@ -1821,7 +1808,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/ks.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/mc13d.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/mc13d.c.o: ../glpk/misc/mc13d.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_135) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/mc13d.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_134) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/mc13d.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/mc13d.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/mc13d.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/mc13d.c.i: cmake_force
@@ -1834,7 +1821,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/mc13d.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/mc21a.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/mc21a.c.o: ../glpk/misc/mc21a.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_136) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/mc21a.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_135) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/mc21a.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/mc21a.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/mc21a.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/mc21a.c.i: cmake_force
@@ -1847,7 +1834,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/mc21a.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/mt1.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/mt1.c.o: ../glpk/misc/mt1.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_137) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/mt1.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_136) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/mt1.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/mt1.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/mt1.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/mt1.c.i: cmake_force
@@ -1860,7 +1847,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/mt1.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/mygmp.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/mygmp.c.o: ../glpk/misc/mygmp.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_138) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/mygmp.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_137) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/mygmp.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/mygmp.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/mygmp.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/mygmp.c.i: cmake_force
@@ -1873,7 +1860,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/mygmp.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/okalg.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/okalg.c.o: ../glpk/misc/okalg.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_139) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/okalg.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_138) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/okalg.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/okalg.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/okalg.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/okalg.c.i: cmake_force
@@ -1886,7 +1873,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/okalg.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/qmd.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/qmd.c.o: ../glpk/misc/qmd.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_140) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/qmd.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_139) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/qmd.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/qmd.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/qmd.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/qmd.c.i: cmake_force
@@ -1899,7 +1886,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/qmd.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/relax4.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/relax4.c.o: ../glpk/misc/relax4.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_141) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/relax4.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_140) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/relax4.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/relax4.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/relax4.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/relax4.c.i: cmake_force
@@ -1912,7 +1899,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/relax4.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/rgr.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/rgr.c.o: ../glpk/misc/rgr.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_142) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/rgr.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_141) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/rgr.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/rgr.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/rgr.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/rgr.c.i: cmake_force
@@ -1925,7 +1912,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/rgr.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/rng.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/rng.c.o: ../glpk/misc/rng.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_143) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/rng.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_142) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/rng.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/rng.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/rng.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/rng.c.i: cmake_force
@@ -1938,7 +1925,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/rng.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/rng1.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/rng1.c.o: ../glpk/misc/rng1.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_144) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/rng1.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_143) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/rng1.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/rng1.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/rng1.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/rng1.c.i: cmake_force
@@ -1951,7 +1938,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/rng1.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/round2n.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/round2n.c.o: ../glpk/misc/round2n.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_145) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/round2n.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_144) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/round2n.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/round2n.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/round2n.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/round2n.c.i: cmake_force
@@ -1964,7 +1951,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/round2n.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/spm.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/spm.c.o: ../glpk/misc/spm.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_146) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/spm.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_145) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/spm.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/spm.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/spm.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/spm.c.i: cmake_force
@@ -1977,7 +1964,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/spm.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/str2int.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/str2int.c.o: ../glpk/misc/str2int.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_147) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/str2int.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_146) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/str2int.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/str2int.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/str2int.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/str2int.c.i: cmake_force
@@ -1990,7 +1977,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/str2int.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/str2num.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/str2num.c.o: ../glpk/misc/str2num.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_148) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/str2num.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_147) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/str2num.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/str2num.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/str2num.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/str2num.c.i: cmake_force
@@ -2003,7 +1990,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/str2num.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/strspx.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/strspx.c.o: ../glpk/misc/strspx.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_149) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/strspx.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_148) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/strspx.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/strspx.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/strspx.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/strspx.c.i: cmake_force
@@ -2016,7 +2003,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/strspx.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/strtrim.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/strtrim.c.o: ../glpk/misc/strtrim.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_150) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/strtrim.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_149) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/strtrim.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/strtrim.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/strtrim.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/strtrim.c.i: cmake_force
@@ -2029,7 +2016,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/strtrim.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/triang.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/triang.c.o: ../glpk/misc/triang.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_151) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/triang.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_150) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/triang.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/triang.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/triang.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/triang.c.i: cmake_force
@@ -2042,7 +2029,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/triang.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/wclique.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/wclique.c.o: ../glpk/misc/wclique.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_152) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/wclique.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_151) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/wclique.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/wclique.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/wclique.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/wclique.c.i: cmake_force
@@ -2055,7 +2042,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/wclique.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/misc/wclique1.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/misc/wclique1.c.o: ../glpk/misc/wclique1.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_153) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/wclique1.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_152) "Building C object CMakeFiles/glpkTest.dir/glpk/misc/wclique1.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/misc/wclique1.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/misc/wclique1.c
 
 CMakeFiles/glpkTest.dir/glpk/misc/wclique1.c.i: cmake_force
@@ -2068,7 +2055,7 @@ CMakeFiles/glpkTest.dir/glpk/misc/wclique1.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl1.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl1.c.o: ../glpk/mpl/mpl1.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_154) "Building C object CMakeFiles/glpkTest.dir/glpk/mpl/mpl1.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_153) "Building C object CMakeFiles/glpkTest.dir/glpk/mpl/mpl1.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/mpl/mpl1.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/mpl/mpl1.c
 
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl1.c.i: cmake_force
@@ -2081,7 +2068,7 @@ CMakeFiles/glpkTest.dir/glpk/mpl/mpl1.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl2.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl2.c.o: ../glpk/mpl/mpl2.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_155) "Building C object CMakeFiles/glpkTest.dir/glpk/mpl/mpl2.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_154) "Building C object CMakeFiles/glpkTest.dir/glpk/mpl/mpl2.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/mpl/mpl2.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/mpl/mpl2.c
 
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl2.c.i: cmake_force
@@ -2094,7 +2081,7 @@ CMakeFiles/glpkTest.dir/glpk/mpl/mpl2.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl3.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl3.c.o: ../glpk/mpl/mpl3.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_156) "Building C object CMakeFiles/glpkTest.dir/glpk/mpl/mpl3.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_155) "Building C object CMakeFiles/glpkTest.dir/glpk/mpl/mpl3.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/mpl/mpl3.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/mpl/mpl3.c
 
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl3.c.i: cmake_force
@@ -2107,7 +2094,7 @@ CMakeFiles/glpkTest.dir/glpk/mpl/mpl3.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl4.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl4.c.o: ../glpk/mpl/mpl4.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_157) "Building C object CMakeFiles/glpkTest.dir/glpk/mpl/mpl4.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_156) "Building C object CMakeFiles/glpkTest.dir/glpk/mpl/mpl4.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/mpl/mpl4.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/mpl/mpl4.c
 
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl4.c.i: cmake_force
@@ -2120,7 +2107,7 @@ CMakeFiles/glpkTest.dir/glpk/mpl/mpl4.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl5.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl5.c.o: ../glpk/mpl/mpl5.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_158) "Building C object CMakeFiles/glpkTest.dir/glpk/mpl/mpl5.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_157) "Building C object CMakeFiles/glpkTest.dir/glpk/mpl/mpl5.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/mpl/mpl5.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/mpl/mpl5.c
 
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl5.c.i: cmake_force
@@ -2133,7 +2120,7 @@ CMakeFiles/glpkTest.dir/glpk/mpl/mpl5.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl6.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl6.c.o: ../glpk/mpl/mpl6.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_159) "Building C object CMakeFiles/glpkTest.dir/glpk/mpl/mpl6.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_158) "Building C object CMakeFiles/glpkTest.dir/glpk/mpl/mpl6.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/mpl/mpl6.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/mpl/mpl6.c
 
 CMakeFiles/glpkTest.dir/glpk/mpl/mpl6.c.i: cmake_force
@@ -2146,7 +2133,7 @@ CMakeFiles/glpkTest.dir/glpk/mpl/mpl6.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/mpl/mplsql.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/mpl/mplsql.c.o: ../glpk/mpl/mplsql.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_160) "Building C object CMakeFiles/glpkTest.dir/glpk/mpl/mplsql.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_159) "Building C object CMakeFiles/glpkTest.dir/glpk/mpl/mplsql.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/mpl/mplsql.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/mpl/mplsql.c
 
 CMakeFiles/glpkTest.dir/glpk/mpl/mplsql.c.i: cmake_force
@@ -2159,7 +2146,7 @@ CMakeFiles/glpkTest.dir/glpk/mpl/mplsql.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/npp/npp1.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/npp/npp1.c.o: ../glpk/npp/npp1.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_161) "Building C object CMakeFiles/glpkTest.dir/glpk/npp/npp1.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_160) "Building C object CMakeFiles/glpkTest.dir/glpk/npp/npp1.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/npp/npp1.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/npp/npp1.c
 
 CMakeFiles/glpkTest.dir/glpk/npp/npp1.c.i: cmake_force
@@ -2172,7 +2159,7 @@ CMakeFiles/glpkTest.dir/glpk/npp/npp1.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/npp/npp2.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/npp/npp2.c.o: ../glpk/npp/npp2.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_162) "Building C object CMakeFiles/glpkTest.dir/glpk/npp/npp2.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_161) "Building C object CMakeFiles/glpkTest.dir/glpk/npp/npp2.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/npp/npp2.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/npp/npp2.c
 
 CMakeFiles/glpkTest.dir/glpk/npp/npp2.c.i: cmake_force
@@ -2185,7 +2172,7 @@ CMakeFiles/glpkTest.dir/glpk/npp/npp2.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/npp/npp3.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/npp/npp3.c.o: ../glpk/npp/npp3.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_163) "Building C object CMakeFiles/glpkTest.dir/glpk/npp/npp3.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_162) "Building C object CMakeFiles/glpkTest.dir/glpk/npp/npp3.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/npp/npp3.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/npp/npp3.c
 
 CMakeFiles/glpkTest.dir/glpk/npp/npp3.c.i: cmake_force
@@ -2198,7 +2185,7 @@ CMakeFiles/glpkTest.dir/glpk/npp/npp3.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/npp/npp4.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/npp/npp4.c.o: ../glpk/npp/npp4.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_164) "Building C object CMakeFiles/glpkTest.dir/glpk/npp/npp4.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_163) "Building C object CMakeFiles/glpkTest.dir/glpk/npp/npp4.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/npp/npp4.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/npp/npp4.c
 
 CMakeFiles/glpkTest.dir/glpk/npp/npp4.c.i: cmake_force
@@ -2211,7 +2198,7 @@ CMakeFiles/glpkTest.dir/glpk/npp/npp4.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/npp/npp5.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/npp/npp5.c.o: ../glpk/npp/npp5.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_165) "Building C object CMakeFiles/glpkTest.dir/glpk/npp/npp5.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_164) "Building C object CMakeFiles/glpkTest.dir/glpk/npp/npp5.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/npp/npp5.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/npp/npp5.c
 
 CMakeFiles/glpkTest.dir/glpk/npp/npp5.c.i: cmake_force
@@ -2224,7 +2211,7 @@ CMakeFiles/glpkTest.dir/glpk/npp/npp5.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/npp/npp6.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/npp/npp6.c.o: ../glpk/npp/npp6.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_166) "Building C object CMakeFiles/glpkTest.dir/glpk/npp/npp6.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_165) "Building C object CMakeFiles/glpkTest.dir/glpk/npp/npp6.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/npp/npp6.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/npp/npp6.c
 
 CMakeFiles/glpkTest.dir/glpk/npp/npp6.c.i: cmake_force
@@ -2237,7 +2224,7 @@ CMakeFiles/glpkTest.dir/glpk/npp/npp6.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/proxy/proxy.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/proxy/proxy.c.o: ../glpk/proxy/proxy.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_167) "Building C object CMakeFiles/glpkTest.dir/glpk/proxy/proxy.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_166) "Building C object CMakeFiles/glpkTest.dir/glpk/proxy/proxy.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/proxy/proxy.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/proxy/proxy.c
 
 CMakeFiles/glpkTest.dir/glpk/proxy/proxy.c.i: cmake_force
@@ -2250,7 +2237,7 @@ CMakeFiles/glpkTest.dir/glpk/proxy/proxy.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/proxy/proxy1.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/proxy/proxy1.c.o: ../glpk/proxy/proxy1.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_168) "Building C object CMakeFiles/glpkTest.dir/glpk/proxy/proxy1.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_167) "Building C object CMakeFiles/glpkTest.dir/glpk/proxy/proxy1.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/proxy/proxy1.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/proxy/proxy1.c
 
 CMakeFiles/glpkTest.dir/glpk/proxy/proxy1.c.i: cmake_force
@@ -2263,7 +2250,7 @@ CMakeFiles/glpkTest.dir/glpk/proxy/proxy1.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spxat.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/simplex/spxat.c.o: ../glpk/simplex/spxat.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_169) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spxat.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_168) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spxat.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/simplex/spxat.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/simplex/spxat.c
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spxat.c.i: cmake_force
@@ -2276,7 +2263,7 @@ CMakeFiles/glpkTest.dir/glpk/simplex/spxat.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spxchuzc.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/simplex/spxchuzc.c.o: ../glpk/simplex/spxchuzc.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_170) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spxchuzc.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_169) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spxchuzc.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/simplex/spxchuzc.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/simplex/spxchuzc.c
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spxchuzc.c.i: cmake_force
@@ -2289,7 +2276,7 @@ CMakeFiles/glpkTest.dir/glpk/simplex/spxchuzc.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spxchuzr.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/simplex/spxchuzr.c.o: ../glpk/simplex/spxchuzr.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_171) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spxchuzr.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_170) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spxchuzr.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/simplex/spxchuzr.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/simplex/spxchuzr.c
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spxchuzr.c.i: cmake_force
@@ -2302,7 +2289,7 @@ CMakeFiles/glpkTest.dir/glpk/simplex/spxchuzr.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spxlp.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/simplex/spxlp.c.o: ../glpk/simplex/spxlp.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_172) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spxlp.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_171) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spxlp.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/simplex/spxlp.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/simplex/spxlp.c
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spxlp.c.i: cmake_force
@@ -2315,7 +2302,7 @@ CMakeFiles/glpkTest.dir/glpk/simplex/spxlp.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spxnt.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/simplex/spxnt.c.o: ../glpk/simplex/spxnt.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_173) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spxnt.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_172) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spxnt.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/simplex/spxnt.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/simplex/spxnt.c
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spxnt.c.i: cmake_force
@@ -2328,7 +2315,7 @@ CMakeFiles/glpkTest.dir/glpk/simplex/spxnt.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spxprim.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/simplex/spxprim.c.o: ../glpk/simplex/spxprim.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_174) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spxprim.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_173) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spxprim.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/simplex/spxprim.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/simplex/spxprim.c
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spxprim.c.i: cmake_force
@@ -2341,7 +2328,7 @@ CMakeFiles/glpkTest.dir/glpk/simplex/spxprim.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spxprob.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/simplex/spxprob.c.o: ../glpk/simplex/spxprob.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_175) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spxprob.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_174) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spxprob.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/simplex/spxprob.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/simplex/spxprob.c
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spxprob.c.i: cmake_force
@@ -2354,7 +2341,7 @@ CMakeFiles/glpkTest.dir/glpk/simplex/spxprob.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spychuzc.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/simplex/spychuzc.c.o: ../glpk/simplex/spychuzc.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_176) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spychuzc.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_175) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spychuzc.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/simplex/spychuzc.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/simplex/spychuzc.c
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spychuzc.c.i: cmake_force
@@ -2367,7 +2354,7 @@ CMakeFiles/glpkTest.dir/glpk/simplex/spychuzc.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spychuzr.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/simplex/spychuzr.c.o: ../glpk/simplex/spychuzr.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_177) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spychuzr.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_176) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spychuzr.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/simplex/spychuzr.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/simplex/spychuzr.c
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spychuzr.c.i: cmake_force
@@ -2380,7 +2367,7 @@ CMakeFiles/glpkTest.dir/glpk/simplex/spychuzr.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spydual.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/simplex/spydual.c.o: ../glpk/simplex/spydual.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_178) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spydual.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_177) "Building C object CMakeFiles/glpkTest.dir/glpk/simplex/spydual.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/simplex/spydual.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/simplex/spydual.c
 
 CMakeFiles/glpkTest.dir/glpk/simplex/spydual.c.i: cmake_force
@@ -2393,7 +2380,7 @@ CMakeFiles/glpkTest.dir/glpk/simplex/spydual.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/zlib/adler32.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/zlib/adler32.c.o: ../glpk/zlib/adler32.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_179) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/adler32.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_178) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/adler32.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/zlib/adler32.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/zlib/adler32.c
 
 CMakeFiles/glpkTest.dir/glpk/zlib/adler32.c.i: cmake_force
@@ -2406,7 +2393,7 @@ CMakeFiles/glpkTest.dir/glpk/zlib/adler32.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/zlib/compress.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/zlib/compress.c.o: ../glpk/zlib/compress.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_180) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/compress.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_179) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/compress.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/zlib/compress.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/zlib/compress.c
 
 CMakeFiles/glpkTest.dir/glpk/zlib/compress.c.i: cmake_force
@@ -2419,7 +2406,7 @@ CMakeFiles/glpkTest.dir/glpk/zlib/compress.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/zlib/crc32.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/zlib/crc32.c.o: ../glpk/zlib/crc32.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_181) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/crc32.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_180) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/crc32.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/zlib/crc32.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/zlib/crc32.c
 
 CMakeFiles/glpkTest.dir/glpk/zlib/crc32.c.i: cmake_force
@@ -2432,7 +2419,7 @@ CMakeFiles/glpkTest.dir/glpk/zlib/crc32.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/zlib/deflate.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/zlib/deflate.c.o: ../glpk/zlib/deflate.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_182) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/deflate.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_181) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/deflate.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/zlib/deflate.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/zlib/deflate.c
 
 CMakeFiles/glpkTest.dir/glpk/zlib/deflate.c.i: cmake_force
@@ -2445,7 +2432,7 @@ CMakeFiles/glpkTest.dir/glpk/zlib/deflate.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/zlib/gzclose.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/zlib/gzclose.c.o: ../glpk/zlib/gzclose.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_183) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/gzclose.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_182) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/gzclose.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/zlib/gzclose.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/zlib/gzclose.c
 
 CMakeFiles/glpkTest.dir/glpk/zlib/gzclose.c.i: cmake_force
@@ -2458,7 +2445,7 @@ CMakeFiles/glpkTest.dir/glpk/zlib/gzclose.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/zlib/gzlib.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/zlib/gzlib.c.o: ../glpk/zlib/gzlib.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_184) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/gzlib.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_183) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/gzlib.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/zlib/gzlib.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/zlib/gzlib.c
 
 CMakeFiles/glpkTest.dir/glpk/zlib/gzlib.c.i: cmake_force
@@ -2471,7 +2458,7 @@ CMakeFiles/glpkTest.dir/glpk/zlib/gzlib.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/zlib/gzread.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/zlib/gzread.c.o: ../glpk/zlib/gzread.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_185) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/gzread.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_184) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/gzread.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/zlib/gzread.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/zlib/gzread.c
 
 CMakeFiles/glpkTest.dir/glpk/zlib/gzread.c.i: cmake_force
@@ -2484,7 +2471,7 @@ CMakeFiles/glpkTest.dir/glpk/zlib/gzread.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/zlib/gzwrite.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/zlib/gzwrite.c.o: ../glpk/zlib/gzwrite.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_186) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/gzwrite.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_185) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/gzwrite.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/zlib/gzwrite.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/zlib/gzwrite.c
 
 CMakeFiles/glpkTest.dir/glpk/zlib/gzwrite.c.i: cmake_force
@@ -2497,7 +2484,7 @@ CMakeFiles/glpkTest.dir/glpk/zlib/gzwrite.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/zlib/inffast.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/zlib/inffast.c.o: ../glpk/zlib/inffast.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_187) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/inffast.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_186) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/inffast.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/zlib/inffast.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/zlib/inffast.c
 
 CMakeFiles/glpkTest.dir/glpk/zlib/inffast.c.i: cmake_force
@@ -2510,7 +2497,7 @@ CMakeFiles/glpkTest.dir/glpk/zlib/inffast.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/zlib/inflate.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/zlib/inflate.c.o: ../glpk/zlib/inflate.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_188) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/inflate.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_187) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/inflate.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/zlib/inflate.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/zlib/inflate.c
 
 CMakeFiles/glpkTest.dir/glpk/zlib/inflate.c.i: cmake_force
@@ -2523,7 +2510,7 @@ CMakeFiles/glpkTest.dir/glpk/zlib/inflate.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/zlib/inftrees.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/zlib/inftrees.c.o: ../glpk/zlib/inftrees.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_189) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/inftrees.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_188) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/inftrees.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/zlib/inftrees.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/zlib/inftrees.c
 
 CMakeFiles/glpkTest.dir/glpk/zlib/inftrees.c.i: cmake_force
@@ -2536,7 +2523,7 @@ CMakeFiles/glpkTest.dir/glpk/zlib/inftrees.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/zlib/trees.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/zlib/trees.c.o: ../glpk/zlib/trees.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_190) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/trees.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_189) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/trees.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/zlib/trees.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/zlib/trees.c
 
 CMakeFiles/glpkTest.dir/glpk/zlib/trees.c.i: cmake_force
@@ -2549,7 +2536,7 @@ CMakeFiles/glpkTest.dir/glpk/zlib/trees.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/zlib/uncompr.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/zlib/uncompr.c.o: ../glpk/zlib/uncompr.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_191) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/uncompr.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_190) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/uncompr.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/zlib/uncompr.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/zlib/uncompr.c
 
 CMakeFiles/glpkTest.dir/glpk/zlib/uncompr.c.i: cmake_force
@@ -2562,7 +2549,7 @@ CMakeFiles/glpkTest.dir/glpk/zlib/uncompr.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/zlib/zio.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/zlib/zio.c.o: ../glpk/zlib/zio.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_192) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/zio.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_191) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/zio.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/zlib/zio.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/zlib/zio.c
 
 CMakeFiles/glpkTest.dir/glpk/zlib/zio.c.i: cmake_force
@@ -2575,7 +2562,7 @@ CMakeFiles/glpkTest.dir/glpk/zlib/zio.c.s: cmake_force
 
 CMakeFiles/glpkTest.dir/glpk/zlib/zutil.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpk/zlib/zutil.c.o: ../glpk/zlib/zutil.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_193) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/zutil.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_192) "Building C object CMakeFiles/glpkTest.dir/glpk/zlib/zutil.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpk/zlib/zutil.c.o   -c /home/daniel/CLionProjects/glpkTest/glpk/zlib/zutil.c
 
 CMakeFiles/glpkTest.dir/glpk/zlib/zutil.c.i: cmake_force
@@ -2586,22 +2573,9 @@ CMakeFiles/glpkTest.dir/glpk/zlib/zutil.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/glpkTest.dir/glpk/zlib/zutil.c.s"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/daniel/CLionProjects/glpkTest/glpk/zlib/zutil.c -o CMakeFiles/glpkTest.dir/glpk/zlib/zutil.c.s
 
-CMakeFiles/glpkTest.dir/test/MyTestClass.c.o: CMakeFiles/glpkTest.dir/flags.make
-CMakeFiles/glpkTest.dir/test/MyTestClass.c.o: ../test/MyTestClass.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_194) "Building C object CMakeFiles/glpkTest.dir/test/MyTestClass.c.o"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/test/MyTestClass.c.o   -c /home/daniel/CLionProjects/glpkTest/test/MyTestClass.c
-
-CMakeFiles/glpkTest.dir/test/MyTestClass.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/glpkTest.dir/test/MyTestClass.c.i"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/daniel/CLionProjects/glpkTest/test/MyTestClass.c > CMakeFiles/glpkTest.dir/test/MyTestClass.c.i
-
-CMakeFiles/glpkTest.dir/test/MyTestClass.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/glpkTest.dir/test/MyTestClass.c.s"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/daniel/CLionProjects/glpkTest/test/MyTestClass.c -o CMakeFiles/glpkTest.dir/test/MyTestClass.c.s
-
 CMakeFiles/glpkTest.dir/glpkExtensions.c.o: CMakeFiles/glpkTest.dir/flags.make
 CMakeFiles/glpkTest.dir/glpkExtensions.c.o: ../glpkExtensions.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_195) "Building C object CMakeFiles/glpkTest.dir/glpkExtensions.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_193) "Building C object CMakeFiles/glpkTest.dir/glpkExtensions.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/glpkTest.dir/glpkExtensions.c.o   -c /home/daniel/CLionProjects/glpkTest/glpkExtensions.c
 
 CMakeFiles/glpkTest.dir/glpkExtensions.c.i: cmake_force
@@ -2612,10 +2586,35 @@ CMakeFiles/glpkTest.dir/glpkExtensions.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/glpkTest.dir/glpkExtensions.c.s"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/daniel/CLionProjects/glpkTest/glpkExtensions.c -o CMakeFiles/glpkTest.dir/glpkExtensions.c.s
 
+CMakeFiles/glpkTest.dir/GlpProb.cpp.o: CMakeFiles/glpkTest.dir/flags.make
+CMakeFiles/glpkTest.dir/GlpProb.cpp.o: ../GlpProb.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_194) "Building CXX object CMakeFiles/glpkTest.dir/GlpProb.cpp.o"
+	/usr/bin/clang++-11  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/glpkTest.dir/GlpProb.cpp.o -c /home/daniel/CLionProjects/glpkTest/GlpProb.cpp
+
+CMakeFiles/glpkTest.dir/GlpProb.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/glpkTest.dir/GlpProb.cpp.i"
+	/usr/bin/clang++-11 $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/daniel/CLionProjects/glpkTest/GlpProb.cpp > CMakeFiles/glpkTest.dir/GlpProb.cpp.i
+
+CMakeFiles/glpkTest.dir/GlpProb.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/glpkTest.dir/GlpProb.cpp.s"
+	/usr/bin/clang++-11 $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/daniel/CLionProjects/glpkTest/GlpProb.cpp -o CMakeFiles/glpkTest.dir/GlpProb.cpp.s
+
+CMakeFiles/glpkTest.dir/SparseVec.cpp.o: CMakeFiles/glpkTest.dir/flags.make
+CMakeFiles/glpkTest.dir/SparseVec.cpp.o: ../SparseVec.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_195) "Building CXX object CMakeFiles/glpkTest.dir/SparseVec.cpp.o"
+	/usr/bin/clang++-11  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/glpkTest.dir/SparseVec.cpp.o -c /home/daniel/CLionProjects/glpkTest/SparseVec.cpp
+
+CMakeFiles/glpkTest.dir/SparseVec.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/glpkTest.dir/SparseVec.cpp.i"
+	/usr/bin/clang++-11 $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/daniel/CLionProjects/glpkTest/SparseVec.cpp > CMakeFiles/glpkTest.dir/SparseVec.cpp.i
+
+CMakeFiles/glpkTest.dir/SparseVec.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/glpkTest.dir/SparseVec.cpp.s"
+	/usr/bin/clang++-11 $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/daniel/CLionProjects/glpkTest/SparseVec.cpp -o CMakeFiles/glpkTest.dir/SparseVec.cpp.s
+
 # Object files for target glpkTest
 glpkTest_OBJECTS = \
-"CMakeFiles/glpkTest.dir/main.c.o" \
-"CMakeFiles/glpkTest.dir/MyClass.cpp.o" \
+"CMakeFiles/glpkTest.dir/main.cpp.o" \
 "CMakeFiles/glpkTest.dir/glpk/amd/amd_1.c.o" \
 "CMakeFiles/glpkTest.dir/glpk/amd/amd_2.c.o" \
 "CMakeFiles/glpkTest.dir/glpk/amd/amd_aat.c.o" \
@@ -2807,14 +2806,14 @@ glpkTest_OBJECTS = \
 "CMakeFiles/glpkTest.dir/glpk/zlib/uncompr.c.o" \
 "CMakeFiles/glpkTest.dir/glpk/zlib/zio.c.o" \
 "CMakeFiles/glpkTest.dir/glpk/zlib/zutil.c.o" \
-"CMakeFiles/glpkTest.dir/test/MyTestClass.c.o" \
-"CMakeFiles/glpkTest.dir/glpkExtensions.c.o"
+"CMakeFiles/glpkTest.dir/glpkExtensions.c.o" \
+"CMakeFiles/glpkTest.dir/GlpProb.cpp.o" \
+"CMakeFiles/glpkTest.dir/SparseVec.cpp.o"
 
 # External object files for target glpkTest
 glpkTest_EXTERNAL_OBJECTS =
 
-glpkTest: CMakeFiles/glpkTest.dir/main.c.o
-glpkTest: CMakeFiles/glpkTest.dir/MyClass.cpp.o
+glpkTest: CMakeFiles/glpkTest.dir/main.cpp.o
 glpkTest: CMakeFiles/glpkTest.dir/glpk/amd/amd_1.c.o
 glpkTest: CMakeFiles/glpkTest.dir/glpk/amd/amd_2.c.o
 glpkTest: CMakeFiles/glpkTest.dir/glpk/amd/amd_aat.c.o
@@ -3006,8 +3005,9 @@ glpkTest: CMakeFiles/glpkTest.dir/glpk/zlib/trees.c.o
 glpkTest: CMakeFiles/glpkTest.dir/glpk/zlib/uncompr.c.o
 glpkTest: CMakeFiles/glpkTest.dir/glpk/zlib/zio.c.o
 glpkTest: CMakeFiles/glpkTest.dir/glpk/zlib/zutil.c.o
-glpkTest: CMakeFiles/glpkTest.dir/test/MyTestClass.c.o
 glpkTest: CMakeFiles/glpkTest.dir/glpkExtensions.c.o
+glpkTest: CMakeFiles/glpkTest.dir/GlpProb.cpp.o
+glpkTest: CMakeFiles/glpkTest.dir/SparseVec.cpp.o
 glpkTest: CMakeFiles/glpkTest.dir/build.make
 glpkTest: CMakeFiles/glpkTest.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_196) "Linking CXX executable glpkTest"

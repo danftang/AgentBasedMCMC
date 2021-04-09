@@ -197,8 +197,6 @@ set(CMAKE_DEPENDS_CHECK_C
   "/home/daniel/CLionProjects/glpkTest/glpk/zlib/zio.c" "/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles/glpkTest.dir/glpk/zlib/zio.c.o"
   "/home/daniel/CLionProjects/glpkTest/glpk/zlib/zutil.c" "/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles/glpkTest.dir/glpk/zlib/zutil.c.o"
   "/home/daniel/CLionProjects/glpkTest/glpkExtensions.c" "/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles/glpkTest.dir/glpkExtensions.c.o"
-  "/home/daniel/CLionProjects/glpkTest/main.c" "/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles/glpkTest.dir/main.c.o"
-  "/home/daniel/CLionProjects/glpkTest/test/MyTestClass.c" "/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles/glpkTest.dir/test/MyTestClass.c.o"
   )
 set(CMAKE_C_COMPILER_ID "GNU")
 
@@ -221,7 +219,9 @@ set(CMAKE_C_TARGET_INCLUDE_PATH
   "../glpk/zlib"
   )
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/daniel/CLionProjects/glpkTest/MyClass.cpp" "/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles/glpkTest.dir/MyClass.cpp.o"
+  "/home/daniel/CLionProjects/glpkTest/GlpProb.cpp" "/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles/glpkTest.dir/GlpProb.cpp.o"
+  "/home/daniel/CLionProjects/glpkTest/SparseVec.cpp" "/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles/glpkTest.dir/SparseVec.cpp.o"
+  "/home/daniel/CLionProjects/glpkTest/main.cpp" "/home/daniel/CLionProjects/glpkTest/cmake-build-debug/CMakeFiles/glpkTest.dir/main.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "Clang")
 

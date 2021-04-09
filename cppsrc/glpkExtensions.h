@@ -8,7 +8,7 @@
 #include "glpk.h"
 #include "spxprob.h"
 
-void glp_print_tableau(glp_prob *lp);
+void glp_bfd_update(glp_prob *P, int j, int nnz, int *indices, double *vals);
 
 #endif //GLPKTEST_GLPKEXTENSIONS_H
 

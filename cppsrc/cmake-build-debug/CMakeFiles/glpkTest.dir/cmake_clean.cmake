@@ -1,5 +1,6 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/glpkTest.dir/MyClass.cpp.o"
+  "CMakeFiles/glpkTest.dir/GlpProb.cpp.o"
+  "CMakeFiles/glpkTest.dir/SparseVec.cpp.o"
   "CMakeFiles/glpkTest.dir/glpk/amd/amd_1.c.o"
   "CMakeFiles/glpkTest.dir/glpk/amd/amd_2.c.o"
   "CMakeFiles/glpkTest.dir/glpk/amd/amd_aat.c.o"
@@ -192,8 +193,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/glpkTest.dir/glpk/zlib/zio.c.o"
   "CMakeFiles/glpkTest.dir/glpk/zlib/zutil.c.o"
   "CMakeFiles/glpkTest.dir/glpkExtensions.c.o"
-  "CMakeFiles/glpkTest.dir/main.c.o"
-  "CMakeFiles/glpkTest.dir/test/MyTestClass.c.o"
+  "CMakeFiles/glpkTest.dir/main.cpp.o"
   "glpkTest"
   "glpkTest.pdb"
 )

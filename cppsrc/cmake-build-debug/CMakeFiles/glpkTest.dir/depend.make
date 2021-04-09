@@ -1512,22 +1512,25 @@ CMakeFiles/glpkTest.dir/glpkExtensions.c.o: ../glpk/simplex/spxprob.h
 CMakeFiles/glpkTest.dir/glpkExtensions.c.o: ../glpkExtensions.c
 CMakeFiles/glpkTest.dir/glpkExtensions.c.o: ../glpkExtensions.h
 
-CMakeFiles/glpkTest.dir/main.c.o: ../glpk/api/prob.h
-CMakeFiles/glpkTest.dir/main.c.o: ../glpk/draft/bfd.h
-CMakeFiles/glpkTest.dir/main.c.o: ../glpk/env/env.h
-CMakeFiles/glpkTest.dir/main.c.o: ../glpk/env/stdc.h
-CMakeFiles/glpkTest.dir/main.c.o: ../glpk/glpk.h
-CMakeFiles/glpkTest.dir/main.c.o: ../glpk/misc/avl.h
-CMakeFiles/glpkTest.dir/main.c.o: ../glpk/misc/dmp.h
-CMakeFiles/glpkTest.dir/main.c.o: ../glpk/misc/fvs.h
-CMakeFiles/glpkTest.dir/main.c.o: ../glpk/simplex/spxlp.h
-CMakeFiles/glpkTest.dir/main.c.o: ../glpk/simplex/spxprob.h
-CMakeFiles/glpkTest.dir/main.c.o: ../glpkExtensions.h
-CMakeFiles/glpkTest.dir/main.c.o: ../main.c
+CMakeFiles/glpkTest.dir/GlpProb.cpp.o: ../glpk/glpk.h
+CMakeFiles/glpkTest.dir/GlpProb.cpp.o: ../GlpProb.cpp
+CMakeFiles/glpkTest.dir/GlpProb.cpp.o: ../GlpProb.h
+CMakeFiles/glpkTest.dir/GlpProb.cpp.o: ../SparseVec.h
 
-CMakeFiles/glpkTest.dir/test/MyTestClass.c.o: ../test/MyTestClass.c
-CMakeFiles/glpkTest.dir/test/MyTestClass.c.o: ../test/MyTestClass.h
+CMakeFiles/glpkTest.dir/SparseVec.cpp.o: ../SparseVec.cpp
+CMakeFiles/glpkTest.dir/SparseVec.cpp.o: ../SparseVec.h
 
-CMakeFiles/glpkTest.dir/MyClass.cpp.o: ../MyClass.cpp
-CMakeFiles/glpkTest.dir/MyClass.cpp.o: ../MyClass.h
+CMakeFiles/glpkTest.dir/main.cpp.o: ../glpk/api/prob.h
+CMakeFiles/glpkTest.dir/main.cpp.o: ../glpk/draft/bfd.h
+CMakeFiles/glpkTest.dir/main.cpp.o: ../glpk/env/stdc.h
+CMakeFiles/glpkTest.dir/main.cpp.o: ../glpk/glpk.h
+CMakeFiles/glpkTest.dir/main.cpp.o: ../glpk/misc/avl.h
+CMakeFiles/glpkTest.dir/main.cpp.o: ../glpk/misc/dmp.h
+CMakeFiles/glpkTest.dir/main.cpp.o: ../glpk/misc/fvs.h
+CMakeFiles/glpkTest.dir/main.cpp.o: ../glpk/simplex/spxlp.h
+CMakeFiles/glpkTest.dir/main.cpp.o: ../glpk/simplex/spxprob.h
+CMakeFiles/glpkTest.dir/main.cpp.o: ../GlpProb.h
+CMakeFiles/glpkTest.dir/main.cpp.o: ../SparseVec.h
+CMakeFiles/glpkTest.dir/main.cpp.o: ../glpkExtensions.h
+CMakeFiles/glpkTest.dir/main.cpp.o: ../main.cpp
 

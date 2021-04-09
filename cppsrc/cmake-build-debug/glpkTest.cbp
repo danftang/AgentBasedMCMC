@@ -116,10 +116,16 @@
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="/home/daniel/CLionProjects/glpkTest/MyClass.cpp">
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/GlpProb.cpp">
 			<Option target="glpkTest"/>
 		</Unit>
-		<Unit filename="/home/daniel/CLionProjects/glpkTest/MyClass.h">
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/GlpProb.h">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/SparseVec.cpp">
+			<Option target="glpkTest"/>
+		</Unit>
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/SparseVec.h">
 			<Option target="glpkTest"/>
 		</Unit>
 		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpk/amd/amd.h">
@@ -932,13 +938,7 @@
 		<Unit filename="/home/daniel/CLionProjects/glpkTest/glpkExtensions.h">
 			<Option target="glpkTest"/>
 		</Unit>
-		<Unit filename="/home/daniel/CLionProjects/glpkTest/main.c">
-			<Option target="glpkTest"/>
-		</Unit>
-		<Unit filename="/home/daniel/CLionProjects/glpkTest/test/MyTestClass.c">
-			<Option target="glpkTest"/>
-		</Unit>
-		<Unit filename="/home/daniel/CLionProjects/glpkTest/test/MyTestClass.h">
+		<Unit filename="/home/daniel/CLionProjects/glpkTest/main.cpp">
 			<Option target="glpkTest"/>
 		</Unit>
 		<Unit filename="/home/daniel/CLionProjects/glpkTest/CMakeLists.txt">

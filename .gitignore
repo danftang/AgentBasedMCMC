@@ -36,3 +36,6 @@ src/META-INF
 
 # Vim
 *.swp
+
+# c++ build
+cppsrc/cmake-build-debug

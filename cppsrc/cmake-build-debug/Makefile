@@ -143,32 +143,59 @@ glpkTest/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/build
 .PHONY : glpkTest/fast
 
-MyClass.o: MyClass.cpp.o
+GlpProb.o: GlpProb.cpp.o
 
-.PHONY : MyClass.o
+.PHONY : GlpProb.o
 
 # target to build an object file
-MyClass.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/MyClass.cpp.o
-.PHONY : MyClass.cpp.o
+GlpProb.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/GlpProb.cpp.o
+.PHONY : GlpProb.cpp.o
 
-MyClass.i: MyClass.cpp.i
+GlpProb.i: GlpProb.cpp.i
 
-.PHONY : MyClass.i
+.PHONY : GlpProb.i
 
 # target to preprocess a source file
-MyClass.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/MyClass.cpp.i
-.PHONY : MyClass.cpp.i
+GlpProb.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/GlpProb.cpp.i
+.PHONY : GlpProb.cpp.i
 
-MyClass.s: MyClass.cpp.s
+GlpProb.s: GlpProb.cpp.s
 
-.PHONY : MyClass.s
+.PHONY : GlpProb.s
 
 # target to generate assembly for a file
-MyClass.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/MyClass.cpp.s
-.PHONY : MyClass.cpp.s
+GlpProb.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/GlpProb.cpp.s
+.PHONY : GlpProb.cpp.s
+
+SparseVec.o: SparseVec.cpp.o
+
+.PHONY : SparseVec.o
+
+# target to build an object file
+SparseVec.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/SparseVec.cpp.o
+.PHONY : SparseVec.cpp.o
+
+SparseVec.i: SparseVec.cpp.i
+
+.PHONY : SparseVec.i
+
+# target to preprocess a source file
+SparseVec.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/SparseVec.cpp.i
+.PHONY : SparseVec.cpp.i
+
+SparseVec.s: SparseVec.cpp.s
+
+.PHONY : SparseVec.s
+
+# target to generate assembly for a file
+SparseVec.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/SparseVec.cpp.s
+.PHONY : SparseVec.cpp.s
 
 glpk/amd/amd_1.o: glpk/amd/amd_1.c.o
 
@@ -5354,59 +5381,32 @@ glpkExtensions.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/glpkExtensions.c.s
 .PHONY : glpkExtensions.c.s
 
-main.o: main.c.o
+main.o: main.cpp.o
 
 .PHONY : main.o
 
 # target to build an object file
-main.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/main.c.o
-.PHONY : main.c.o
+main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/main.cpp.o
+.PHONY : main.cpp.o
 
-main.i: main.c.i
+main.i: main.cpp.i
 
 .PHONY : main.i
 
 # target to preprocess a source file
-main.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/main.c.i
-.PHONY : main.c.i
+main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/main.cpp.i
+.PHONY : main.cpp.i
 
-main.s: main.c.s
+main.s: main.cpp.s
 
 .PHONY : main.s
 
 # target to generate assembly for a file
-main.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/main.c.s
-.PHONY : main.c.s
-
-test/MyTestClass.o: test/MyTestClass.c.o
-
-.PHONY : test/MyTestClass.o
-
-# target to build an object file
-test/MyTestClass.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/test/MyTestClass.c.o
-.PHONY : test/MyTestClass.c.o
-
-test/MyTestClass.i: test/MyTestClass.c.i
-
-.PHONY : test/MyTestClass.i
-
-# target to preprocess a source file
-test/MyTestClass.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/test/MyTestClass.c.i
-.PHONY : test/MyTestClass.c.i
-
-test/MyTestClass.s: test/MyTestClass.c.s
-
-.PHONY : test/MyTestClass.s
-
-# target to generate assembly for a file
-test/MyTestClass.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/test/MyTestClass.c.s
-.PHONY : test/MyTestClass.c.s
+main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/glpkTest.dir/build.make CMakeFiles/glpkTest.dir/main.cpp.s
+.PHONY : main.cpp.s
 
 # Help Target
 help:
@@ -5417,9 +5417,12 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... glpkTest"
-	@echo "... MyClass.o"
-	@echo "... MyClass.i"
-	@echo "... MyClass.s"
+	@echo "... GlpProb.o"
+	@echo "... GlpProb.i"
+	@echo "... GlpProb.s"
+	@echo "... SparseVec.o"
+	@echo "... SparseVec.i"
+	@echo "... SparseVec.s"
 	@echo "... glpk/amd/amd_1.o"
 	@echo "... glpk/amd/amd_1.i"
 	@echo "... glpk/amd/amd_1.s"
@@ -5999,9 +6002,6 @@ help:
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
-	@echo "... test/MyTestClass.o"
-	@echo "... test/MyTestClass.i"
-	@echo "... test/MyTestClass.s"
 .PHONY : help
 
 

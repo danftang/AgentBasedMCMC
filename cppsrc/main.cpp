@@ -1,11 +1,9 @@
 //#include <iostream>
+#include <iostream>
 #include "glpk.h"
-#include "prob.h"
-#include "spxlp.h"
 #include "spxprob.h"
-#include "env.h"
-#include "bfd.h"
 #include "glpkExtensions.h"
+#include "GlpProb.h"
 
 
 int main() {
@@ -49,9 +47,14 @@ int main() {
     s35:  x3 = glp_get_col_prim(lp, 3);
     s36:  printf("\nz = %g; x1 = %g; x2 = %g; x3 = %g\n",
                  z, x1, x2, x3);
+
+
+    GlpProb myProb(lp);
+    myProb.printTableau();
+
     s37:  glp_delete_prob(lp);
 
-    glp_print_tableau(lp);
+//    glp_print_tableau(lp);
 //    bfd_update(lp->bfd, 1, )
 
 
@@ -59,28 +62,28 @@ int main() {
 }
 
 
-void buildSimplex(glp_prob *P, const glp_smcp *parm) {
-    SPXLP lp;
-    int *map;
-    spx_init_lp(&lp, P, parm->excl);
-    spx_alloc_lp(&lp);
-    map = talloc(1+P->m+P->n, int);
-    spx_build_lp(&lp, P, parm->excl, parm->shift, map);
-    spx_build_basis(&lp, P, map);
-
-}
-
-void getBf(glp_prob *P, const glp_smcp *parm) {
-    BFD *bfd = P->bfd;
-    int idx[2];
-    double vals[2];
-    bfd_update(bfd, 1, 2, idx, vals);
-    glp_factorize(P);
-
-    FVS sparseVec;
-    sparseVec.n = 1000;
-    sparseVec.nnz = 1;
-    sparseVec.ind = idx;
-    sparseVec.vec = vals;
-    bfd_ftran_s(bfd, &sparseVec);
-}
+//void buildSimplex(glp_prob *P, const glp_smcp *parm) {
+//    SPXLP lp;
+//    int *map;
+//    spx_init_lp(&lp, P, parm->excl);
+//    spx_alloc_lp(&lp);
+//    map = talloc(1+P->m+P->n, int);
+//    spx_build_lp(&lp, P, parm->excl, parm->shift, map);
+//    spx_build_basis(&lp, P, map);
+//
+//}
+//
+//void getBf(glp_prob *P, const glp_smcp *parm) {
+//    BFD *bfd = P->bfd;
+//    int idx[2];
+//    double vals[2];
+//    bfd_update(bfd, 1, 2, idx, vals);
+//    glp_factorize(P);
+//
+//    FVS sparseVec;
+//    sparseVec.n = 1000;
+//    sparseVec.nnz = 1;
+//    sparseVec.ind = idx;
+//    sparseVec.vec = vals;
+//    bfd_ftran_s(bfd, &sparseVec);
+//}
