@@ -2,8 +2,8 @@
 #include <iostream>
 #include "glpk.h"
 #include "spxprob.h"
-#include "glpkExtensions.h"
-#include "GlpProb.h"
+#include "GlpProblem.h"
+#include "GlpTableau.h"
 
 
 int main() {
@@ -12,7 +12,7 @@ int main() {
     double ar[1+1000], z, x1, x2, x3;
     s1:   lp = glp_create_prob();
     s2:   glp_set_prob_name(lp, "sample");
-    s3:   glp_set_obj_dir(lp, GLP_MAX);
+    s3:   glp_set_obj_dir(lp, GLP_MIN);
     s4:   glp_add_rows(lp, 3);
     s5:   glp_set_row_name(lp, 1, "p");
     s6:   glp_set_row_bnds(lp, 1, GLP_UP, 0.0, 100.0);
@@ -34,25 +34,64 @@ int main() {
     s22:  ia[2] = 1, ja[2] = 2, ar[2] =  1.0; /* a[1,2] =  1 */
     s23:  ia[3] = 1, ja[3] = 3, ar[3] =  1.0; /* a[1,3] =  1 */
     s24:  ia[4] = 2, ja[4] = 1, ar[4] = 10.0; /* a[2,1] = 10 */
-    s25:  ia[5] = 3, ja[5] = 1, ar[5] =  2.0; /* a[3,1] =  2 */
     s26:  ia[6] = 2, ja[6] = 2, ar[6] =  4.0; /* a[2,2] =  4 */
-    s27:  ia[7] = 3, ja[7] = 2, ar[7] =  2.0; /* a[3,2] =  2 */
     s28:  ia[8] = 2, ja[8] = 3, ar[8] =  5.0; /* a[2,3] =  5 */
-    s29:  ia[9] = 3, ja[9] = 3, ar[9] =  6.0; /* a[3,3] =  6 */
+    s25:  ia[5] = 3, ja[5] = 1, ar[5] =  2.0; /* a[3,1] =  2 */
+    s27:  ia[7] = 3, ja[7] = 2, ar[7] =  2.0; /* a[3,2] =  2 */
+    s29:  ia[9] = 3, ja[9] = 3, ar[9] =  1.0; /* a[3,3] =  6 */
     s30:  glp_load_matrix(lp, 9, ia, ja, ar);
-    s31:  glp_simplex(lp, NULL);
-    s32:  z = glp_get_obj_val(lp);
-    s33:  x1 = glp_get_col_prim(lp, 1);
-    s34:  x2 = glp_get_col_prim(lp, 2);
-    s35:  x3 = glp_get_col_prim(lp, 3);
-    s36:  printf("\nz = %g; x1 = %g; x2 = %g; x3 = %g\n",
-                 z, x1, x2, x3);
+    glp_std_basis(lp);
+    glp_factorize(lp);
+//    s31:  glp_simplex(lp, NULL);
+//    s32:  z = glp_get_obj_val(lp);
+//    s33:  x1 = glp_get_col_prim(lp, 1);
+//    s34:  x2 = glp_get_col_prim(lp, 2);
+//    s35:  x3 = glp_get_col_prim(lp, 3);
+//    s36:  printf("\nz = %g; x1 = %g; x2 = %g; x3 = %g\n",
+//                 z, x1, x2, x3);
 
 
-    GlpProb myProb(lp);
-    myProb.printTableau();
+    GlpProblem myProb(lp);
+    GlpTableau myTableau(lp);
+    SparseVec c(myTableau.nRows());
 
-    s37:  glp_delete_prob(lp);
+    std::cout << myProb;
+    std::cout << myTableau;
+
+    for(int k=0; k<6; ++k) {
+        myTableau.col(k,c);
+        std::cout << c << std::endl;
+    }
+
+//    for(int i=0; i<3; ++i) {
+//        std::cout << glp_eval_tab_col(lp,k,) << std::endl;
+//    }
+
+
+//    glp_set_col_stat(lp, 3, GLP_BS);
+//    glp_set_row_stat(lp, 3, GLP_NU);
+    myTableau.pivot(2,5);
+//    glp_unscale_prob(lp);
+//
+//    std::cout << std::endl;
+//    std::cout << myTableau;
+
+//    lp->valid = 0;
+//    glp_factorize(lp);
+//    std::cout << std::endl;
+////    glp_unscale_prob(lp);
+    std::cout << std::endl;
+    std::cout << myTableau;
+//
+    for(int k=0; k<6; ++k) {
+        myTableau.col(k,c);
+        std::cout << c << std::endl;
+    }
+//
+//
+
+
+s37:  glp_delete_prob(lp);
 
 //    glp_print_tableau(lp);
 //    bfd_update(lp->bfd, 1, )

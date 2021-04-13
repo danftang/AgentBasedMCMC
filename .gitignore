@@ -38,4 +38,4 @@ src/META-INF
 *.swp
 
 # c++ build
-cppsrc/cmake-build-debug
+cppsrc/cmake*

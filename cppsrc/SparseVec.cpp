@@ -3,54 +3,80 @@
 //
 
 #include <iomanip>
+#include <iostream>
 #include "SparseVec.h"
 
 SparseVec::SparseVec(int dim) {
-    sparseSize = 0;
-    dimension = dim;
-    indices = new int[dimension+1];
-    vals = new double[dimension+1];
+    n = 0;
+    nnz = dim;
+    ind = new int[dim] -1;
+    vec = new double[dim] -1;
 }
 
 SparseVec::~SparseVec() {
-    free(indices);
-    free(vals);
+    free(ind+1);
+    free(vec+1);
 }
 
 double &SparseVec::operator[](int i) {
-    for(int k=1; k<=sparseSize; k++) {
-        if(indices[k] == i) return vals[k];
+    for(int k=1; k<=nnz; k++) {
+        if(ind[k] == i+1) return vec[k];
     }
-    sparseSize++;
-    indices[sparseSize] = i;
-    return vals[sparseSize]; // allows zero values
+    ind[++nnz] = i+1;
+    return vec[nnz]; // allows zero values
 }
 
 
 double SparseVec::operator[](int i) const {
-    for(int k=1; k<=sparseSize; k++) {
-        if(indices[k] == i) return vals[k];
+    for(int k=1; k<nnz; k++) {
+        if(ind[k] == i+1) return vec[k];
     }
     return 0.0;
 }
 
 void SparseVec::add(int i, double v) {
-    indices[++sparseSize] = i;
-    vals[sparseSize] = v; // allows zero values
+    if(v != 0.0) {
+        ind[++nnz] = i + 1;
+        vec[nnz] = v;
+    } // doesn't delete if index already exists
 }
 
-std::ostream &operator <<(std::ostream &out, SparseVec &sVector) {
+void SparseVec::clear() {
+    nnz = 0;
+}
+
+void SparseVec::toDense(double *dense) const {
     int i;
-    double dense[sVector.dimension];
-
-    for(i=0; i<sVector.dimension; ++i) { dense[i] = 0.0;}
-    for(i=1; i<=sVector.sparseSize; ++i) {
-        if(sVector.indices[i]-1 >= sVector.dimension) out << "Out of range index!!";
-        dense[sVector.indices[i]-1] = sVector.vals[i];
+    for(i=0; i<n; ++i) { dense[i] = 0.0; }
+    for(i=1; i<=nnz; ++i) {
+        if(ind[i] > n || ind[i] < 1)
+            std::cout << "Out of range index[" << i << "] = " << ind[i] << " -> " << vec[i] << std::endl;
+        dense[ind[i]-1] = vec[i];
     }
+}
 
-    for(i=0; i<sVector.dimension; ++i) {
-        out << std::setw(12) << dense[i] << "\t";
+void SparseVec::entry(int k, std::pair<int, double> &retEntry) {
+    int k1 = k+1;
+    retEntry.first = ind[k1];
+    retEntry.second = vec[k1];
+}
+
+double SparseVec::dotProd(double *dense) const {
+    double *dense1base = dense-1;
+    double dp = 0.0;
+    int j;
+    for(int i=1; i<=nnz; ++i) {
+        j = ind[i];
+        dp += dense1base[j] * vec[i];
     }
+    return dp;
+}
+
+
+std::ostream &operator <<(std::ostream &out, const SparseVec &sVector) {
+    int i;
+    double dense[sVector.n];
+    sVector.toDense(dense);
+    for(i=0; i<sVector.n; ++i) out << std::setw(12) << dense[i] << "\t";
     return out;
 }
