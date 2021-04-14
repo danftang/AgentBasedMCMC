@@ -11,14 +11,9 @@
 class GlpTableau {
 public:
     glp_prob *lp;
-protected:
-    SparseVec tmpStore;
 
 public:
-    GlpTableau(glp_prob *prob): tmpStore(glp_get_num_rows(prob) + glp_get_num_cols(prob)) {
-        lp = prob;
-    }
-
+    GlpTableau(glp_prob *prob) { lp = prob; }
 
     int nRows()         { return glp_get_num_rows(lp); }
     int nCols()         { return glp_get_num_cols(lp) + glp_get_num_rows(lp); }
@@ -40,11 +35,13 @@ public:
     double basicVal(int i);
     bool pivot(int i, int j);
 
-protected:
-    SparseVec &getStore(int dim)    { tmpStore.clear(); tmpStore.n = dim; return tmpStore; }
-    SparseVec &tmpColStore()        { return getStore(nRows()); }
-    SparseVec &tmpRowStore()        { return getStore(nCols()); }
+    int colType(int k);
 
+    void setBasicRow(int i, int k);
+
+    double colVal(int k);
+
+    void incrementBasicVal(int i, double increment);
 };
 
 std::ostream &operator <<(std::ostream &out, GlpTableau &tableau);

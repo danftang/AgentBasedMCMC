@@ -57,7 +57,7 @@ void SparseVec::toDense(double *dense) const {
 
 void SparseVec::entry(int k, std::pair<int, double> &retEntry) {
     int k1 = k+1;
-    retEntry.first = ind[k1];
+    retEntry.first = ind[k1]-1;
     retEntry.second = vec[k1];
 }
 

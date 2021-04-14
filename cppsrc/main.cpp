@@ -41,7 +41,8 @@ int main() {
     s29:  ia[9] = 3, ja[9] = 3, ar[9] =  1.0; /* a[3,3] =  6 */
     s30:  glp_load_matrix(lp, 9, ia, ja, ar);
     glp_std_basis(lp);
-    glp_factorize(lp);
+    glp_warm_up(lp);
+//    glp_factorize(lp);
 //    s31:  glp_simplex(lp, NULL);
 //    s32:  z = glp_get_obj_val(lp);
 //    s33:  x1 = glp_get_col_prim(lp, 1);
@@ -57,6 +58,7 @@ int main() {
 
     std::cout << myProb;
     std::cout << myTableau;
+    std::cout << "Columns" << std::endl;
 
     for(int k=0; k<6; ++k) {
         myTableau.col(k,c);

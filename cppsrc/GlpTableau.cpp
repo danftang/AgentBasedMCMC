@@ -61,6 +61,8 @@ void GlpTableau::col(int k, SparseVec &result) {
 
 
 void GlpTableau::reducedObjective(SparseVec &result) {
+    result.clear();
+    result.n = nCols();
     for (int i = 0; i < nRows(); i++) {
         result.add(i, glp_get_row_dual(lp, i+1));
     }
@@ -82,10 +84,52 @@ int GlpTableau::basicRow(int k) {
     return glp_get_col_bind(lp, k - nRows() + 1)-1;
 }
 
+void GlpTableau::setBasicRow(int i, int k) {
+    // remove old binding
+    int oldBoundk1 = lp->head[i+1];
+    if(oldBoundk1 <= nRows()) {
+        lp->row[oldBoundk1]->bind = 0;
+    } else {
+        lp->col[oldBoundk1 - nRows()]->bind = 0;
+    }
+    // add new binding
+    lp->head[i+1] = k+1;
+    if(k < nRows()) {
+        lp->row[k+1]->bind = i+1;
+    } else {
+        lp->col[k-nRows()+1]->bind = i+1;
+    }
+}
+
 
 int GlpTableau::colState(int k) {
     if(k < nRows()) return glp_get_row_stat(lp,k+1);
     return glp_get_col_stat(lp,k-nRows()+1);
+}
+
+void GlpTableau::setColState(int k, int state) {
+    if(k < nRows()) glp_set_row_stat(lp, k+1, state); else glp_set_col_stat(lp, k-nRows()+1, state);
+    if (k < nRows()) {
+        GLPROW *row = lp->row[k+1];
+        switch(state) {
+            case GLP_NL: row->prim = row->lb; break;
+            case GLP_NU: row->prim = row->ub; break;
+            case GLP_NF: row->prim = 0.0; break;
+        }
+
+    } else {
+        GLPCOL *col = lp->col[k+1];
+        switch(state) {
+            case GLP_NL: col->prim = col->lb; break;
+            case GLP_NU: col->prim = col->ub; break;
+            case GLP_NF: col->prim = 0.0; break;
+        }
+    }
+}
+
+int GlpTableau::colType(int k) {
+    if(k < nRows()) return glp_get_row_type(lp, k+1);
+    return glp_get_col_type(lp, k+1);
 }
 
 double GlpTableau::upperBound(int k) {
@@ -98,11 +142,29 @@ double GlpTableau::lowerBound(int k) {
     return glp_get_col_lb(lp, k-nRows()+1);
 }
 
-// i is row
+// get the primal basic value of the basic variable associated with row i
 double GlpTableau::basicVal(int i) {
     int k = glp_get_bhead(lp, i+1);
     if (k <= nRows()) return glp_get_row_prim(lp, k);
     return glp_get_col_prim(lp, k - nRows());
+}
+
+// set the value of the basic variable associated with row i
+void GlpTableau::incrementBasicVal(int i, double increment) {
+    int k1 = lp->head[i+1];
+    if (k1 <= nRows()) {
+        lp->row[k1]->prim += increment;
+    } else {
+        lp->col[k1-nRows()]->prim += increment;
+    }
+}
+
+// current value of column k in the primal basic solution
+double GlpTableau::colVal(int k) {
+    if(k<nRows()) {
+        return lp->row[k+1]->prim;
+    }
+    return lp->col[k+1-nRows()]->prim;
 }
 
 // Removes the basic variable associated with row i from the
@@ -116,35 +178,51 @@ bool GlpTableau::pivot(int i, int k) {
     int leavingVar = basicCol(i);
     switch(incomingVarState) {
         case GLP_BS: if(leavingVar == k) return true; else return false;
-        case GLP_NF: return false;
-        case GLP_NS: return false;
+        case GLP_NS: return false; // fixed vars shouldn't enter basis
     }
-    col(k,tmpColStore());
-    bool pivotPointIsPositive = tmpStore[i] > 0.0;
-//    std::cout << "Pivoting row " << i << " to " << c << std::endl;
-    int failed = bfd_update(lp->bfd, i+1, tmpStore.nnz, tmpStore.ind, tmpStore.vec);
+    SparseVec incomingCol(nRows());
+    col(k, incomingCol);
+    double pivotElement = incomingCol[i];
+    int leavingVarNewState;
+
+    int failed = bfd_update(lp->bfd, i+1, incomingCol.nnz, incomingCol.ind, incomingCol.vec);
     if(failed != 0) return false;
 
-    // make leaving var non-basic
-    if(incomingVarState == GLP_NL) {
-        setColState(leavingVar, pivotPointIsPositive?GLP_NL:GLP_NU);
-    } else {
-        setColState(leavingVar, pivotPointIsPositive?GLP_NU:GLP_NL);
-    }
-    if(leavingVar < nRows()) {
-        lp->row[leavingVar+1]->bind = 0;
-    } else {
-        lp->col[leavingVar-nRows()+1]->bind = 0;
+    switch(colType(leavingVar)) {
+        case GLP_UP: leavingVarNewState = GLP_NU; break;
+        case GLP_LO: leavingVarNewState = GLP_NL; break;
+        case GLP_FX: leavingVarNewState = GLP_NF; break;
+        case GLP_DB:
+            // leaving var is double bound so go in direction
+            // that moves the entering var away from its current bound
+            switch(incomingVarState) {
+                case GLP_NL: // incoming is currently on lower bound
+                    leavingVarNewState = pivotElement>0.0?GLP_NL:GLP_NU; break;
+                case GLP_NU: // incoming is currently on upper bound
+                    leavingVarNewState = pivotElement>0.0?GLP_NU:GLP_NL; break;
+                case GLP_NF: // incoming is free (currently zero), set outgoing to lower bound
+                    leavingVarNewState = GLP_NL;
+                default:
+                    throw("unrecognized incoming variable state");
+            }
+            break;
+        default: throw("Unrecognized leaving variable type");
     }
 
+    // make leaving var non-basic
+    double leavingVarOrigVal = colVal(leavingVar);
+    setColState(leavingVar, leavingVarNewState);
     // make entering variable basic
     setColState(k, GLP_BS);
-    lp->head[i+1] = k+1;
-    if(k < nRows()) {
-        lp->row[k+1]->bind = i+1;
-    } else {
-        int j = k - nRows() + 1;
-        lp->col[j]->bind = i+1;
+    setBasicRow(i,k);
+
+    // update basic primary solution
+    double delta = (colVal(leavingVar) - leavingVarOrigVal)/pivotElement;
+//    std::cout << "delta = " << delta << std::endl;
+    int rowIndex;
+    for(int q=1; q <= incomingCol.nnz; ++q) {
+        rowIndex = incomingCol.ind[q] - 1;
+        incrementBasicVal(rowIndex, rowIndex==i?delta:delta*incomingCol.vec[q]);
     }
 
     lp->valid = 1;
@@ -152,9 +230,6 @@ bool GlpTableau::pivot(int i, int k) {
 }
 
 
-void GlpTableau::setColState(int k, int state) {
-    if(k < nRows()) glp_set_row_stat(lp, k+1, state); else glp_set_col_stat(lp, k-nRows()+1, state);
-}
 
 
 void GlpTableau::MCol(int k, SparseVec &result) {
@@ -168,8 +243,9 @@ void GlpTableau::MCol(int k, SparseVec &result) {
 }
 
 void GlpTableau::MCol(int k, double *result) {
-    MCol(k, tmpColStore());
-    tmpStore.toDense(result);
+    SparseVec colVec(nRows());
+    MCol(k, colVec);
+    colVec.toDense(result);
 }
 
 std::ostream &operator <<(std::ostream &out, GlpTableau &tableau) {
