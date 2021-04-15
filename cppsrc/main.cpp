@@ -4,6 +4,7 @@
 #include "spxprob.h"
 #include "GlpProblem.h"
 #include "GlpTableau.h"
+#include "GlpSimplex.h"
 
 
 int main() {
@@ -53,44 +54,51 @@ int main() {
 
 
     GlpProblem myProb(lp);
-    GlpTableau myTableau(lp);
-    SparseVec c(myTableau.nRows());
+//    GlpTableau myTableau(lp);
+    GlpSimplex mySimplex(lp);
+//    SparseVec c(myTableau.nRows());
 
     std::cout << myProb;
-    std::cout << myTableau;
-    std::cout << "Columns" << std::endl;
+//    std::cout << myTableau;
+    std::cout << mySimplex << std::endl;
 
-    for(int k=0; k<6; ++k) {
-        myTableau.col(k,c);
-        std::cout << c << std::endl;
-    }
+    mySimplex.pivot(3,3,true);
 
-//    for(int i=0; i<3; ++i) {
-//        std::cout << glp_eval_tab_col(lp,k,) << std::endl;
-//    }
+    std::cout << mySimplex << std::endl;
 
-
-//    glp_set_col_stat(lp, 3, GLP_BS);
-//    glp_set_row_stat(lp, 3, GLP_NU);
-    myTableau.pivot(2,5);
-//    glp_unscale_prob(lp);
+//    std::cout << "Columns" << std::endl;
 //
+//    for(int k=0; k<6; ++k) {
+//        myTableau.col(k,c);
+//        std::cout << c << std::endl;
+//    }
+//
+////    for(int i=0; i<3; ++i) {
+////        std::cout << glp_eval_tab_col(lp,k,) << std::endl;
+////    }
+//
+//
+////    glp_set_col_stat(lp, 3, GLP_BS);
+////    glp_set_row_stat(lp, 3, GLP_NU);
+//    myTableau.pivot(2,5);
+////    glp_unscale_prob(lp);
+////
+////    std::cout << std::endl;
+////    std::cout << myTableau;
+//
+////    lp->valid = 0;
+////    glp_factorize(lp);
+////    std::cout << std::endl;
+//////    glp_unscale_prob(lp);
 //    std::cout << std::endl;
 //    std::cout << myTableau;
-
-//    lp->valid = 0;
-//    glp_factorize(lp);
-//    std::cout << std::endl;
-////    glp_unscale_prob(lp);
-    std::cout << std::endl;
-    std::cout << myTableau;
-//
-    for(int k=0; k<6; ++k) {
-        myTableau.col(k,c);
-        std::cout << c << std::endl;
-    }
-//
-//
+////
+//    for(int k=0; k<6; ++k) {
+//        myTableau.col(k,c);
+//        std::cout << c << std::endl;
+//    }
+////
+////
 
 
 s37:  glp_delete_prob(lp);
