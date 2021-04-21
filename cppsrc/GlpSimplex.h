@@ -25,6 +25,7 @@ public:
     double reducedObjective(int j);             // value of the j'th (1 <= j <= n-m) element of the reduced objective
     void pivot(int i, int j, bool leavingVarToUpperBound, double *pivotCol=NULL);
 
+
 };
 
 std::ostream &operator <<(std::ostream &out, GlpSimplex &simplex);

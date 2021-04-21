@@ -41,6 +41,11 @@ double GlpSimplex::reducedObjective(int j) {
     return spx_eval_dj(this, pi, j);
 }
 
+// i,j is the pivot element, 1-based, (the j'th col of N replaces the i'th col of B)
+// TODO: Better to use k coords on j?
+// if leavingVarToUpperBound is true then the leaving var is set to its upper bound
+// pivotCol - if non-null should be set to the current ftran of the incoming column,
+// if null this will be calculated
 void GlpSimplex::pivot(int i, int j, bool leavingVarToUpperBound, double *pivotCol) {
     const int boundFlag = leavingVarToUpperBound?1:0;
     double *pivCol;
