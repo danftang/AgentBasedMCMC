@@ -1,9 +1,9 @@
 //#include <iostream>
 #include <iostream>
 #include "glpk.h"
-#include "spxprob.h"
+//#include "spxprob.h"
 #include "GlpProblem.h"
-#include "GlpTableau.h"
+//#include "GlpTableau.h"
 #include "GlpSimplex.h"
 
 

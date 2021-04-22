@@ -111,6 +111,7 @@ interface ABM<AGENT: Agent<AGENT>,ACT: Ordered<ACT>> {
             ?:throw(RuntimeException("No fermionic acts available"))
     }
 
+
     fun AGENT.nonFermionicConcreteTimestep(others: Multiset<AGENT>): ACT {
         val actDistribution = this.timestep(others)
         val r = Random.nextDouble()
