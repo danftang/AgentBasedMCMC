@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 project(glpkTest)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 link_directories(lib)
 link_libraries(glpkpp)
 
@@ -13,4 +13,4 @@ include_directories(glpkppinclude)
 #        glpk/*/*.c)
 
 #add_executable(glpkTest main.cpp ${GLPK_SOURCES} GlpProblem.cpp GlpProblem.h SparseVec.cpp SparseVec.h GlpTableau.cpp GlpTableau.h GlpSimplex.cpp GlpSimplex.h SimplexMCMC.cpp SimplexMCMC.h)
-add_executable(glpkTest main.cpp)
+add_executable(glpkTest main.cpp Agent.h ABM.h CatMouseAgent.cpp CatMouseAgent.h ABMCMC.h Observation.cpp Observation.h)
