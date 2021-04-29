@@ -11,6 +11,7 @@
 #include "glpkpp.h"
 
 class SimplexMCMC: public glpkpp::GlpSimplex {
+public:
     std::vector<int>    colLastNonZero;             // row-index of the last non-zero entry in this col
     std::vector<int>    rowLatestCompletionPivot; // k-col-index of the earliest col of the final basis that can pivot on this row
     std::vector<int>    latestCompletionBegin;   // k-col-index of the earliest col of the final completion

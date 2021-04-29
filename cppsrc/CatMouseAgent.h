@@ -34,7 +34,7 @@ class CatMouseAgent {
     std::vector<double> timestep(std::multiset<CatMouseAgent> others);
     std::vector<CatMouseAgent> consequences(Act act); // the consequences of an act
     // returns the constraints implied by the given act
-    glpkpp::Constraint constraints(Act act); // to be generated automatically by static analysis...eventually.
+    std::vector<glpkpp::Constraint> constraints(Act act); // to be generated automatically by static analysis...eventually.
 
 };
 

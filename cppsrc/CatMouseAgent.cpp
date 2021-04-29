@@ -25,6 +25,6 @@ std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) {
     return std::vector<CatMouseAgent>(); // placeholder
 }
 
-glpkpp::Constraint CatMouseAgent::constraints(CatMouseAgent::Act act) {
-    return glpkpp::Constraint(); // placeholder
+std::vector<glpkpp::Constraint> CatMouseAgent::constraints(CatMouseAgent::Act act) {
+    return std::vector<glpkpp::Constraint>(); // placeholder
 }

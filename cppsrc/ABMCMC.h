@@ -12,19 +12,20 @@
 template<typename AGENT>
 class ABMCMC {
 
-    SimplexMCMC         simplex;
-    glpkpp::GlpProblem  problem;
     std::vector<Observation<AGENT>> observations;
+    glpkpp::GlpProblem  problem;
+    SimplexMCMC         simplex;
 
     int nSamples = 0;
     int nRejections = 0;
     int fractionalRunLength = 0;
     int nTimesteps;
 
-    ABMCMC(int nTimesteps, std::vector<Observation<AGENT>> &observations,
-    glpkpp::SparseVec &initialSample) {
-        this->nTimesteps = nTimesteps;
-        problem.ensureNVars(AGENT::domainSize * AGENT::Act::domainSize * nTimesteps);
+    ABMCMC(int nTimesteps, std::vector<Observation<AGENT>> &observations,glpkpp::SparseVec &initialSample) :
+    problem(ABMProblem(nTimesteps,observations)),
+    simplex(problem),
+    nTimesteps(nTimesteps) {
+
 //        this.observations = observations
 //        val constraints = constraints(model, nTimesteps, observations)
 //        this.simplex = IntegerSimplexMCMC(
@@ -47,7 +48,15 @@ class ABMCMC {
 
 
 protected:
-    void addContinuityConstraints() {
+    static glpkpp::GlpProblem ABMProblem(int nTimesteps, const std::vector<Observation<AGENT>> &observations) {
+        glpkpp::GlpProblem prob;
+        prob.ensureNVars(AGENT::domainSize * AGENT::Act::domainSize * nTimesteps);
+        addContinuityConstraints(prob, nTimesteps);
+        addInteractionConstraints(prob, nTimesteps);
+        return prob;
+    }
+
+    static void addContinuityConstraints(glpkpp::GlpProblem &problem, int nTimesteps) {
         glpkpp::Constraint constraint(0.0,0.0);
         std::vector<std::vector<int>> incomingEdges;
         calcConsequencesByEndState(incomingEdges);
@@ -72,22 +81,45 @@ protected:
         }
     }
 
-    void addInteractionConstraints() {
-        glpkpp::Constraint constraint;
+    static void addInteractionConstraints(glpkpp::GlpProblem &problem, int nTimesteps) {
         for(int time = 0; time < nTimesteps; ++time) {
             for (int agentState = 0; agentState < AGENT::domainSize; ++agentState) {
                 AGENT agent(agentState);
                 for (int act = 0; act < AGENT::Act::domainSize; ++act) {
-                    glpkpp::Constraint constraint = agent->constraints(act);
-
-                    // TODO: do act implies constraint and add to LP
+                    for(const glpkpp::Constraint &actConstraint : agent.constraints(act)) {
+                        addXImpliesY(problem, eventId(time,agentState,act), actConstraint);
+                    }
                 }
             }
         }
     }
 
+    // Returns constraint x -> y
+    // under the assumption that
+    // 0 <= x <= 1
+    // and 0 <= y_i <= 1
+    // by using the identity
+    //
+    static void addXImpliesY(glpkpp::GlpProblem &problem, int x, const glpkpp::Constraint &y) {
+            glpkpp::Constraint upperBoundConstraint(-std::numeric_limits<double>::infinity(), 0.0);
+            glpkpp::Constraint lowerBoundConstraint(0.0, std::numeric_limits<double>::infinity());
+            for(auto term: y.coefficients) {
+                if (term.second > 0.0)
+                    upperBoundConstraint.upperBound += term.second;
+                else
+                    lowerBoundConstraint.lowerBound += term.second;
+                upperBoundConstraint.coefficients[term.first] = term.second;
+                lowerBoundConstraint.coefficients[term.first] = -term.second;
+            }
+            upperBoundConstraint.coefficients[x] = upperBoundConstraint.upperBound - y.upperBound;
+            lowerBoundConstraint.coefficients[x] = lowerBoundConstraint.lowerBound + y.lowerBound;
+            problem.addConstraint(upperBoundConstraint);
+            problem.addConstraint(lowerBoundConstraint);
+    }
 
-    void calcConsequencesByEndState(std::vector<std::vector<int> > &endStateToEvents) {
+
+
+    static void calcConsequencesByEndState(std::vector<std::vector<int> > &endStateToEvents) {
         endStateToEvents.clear();
         endStateToEvents.resize(AGENT::domainSize * AGENT::Act::domainSize);
         AGENT *pAgent;
@@ -105,7 +137,7 @@ protected:
     }
 
 
-    int eventId(int time, int state, int act) {
+    static int eventId(int time, int state, int act) {
         return time*(AGENT::domainSize*AGENT::Act::domainSize) +
             state*AGENT::Act::domainSize +
             act;
