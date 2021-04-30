@@ -6,8 +6,8 @@
 #include <algorithm>
 #include <cmath>
 
-SimplexMCMC::SimplexMCMC(glpkpp::GlpProblem &prob) :
-        GlpSimplex(prob),
+SimplexMCMC::SimplexMCMC(glp::Problem &prob, const glp::SparseVec &initialSample) :
+        Simplex(prob),
         colLastNonZero(n,-1),
         rowLatestCompletionPivot(m, -1),
         latestCompletionBegin(m, -1),

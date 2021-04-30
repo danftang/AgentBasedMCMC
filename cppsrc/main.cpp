@@ -1,11 +1,15 @@
 #include <iostream>
 #include "glpkppinclude/glpkpp.h"
+#include "CatMouseAgent.h"
+#include "ABMProblem.h"
 
-using namespace glpkpp;
+using glp::X;
 
 int main() {
 
-    GlpProblem myProb;
+    ABMProblem<CatMouseAgent> myProb(4, );
+
+    glp::Problem myProb;
 
     myProb.addConstraint(1.0*X(1) + 1.0*X(2) + 1.0*X(3) <= 100.0);
     myProb.addConstraint(10.0*X(1) + 4.0*X(2) + 5.0*X(3) <= 600.0);
@@ -17,7 +21,7 @@ int main() {
     myProb.stdBasis();
     myProb.warmUp();
 
-    GlpSimplex mySimplex(myProb);
+    glp::Simplex mySimplex(myProb);
 
     std::cout << myProb;
     std::cout << mySimplex << std::endl;
