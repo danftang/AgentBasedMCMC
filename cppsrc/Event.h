@@ -8,22 +8,12 @@
 #include <utility>
 
 template<typename AGENT>
-class Event {
-    int id;
+class Event: public glp::X {
+public:
     Event(int time, const AGENT &agent, const typename AGENT::Act &act):
-    id(time*AGENT::domainSize*AGENT::Act::domainSize + agent*AGENT::domainSize + act) { }
+    X(time*AGENT::domainSize*(int)AGENT::Act::domainSize + agent*AGENT::domainSize + (int)act) { }
 
-    operator int() const { return id; }
+
 };
-
-//template<typename AGENT>
-//Event<AGENT> event(int time, const AGENT &agent, const typename AGENT::Act &act) {
-//    return Event(time, agent, act);
-//}
-
-template<typename AGENT>
-std::pair<const double, const Event<AGENT>> operator *(const double &multiplier, const Event<AGENT> &event) {
-    return std::pair(multiplier,event);
-}
 
 #endif //GLPKTEST_EVENT_H

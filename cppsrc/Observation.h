@@ -6,8 +6,13 @@
 #define GLPKTEST_OBSERVATION_H
 
 #include <boost/math/distributions/binomial.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/binomial_distribution.hpp>
+#include <boost/random/discrete_distribution.hpp>
 #include "SimplexMCMC.h"
 #include "Event.h"
+#include "Trajectory.h"
+#include "State.h"
 
 template<typename AGENT>
 class Observation {
@@ -23,19 +28,16 @@ public:
     numberObserved(numberObserved),
     pObserve(pObserve) {}
 
-    Observation(int time, const AGENT &agent, const Trajectory<AGENT> &trajectory) {
-
+    // make observation of the trajectory
+    Observation(int time, const AGENT &agent,const double &pObserve, const Trajectory<AGENT> &trajectory):
+    time(time),
+    agent(agent),
+    pObserve(pObserve)
+    {
+        boost::random::binomial_distribution binom(trajectory(time,agent),pObserve);
+        numberObserved = binom(boost::mt11213b());
     }
 
-//    val footprintsObserved: Boolean = (Random.nextDouble() < pObserveFootprints(time, lookedFor, trajectory))
-//
-//    override fun logLikelihood(trajectory: Trajectory<PredPreyAgent, Acts>): Double {
-//        return if(footprintsObserved) {
-//            ln(pObserveFootprints(time, lookedFor, trajectory))
-//        } else {
-//            ln(1.0-pObserveFootprints(time, lookedFor, trajectory))
-//        }
-//    }
 //
 //    override fun eventConstraints(): List<MutableConstraint<Fraction>> {
 //        return if(footprintsObserved) {
@@ -45,22 +47,22 @@ public:
 //        }
 //    }
 //
-//    companion object {
-//            val pObserveIfPresent = 0.9
-//
-//            fun pObserveFootprints(time: Int, lookedFor: PredPreyAgent, trajectory: Trajectory<PredPreyAgent, Acts>): Double {
-//                return if(trajectory.nAgents(time, lookedFor) >= 1) pObserveIfPresent else 0.0
-//            }
-//    }
-//
 
     double logLikelihood(const glp::SparseVec &trajectory) const {
         int n = trajectory[State(time,agent)];
         if(n < numberObserved) return -std::numeric_limits<double>::infinity();
         return log(boost::math::pdf(boost::math::binomial(n, pObserve), numberObserved));
     }
-    
-    std::vector<glp::Constraint> constraints() const;
+
+    // if we observed m agents, there cannot be less than m agents present (though there may be more if
+    // pObserve < 1.0)
+    std::vector<glp::Constraint> constraints() const {
+        return std::vector<glp::Constraint>({ glp::Constraint(
+                numberObserved,
+                1.0 * State(time, agent),
+                std::numeric_limits<double>::infinity()
+                ) });
+    }
 };
 
 

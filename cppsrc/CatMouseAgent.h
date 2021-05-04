@@ -11,6 +11,7 @@
 #include "glpkpp.h"
 
 class CatMouseAgent {
+public:
     enum class Act {
         MOVE,
         STAYPUT,
