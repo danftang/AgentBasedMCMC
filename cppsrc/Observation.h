@@ -48,8 +48,8 @@ public:
 //    }
 //
 
-    double logLikelihood(const glp::SparseVec &trajectory) const {
-        int n = trajectory[State(time,agent)];
+    double logLikelihood(const Trajectory<AGENT> &trajectory) const {
+        int n = trajectory(time,agent);
         if(n < numberObserved) return -std::numeric_limits<double>::infinity();
         return log(boost::math::pdf(boost::math::binomial(n, pObserve), numberObserved));
     }
@@ -57,11 +57,7 @@ public:
     // if we observed m agents, there cannot be less than m agents present (though there may be more if
     // pObserve < 1.0)
     std::vector<glp::Constraint> constraints() const {
-        return std::vector<glp::Constraint>({ glp::Constraint(
-                numberObserved,
-                1.0 * State(time, agent),
-                std::numeric_limits<double>::infinity()
-                ) });
+        return std::vector({ 1.0*State(time,agent) >= numberObserved });
     }
 };
 

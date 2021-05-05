@@ -22,6 +22,8 @@ int main() {
 
     std::copy(constraints.begin(), constraints.end(), std::ostream_iterator<glp::Constraint>(std::cout, ", "));
 
+    std::cout << myObs.logLikelihood(myVec);
+
 //    std::cout << myTraj;
 
 //    ABMProblem<CatMouseAgent> myProb(4, );

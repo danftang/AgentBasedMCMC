@@ -58,7 +58,7 @@ class ABMProblem: glp::Problem {
                     // incoming edges
                     int timeOffset = time*AGENT::domainSize*AGENT::Act::domainSize;
                     for (int inEdge: incomingEdges[agentState]) {
-                        constraint[timeOffset + inEdge] = -1.0;
+                        constraint.coefficients.add(timeOffset + inEdge, -1.0);
                     }
                 }
                 addConstraint(constraint);
@@ -89,20 +89,20 @@ class ABMProblem: glp::Problem {
     void addXImpliesY(int x, const glp::Constraint &y) {
         if(y.upperBound != infinity) {
             glp::Constraint upperBoundConstraint(-infinity, 0.0);
-            for (auto term: y.coefficients) {
-                if (term.second > 0.0) upperBoundConstraint.upperBound += term.second;
-                upperBoundConstraint.coefficients[term.first] = term.second;
+            for (int i=0; i < y.coefficients.sparseSize(); ++i) {
+                if (y.coefficients.values[i] > 0.0) upperBoundConstraint.upperBound += y.coefficients.values[i];
+                upperBoundConstraint.coefficients.add(y.coefficients.indices[i], y.coefficients.values[i]);
             }
-            upperBoundConstraint.coefficients[x] = upperBoundConstraint.upperBound - y.upperBound;
+            upperBoundConstraint.coefficients.add(x, upperBoundConstraint.upperBound - y.upperBound);
             addConstraint(upperBoundConstraint);
         }
         if(y.lowerBound != -infinity) {
             glp::Constraint lowerBoundConstraint(0.0, infinity);
-            for (auto term: y.coefficients) {
-                if (term.second < 0.0) lowerBoundConstraint.lowerBound += term.second;
-                lowerBoundConstraint.coefficients[term.first] = -term.second;
+            for (int i=0; i < y.coefficients.sparseSize(); ++i) {
+                if (y.coefficients.values[i] < 0.0) lowerBoundConstraint.upperBound += y.coefficients.values[i];
+                lowerBoundConstraint.coefficients.add(y.coefficients.indices[i], -y.coefficients.values[i]);
             }
-            lowerBoundConstraint.coefficients[x] = lowerBoundConstraint.lowerBound + y.lowerBound;
+            lowerBoundConstraint.coefficients.add(x, lowerBoundConstraint.lowerBound + y.lowerBound);
             addConstraint(lowerBoundConstraint);
         }
     }

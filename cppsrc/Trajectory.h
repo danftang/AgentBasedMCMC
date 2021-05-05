@@ -10,15 +10,15 @@
 template<typename AGENT>
 class Trajectory: glp::SparseVec {
 public:
-    Trajectory(int dimension, int capacity=-1): glp::SparseVec(dimension,capacity) { }
+    Trajectory() { }
     Trajectory(glp::SparseVec &&rvalue): glp::SparseVec(0) {
-        moveFrom(rvalue);
+        swap(rvalue);
     }
 
     Trajectory(const glp::SparseVec &lvalue): glp::SparseVec(lvalue) { }
 
     Trajectory &operator =(glp::SparseVec &&rvalue) {
-        moveFrom(rvalue);
+        swap(rvalue);
         return *this;
     }
 
@@ -28,14 +28,14 @@ public:
     }
 
     // event count
-    double operator()(int time, const AGENT &agent, const typename AGENT::Act &act) {
+    double operator()(int time, const AGENT &agent, const typename AGENT::Act &act) const {
         return (*this)[Event(time,agent,act)];
     }
 
     // occupation number
-    double operator()(int time, const AGENT &agent) {
-        int beginIndex = Event(time,agent,0);
-        int endIndex = beginIndex + AGENT::Act::domainSize;
+    double operator()(int time, const AGENT &agent) const {
+        int beginIndex = Event(time,agent,typename AGENT::Act(0));
+        int endIndex = beginIndex + (int)AGENT::Act::domainSize;
         double occupation = 0.0;
         int index;
         for(int i=1; i<=sparseSize(); ++i) {

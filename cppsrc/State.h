@@ -19,10 +19,10 @@ public:
     agent(agent) { }
 
     glp::LinearSum operator *(double c) const {
-        glp::LinearSum sum((int)AGENT::Act::domainSize);
+        glp::LinearSum sum;
         int beginIndex = Event(time, agent, typename AGENT::Act(0));
         for(int actId=0; actId < (int)AGENT::Act::domainSize; ++actId) {
-            sum.push_back(std::pair(c,beginIndex+actId));
+            sum.add(beginIndex+actId, c);
         }
         return sum;
     }
@@ -30,6 +30,7 @@ public:
     friend glp::LinearSum operator *(double c, const State<AGENT> &state) {
         return state * c;
     }
+
 
 //    friend LinearSum &operator +=(LinearSum &sum, const std::pair<double,State<AGENT>> &stateTerm) {
 //        int beginIndex = Event(stateTerm.second.time, stateTerm.second.agent, 0);
