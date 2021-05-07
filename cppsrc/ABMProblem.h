@@ -11,17 +11,20 @@
 #include "Event.h"
 
 template<typename AGENT>
-class ABMProblem: glp::Problem {
+class ABMProblem: public glp::Problem {
+public:
     static constexpr double infinity = std::numeric_limits<double>::infinity();
 
     int nTimesteps;
 //    std::vector<Observation<AGENT>> observations;
 
 
+
     ABMProblem(int nTimesteps, const std::vector<Observation<AGENT> > &observations): nTimesteps(nTimesteps) {
-        ensureNVars(AGENT::domainSize * AGENT::Act::domainSize * nTimesteps);
+        ensureNVars(AGENT::domainSize() * AGENT::actDomainSize() * nTimesteps);
         addContinuityConstraints();
         addInteractionConstraints();
+        addActFermionicConstraints();
     }
 
     //    fun logProb(X: SparseVector<Fraction>): Double {
@@ -41,25 +44,21 @@ class ABMProblem: glp::Problem {
 //        }
 //    }
 
+protected:
 
     void addContinuityConstraints() {
         glp::Constraint constraint(0.0,0.0);
-        std::vector<std::vector<int>> incomingEdges;
-        calcConsequencesByEndState(incomingEdges);
-        for(int time = 0; time < nTimesteps; ++time) {
-            for(int agentState = 0; agentState < AGENT::domainSize; ++agentState) {
+        std::vector<std::vector<int>> incomingEdges = consequencesByEndState();
+        for(int time = 1; time < nTimesteps; ++time) {
+            for(int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
                 // outgoing edges
-                if(time < nTimesteps-1) {
-                    for (int act = 0; act < AGENT::Act::domainSize; ++act) {
-                        constraint[Event(time, AGENT(agentState), act)] = 1.0;
-                    }
+                for (int act = 0; act < AGENT::actDomainSize(); ++act) {
+                    constraint.coefficients.add(Event<AGENT>(time, agentState, act), 1.0);
                 }
-                if(time > 0) {
-                    // incoming edges
-                    int timeOffset = time*AGENT::domainSize*AGENT::Act::domainSize;
-                    for (int inEdge: incomingEdges[agentState]) {
-                        constraint.coefficients.add(timeOffset + inEdge, -1.0);
-                    }
+                // incoming edges
+                int timeOffset = (time-1)*AGENT::domainSize()*AGENT::actDomainSize();
+                for (int inEdge: incomingEdges[agentState]) {
+                    constraint.coefficients.add(timeOffset + inEdge, -1.0);
                 }
                 addConstraint(constraint);
                 constraint.coefficients.clear();
@@ -69,9 +68,9 @@ class ABMProblem: glp::Problem {
 
     void addInteractionConstraints() {
         for(int time = 0; time < nTimesteps; ++time) {
-            for (int agentState = 0; agentState < AGENT::domainSize; ++agentState) {
+            for (int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
                 AGENT agent(agentState);
-                for (int act = 0; act < AGENT::Act::domainSize; ++act) {
+                for (int act = 0; act < AGENT::actDomainSize(); ++act) {
                     for(const glp::Constraint &actConstraint : agent.constraints(act)) {
                         addXImpliesY(Event(time,agent,act), actConstraint);
                     }
@@ -108,22 +107,32 @@ class ABMProblem: glp::Problem {
     }
 
 
+    void addActFermionicConstraints() {
+        for(int time = 0; time < nTimesteps; ++time) {
+            for (int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
+                for (int act = 0; act < AGENT::actDomainSize(); ++act) {
+                    addConstraint(0.0 <= 1.0*Event<AGENT>(time,agentState,act) <= 1.0);
+                }
+            }
+        }
+    }
 
 
-    static void calcConsequencesByEndState(std::vector<std::vector<int> > &endStateToEvents) {
+    static std::vector<std::vector<int>> consequencesByEndState() {
+        std::vector<std::vector<int> > endStateToEvents;
         endStateToEvents.clear();
-        endStateToEvents.resize(AGENT::domainSize * AGENT::Act::domainSize);
-//        AGENT *pAgent;
+        endStateToEvents.resize(AGENT::domainSize());
         std::vector<AGENT> consequences;
-        for(int agentState = 0; agentState < AGENT::domainSize; ++agentState) {
+        for(int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
             AGENT agent(agentState);
-            for (int act = 0; act < AGENT::Act::domainSize; ++act) {
-                agent.consequences(act, consequences);
+            for (int act = 0; act < AGENT::actDomainSize(); ++act) {
+                consequences = agent.consequences(act);
                 for(AGENT endState: consequences) {
                     endStateToEvents[endState].push_back(Event(0,agent,act));
                 }
             }
         }
+        return endStateToEvents;
     }
 };
 

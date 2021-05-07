@@ -3,6 +3,7 @@
 //
 
 #include "CatMouseAgent.h"
+#include "State.h"
 
 // returns PMF over acts
 std::vector<double> CatMouseAgent::timestep(std::multiset<CatMouseAgent> others) {
@@ -22,9 +23,21 @@ std::vector<double> CatMouseAgent::timestep(std::multiset<CatMouseAgent> others)
 }
 
 std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) {
-    return std::vector<CatMouseAgent>(); // placeholder
+    if(act == MOVE) {
+        return std::vector<CatMouseAgent>({ CatMouseAgent(type(), Position((position()+1)%2)) });
+    } else {
+        return std::vector<CatMouseAgent>({ CatMouseAgent(type(), position()) });
+    }
 }
 
-std::vector<glp::Constraint> CatMouseAgent::constraints(CatMouseAgent::Act act) {
-    return std::vector<glp::Constraint>(); // placeholder
+std::vector<glp::Constraint> CatMouseAgent::constraints(Act act) {
+    if(type() == MOUSE) {
+        if(act == MOVE) {
+            return std::vector({ 1.0*State(0,CatMouseAgent(CAT, position())) >= 1 });
+        } else {
+            return std::vector({ 1.0*State(0,CatMouseAgent(CAT, position())) == 0 });
+        }
+    } else {
+        return std::vector<glp::Constraint>();
+    }
 }

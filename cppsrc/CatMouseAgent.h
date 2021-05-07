@@ -12,10 +12,11 @@
 
 class CatMouseAgent {
 public:
-    enum class Act {
+    typedef int Act;
+
+    enum ActNames {
         MOVE,
-        STAYPUT,
-        domainSize = 2
+        STAYPUT
     };
 
     enum Position {
@@ -23,21 +24,35 @@ public:
         RIGHT
     };
 
+    enum Type {
+        CAT,
+        MOUSE
+    };
 
-    Position pos;
+    int stateId;
 
     // Agent Domain stuff
-    static const int domainSize = 2;
-    CatMouseAgent(int ordinal) { if(ordinal%2 == 0) pos = LEFT; else pos = RIGHT;}
-    operator int() const { return pos; }
+    static constexpr int domainSize() { return 2; }
+    static constexpr int actDomainSize() { return 2; }
 
+    CatMouseAgent(int ordinal): stateId(ordinal) {}
+    CatMouseAgent(Type type, Position position): stateId(position + 2*type) { }
+    operator int() const { return stateId; }
+    Position position() const { return Position(stateId%2); }
+    Type type() const { return Type(stateId/2); }
 
     std::vector<double> timestep(std::multiset<CatMouseAgent> others);
     std::vector<CatMouseAgent> consequences(Act act); // the consequences of an act
     // returns the constraints implied by the given act
     std::vector<glp::Constraint> constraints(Act act); // to be generated automatically by static analysis...eventually.
 
+    friend std::ostream &operator <<(std::ostream &out, const CatMouseAgent &agent) {
+        out << agent.type() << ":" << agent.position();
+        return out;
+    }
+
 };
+
 
 
 #endif //GLPKTEST_CATMOUSEAGENT_H

@@ -8,7 +8,7 @@
 #include "glpkpp.h"
 
 template<typename AGENT>
-class Trajectory: glp::SparseVec {
+class Trajectory: public glp::SparseVec {
 public:
     Trajectory() { }
     Trajectory(glp::SparseVec &&rvalue): glp::SparseVec(0) {
@@ -35,7 +35,7 @@ public:
     // occupation number
     double operator()(int time, const AGENT &agent) const {
         int beginIndex = Event(time,agent,typename AGENT::Act(0));
-        int endIndex = beginIndex + (int)AGENT::Act::domainSize;
+        int endIndex = beginIndex + AGENT::actDomainSize();
         double occupation = 0.0;
         int index;
         for(int i=1; i<=sparseSize(); ++i) {
@@ -43,6 +43,25 @@ public:
             if(beginIndex <= index && index < endIndex) occupation += values[i];
         }
         return occupation;
+    }
+
+    friend std::ostream &operator <<(std::ostream &out, const Trajectory<AGENT> &trajectory) {
+        out << "TODO: Implement trajectory printing" << std::endl;
+
+        Trajectory sortedTrajectory(trajectory);
+        sortedTrajectory.sort();
+
+        int timestep = -1;
+        for(auto eventCount: sortedTrajectory) {
+            Event<AGENT> event = eventCount.index;
+            if(event.time() != timestep) {
+                out << "time = " << event.time() << std::endl;
+                timestep = event.time();
+            }
+            out << "  " << eventCount.value << "*" << event << std::endl;
+        }
+
+        return out;
     }
 
 //    val stateTrajectory: List<Multiset<AGENT>> by lazy {

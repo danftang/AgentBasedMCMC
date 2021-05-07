@@ -3,26 +3,26 @@
 #include "CatMouseAgent.h"
 #include "ABMProblem.h"
 #include "Trajectory.h"
+#include "Experiments.h"
+#include "StlStream.h"
 
 using glp::X;
 
-glp::SparseVec myFunc() {
-    return glp::SparseVec(3);
-}
-
 int main() {
-
-//    Trajectory<CatMouseAgent> myTraj(3);
+    Experiments::CatMouseExpt();
+    //    Trajectory<CatMouseAgent> myTraj(3);
 //    myTraj = myFunc();
-    glp::SparseVec myVec(3);
-    Trajectory<CatMouseAgent> myTraj(myVec);
-
-    Observation<CatMouseAgent> myObs(0, CatMouseAgent(0), 1, 0.9);
-    auto constraints = myObs.constraints();
-
-    std::copy(constraints.begin(), constraints.end(), std::ostream_iterator<glp::Constraint>(std::cout, ", "));
-
-    std::cout << myObs.logLikelihood(myVec);
+//    glp::SparseVec myVec(3);
+//    Trajectory<CatMouseAgent> myTraj(myVec);
+//
+//    Observation<CatMouseAgent> myObs(0, CatMouseAgent(0), 1, 0.9);
+//    auto constraints = myObs.constraints();
+//
+//    for(auto constraint: constraints) {
+//        std::cout << constraint << std::endl;
+//    }
+//
+//    std::cout << myObs.logLikelihood(myVec);
 
 //    std::cout << myTraj;
 
@@ -51,3 +51,4 @@ int main() {
 
     return 0;
 }
+

@@ -7,6 +7,7 @@
 
 #include <utility>
 #include "LinearSum.h"
+#include "Event.h"
 
 template<typename AGENT>
 class State {
@@ -20,8 +21,8 @@ public:
 
     glp::LinearSum operator *(double c) const {
         glp::LinearSum sum;
-        int beginIndex = Event(time, agent, typename AGENT::Act(0));
-        for(int actId=0; actId < (int)AGENT::Act::domainSize; ++actId) {
+        int beginIndex = Event<AGENT>(time, agent, 0);
+        for(int actId=0; actId < AGENT::actDomainSize(); ++actId) {
             sum.add(beginIndex+actId, c);
         }
         return sum;
