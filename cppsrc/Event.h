@@ -11,7 +11,7 @@ template<typename AGENT>
 class Event: public glp::X {
 public:
     Event(int time, const AGENT agent, const typename AGENT::Act act):
-    X(time*AGENT::domainSize()*AGENT::actDomainSize() + agent*AGENT::domainSize() + (int)act + 1) { }
+    X(time*AGENT::domainSize()*AGENT::actDomainSize() + agent*AGENT::actDomainSize() + (int)act + 1) { }
 
     Event(int eventId): X(eventId) {}
 

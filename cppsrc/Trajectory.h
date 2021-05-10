@@ -46,8 +46,6 @@ public:
     }
 
     friend std::ostream &operator <<(std::ostream &out, const Trajectory<AGENT> &trajectory) {
-        out << "TODO: Implement trajectory printing" << std::endl;
-
         Trajectory sortedTrajectory(trajectory);
         sortedTrajectory.sort();
 

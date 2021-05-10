@@ -30,12 +30,12 @@ std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) {
     }
 }
 
-std::vector<glp::Constraint> CatMouseAgent::constraints(Act act) {
+std::vector<glp::Constraint> CatMouseAgent::constraints(int time, Act act) {
     if(type() == MOUSE) {
         if(act == MOVE) {
-            return std::vector({ 1.0*State(0,CatMouseAgent(CAT, position())) >= 1 });
+            return std::vector({ 1.0*State(time,CatMouseAgent(CAT, position())) >= 1 });
         } else {
-            return std::vector({ 1.0*State(0,CatMouseAgent(CAT, position())) == 0 });
+            return std::vector({ 1.0*State(time,CatMouseAgent(CAT, position())) == 0 });
         }
     } else {
         return std::vector<glp::Constraint>();

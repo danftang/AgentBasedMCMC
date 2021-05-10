@@ -9,6 +9,7 @@
 #include "glpkpp.h"
 #include "Observation.h"
 #include "Event.h"
+#include "StlStream.h"
 
 template<typename AGENT>
 class ABMProblem: public glp::Problem {
@@ -25,6 +26,7 @@ public:
         addContinuityConstraints();
         addInteractionConstraints();
         addActFermionicConstraints();
+        addObservations(observations);
     }
 
     //    fun logProb(X: SparseVector<Fraction>): Double {
@@ -71,7 +73,7 @@ protected:
             for (int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
                 AGENT agent(agentState);
                 for (int act = 0; act < AGENT::actDomainSize(); ++act) {
-                    for(const glp::Constraint &actConstraint : agent.constraints(act)) {
+                    for(const glp::Constraint &actConstraint : agent.constraints(time, act)) {
                         addXImpliesY(Event(time,agent,act), actConstraint);
                     }
                 }
@@ -96,12 +98,12 @@ protected:
             addConstraint(upperBoundConstraint);
         }
         if(y.lowerBound != -infinity) {
-            glp::Constraint lowerBoundConstraint(0.0, infinity);
+            glp::Constraint lowerBoundConstraint(-infinity, 0.0);
             for (int i=0; i < y.coefficients.sparseSize(); ++i) {
-                if (y.coefficients.values[i] < 0.0) lowerBoundConstraint.upperBound += y.coefficients.values[i];
+                if (y.coefficients.values[i] < 0.0) lowerBoundConstraint.upperBound -= y.coefficients.values[i];
                 lowerBoundConstraint.coefficients.add(y.coefficients.indices[i], -y.coefficients.values[i]);
             }
-            lowerBoundConstraint.coefficients.add(x, lowerBoundConstraint.lowerBound + y.lowerBound);
+            lowerBoundConstraint.coefficients.add(x, lowerBoundConstraint.upperBound + y.lowerBound);
             addConstraint(lowerBoundConstraint);
         }
     }
@@ -111,8 +113,18 @@ protected:
         for(int time = 0; time < nTimesteps; ++time) {
             for (int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
                 for (int act = 0; act < AGENT::actDomainSize(); ++act) {
-                    addConstraint(0.0 <= 1.0*Event<AGENT>(time,agentState,act) <= 1.0);
+                    Event<AGENT> event = Event<AGENT>(time,agentState,act);
+                    addConstraint(0.0 <= 1.0*event <= 1.0);
+                    setColKind(event, BINARY);
                 }
+            }
+        }
+    }
+
+    void addObservations(const std::vector<Observation<AGENT> > &observations) {
+        for(const Observation<AGENT> &observation: observations) {
+            for(const glp::Constraint &constraint: observation.constraints()) {
+                addConstraint(constraint);
             }
         }
     }
@@ -134,6 +146,8 @@ protected:
         }
         return endStateToEvents;
     }
+
+
 };
 
 

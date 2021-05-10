@@ -32,7 +32,7 @@ public:
     int stateId;
 
     // Agent Domain stuff
-    static constexpr int domainSize() { return 2; }
+    static constexpr int domainSize() { return 4; }
     static constexpr int actDomainSize() { return 2; }
 
     CatMouseAgent(int ordinal): stateId(ordinal) {}
@@ -44,7 +44,7 @@ public:
     std::vector<double> timestep(std::multiset<CatMouseAgent> others);
     std::vector<CatMouseAgent> consequences(Act act); // the consequences of an act
     // returns the constraints implied by the given act
-    std::vector<glp::Constraint> constraints(Act act); // to be generated automatically by static analysis...eventually.
+    std::vector<glp::Constraint> constraints(int time, Act act); // to be generated automatically by static analysis...eventually.
 
     friend std::ostream &operator <<(std::ostream &out, const CatMouseAgent &agent) {
         out << agent.type() << ":" << agent.position();
