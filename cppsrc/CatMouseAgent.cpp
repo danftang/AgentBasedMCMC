@@ -6,20 +6,23 @@
 #include "State.h"
 
 // returns PMF over acts
-std::vector<double> CatMouseAgent::timestep(std::multiset<CatMouseAgent> others) {
+std::vector<double> CatMouseAgent::timestep(std::map<CatMouseAgent,double> others) {
+    static constexpr double pCatMove = 0.25;
+    std::vector<double> actPmf(actDomainSize());
 
-//        val pCatMove = 0.25
-//
-//        return if(type == AgentType.CAT) {
-//            arrayOf(pCatMove, 1.0-pCatMove)
-//        } else {
-//            if(others[CatMouseAgent(AgentType.CAT, position)] >= 1) {
-//                arrayOf(1.0,0.0)
-//            } else {
-//                arrayOf(0.0,1.0)
-//            }
-//        }
-    return std::vector<double>(); // placeholder
+    if (type() == CAT) {
+        actPmf[MOVE] = pCatMove;
+        actPmf[STAYPUT] = 1.0 - pCatMove;
+    } else {
+        if (others[CatMouseAgent(CAT, position())] >= 1.0) {
+            actPmf[MOVE] = 1.0;
+            actPmf[STAYPUT] = 0.0;
+        } else {
+            actPmf[MOVE] = 0.0;
+            actPmf[STAYPUT] = 1.0;
+        }
+    }
+    return actPmf;
 }
 
 std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) {
@@ -30,6 +33,8 @@ std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) {
     }
 }
 
+
+// result of static analysis of timestep member function...
 std::vector<glp::Constraint> CatMouseAgent::constraints(int time, Act act) {
     if(type() == MOUSE) {
         if(act == MOVE) {

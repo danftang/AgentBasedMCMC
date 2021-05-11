@@ -5,11 +5,13 @@
 #include "Trajectory.h"
 #include "Experiments.h"
 #include "StlStream.h"
+#include "Random.h"
 
 using glp::X;
 
 int main() {
-    Experiments::CatMouseExpt();
+//    Experiments::CatMouseExpt();
+
     //    Trajectory<CatMouseAgent> myTraj(3);
 //    myTraj = myFunc();
 //    glp::SparseVec myVec(3);

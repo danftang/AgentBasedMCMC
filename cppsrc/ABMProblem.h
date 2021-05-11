@@ -17,11 +17,13 @@ public:
     static constexpr double infinity = std::numeric_limits<double>::infinity();
 
     int nTimesteps;
-//    std::vector<Observation<AGENT>> observations;
+    std::vector<Observation<AGENT>> observations;
 
 
 
-    ABMProblem(int nTimesteps, const std::vector<Observation<AGENT> > &observations): nTimesteps(nTimesteps) {
+    ABMProblem(int nTimesteps, std::vector<Observation<AGENT> > observations):
+    nTimesteps(nTimesteps),
+    observations(observations) {
         ensureNVars(AGENT::domainSize() * AGENT::actDomainSize() * nTimesteps);
         addContinuityConstraints();
         addInteractionConstraints();
@@ -29,22 +31,14 @@ public:
         addObservations(observations);
     }
 
-    //    fun logProb(X: SparseVector<Fraction>): Double {
-//        if(X.isInteger()) {
-//            val trajectory = Trajectory(model, X)
-//            val prior = trajectory.logPrior()
-//            val likelihood = observations.sumByDouble { it.logLikelihood(trajectory) }
-////        val penalty = logFractionPenalty(X)
-//            val logP = prior + likelihood //+ penalty
-////        if(penalty < 0.0) println("Got fractional penalty $penalty")
-////        println("prior logprob $prior likelihood logprob $likelihood fraction penalty $penalty = $logP")
-//            return logP
-//        } else {
-//            // TODO: Test for dealing with fractional states
-//            return X.nonZeroEntries.values.sumByDouble { it.toDouble() * -2.2 } // constant = average logprob per event
-//
-//        }
-//    }
+    double logProb(const glp::SparseVec & X) {
+            const auto &trajectory = (const Trajectory<AGENT> &)X;
+            double logP = trajectory.logPrior();
+            for(auto observation: observations) {
+                logP += observation.logLikelihood(trajectory);
+            }
+            return logP;
+    }
 
 protected:
 

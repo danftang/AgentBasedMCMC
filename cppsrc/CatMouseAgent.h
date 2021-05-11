@@ -41,7 +41,7 @@ public:
     Position position() const { return Position(stateId%2); }
     Type type() const { return Type(stateId/2); }
 
-    std::vector<double> timestep(std::multiset<CatMouseAgent> others);
+    std::vector<double> timestep(std::map<CatMouseAgent,double> others);
     std::vector<CatMouseAgent> consequences(Act act); // the consequences of an act
     // returns the constraints implied by the given act
     std::vector<glp::Constraint> constraints(int time, Act act); // to be generated automatically by static analysis...eventually.

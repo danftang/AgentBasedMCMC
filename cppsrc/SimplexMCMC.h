@@ -8,10 +8,14 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <random>
 #include "glpkpp.h"
+#include "BasisProbability.h"
+#include "PivotPoint.h"
 
 class SimplexMCMC: public glp::Simplex {
 public:
+
     std::vector<int>    colLastNonZero;             // row-index of the last non-zero entry in this col
     std::vector<int>    rowLatestCompletionPivot; // k-col-index of the earliest col of the final basis that can pivot on this row
     std::vector<int>    latestCompletionBegin;   // k-col-index of the earliest col of the final completion
@@ -22,34 +26,22 @@ public:
     int nRejections = 0;
     int fractionalRunLength = 0;
 
-    SimplexMCMC(glp::Problem &prob, const glp::SparseVec &initialSample);
+    BasisProbability probability;
+
+
+    SimplexMCMC(glp::Problem &prob);
 
     void randomPivot();
     double lnDegeneracyProb();
 
-//
-//
-//    fun<R> expectation(nSamples: Int, initialExpectation: R, expectationAccumulator: (SparseVector<Fraction>, R) -> R): R {
-//        var e = initialExpectation
-//        var oldSample: SparseVector<Fraction>? = null
-//        var rejections = 0
-//        var lastTime = Instant.now().toEpochMilli()
-//        for(s in 1..nSamples) {
-//            val newSample = simplex.nextIntegerSample()
-//            e = expectationAccumulator(newSample, e)
-//            if(oldSample === newSample) ++rejections
-//            oldSample = newSample
-//            if(s.rem(100) == 0) {
-//                val now = Instant.now().toEpochMilli()
-//                println("Got to sample $s in ${(now-lastTime)/1000.0}s largest Numerator,Denominator ${largestNumeratorDenominator()}, Size ${simplex.M.rows.sumBy { it.nonZeroEntries.size }}, Degeneracy ${simplex.degeneracy()} logPiv = ${simplex.state.logProbOfPivotState} logPX = ${simplex.state.logPX}, logPDegeneracy = ${simplex.state.logDegeneracyProb} prob per event = ${simplex.state.logPX/newSample.nonZeroEntries.size}")
-//                lastTime = now
-////                println(simplex.fractionalLogP - simplex.state.logPX - ln(simplex.transitionProb(simplex.proposePivot())))
-//            }
-//        }
-//        println("Rejection ratio = ${rejections.toDouble()/nSamples}")
-//        return e
-//    }
+    glp::SparseVec nextSample();
+    void processProposal(PivotPoint proposal);
+    double transitionProb(PivotPoint proposal);
+    double reverseTransitionProb(PivotPoint proposal);
 
+    PivotPoint proposePivot();
+
+    std::vector<int> calcPivotRows(int j, const std::vector<double> &colVec);
 };
 
 

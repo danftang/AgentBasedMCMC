@@ -34,16 +34,45 @@ public:
 
     // occupation number
     double operator()(int time, const AGENT &agent) const {
-        int beginIndex = Event(time,agent,typename AGENT::Act(0));
+        int beginIndex = Event(time,agent,0);
         int endIndex = beginIndex + AGENT::actDomainSize();
         double occupation = 0.0;
-        int index;
+        int eventId;
         for(int i=1; i<=sparseSize(); ++i) {
-            index = indices[i];
-            if(beginIndex <= index && index < endIndex) occupation += values[i];
+            eventId = indices[i];
+            if(beginIndex <= eventId && eventId < endIndex) occupation += values[i];
         }
         return occupation;
     }
+
+    std::vector<std::map<AGENT,double>> getStateTrajectory(int time) {
+        std::vector<std::map<AGENT,double>> stateTrajectory;
+        int eventId;
+        for(int i=1; i<=sparseSize(); ++i) {
+            auto event = Event<AGENT>(indices[i]);
+            if(event.time() >= stateTrajectory.size()) stateTrajectory.resize(event.time()+1);
+            stateTrajectory[event.time()][event.agent()] += values[i];
+        }
+        return stateTrajectory;
+    }
+
+    double logPrior() {
+        double logP = 0.0;
+        std::vector<std::map<AGENT,double>> stateTrajectory = getStateTrajectory();
+        for(auto eventOccupation : *this) {
+            auto event = Event<AGENT>(eventOccupation.index);
+            logP += eventOccupation.value * ln( event.agent().timestep(stateTrajectory[event.time()])[event.act()] );
+//                   - CombinatoricsUtils.factorialLog(occupation) // TODO: add this for non-state-fermionic trajectories
+        }
+// TODO: Add this as we're no longer assuming state-fermionicity
+//        for(state in stateTrajectory) {
+//            for((_, occupation) in state.entries) {
+//                logP += CombinatoricsUtils.factorialLog(occupation)
+//            }
+//        }
+        return logP;
+    }
+
 
     friend std::ostream &operator <<(std::ostream &out, const Trajectory<AGENT> &trajectory) {
         Trajectory sortedTrajectory(trajectory);
@@ -119,20 +148,6 @@ public:
 //    }
 //
 //
-//    fun logPrior(): Double {
-//        var logP = 0.0
-//        for((event,occupation) in events) {
-//            logP += occupation * ln( event.agent.timestep(stateTrajectory[event.time])[event.act.ordinal] )
-////                   - CombinatoricsUtils.factorialLog(occupation) // for non-fermionic
-//        }
-//// Add this for non-fermionic
-////        for(state in stateTrajectory) {
-////            for((_, occupation) in state.entries) {
-////                logP += CombinatoricsUtils.factorialLog(occupation)
-////            }
-////        }
-//        return logP
-//    }
 
 };
 

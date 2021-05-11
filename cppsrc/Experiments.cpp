@@ -34,16 +34,13 @@ void Experiments::CatMouseExpt() {
 //    initialTrajectory.add(Event(0,leftCat, CatMouseAgent::STAYPUT),1.0);
 //    std::cout << "Initial trajectory is" << std::endl;
 //    std::cout << initialTrajectory << std::endl;
-
 //    abm.stdBasis(); // TODO: make this automatic
 //    abm.warmUp();
 
-//    SimplexMCMC mcmc(abm, initialTrajectory);
-//
-//    for(n in 1..6) {
-//        val sample = mcmc.nextSample()
-//        CatAndMouseABM.plot(sample)
-//        println(sample)
-//    }
+    SimplexMCMC mcmc(abm);
+    for(int n=0; n<6; ++n) {
+        Trajectory<CatMouseAgent> sample = mcmc.nextSample();
+        std::cout << sample;
+    }
 
 }
