@@ -31,17 +31,20 @@ public:
 
     SimplexMCMC(glp::Problem &prob);
 
-    void randomPivot();
     double lnDegeneracyProb();
 
     glp::SparseVec nextSample();
     void processProposal(PivotPoint proposal);
     double transitionProb(PivotPoint proposal);
     double reverseTransitionProb(PivotPoint proposal);
+    void pivot(const PivotPoint &piv) { this-> glp::Simplex::pivot(piv.i, piv.j, piv.col); }
 
     PivotPoint proposePivot();
 
     std::vector<int> calcPivotRows(int j, const std::vector<double> &colVec);
+    std::vector<int> calcPivotRows(int j) { return calcPivotRows(j,tableauCol(j)); }
+
+    void randomWalk();
 };
 
 

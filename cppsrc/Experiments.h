@@ -9,6 +9,7 @@
 class Experiments {
 public:
     static void CatMouseExpt();
+    static void Pivot();
 };
 
 

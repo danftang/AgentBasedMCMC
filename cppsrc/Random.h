@@ -6,6 +6,8 @@
 #define GLPKTEST_RANDOM_H
 
 #include <random>
+#include <iostream>
+#include <cassert>
 
 class Random {
 public:
@@ -20,7 +22,8 @@ public:
     }
 
     static int nextInt(int from, int until) {
-        return std::uniform_int_distribution<int>(from, until)(gen);
+        assert(from < until);
+        return std::uniform_int_distribution<int>(from, until-1)(gen);
     }
 
 };

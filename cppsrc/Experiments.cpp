@@ -44,3 +44,34 @@ void Experiments::CatMouseExpt() {
     }
 
 }
+
+
+void Experiments::Pivot() {
+    using glp::X;
+    glp::Problem myProb;
+
+    myProb.addConstraint(1.0*X(1) + 1.0*X(2) + 1.0*X(3) <= 100.0);
+    myProb.addConstraint(10.0*X(1) + 4.0*X(2) + 5.0*X(3) <= 600.0);
+    myProb.addConstraint(2.0*X(1) + 2.0*X(2) + 6.0*X(3) <= 300.0);
+    myProb.addConstraint(0.0 <= 1.0*X(1));
+    myProb.addConstraint(0.0 <= 1.0*X(2));
+    myProb.addConstraint(0.0 <= 1.0*X(3));
+    myProb.setObjective(10.0*X(1) + 6.0*X(2) + 4.0*X(3));
+    myProb.stdBasis();
+    myProb.warmUp();
+    std::cout << myProb;
+
+    SimplexMCMC myMCMC(myProb);
+
+    std::cout << myMCMC << std::endl;
+
+    for(int sample=0; sample < 5; ++sample) {
+        myMCMC.randomWalk();
+        std::cout << myMCMC << std::endl;
+        std::cout << "Sample is: " << myMCMC.X() << std::endl;
+    }
+
+//    mySimplex.pivot(3,3);
+//    std::cout << mySimplex << std::endl;
+
+}

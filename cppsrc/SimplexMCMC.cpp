@@ -21,9 +21,6 @@ SimplexMCMC::SimplexMCMC(glp::Problem &prob) :
 }
 
 
-void SimplexMCMC::randomPivot() {
-
-}
 
 // Calculate the degeneracy probability of the current state
 // from a cold start (i.e. nothing already calculated)
@@ -59,7 +56,7 @@ double SimplexMCMC::lnDegeneracyProb() {
         lnP += lnRowPivotCount[i] = std::log(c);
         if(last < nextVarEnd) nextVarEnd = last;
         latestCompletionBegin[i] = nextVarEnd;
-        pivot(i,lastj,false);
+        pivot(PivotPoint(i,lastj,tableauCol(lastj)));
     }
     return lnP;
 }
@@ -83,7 +80,7 @@ glp::SparseVec SimplexMCMC::nextSample() {
 void SimplexMCMC::processProposal(PivotPoint proposalPivot) {
     double acceptanceDenominator = probability.logProb() + log(transitionProb(proposalPivot));
     double revTransitionProb = reverseTransitionProb(proposalPivot);
-    pivot(proposalPivot.i, proposalPivot.j, false);
+    pivot(proposalPivot);
     BasisProbability destinationProb(*this);
     double acceptanceNumerator = destinationProb.logProb() + log(revTransitionProb);
     double logAcceptance = std::min(acceptanceNumerator - acceptanceDenominator, 0.0);
@@ -110,30 +107,42 @@ double SimplexMCMC::reverseTransitionProb(PivotPoint proposal) {
     return 0;
 }
 
+void SimplexMCMC::randomWalk() {
+    pivot(proposePivot());
+}
+
 PivotPoint SimplexMCMC::proposePivot() {
     // choose a pivot column
-    PivotPoint pivot(0, Random::nextInt(nVars() - nRows()));
-    std::vector<double> pivotCol = tableauCol(pivot.j);
-
-    return PivotPoint(0, 0);
+    int j = Random::nextInt(1,n - m + 1);
+    PivotPoint pivot(0, j, tableauCol(j));
+    std::vector<int> pivotRows = calcPivotRows(pivot.j, pivot.col);
+    pivot.i = pivotRows[Random::nextInt(pivotRows.size())];
+    return pivot;
 }
 
 
+// assumes no unbounded variables
 std::vector<int> SimplexMCMC::calcPivotRows(int j, const std::vector<double> &colVec) {
     std::vector<int> pivRows;
-    int k = head[m+j];
-    double db_dDSign = isAtLowerBound(j)?-1.0:1.0;
-    double deltaMin = u[k] - l[k];
+    int kIncoming = head[m + j];
+    double deltaMin = u[kIncoming] - l[kIncoming];
+    double DXi;
+    double DXj;
     for(int i=1; i<=nRows();++i) {
-        double db_dD = colVec[i] * db_dDSign;
-        if(db_dD != 0.0) {
-            double Db = db_dD < 0.0 ? (l[head[i]] - b[i]) : (u[head[i]] - b[i]);
-            double dD = Db / db_dD;
-            if (dD < deltaMin) {
+        if(colVec[i] != 0.0) {
+            int kOutgoing = head[i];
+            bool outgoingToUpperBound = (colVec[i] > 0.0) ^ isAtUpperBound(j);
+            if(outgoingToUpperBound) {
+                DXi = u[kOutgoing] - b[i];
+            } else {
+                DXi = l[kOutgoing] - b[i];
+            }
+            DXj = fabs(DXi/colVec[i]);
+            if (DXj < deltaMin) {
                 pivRows.clear();
                 pivRows.push_back(i);
-                deltaMin = dD;
-            } else if (dD == deltaMin) {
+                deltaMin = DXj;
+            } else if (DXj == deltaMin) {
                 pivRows.push_back(i);
             }
         }

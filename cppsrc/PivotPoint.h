@@ -13,10 +13,11 @@ class PivotPoint {
 public:
     int i;
     int j;
+    std::vector<double> col;
 
-    PivotPoint(int i, int j): i(i), j(j) {}
+    PivotPoint(int i, int j, std::vector<double> col): i(i), j(j), col(col) {}
 
-    operator std::tuple<int &,int &>() { return std::tie(i,j); }
+//    operator std::tuple<int &,int &>() { return std::tie(i,j); }
 };
 
 
