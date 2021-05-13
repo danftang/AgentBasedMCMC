@@ -13,6 +13,7 @@
 #include "Event.h"
 #include "Trajectory.h"
 #include "State.h"
+#include "StateTrajectory.h"
 
 template<typename AGENT>
 class Observation {
@@ -48,7 +49,7 @@ public:
 //    }
 //
 
-    double logLikelihood(const Trajectory<AGENT> &trajectory) const {
+    double logLikelihood(const StateTrajectory<AGENT> &trajectory) const {
         int n = trajectory(time,agent);
         if(n < numberObserved) return -std::numeric_limits<double>::infinity();
         return log(boost::math::pdf(boost::math::binomial(n, pObserve), numberObserved));

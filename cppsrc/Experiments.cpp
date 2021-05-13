@@ -4,7 +4,6 @@
 
 #include <vector>
 #include "Experiments.h"
-#include "Observation.h"
 #include "CatMouseAgent.h"
 #include "ABMProblem.h"
 #include "SimplexMCMC.h"
@@ -24,11 +23,12 @@ void Experiments::CatMouseExpt() {
     std::cout << abm << std::endl;
 
     // calculate initial trajectory
+    abm.cpxBasis();
     abm.simplex();
     std::cout << "LP relaxation initial trajectory: " << abm.primalSolution() << std::endl;
     abm.intOpt();
     std::cout << "MIP initial trajectory: " << abm.mipSolution() << std::endl;
-
+    abm.warmUp();
 
 //    Trajectory<CatMouseAgent> initialTrajectory;
 //    initialTrajectory.add(Event(0,leftCat, CatMouseAgent::STAYPUT),1.0);
@@ -37,16 +37,18 @@ void Experiments::CatMouseExpt() {
 //    abm.stdBasis(); // TODO: make this automatic
 //    abm.warmUp();
 
-    SimplexMCMC mcmc(abm);
-    for(int n=0; n<6; ++n) {
-        Trajectory<CatMouseAgent> sample = mcmc.nextSample();
-        std::cout << sample;
+    SimplexMCMC mcmc(abm, abm.logProbFunc());
+    std::cout << mcmc.X() << std::endl;
+    for(int n=0; n<100; ++n) {
+        mcmc.nextSample();
+//        mcmc.randomWalk();
+        std::cout << mcmc.X() << std::endl;
     }
 
 }
 
 
-void Experiments::Pivot() {
+void Experiments::RandomWalk() {
     using glp::X;
     glp::Problem myProb;
 
@@ -61,7 +63,7 @@ void Experiments::Pivot() {
     myProb.warmUp();
     std::cout << myProb;
 
-    SimplexMCMC myMCMC(myProb);
+    SimplexMCMC myMCMC(myProb, nullPMF);
 
     std::cout << myMCMC << std::endl;
 

@@ -45,9 +45,8 @@ public:
         return occupation;
     }
 
-    std::vector<std::map<AGENT,double>> getStateTrajectory(int time) {
+    std::vector<std::map<AGENT,double>> getStateTrajectory() {
         std::vector<std::map<AGENT,double>> stateTrajectory;
-        int eventId;
         for(int i=1; i<=sparseSize(); ++i) {
             auto event = Event<AGENT>(indices[i]);
             if(event.time() >= stateTrajectory.size()) stateTrajectory.resize(event.time()+1);

@@ -11,7 +11,6 @@ class SimplexMCMC;
 
 class BasisProbability {
 public:
-    glp::SparseVec currentSample;
     double logDegeneracyProb;
     double logPX;
     double logFractionalPenalty;
@@ -20,7 +19,7 @@ public:
         return logPX + logDegeneracyProb + logFractionalPenalty;
     }
 
-    BasisProbability(SimplexMCMC &simplex) { }
+    BasisProbability(SimplexMCMC &simplex);
 
 };
 

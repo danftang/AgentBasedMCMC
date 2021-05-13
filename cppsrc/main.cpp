@@ -10,8 +10,8 @@
 using glp::X;
 
 int main() {
-//    Experiments::CatMouseExpt();
-    Experiments::Pivot();
+    Experiments::CatMouseExpt();
+//    Experiments::RandomWalk();
 
     return 0;
 }

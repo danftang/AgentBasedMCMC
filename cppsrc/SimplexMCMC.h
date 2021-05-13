@@ -11,38 +11,44 @@
 #include <random>
 #include "glpkpp.h"
 #include "BasisProbability.h"
-#include "PivotPoint.h"
+#include "Pivot.h"
 
 class SimplexMCMC: public glp::Simplex {
 public:
+    static constexpr double fractionalK = 0.1;
+
+//    using glp::Simplex::pivot;
 
     std::vector<int>    colLastNonZero;             // row-index of the last non-zero entry in this col
     std::vector<int>    rowLatestCompletionPivot; // k-col-index of the earliest col of the final basis that can pivot on this row
     std::vector<int>    latestCompletionBegin;   // k-col-index of the earliest col of the final completion
     std::vector<double> lnRowPivotCount;            // ln of number of possible choices of next in-sequence var of degenerate state
-    std::set<int>       finalBasis;                 // the final degenerate state (ordered)
-    std::map<int,int>   currentBasis;               // the current basis ordered map from k-index to m-index
+   // std::set<int>       finalBasis;                 // the final degenerate state (ordered)
+    std::map<int,int>   orderedBasis;               // the current basis ordered map from k-index to m-index
     int nSamples = 0;
     int nRejections = 0;
     int fractionalRunLength = 0;
+    std::function<double (const std::vector<double> &)> logProbFunc;
 
     BasisProbability probability;
 
 
-    SimplexMCMC(glp::Problem &prob);
+    SimplexMCMC(glp::Problem &prob, std::function<double (const std::vector<double> &)> logProb);
 
     double lnDegeneracyProb();
+    double lnProb() { return logProbFunc(X()); }
+    double lnFractionalPenalty();
 
-    glp::SparseVec nextSample();
-    void processProposal(PivotPoint proposal);
-    double transitionProb(PivotPoint proposal);
-    double reverseTransitionProb(PivotPoint proposal);
-    void pivot(const PivotPoint &piv) { this-> glp::Simplex::pivot(piv.i, piv.j, piv.col); }
+    void nextSample();
+    void processProposal(Pivot proposal);
+    double transitionProb(Pivot proposal);
+    double reverseTransitionProb(Pivot proposal);
+    void pivot(const Pivot &piv) { this->glp::Simplex::pivot(piv.i, piv.j, piv.col); }
 
-    PivotPoint proposePivot();
+    Pivot proposePivot();
 
-    std::vector<int> calcPivotRows(int j, const std::vector<double> &colVec);
-    std::vector<int> calcPivotRows(int j) { return calcPivotRows(j,tableauCol(j)); }
+//    std::vector<int> calcPivotRows(int j, const std::vector<double> &colVec);
+//    std::vector<int> calcPivotRows(int j) { return calcPivotRows(j,tableauCol(j)); }
 
     void randomWalk();
 };

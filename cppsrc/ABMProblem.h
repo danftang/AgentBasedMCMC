@@ -10,6 +10,7 @@
 #include "Observation.h"
 #include "Event.h"
 #include "StlStream.h"
+#include "StateTrajectory.h"
 
 template<typename AGENT>
 class ABMProblem: public glp::Problem {
@@ -31,13 +32,41 @@ public:
         addObservations(observations);
     }
 
-    double logProb(const glp::SparseVec & X) {
-            const auto &trajectory = (const Trajectory<AGENT> &)X;
-            double logP = trajectory.logPrior();
-            for(auto observation: observations) {
-                logP += observation.logLikelihood(trajectory);
+//    double logProb(const glp::SparseVec & X) {
+//            const auto &trajectory = (const Trajectory<AGENT> &)X;
+//            double logP = trajectory.logPrior();
+//            for(auto observation: observations) {
+//                logP += observation.logLikelihood(trajectory);
+//            }
+//            return logP;
+//    }
+
+    double logProb(const std::vector<double> &X) {
+        double logP = 0.0;
+        StateTrajectory<AGENT> stateTrajectory(X);
+        for(int eventId=1; eventId < X.size(); ++eventId) {
+            if(X[eventId] > 0.0) {
+                auto event = Event<AGENT>(eventId);
+                logP += X[eventId] * log(event.agent().timestep(stateTrajectory[event.time()])[event.act()]);
+//                   - CombinatoricsUtils.factorialLog(X[eventId]) // TODO: add this for non-state-fermionic trajectories
             }
-            return logP;
+        }
+// TODO: Add this as we're no longer assuming state-fermionicity
+//        for(state in stateTrajectory) {
+//            for((_, occupation) in state.entries) {
+//                logP += CombinatoricsUtils.factorialLog(occupation)
+//            }
+//        }
+
+        for(auto observation: observations) {
+            logP += observation.logLikelihood(stateTrajectory);
+        }
+        return logP;
+    }
+
+
+    std::function<double(const std::vector<double> &X)> logProbFunc() {
+        return [&](const std::vector<double> &X) { return this->logProb(X); };
     }
 
 protected:

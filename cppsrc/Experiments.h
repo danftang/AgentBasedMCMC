@@ -9,7 +9,9 @@
 class Experiments {
 public:
     static void CatMouseExpt();
-    static void Pivot();
+    static void RandomWalk();
+
+    static double nullPMF(const std::vector<double> &X) { return 0.0; }
 };
 
 

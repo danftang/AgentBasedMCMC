@@ -13,4 +13,4 @@ include_directories(glpkppinclude)
 #        glpk/*/*.c)
 
 #add_executable(glpkTest main.cpp ${GLPK_SOURCES} GlpProblem.cpp GlpProblem.h SparseVec.cpp SparseVec.h GlpTableau.cpp GlpTableau.h GlpSimplex.cpp GlpSimplex.h SimplexMCMC.cpp SimplexMCMC.h)
-add_executable(glpkTest main.cpp Agent.h ABM.h CatMouseAgent.cpp CatMouseAgent.h Observation.h ABMProblem.h Event.h Trajectory.h State.h Experiments.cpp Experiments.h SimplexMCMC.cpp StlStream.h Timestep.h BasisProbability.cpp BasisProbability.h PivotPoint.h Random.cpp Random.h)
+add_executable(glpkTest main.cpp Agent.h ABM.h CatMouseAgent.cpp CatMouseAgent.h Observation.h ABMProblem.h Event.h Trajectory.h State.h Experiments.cpp Experiments.h SimplexMCMC.cpp StlStream.h Timestep.h BasisProbability.cpp BasisProbability.h Pivot.h Random.cpp Random.h Pivot.cpp StateTrajectory.h)

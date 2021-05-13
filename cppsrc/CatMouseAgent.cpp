@@ -6,7 +6,7 @@
 #include "State.h"
 
 // returns PMF over acts
-std::vector<double> CatMouseAgent::timestep(std::map<CatMouseAgent,double> others) {
+std::vector<double> CatMouseAgent::timestep(std::map<CatMouseAgent,double> others) const {
     static constexpr double pCatMove = 0.25;
     std::vector<double> actPmf(actDomainSize());
 
