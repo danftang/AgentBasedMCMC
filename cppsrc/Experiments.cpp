@@ -42,7 +42,9 @@ void Experiments::CatMouseExpt() {
     for(int n=0; n<100; ++n) {
         mcmc.nextSample();
 //        mcmc.randomWalk();
-        std::cout << mcmc.X() << std::endl;
+        std::cout << n << "  " << mcmc.X() << std::endl;
+        std::cout << "Valid = " << abm.isValidSolution(mcmc.X()) << std::endl;
+        assert(abm.isValidSolution(mcmc.X()));
     }
 
 }

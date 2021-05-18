@@ -12,6 +12,7 @@
 #include "glpkpp.h"
 #include "BasisProbability.h"
 #include "Pivot.h"
+#include "ColumnPivot.h"
 
 class SimplexMCMC: public glp::Simplex {
 public:
@@ -40,17 +41,21 @@ public:
     double lnFractionalPenalty();
 
     void nextSample();
-    void processProposal(Pivot proposal);
-    double transitionProb(Pivot proposal);
-    double reverseTransitionProb(Pivot proposal);
+//    double reverseTransitionProb(Pivot proposal);
     void pivot(const Pivot &piv) { this->glp::Simplex::pivot(piv.i, piv.j, piv.col); }
 
-    Pivot proposePivot();
 
 //    std::vector<int> calcPivotRows(int j, const std::vector<double> &colVec);
 //    std::vector<int> calcPivotRows(int j) { return calcPivotRows(j,tableauCol(j)); }
 
     void randomWalk();
+
+protected:
+    void processProposal(const ColumnPivot &proposal);
+    double transitionProb(const ColumnPivot &proposal);
+    ColumnPivot proposePivot();
+
+
 };
 
 

@@ -5,6 +5,7 @@
 #include "SimplexMCMC.h"
 #include "Pivot.h"
 #include "Random.h"
+#include "ColumnPivot.h"
 #include <algorithm>
 #include <cmath>
 
@@ -78,7 +79,7 @@ double SimplexMCMC::lnFractionalPenalty() {
 // and reject based on Metropolis-Hastings
 // returns the next sample
 void SimplexMCMC::nextSample() {
-    Pivot proposalPivot = proposePivot();
+    ColumnPivot proposalPivot = proposePivot();
     processProposal(proposalPivot);
     ++nSamples;
     if(probability.logFractionalPenalty != 0.0) {
@@ -88,10 +89,11 @@ void SimplexMCMC::nextSample() {
 }
 
 
-void SimplexMCMC::processProposal(Pivot proposalPivot) {
+void SimplexMCMC::processProposal(const ColumnPivot &proposalPivot) {
+    std::cout << "Processing proposal " << proposalPivot.i << ", " << proposalPivot.j << std::endl;
     double acceptanceDenominator = probability.logProb() + log(transitionProb(proposalPivot));
     pivot(proposalPivot);
-    Pivot reversePivot(*this, proposalPivot.i, proposalPivot.j, proposalPivot.reverseCol());
+    ColumnPivot reversePivot = proposalPivot.reverse(*this);
     BasisProbability destinationProb(*this);
     double acceptanceNumerator = destinationProb.logProb() + log(transitionProb(reversePivot));
     double logAcceptance = std::min(acceptanceNumerator - acceptanceDenominator, 0.0);
@@ -115,24 +117,28 @@ void SimplexMCMC::processProposal(Pivot proposalPivot) {
     }
 }
 
-double SimplexMCMC::transitionProb(Pivot proposal) {
+double SimplexMCMC::transitionProb(const ColumnPivot &proposal) {
     return 1.0/((n-m)*proposal.pivotRows.size());
 }
 
-double SimplexMCMC::reverseTransitionProb(Pivot proposal) {
-    return 0;
-}
+//double SimplexMCMC::reverseTransitionProb(Pivot proposal) {
+//    return 0;
+//}
 
 void SimplexMCMC::randomWalk() {
     pivot(proposePivot());
 }
 
-Pivot SimplexMCMC::proposePivot() {
+ColumnPivot SimplexMCMC::proposePivot() {
     // choose a pivot column
     int j = Random::nextInt(1,n - m + 1);
-    Pivot pivot(*this, j);
-    pivot.i = pivot.pivotRows[Random::nextInt(pivot.pivotRows.size())];
-    return pivot;
+    ColumnPivot proposal(*this, j);
+    if(proposal.pivotRows.size() >0) {
+        proposal.i = proposal.pivotRows[Random::nextInt(proposal.pivotRows.size())];
+    } else {
+        proposal.i = -1; // incoming var goes to opposite limit.
+    }
+    return proposal;
 }
 
 

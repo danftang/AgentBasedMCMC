@@ -18,16 +18,16 @@ public:
     int i;
     int j;
     std::vector<double> col;
-    std::vector<int>    pivotRows;
-
-//    Pivot(int i, int j, std::vector<double> col, std::vector<int> pivotRows): i(i), j(j), col(std::move(col)), pivotRows(std::move(pivotRows)) {}
+//    std::vector<int>    pivotRows;
 
     Pivot() = default;
-    Pivot(glp::Simplex &simplex, int j); // j = column to pivot on
-    Pivot(glp::Simplex &lp, int i, int j, std::vector<double> col);
+//    Pivot(glp::Simplex &simplex, int j); // j = column to pivot on
+    Pivot(int i, int j, std::vector<double> column): i(i), j(j), col(std::move(column)) { }
+
 
     //    operator std::tuple<int &,int &>() { return std::tie(i,j); }
-    std::vector<double> reverseCol();
+    std::vector<double> reverseCol() const;
+//    Pivot reverse() const { return Pivot(i, j, reverseCol()); }
 };
 
 
