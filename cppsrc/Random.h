@@ -26,6 +26,23 @@ public:
         return std::uniform_int_distribution<int>(from, until-1)(gen);
     }
 
+    static int choose(const std::vector<double> &probabilities) {
+        return choose(probabilities.begin(), probabilities.end());
+    }
+
+    template<typename InputIterator>
+    static int choose(InputIterator begin, InputIterator end) {
+        return std::discrete_distribution<int>(begin, end)(gen);
+    }
+
+    static int nextPoisson(double lambda) {
+        return std::poisson_distribution(lambda)(gen);
+    }
+
+    static int nextBinomial(int nTirals, double p) {
+        return std::binomial_distribution<int>(nTirals, p)(gen);
+    }
+
 };
 
 

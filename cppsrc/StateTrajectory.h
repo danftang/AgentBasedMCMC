@@ -11,7 +11,7 @@
 #include "glpkpp.h"
 
 template<typename AGENT>
-class StateTrajectory: public std::vector<std::map<AGENT,double>> {
+class StateTrajectory: public std::vector<ModelState<AGENT>> {
 public:
     StateTrajectory(const glp::SparseVec &actTrajectory) {
         for(int i=1; i <= actTrajectory.sparseSize(); ++i) {
@@ -31,18 +31,6 @@ public:
             }
         }
     }
-
-    double &operator()(int time, const AGENT &agent) {
-        return (*this)[time][agent];
-    }
-
-    double operator()(int time, const AGENT &agent) const {
-        const std::map<AGENT,double> &state = (*this)[time];
-        auto iter = state.find(agent);
-        return iter==state.end()?0.0:iter->second;
-    }
-
-
 };
 
 

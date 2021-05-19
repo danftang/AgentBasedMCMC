@@ -21,22 +21,21 @@ public:
     int time;
     AGENT agent;
     int numberObserved;
-    double pObserve;
+    double pObserveIfPresent;
 
-    Observation(int time, const AGENT &agent, int numberObserved, const double &pObserve):
-    time(time),
-    agent(agent),
-    numberObserved(numberObserved),
-    pObserve(pObserve) {}
+    Observation(int time, const AGENT &agent, int numberObserved, const double &pObserveIfPresent):
+            time(time),
+            agent(agent),
+            numberObserved(numberObserved),
+            pObserveIfPresent(pObserveIfPresent) {}
 
     // make observation of the trajectory
-    Observation(int time, const AGENT &agent,const double &pObserve, const Trajectory<AGENT> &trajectory):
-    time(time),
-    agent(agent),
-    pObserve(pObserve)
+    Observation(int time, const AGENT &agent, double pObserveIfPresent, const Trajectory<AGENT> &trajectory):
+            time(time),
+            agent(agent),
+            pObserveIfPresent(pObserveIfPresent)
     {
-        boost::random::binomial_distribution binom(trajectory(time,agent),pObserve);
-        numberObserved = binom(boost::mt11213b());
+        numberObserved = Random::nextBinomial(trajectory(time,agent), pObserveIfPresent);
     }
 
 //
@@ -50,9 +49,9 @@ public:
 //
 
     double logLikelihood(const StateTrajectory<AGENT> &trajectory) const {
-        int n = trajectory(time,agent);
+        int n = trajectory[time][agent];
         if(n < numberObserved) return -std::numeric_limits<double>::infinity();
-        return log(boost::math::pdf(boost::math::binomial(n, pObserve), numberObserved));
+        return log(boost::math::pdf(boost::math::binomial(n, pObserveIfPresent), numberObserved));
     }
 
     // if we observed m agents, there cannot be less than m agents present (though there may be more if
@@ -60,7 +59,27 @@ public:
     std::vector<glp::Constraint> constraints() const {
         return std::vector({ 1.0*State(time,agent) >= numberObserved });
     }
+
+    static std::pair<std::vector<Observation<AGENT>>,Trajectory<AGENT>> generateObservations(const ModelState<AGENT> &startState, int nTimesteps, double pMakeObservation);
 };
+
+
+template<typename AGENT>
+std::pair<std::vector<Observation<AGENT>>,Trajectory<AGENT>>
+Observation<AGENT>::generateObservations(const ModelState<AGENT> &startState, int nTimesteps, double pMakeObservation) {
+        Trajectory<AGENT> trajectory = Trajectory<AGENT>::run(startState, nTimesteps);
+        std::vector<Observation<AGENT>> observations;
+        observations.reserve(nTimesteps * AGENT::domainSize() * pMakeObservation * 1.5);
+        for (int t=0; t<nTimesteps;++t) {
+            for (int agentId=1; agentId < AGENT::domainSize(); ++agentId) {
+                if (Random::nextDouble() < pMakeObservation) {
+                    observations.push_back(Observation(t,AGENT(agentId), 0.9, trajectory));
+                }
+            }
+        }
+//        checkTrajectorySatisfiesObervations(trajectory, observations)
+    return std::make_pair(observations, trajectory);
+}
 
 
 #endif //GLPKTEST_OBSERVATION_H

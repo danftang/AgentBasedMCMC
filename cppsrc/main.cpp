@@ -1,6 +1,6 @@
 #include <iostream>
 #include "glpkppinclude/glpkpp.h"
-#include "CatMouseAgent.h"
+#include "agents/CatMouseAgent.h"
 #include "ABMProblem.h"
 #include "Trajectory.h"
 #include "Experiments.h"
@@ -10,7 +10,8 @@
 using glp::X;
 
 int main() {
-    Experiments::CatMouseExpt();
+    Experiments::PredPreyExpt();
+//    Experiments::CatMouseExpt();
 //    Experiments::RandomWalk();
 
     return 0;

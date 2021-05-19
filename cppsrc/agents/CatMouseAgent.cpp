@@ -3,10 +3,10 @@
 //
 
 #include "CatMouseAgent.h"
-#include "State.h"
+#include "../State.h"
 
 // returns PMF over acts
-std::vector<double> CatMouseAgent::timestep(std::map<CatMouseAgent,double> others) const {
+std::vector<double> CatMouseAgent::timestep(const ModelState<CatMouseAgent> &others) const {
     static constexpr double pCatMove = 0.25;
     std::vector<double> actPmf(actDomainSize());
 
@@ -25,7 +25,7 @@ std::vector<double> CatMouseAgent::timestep(std::map<CatMouseAgent,double> other
     return actPmf;
 }
 
-std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) {
+std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) const {
     if(act == MOVE) {
         return std::vector<CatMouseAgent>({ CatMouseAgent(type(), Position((position()+1)%2)) });
     } else {
@@ -35,7 +35,7 @@ std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) {
 
 
 // result of static analysis of timestep member function...
-std::vector<glp::Constraint> CatMouseAgent::constraints(int time, Act act) {
+std::vector<glp::Constraint> CatMouseAgent::constraints(int time, Act act) const {
     if(type() == MOUSE) {
         if(act == MOVE) {
             return std::vector({ 1.0*State(time,CatMouseAgent(CAT, position())) >= 1 });

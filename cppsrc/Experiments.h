@@ -8,6 +8,7 @@
 
 class Experiments {
 public:
+    static void PredPreyExpt();
     static void CatMouseExpt();
     static void RandomWalk();
 

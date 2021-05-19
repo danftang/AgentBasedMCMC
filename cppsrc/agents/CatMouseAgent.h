@@ -9,6 +9,7 @@
 #include <vector>
 #include <set>
 #include "glpkpp.h"
+#include "../ModelState.h"
 
 class CatMouseAgent {
 public:
@@ -41,10 +42,10 @@ public:
     Position position() const { return Position(stateId%2); }
     Type type() const { return Type(stateId/2); }
 
-    std::vector<double> timestep(std::map<CatMouseAgent,double> others) const;
-    std::vector<CatMouseAgent> consequences(Act act); // the consequences of an act
+    std::vector<double> timestep(const ModelState<CatMouseAgent> &others) const;
+    std::vector<CatMouseAgent> consequences(Act act) const; // the consequences of an act
     // returns the constraints implied by the given act
-    std::vector<glp::Constraint> constraints(int time, Act act); // to be generated automatically by static analysis...eventually.
+    std::vector<glp::Constraint> constraints(int time, Act act) const; // to be generated automatically by static analysis...eventually.
 
     friend std::ostream &operator <<(std::ostream &out, const CatMouseAgent &agent) {
         out << agent.type() << ":" << agent.position();

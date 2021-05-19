@@ -4,9 +4,51 @@
 
 #include <vector>
 #include "Experiments.h"
-#include "CatMouseAgent.h"
+#include "agents/CatMouseAgent.h"
 #include "ABMProblem.h"
 #include "SimplexMCMC.h"
+#include "agents/PredPreyAgent.h"
+
+
+void Experiments::PredPreyExpt() {
+    PredPreyAgent::GRIDSIZE = 8;
+    int nTimesteps = 2;
+    std::vector<Observation<PredPreyAgent>> observations;
+    Trajectory<PredPreyAgent> realTrajectory;
+    auto startState = ModelState<PredPreyAgent>::randomPoissonState([](const PredPreyAgent &agent) {
+        if(agent.type() == PredPreyAgent::PREDATOR) return 0.02;
+        return 0.04;
+    });
+    std::tie(observations, realTrajectory) =
+            Observation<PredPreyAgent>::generateObservations(startState, nTimesteps, 0.01);
+    ABMProblem<PredPreyAgent> abm(2, observations);
+
+    std::cout << abm << std::endl;
+
+    // calculate initial trajectory
+//    abm.cpxBasis();
+//    abm.simplex();
+//    std::cout << "LP relaxation initial trajectory: " << abm.primalSolution() << std::endl;
+//    abm.intOpt();
+//    std::cout << "MIP initial trajectory: " << abm.mipSolution() << std::endl;
+//    abm.warmUp();
+
+//    Trajectory<CatMouseAgent> initialTrajectory;
+//    initialTrajectory.add(Event(0,leftCat, CatMouseAgent::STAYPUT),1.0);
+//    std::cout << "Initial trajectory is" << std::endl;
+//    std::cout << initialTrajectory << std::endl;
+//    abm.stdBasis(); // TODO: make this automatic
+//    abm.warmUp();
+
+    SimplexMCMC mcmc(abm, abm.logProbFunc());
+    std::cout << mcmc.X() << std::endl;
+    for(int n=0; n<100; ++n) {
+        mcmc.nextSample();
+        assert(abm.isValidSolution(mcmc.X()));
+    }
+
+}
+
 
 void Experiments::CatMouseExpt() {
     CatMouseAgent leftCat(CatMouseAgent::Type::CAT, CatMouseAgent::Position::LEFT);
