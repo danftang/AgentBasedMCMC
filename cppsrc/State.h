@@ -32,6 +32,11 @@ public:
         return state * c;
     }
 
+    friend std::ostream &operator <<(std::ostream &out, const State &state) {
+        out << state.agent << "@t" << state.time;
+        return out;
+    }
+
 
 //    friend LinearSum &operator +=(LinearSum &sum, const std::pair<double,State<AGENT>> &stateTerm) {
 //        int beginIndex = Event(stateTerm.second.time, stateTerm.second.agent, 0);

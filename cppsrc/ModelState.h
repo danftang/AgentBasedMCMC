@@ -18,6 +18,7 @@ public:
         return iter==this->end()?0.0:iter->second;
     }
 
+
     ModelState &operator +=(const std::vector<AGENT> &stateVector) {
         for(const AGENT &agent: stateVector) {
             (*this)[agent] += 1.0;
@@ -27,7 +28,7 @@ public:
 
     static ModelState<AGENT> randomPoissonState(const std::function<double (const AGENT &)> &pmf) {
         ModelState<AGENT> state;
-        for(int agentId=1; agentId<AGENT::domainSize(); ++agentId) {
+        for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
             int occupation = Random::nextPoisson(pmf(agentId));
             if(occupation > 0) state[agentId] = occupation;
         }

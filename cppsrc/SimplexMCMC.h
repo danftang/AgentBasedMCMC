@@ -25,7 +25,7 @@ public:
     std::vector<int>    latestCompletionBegin;   // k-col-index of the earliest col of the final completion
     std::vector<double> lnRowPivotCount;            // ln of number of possible choices of next in-sequence var of degenerate state
    // std::set<int>       finalBasis;                 // the final degenerate state (ordered)
-    std::map<int,int>   orderedBasis;               // the current basis ordered map from k-index to m-index
+//    std::map<int,int>   orderedBasis;               // the current basis ordered map from k-index to i-index
     int nSamples = 0;
     int nRejections = 0;
     int fractionalRunLength = 0;

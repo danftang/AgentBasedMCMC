@@ -39,16 +39,16 @@ public:
     static constexpr int actDomainSize() { return 6; }
 
     PredPreyAgent(int ordinal): stateId(ordinal) {}
-    PredPreyAgent( int x, int y, Type type): stateId(x + GRIDSIZE*y + GRIDSIZE*GRIDSIZE*type + 1) { }
+    PredPreyAgent( int x, int y, Type type): stateId(x + GRIDSIZE*y + GRIDSIZE*GRIDSIZE*type) { }
     operator int() const { return stateId; }
-    int xPosition() const { return (stateId-1)%GRIDSIZE; }
-    int yPosition() const { return ((stateId-1)/GRIDSIZE)%GRIDSIZE; }
-    Type type() const { return Type((stateId-1)/(GRIDSIZE*GRIDSIZE)); }
+    int xPosition() const { return stateId%GRIDSIZE; }
+    int yPosition() const { return (stateId/GRIDSIZE)%GRIDSIZE; }
+    Type type() const { return Type(stateId/(GRIDSIZE*GRIDSIZE)); }
 
-    int xLeft() const { return(((stateId-1)+GRIDSIZE-1)%GRIDSIZE); }
-    int xRight() const { return(stateId%GRIDSIZE); }
-    int yUp() const { return(((stateId-1)/GRIDSIZE+1)%GRIDSIZE); }
-    int yDown() const { return(((stateId-1)/GRIDSIZE + GRIDSIZE-1)%GRIDSIZE); }
+    int xLeft() const { return((stateId+GRIDSIZE-1)%GRIDSIZE); }
+    int xRight() const { return((stateId+1)%GRIDSIZE); }
+    int yUp() const { return((stateId/GRIDSIZE+1)%GRIDSIZE); }
+    int yDown() const { return((stateId/GRIDSIZE + GRIDSIZE-1)%GRIDSIZE); }
 
 
     std::vector<double> timestep(const ModelState<PredPreyAgent> &others) const;
@@ -57,7 +57,8 @@ public:
     std::vector<glp::Constraint> constraints(int time, Act act) const; // to be generated automatically by static analysis...eventually.
 
     friend std::ostream &operator <<(std::ostream &out, const PredPreyAgent &agent) {
-        out << agent.type() << ":" << agent.xPosition() << "," << agent.yPosition();
+
+        out << (agent.type()==PREY?"PREY":"PRED") << ":(" << agent.xPosition() << "," << agent.yPosition() <<")";
         return out;
     }
 

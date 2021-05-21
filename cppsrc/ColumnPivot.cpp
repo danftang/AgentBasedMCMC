@@ -8,12 +8,13 @@
 #include "StlStream.h"
 
 ColumnPivot::ColumnPivot(glp::Simplex &lp, int j, std::vector<double> column): Pivot(-1,j,column) {
+    const double tol = 1e-8;
     int kIncoming = lp.head[lp.m + j];
     double deltaMin = lp.u[kIncoming] - lp.l[kIncoming];
     double DXi;
     double DXj;
     for(int i=1; i<col.size();++i) {
-        if(col[i] != 0.0) {
+        if(fabs(col[i]) > tol) {
             int kOutgoing = lp.head[i];
             bool outgoingToUpperBound = (col[i] > 0.0) ^ lp.isAtUpperBound(j);
             if(outgoingToUpperBound) {

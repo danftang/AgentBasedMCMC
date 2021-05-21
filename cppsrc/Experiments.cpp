@@ -11,39 +11,40 @@
 
 
 void Experiments::PredPreyExpt() {
-    PredPreyAgent::GRIDSIZE = 8;
-    int nTimesteps = 2;
-    std::vector<Observation<PredPreyAgent>> observations;
-    Trajectory<PredPreyAgent> realTrajectory;
+    PredPreyAgent::GRIDSIZE = 16;
+    int nTimesteps = 8;
     auto startState = ModelState<PredPreyAgent>::randomPoissonState([](const PredPreyAgent &agent) {
         if(agent.type() == PredPreyAgent::PREDATOR) return 0.02;
         return 0.04;
     });
-    std::tie(observations, realTrajectory) =
+    std::cout << "Start state: " << startState << std::endl;
+    auto [observations, realTrajectory] =
             Observation<PredPreyAgent>::generateObservations(startState, nTimesteps, 0.01);
-    ABMProblem<PredPreyAgent> abm(2, observations);
+    ABMProblem<PredPreyAgent> abm(nTimesteps, observations);
 
-    std::cout << abm << std::endl;
+    std::cout << "Real trajectory: " << glp::SparseVec(realTrajectory) << std::endl;
+    std::cout << "Observations: " << observations << std::endl;
+//    std::cout << "Linearised ABM:\n" << abm << std::endl;
 
-    // calculate initial trajectory
-//    abm.cpxBasis();
-//    abm.simplex();
-//    std::cout << "LP relaxation initial trajectory: " << abm.primalSolution() << std::endl;
-//    abm.intOpt();
-//    std::cout << "MIP initial trajectory: " << abm.mipSolution() << std::endl;
-//    abm.warmUp();
+    abm.solutionBasis(realTrajectory);
+    abm.warmUp();
 
-//    Trajectory<CatMouseAgent> initialTrajectory;
-//    initialTrajectory.add(Event(0,leftCat, CatMouseAgent::STAYPUT),1.0);
-//    std::cout << "Initial trajectory is" << std::endl;
-//    std::cout << initialTrajectory << std::endl;
-//    abm.stdBasis(); // TODO: make this automatic
-//    abm.warmUp();
+
 
     SimplexMCMC mcmc(abm, abm.logProbFunc());
-    std::cout << mcmc.X() << std::endl;
-    for(int n=0; n<100; ++n) {
+
+    // do we have fixed variables in the basis here?
+    for(int i=1; i<=mcmc.m; ++i) {
+        if(mcmc.l[mcmc.head[i]] == mcmc.u[mcmc.head[i]]) std::cout << "Fixed var in basis " << i << std::endl;
+    }
+    for(int j=1; j<=mcmc.n-mcmc.m; ++j) {
+        if(mcmc.l[mcmc.head[mcmc.m+j]] == mcmc.u[mcmc.head[mcmc.m+j]]) std::cout << "Fixed null var " << j << std::endl;
+    }
+
+    std::cout << glp::SparseVec(mcmc.X()) << std::endl;
+    for(int n=0; n<99; ++n) {
         mcmc.nextSample();
+        std::cout << glp::SparseVec(mcmc.X()) << std::endl;
         assert(abm.isValidSolution(mcmc.X()));
     }
 

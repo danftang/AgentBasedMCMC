@@ -9,10 +9,13 @@
 #include <map>
 
 #include "glpkpp.h"
+#include "State.h"
 
 template<typename AGENT>
 class StateTrajectory: public std::vector<ModelState<AGENT>> {
 public:
+    using std::vector<ModelState<AGENT>>::operator [];
+
     StateTrajectory(const glp::SparseVec &actTrajectory) {
         for(int i=1; i <= actTrajectory.sparseSize(); ++i) {
             auto event = Event<AGENT>(actTrajectory.indices[i]);
@@ -30,6 +33,16 @@ public:
                 (*this)[event.time()][event.agent()] += eventTrajectory[eventId];
             }
         }
+    }
+
+
+    double operator [](const State<AGENT> &agentState) const {
+        if(agentState.time >= this->size()) return 0;
+        return (*this)[agentState.time][agentState.agent];
+    }
+
+    double &operator [](const State<AGENT> &agentState) {
+        return (*this)[agentState.time][agentState.agent];
     }
 };
 

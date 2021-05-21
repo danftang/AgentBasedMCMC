@@ -42,10 +42,11 @@ public:
 //    }
 
     double logProb(const std::vector<double> &X) {
+        const double tol = 1e-8;
         double logP = 0.0;
         StateTrajectory<AGENT> stateTrajectory(X);
         for(int eventId=1; eventId < X.size(); ++eventId) {
-            if(X[eventId] > 0.0) {
+            if(fabs(X[eventId]) > tol) {
                 auto event = Event<AGENT>(eventId);
                 logP += X[eventId] * log(event.agent().timestep(stateTrajectory[event.time()])[event.act()]);
 //                   - CombinatoricsUtils.factorialLog(X[eventId]) // TODO: add this for non-state-fermionic trajectories
@@ -58,7 +59,7 @@ public:
 //            }
 //        }
 
-        for(auto observation: observations) {
+        for(const auto &observation: observations) {
             logP += observation.logLikelihood(stateTrajectory);
         }
         return logP;
@@ -154,15 +155,13 @@ protected:
 
 
     static std::vector<std::vector<int>> consequencesByEndState() {
-        std::vector<std::vector<int> > endStateToEvents;
-        endStateToEvents.clear();
-        endStateToEvents.resize(AGENT::domainSize());
+        std::vector<std::vector<int> > endStateToEvents(AGENT::domainSize());
         std::vector<AGENT> consequences;
         for(int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
             AGENT agent(agentState);
             for (int act = 0; act < AGENT::actDomainSize(); ++act) {
                 consequences = agent.consequences(act);
-                for(AGENT endState: consequences) {
+                for(const AGENT &endState: consequences) {
                     endStateToEvents[endState].push_back(Event(0,agent,act));
                 }
             }

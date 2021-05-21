@@ -26,6 +26,11 @@ SimplexMCMC::SimplexMCMC(glp::Problem &prob, std::function<double (const std::ve
 
 // Calculate the degeneracy probability of the current state
 // from a cold start (i.e. nothing already calculated)
+//
+// If we split the variables into the ones that are on a bound, d, and those that aren't, x,
+// then any basis that includes all x variables will have the same solution.
+// However, on an integer solution, all variables are on their bound, so any
+// pivot state can represent any state!!!
 double SimplexMCMC::lnDegeneracyProb() {
     int nextVarBegin;
     int nextVarEnd = n+m+1;
@@ -33,41 +38,43 @@ double SimplexMCMC::lnDegeneracyProb() {
     int c = 0;
     double lnP = 0.0;
 
-    auto basisVar = orderedBasis.rbegin();
-    while(basisVar != orderedBasis.rend()) {
-        i = basisVar->second;
-        std::vector<double> row = tableauRow(i);
-        ++basisVar;
-        nextVarBegin = basisVar->first + 1;
-        last = 0;
-        for(j = 1; j <=n; ++j) {
-            if(row[j] != 0.0) {
-                k = head[m+j];
-                if(colLastNonZero[j] == -1) {
-                    colLastNonZero[j] = i;
-                    if(k >= nextVarBegin && k < nextVarEnd) ++c;
-                }
-                if(k>last) {
-                    last = k;
-                    lastj = j;
-                }
-            }
-        }
-        rowLatestCompletionPivot[i] = last;
-        lnP += lnRowPivotCount[i] = std::log(c);
-        if(last < nextVarEnd) nextVarEnd = last;
-        latestCompletionBegin[i] = nextVarEnd;
-        glp::Simplex::pivot(i, lastj);
-        lpSolutionIsValid(false);
-    }
+
+//    auto basisVar = orderedBasis.rbegin();
+//    while(basisVar != orderedBasis.rend()) {
+//        i = basisVar->second;
+//        std::vector<double> row = tableauRow(i);
+//        ++basisVar;
+//        nextVarBegin = basisVar->first + 1;
+//        last = 0;
+//        for(j = 1; j <=n-m; ++j) {
+//            if(row[j] != 0.0) {
+//                k = head[m+j];
+//                if(colLastNonZero[j] == -1) {
+//                    colLastNonZero[j] = i;
+//                    if(k >= nextVarBegin && k < nextVarEnd) ++c;
+//                }
+//                if(k>last) {
+//                    last = k;
+//                    lastj = j;
+//                }
+//            }
+//        }
+//        rowLatestCompletionPivot[i] = last;
+//        lnP += lnRowPivotCount[i] = std::log(c);
+//        if(last < nextVarEnd) nextVarEnd = last;
+//        latestCompletionBegin[i] = nextVarEnd;
+//        glp::Simplex::pivot(i, lastj);
+//        lpSolutionIsValid(false);
+//    }
     return lnP;
 }
 
 double SimplexMCMC::lnFractionalPenalty() {
     // fractions must be in the basis, so check b
+    const double tol = 1e-8;
     double penalty = 0.0;
     for(int i=1; i<=m; ++i) {
-        if(round(b[i]) != b[i]) {
+        if(fabs(round(b[i]) - b[i]) > tol) {
             penalty += fractionalK;
         }
     }
@@ -98,8 +105,8 @@ void SimplexMCMC::processProposal(const ColumnPivot &proposalPivot) {
     double acceptanceNumerator = destinationProb.logProb() + log(transitionProb(reversePivot));
     double logAcceptance = std::min(acceptanceNumerator - acceptanceDenominator, 0.0);
 //    if(isnan( logAcceptance )) println("NaN Acceptance $acceptanceNumerator / $acceptanceDenominator logPiv = ${state.logProbOfPivotState} transition prob = ${transitionProb(revertState.reversePivot)} columnWeight = ${columnWeights.P(revertState.reversePivot.col)} nPivots = ${nPivots(revertState.reversePivot.col)}");
-    std::cout << "Acceptance is " << exp(logAcceptance) << std::endl;
-    if (logAcceptance == NAN || Random::nextDouble() <= exp(logAcceptance)) { // explicity accept if both numerator and denominator are -infinity
+    std::cout << "Log acceptance is " << acceptanceNumerator << " - " << acceptanceDenominator << " = " << logAcceptance << std::endl;
+    if (std::isnan(logAcceptance) || Random::nextDouble() <= exp(logAcceptance)) { // explicity accept if both numerator and denominator are -infinity
         // Accept proposal
         std::cout << "Accepting" << std::endl;
         probability = destinationProb;
@@ -118,7 +125,7 @@ void SimplexMCMC::processProposal(const ColumnPivot &proposalPivot) {
 }
 
 double SimplexMCMC::transitionProb(const ColumnPivot &proposal) {
-    return 1.0/((n-m)*proposal.pivotRows.size());
+    return 1.0/(n*proposal.pivotRows.size());
 }
 
 //double SimplexMCMC::reverseTransitionProb(Pivot proposal) {

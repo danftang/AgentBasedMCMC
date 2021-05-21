@@ -17,4 +17,15 @@ std::ostream &operator <<(std::ostream &out, const std::vector<T> &vec) {
     return out;
 }
 
+template<typename KEY, typename VALUE>
+std::ostream &operator <<(std::ostream &out, const std::map<KEY,VALUE> &map) {
+    out << "{";
+    for(const auto &[key,value]: map) {
+        out << key << " -> " << value << ", ";
+    }
+    out << "\b\b}";
+    return out;
+
+}
+
 #endif //GLPKTEST_STLSTREAM_H

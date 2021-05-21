@@ -13,7 +13,7 @@
 template<typename AGENT>
 class Trajectory: public std::vector<double> {
 public:
-    Trajectory() { }
+    Trajectory(int nTimesteps): std::vector<double>(nTimesteps*AGENT::domainSize()*AGENT::actDomainSize()+1) { }
     Trajectory(std::vector<double> &&rvalue): std::vector<double>(std::move(rvalue)) { }
     Trajectory(const std::vector<double> &lvalue): std::vector<double>(lvalue) { }
 
@@ -78,15 +78,15 @@ template<typename AGENT>
 Trajectory<AGENT> Trajectory<AGENT>::run(const ModelState<AGENT> &startState, int nTimesteps) {
     ModelState<AGENT> t0State = startState;
     ModelState<AGENT> t1State;
-    Trajectory<AGENT> trajectory;
+    Trajectory<AGENT> trajectory(nTimesteps);
     for(int t=0; t<nTimesteps; ++t) {
-        for(auto agentOccupation: t0State) {
-            std::vector<double> actPMF = agentOccupation.first.timestep(t0State);
-            assert(agentOccupation.second <= actPMF.size());
-            for(int nthAgent=0; nthAgent < agentOccupation.second; ++nthAgent) {
+        for(const auto &[agent, occupation]: t0State) {
+            std::vector<double> actPMF = agent.timestep(t0State);
+            assert(occupation <= actPMF.size());
+            for(int nthAgent=0; nthAgent < occupation; ++nthAgent) {
                 typename AGENT::Act act = Random::choose(actPMF);
-                trajectory[Event(t,agentOccupation.first,act)] = 1.0;
-                t1State += agentOccupation.first.consequences(act);
+                trajectory[Event(t,agent,act)] = 1.0;
+                t1State += agent.consequences(act);
                 actPMF[act] = 0.0;
             }
         }
