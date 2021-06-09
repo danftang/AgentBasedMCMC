@@ -29,12 +29,12 @@ public:
     int nSamples = 0;
     int nRejections = 0;
     int fractionalRunLength = 0;
-    std::function<double (const std::vector<double> &)> logProbFunc;
+    const std::function<double (const std::vector<double> &)> &logProbFunc;
 
-    BasisProbability probability;
+//    BasisProbability probability;
 
 
-    SimplexMCMC(glp::Problem &prob, std::function<double (const std::vector<double> &)> logProb);
+    SimplexMCMC(glp::Problem &prob, const std::function<double (const std::vector<double> &)> &logProb);
 
     double lnDegeneracyProb();
     double lnProb() { return logProbFunc(X()); }
@@ -50,11 +50,24 @@ public:
 
     void randomWalk();
 
+    // TEST STUFF
+    int countFractionalPivCols();
+
+
 protected:
     void processProposal(const ColumnPivot &proposal);
-    double transitionProb(const ColumnPivot &proposal);
+    double logTransitionProb(const ColumnPivot &proposal);
+    double logReverseTransitionProb(const ColumnPivot &proposal);
     ColumnPivot proposePivot();
+    ColumnPivot proposeColumn();
+    void proposeRow(ColumnPivot &colProposal);
 
+
+    void toCanonicalState();
+    std::vector<int> auxiliaries();
+
+    void addPivotToLPSolution(const ColumnPivot &pivot);
+    void subtractPivotFromLPSolution(const ColumnPivot &pivot);
 
 };
 

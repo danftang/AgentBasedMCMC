@@ -7,13 +7,12 @@
 #include "ColumnPivot.h"
 #include "StlStream.h"
 
-ColumnPivot::ColumnPivot(glp::Simplex &lp, int j, std::vector<double> column): Pivot(-1,j,column) {
-    const double tol = 1e-8;
+ColumnPivot::ColumnPivot(glp::Simplex &lp, int j, std::vector<double> column): Pivot(-1,j,std::move(column)) {
     int kIncoming = lp.head[lp.m + j];
-    double deltaMin = lp.u[kIncoming] - lp.l[kIncoming];
+    delta = lp.u[kIncoming] - lp.l[kIncoming];
     double DXi;
     double DXj;
-    for(int i=1; i<col.size();++i) {
+    for(int i=1; i<col.size();++i) { // TODO: allow optionally degenerate pivots if both incoming and outgoing are on bounds?
         if(fabs(col[i]) > tol) {
             int kOutgoing = lp.head[i];
             bool outgoingToUpperBound = (col[i] > 0.0) ^ lp.isAtUpperBound(j);
@@ -23,16 +22,18 @@ ColumnPivot::ColumnPivot(glp::Simplex &lp, int j, std::vector<double> column): P
                 DXi = lp.l[kOutgoing] - lp.b[i];
             }
             DXj = fabs(DXi/col[i]);
-            if (DXj < deltaMin) {
+            if (DXj < delta) {
                 pivotRows.clear();
                 pivotRows.push_back(i);
-                deltaMin = DXj;
-            } else if (DXj == deltaMin) {
+                delta = DXj;
+            } else if (DXj == delta) {
                 pivotRows.push_back(i);
             }
         }
     }
     if(!pivotRows.empty()) this->i = pivotRows.front();
+    if(lp.isAtUpperBound(j)) delta = -delta;
+    orderPivotRows(lp);
 }
 
 
@@ -41,3 +42,21 @@ ColumnPivot ColumnPivot::reverse(glp::Simplex &lp) const {
     revCol.i = i;
     return revCol;
 }
+
+
+// orders pivot rows so that all structural vars in the original LP come before auxiliary vars
+void ColumnPivot::orderPivotRows(glp::Simplex &lp) {
+    nStructuralPivotRows = 0;
+    while(lp.kSimTokProb[lp.head[pivotRows[nStructuralPivotRows]]] > lp.originalProblem.nConstraints() && nStructuralPivotRows < pivotRows.size()) {
+        ++nStructuralPivotRows;
+    }
+    for(int entry = nStructuralPivotRows + 1; entry < pivotRows.size(); ++entry) {
+        int i = pivotRows[entry];
+        if(lp.kSimTokProb[lp.head[i]] > lp.originalProblem.nConstraints()) {
+            // swap current entry with first non-structural
+            pivotRows[entry] = pivotRows[nStructuralPivotRows];
+            pivotRows[nStructuralPivotRows++] = i;
+        }
+    }
+}
+

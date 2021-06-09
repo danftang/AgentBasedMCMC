@@ -45,9 +45,9 @@ void Experiments::PredPreyExpt() {
     for(int n=0; n<99; ++n) {
         mcmc.nextSample();
         std::cout << glp::SparseVec(mcmc.X()) << std::endl;
+//        std::cout << "number of fractional pivots = " << mcmc.countFractionalPivCols() << " / " << mcmc.nNonBasic() << std::endl;
         assert(abm.isValidSolution(mcmc.X()));
     }
-
 }
 
 

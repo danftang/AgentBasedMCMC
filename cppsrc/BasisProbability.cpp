@@ -6,7 +6,7 @@
 #include "SimplexMCMC.h"
 
 BasisProbability::BasisProbability(SimplexMCMC &simplex) {
-    logDegeneracyProb = simplex.lnDegeneracyProb();
+    logDegeneracyProb = 0.0;//simplex.lnDegeneracyProb();
     logPX = simplex.lnProb();
     logFractionalPenalty = simplex.lnFractionalPenalty();
 }
