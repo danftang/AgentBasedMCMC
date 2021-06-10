@@ -7,7 +7,7 @@
 #include "ColumnPivot.h"
 #include "StlStream.h"
 
-ColumnPivot::ColumnPivot(glp::Simplex &lp, int j, std::vector<double> column): Pivot(-1,j,std::move(column)) {
+ColumnPivot::ColumnPivot(glp::Simplex &lp, int j, std::vector<double> column): ProposalPivot(-1, j, std::move(column)) {
     int kIncoming = lp.head[lp.m + j];
     delta = lp.u[kIncoming] - lp.l[kIncoming];
     double DXi;

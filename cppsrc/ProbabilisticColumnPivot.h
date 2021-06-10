@@ -12,15 +12,15 @@
 #define GLPKTEST_PROBABILISTICCOLUMNPIVOT_H
 
 
-#include "Pivot.h"
+#include "ProposalPivot.h"
 
-class ProbabilisticColumnPivot: public Pivot {
+class ProbabilisticColumnPivot: public ProposalPivot {
 public:
     static constexpr double tol = 1e-8;
     static constexpr double kappa = -0.001; // exponential coefficient for probabilities of choosing row based on change in feasibility
 
     bool leavingVarToUpperBound;
-    double transitionProb;
+//    double transitionProb;
     std::vector<int> activeRows;
     std::vector<double> pivotPMF; // index is (2*activeRowIndex + toUpperBound), value is probability mass
 

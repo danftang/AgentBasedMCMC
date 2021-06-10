@@ -3,7 +3,7 @@
 //
 
 #include "SimplexMCMC.h"
-#include "Pivot.h"
+#include "ProposalPivot.h"
 #include "Random.h"
 #include "ColumnPivot.h"
 #include <algorithm>
@@ -86,8 +86,10 @@ double SimplexMCMC::lnFractionalPenalty() {
 // and reject based on Metropolis-Hastings
 // returns the next sample
 void SimplexMCMC::nextSample() {
-    ColumnPivot proposalPivot = proposePivot();
-    processProposal(proposalPivot);
+    do {
+        ProbabilisticColumnPivot proposalPivot = proposePivot();
+        processProposal(proposalPivot);
+    } while(!solutionIsPrimaryFeasible());
     ++nSamples;
 //    if(probability.logFractionalPenalty != 0.0) {
 //        ++fractionalRunLength;
@@ -96,22 +98,15 @@ void SimplexMCMC::nextSample() {
 }
 
 
-void SimplexMCMC::processProposal(const ColumnPivot &proposalPivot) {
-    std::cout << "Processing proposal " << proposalPivot.i << ", " << proposalPivot.j << " " << proposalPivot.delta << std::endl;
-    if(proposalPivot.isDegenerate()) {
-        // always accept degenerate pivots (same probability and same transition prob)
-    }
-    double acceptanceDenominator = logProbFunc(X()) + logTransitionProb(proposalPivot);
-//    pivot(proposalPivot);
-//    ColumnPivot reversePivot = proposalPivot.reverse(*this);
-//    BasisProbability destinationProb(*this);
-    addPivotToLPSolution(proposalPivot);
-    double acceptanceNumerator = logProbFunc(lpSolution) + logReverseTransitionProb(proposalPivot);
-    subtractPivotFromLPSolution(proposalPivot);
-    double logAcceptance = std::min(acceptanceNumerator - acceptanceDenominator, 0.0);
+void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
+    std::cout << "Processing proposal " << proposalPivot.i << ", " << proposalPivot.j << std::endl;
+    double sourceProb = logProbFunc(X());
+    updateLPSolution(proposalPivot);
+    double destinationProb = logProbFunc(lpSolution);
+    revertLPSolution(proposalPivot);
+    double logAcceptance = std::min(destinationProb - sourceProb - proposalPivot.logTransitionRatio, 0.0);
 //    if(isnan( logAcceptance )) println("NaN Acceptance $acceptanceNumerator / $acceptanceDenominator logPiv = ${state.logProbOfPivotState} transition prob = ${transitionProb(revertState.reversePivot)} columnWeight = ${columnWeights.P(revertState.reversePivot.col)} nPivots = ${nPivots(revertState.reversePivot.col)}");
-    std::cout << "Log acceptance is " << acceptanceNumerator << " - " << acceptanceDenominator << " = " << logAcceptance << std::endl;
-    std::cout << "Log transition probs are " << logTransitionProb(proposalPivot) << " " << logReverseTransitionProb(proposalPivot) << std::endl;
+    std::cout << "Log acceptance is " << sourceProb << " - " << destinationProb << " - " << proposalPivot.logTransitionRatio <<" = " << logAcceptance << std::endl;
     if (std::isnan(logAcceptance) || Random::nextDouble() <= exp(logAcceptance)) { // explicity accept if both numerator and denominator are -infinity
         // Accept proposal
         std::cout << "Accepting" << std::endl;
@@ -119,54 +114,45 @@ void SimplexMCMC::processProposal(const ColumnPivot &proposalPivot) {
     } else {
         // reject
         std::cout << "Rejecting" << std::endl;
-//        if(revertState.cache.logFractionalPenalty != 0.0 && state.logFractionalPenalty == 0.0) {
-//            println("Rejecting fraction->integer transition with denominator = ${revertState.cache.logPX} + ${revertState.cache.logDegeneracyProb} + ${revertState.cache.logFractionalPenalty} + ${acceptanceDenominator - revertState.cache.logFractionalPenalty - revertState.cache.logDegeneracyProb - revertState.cache.logPX} = $acceptanceDenominator, numerator = ${state.logPX} + ${state.logDegeneracyProb} + ${ln(transitionProb(revertState.reversePivot))} = $acceptanceNumerator, acceptance = $logAcceptance")
-//        }
-//        if(revertState.cache.logFractionalPenalty == 0.0 && state.logFractionalPenalty != 0.0) {
-//            println("Rejecting integer->fraction transition with denominator = ${revertState.cache.logPX} + ${revertState.cache.logDegeneracyProb} + ${acceptanceDenominator - revertState.cache.logFractionalPenalty - revertState.cache.logDegeneracyProb - revertState.cache.logPX} = $acceptanceDenominator, numerator = ${state.logPX} + ${state.logDegeneracyProb} +  + ${revertState.cache.logFractionalPenalty} + ${ln(transitionProb(revertState.reversePivot))} = $acceptanceNumerator, acceptance = $logAcceptance")
-//        }
-//        revertLastPivot()
     }
 }
 
-double SimplexMCMC::logTransitionProb(const ColumnPivot &proposal) {
-    return -log(nNonBasic())-log(proposal.pivotRows.size());
-}
-
-double SimplexMCMC::logReverseTransitionProb(const ColumnPivot &proposal) {
-    int degeneracyCount = 1;
-    for(int i=1; i<proposal.col.size(); ++i) {
-        if(i != proposal.i && fabs(proposal.col[i]) > 1e-6 && (b[i] == u[head[i]] || b[i] == l[head[i]])) ++degeneracyCount;
-    }
-    return -log(nNonBasic()) - log(degeneracyCount);
-}
+//double SimplexMCMC::logTransitionProb(const ColumnPivot &proposal) {
+//    return -log(nNonBasic())-log(proposal.pivotRows.size());
+//}
+//
+//double SimplexMCMC::logReverseTransitionProb(const ColumnPivot &proposal) {
+//    int degeneracyCount = 1;
+//    for(int i=1; i<proposal.col.size(); ++i) {
+//        if(i != proposal.i && fabs(proposal.col[i]) > 1e-6 && (b[i] == u[head[i]] || b[i] == l[head[i]])) ++degeneracyCount;
+//    }
+//    return -log(nNonBasic()) - log(degeneracyCount);
+//}
 
 void SimplexMCMC::randomWalk() {
     pivot(proposePivot());
 }
 
-ColumnPivot SimplexMCMC::proposePivot() {
-    ColumnPivot proposal = proposeColumn();
-    proposeRow(proposal);
-    return proposal;
+ProbabilisticColumnPivot SimplexMCMC::proposePivot() {
+    return ProbabilisticColumnPivot(*this, proposeColumn());
 }
 
-// To be based on rate of change of L1-norm feasibility objective
-ColumnPivot SimplexMCMC::proposeColumn() {
+// To be based on rate of change of L1-norm feasibility objective?
+// uniform prob for now
+int SimplexMCMC::proposeColumn() {
     // choose a pivot column
-    int j = Random::nextInt(1,n - m + 1);
-    return ColumnPivot(*this, j);
+    return Random::nextInt(1,n - m + 1);
 }
 
 
-// To be based on increase in feasibility
-void SimplexMCMC::proposeRow(ColumnPivot &colProposal) {
-    if(colProposal.pivotRows.size() > 0) {
-        colProposal.i = colProposal.pivotRows[Random::nextInt(colProposal.pivotRows.size())];
-    } else {
-        colProposal.i = -1; // incoming var goes to opposite limit.
-    }
-}
+// Moved to ProbabilisticColumnPivot
+//void SimplexMCMC::proposeRow(ColumnPivot &colProposal) {
+//    if(colProposal.pivotRows.size() > 0) {
+//        colProposal.i = colProposal.pivotRows[Random::nextInt(colProposal.pivotRows.size())];
+//    } else {
+//        colProposal.i = -1; // incoming var goes to opposite limit.
+//    }
+//}
 
 
 // pivots-in any auxiliary variables if there exists a basic variable on a bound
@@ -200,18 +186,27 @@ int SimplexMCMC::countFractionalPivCols() {
     return nFractionals;
 }
 
-void SimplexMCMC::addPivotToLPSolution(const ColumnPivot &pivot) {
+void SimplexMCMC::updateLPSolution(const ProposalPivot &pivot) {
     for(int i=1; i<=nBasic(); ++i) {
         lpSolution[kSimTokProb[head[i]]] -= pivot.col[i] * pivot.delta;
     }
     lpSolution[kSimTokProb[head[nBasic() + pivot.j]]] += pivot.delta;
 }
 
-void SimplexMCMC::subtractPivotFromLPSolution(const ColumnPivot &pivot) {
+void SimplexMCMC::revertLPSolution(const ProposalPivot &pivot) {
     lpSolution[kSimTokProb[head[nBasic() + pivot.j]]] -= pivot.delta;
     for(int i=1; i<=nBasic(); ++i) {
         lpSolution[kSimTokProb[head[i]]] += pivot.col[i] * pivot.delta;
     }
+}
+
+bool SimplexMCMC::solutionIsPrimaryFeasible() {
+    const double tol = 1e-8;
+    for(int i=1; i<nBasic(); ++i) {
+        int k = head[i];
+        if(b[i] < l[k] - tol || b[i] > u[k] + tol) return false;
+    }
+    return true;
 }
 
 

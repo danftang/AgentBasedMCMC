@@ -48,7 +48,7 @@ public:
         for(int eventId=1; eventId < X.size(); ++eventId) {
             if(fabs(X[eventId]) > tol) {
                 auto event = Event<AGENT>(eventId);
-                logP += X[eventId] * log(event.agent().timestep(stateTrajectory[event.time()])[event.act()]);
+                logP += fabs(X[eventId]) * log(event.agent().timestep(stateTrajectory[event.time()])[event.act()]);
 //                   - CombinatoricsUtils.factorialLog(X[eventId]) // TODO: add this for non-state-fermionic trajectories
             }
         }

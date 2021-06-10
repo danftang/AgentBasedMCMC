@@ -7,7 +7,7 @@
 #include "Random.h"
 
 // set up cumulative probability
-ProbabilisticColumnPivot::ProbabilisticColumnPivot(glp::Simplex &simplex, int j, std::vector<double> column): Pivot(-1,j,std::move(column)) {
+ProbabilisticColumnPivot::ProbabilisticColumnPivot(glp::Simplex &simplex, int j, std::vector<double> column): ProposalPivot(-1, j, std::move(column)) {
 
     std::multimap<double, int> transitions; // from delta_j to PMF-index.
 
@@ -29,13 +29,13 @@ ProbabilisticColumnPivot::ProbabilisticColumnPivot(glp::Simplex &simplex, int j,
 
     // add entry for bound swap of column
     int colk = simplex.head[j];
-    transitions.emplace(simplex.isAtUpperBound(j)?(simplex.l[colk]- simplex.u[colk]):(simplex.u[colk]- simplex.l[colk]),
-                        2*activeRows.size());
+    double boundSwapDelta = simplex.isAtUpperBound(j)?(simplex.l[colk]- simplex.u[colk]):(simplex.u[colk]- simplex.l[colk]);
+    transitions.emplace(boundSwapDelta, 2*activeRows.size());
 
     // now populate pivotPMF
     pivotPMF.resize(activeRows.size() * 2 + 1, 0.0);
     auto firstPositivePivot = transitions.lower_bound(0.0);
-    // first do +ve DeltaJ pivots (if any)
+    // first do +ve Delta_j pivots (if any)
     double DeltaF = 0.0;
     double lastDj = 0.0;
     double dDf_dDj = colFeasibilityGradient(simplex, true);
@@ -44,9 +44,11 @@ ProbabilisticColumnPivot::ProbabilisticColumnPivot(glp::Simplex &simplex, int j,
         DeltaF += (Dj-lastDj)*dDf_dDj;
         lastDj = Dj;
         dDf_dDj += 1.0;
-        pivotPMF[pmfIndex] = exp(kappa * DeltaF);
+        // only pivot on unity pivot points (this ensures solutions remain integer if coeffs are integer to start with)
+        // TODO: Understand consequences of this design decision
+        pivotPMF[pmfIndex] = (pmfIndex == 2*activeRows.size() || fabs(fabs(col[activeRows[pmfIndex/2]])-1.0) < tol )?exp(kappa * DeltaF):0.0;
     }
-    // now do -ve pivots
+    // now do -ve Delta_j pivots
     DeltaF = 0.0;
     lastDj = 0.0;
     dDf_dDj = colFeasibilityGradient(simplex, false);
@@ -55,7 +57,8 @@ ProbabilisticColumnPivot::ProbabilisticColumnPivot(glp::Simplex &simplex, int j,
         DeltaF += (Dj-lastDj)*dDf_dDj;
         lastDj = Dj;
         dDf_dDj -= 1.0;
-        pivotPMF[pmfIndex] = exp(kappa * DeltaF);
+        // only pivot on unity pivot points (this ensures solutions remain integer if coeffs are integer to start with)
+        pivotPMF[pmfIndex] = (pmfIndex == 2*activeRows.size() || fabs(fabs(col[activeRows[pmfIndex/2]])-1.0) < tol )?exp(kappa * DeltaF):0.0;
     }
 
     // choose row
@@ -63,8 +66,14 @@ ProbabilisticColumnPivot::ProbabilisticColumnPivot(glp::Simplex &simplex, int j,
     if(pivotChoice < 2*activeRows.size()) {
         i = activeRows[pivotChoice / 2];
         leavingVarToUpperBound = pivotChoice % 2;
-        transitionProb = pivotPMF[pivotChoice];
+        int leavingk = simplex.head[i];
+        delta = ((leavingVarToUpperBound?simplex.u[leavingk]:simplex.l[leavingk])  - simplex.b[i])/col[i];
+    } else {
+        i = -1; // column does bound swap.
+        leavingVarToUpperBound = !simplex.isAtUpperBound(j);
+        delta = boundSwapDelta;
     }
+    logTransitionRatio = 0.0;
 }
 
 

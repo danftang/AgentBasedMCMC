@@ -16,6 +16,8 @@ class StateTrajectory: public std::vector<ModelState<AGENT>> {
 public:
     using std::vector<ModelState<AGENT>>::operator [];
 
+    static constexpr double tol = 1e-8;
+
     StateTrajectory(const glp::SparseVec &actTrajectory) {
         for(int i=1; i <= actTrajectory.sparseSize(); ++i) {
             auto event = Event<AGENT>(actTrajectory.indices[i]);
@@ -28,9 +30,10 @@ public:
     StateTrajectory(const std::vector<double> &eventTrajectory) {
         this->resize((eventTrajectory.size() - 1) / (AGENT::domainSize() * AGENT::actDomainSize()));
         for(int eventId=1; eventId < eventTrajectory.size(); ++eventId) {
-            if(eventTrajectory[eventId] != 0.0) {
+            double occupation = fabs(eventTrajectory[eventId]);
+            if(occupation > tol) {
                 auto event = Event<AGENT>(eventId);
-                (*this)[event.time()][event.agent()] += eventTrajectory[eventId];
+                (*this)[event.time()][event.agent()] += occupation;
             }
         }
     }

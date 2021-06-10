@@ -3,9 +3,9 @@
 //
 
 #include <cmath>
-#include "Pivot.h"
+#include "ProposalPivot.h"
 
-//Pivot::Pivot(glp::Simplex &lp, int j): j(j), col(lp.tableauCol(j)) {
+//ProposalPivot::ProposalPivot(glp::Simplex &lp, int j): j(j), col(lp.tableauCol(j)) {
 //    int kIncoming = lp.head[lp.m + j];
 //    double deltaMin = lp.u[kIncoming] - lp.l[kIncoming];
 //    double DXi;
@@ -35,7 +35,7 @@
 
 // returns the column for the reverse pivot
 // or the empty vector if i < 1 (i.e. if the pivot is just a bound swap of the j'th column)
-std::vector<double> Pivot::reverseCol() const {
+std::vector<double> ProposalPivot::reverseCol() const {
     std::vector<double> revCol(col.size());
     if(i < 1) {
         for(int irev=0; irev < col.size(); ++irev) {

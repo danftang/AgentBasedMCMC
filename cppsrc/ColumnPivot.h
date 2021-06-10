@@ -8,14 +8,13 @@
 
 
 #include <vector>
-#include "Pivot.h"
+#include "ProposalPivot.h"
 
-class ColumnPivot: public Pivot {
+class ColumnPivot: public ProposalPivot {
 public:
     static constexpr double tol = 1e-8; // tolerance to consider a value zero
 
     std::vector<int>    pivotRows;  // rows on which this column can be pivoted while maintaining feasibility (structural vars precede auxiliary)
-    double              delta;      // the change in the value of this column on pivoting on any of the pivotRows
     int                 nStructuralPivotRows; // Number of entries in pivotRows that correspond to structural pivots (i.e. not auxiliary)
 
     ColumnPivot(glp::Simplex &simplex, int j): ColumnPivot(simplex, j, simplex.tableauCol(j)) { }

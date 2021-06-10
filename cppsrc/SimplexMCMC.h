@@ -11,8 +11,9 @@
 #include <random>
 #include "glpkpp.h"
 #include "BasisProbability.h"
-#include "Pivot.h"
+#include "ProposalPivot.h"
 #include "ColumnPivot.h"
+#include "ProbabilisticColumnPivot.h"
 
 class SimplexMCMC: public glp::Simplex {
 public:
@@ -41,8 +42,8 @@ public:
     double lnFractionalPenalty();
 
     void nextSample();
-//    double reverseTransitionProb(Pivot proposal);
-    void pivot(const Pivot &piv) { this->glp::Simplex::pivot(piv.i, piv.j, piv.col); }
+//    double reverseTransitionProb(ProposalPivot proposal);
+    void pivot(const ProposalPivot &piv) { this->glp::Simplex::pivot(piv.i, piv.j, piv.col); }
 
 
 //    std::vector<int> calcPivotRows(int j, const std::vector<double> &colVec);
@@ -55,20 +56,18 @@ public:
 
 
 protected:
-    void processProposal(const ColumnPivot &proposal);
-    double logTransitionProb(const ColumnPivot &proposal);
-    double logReverseTransitionProb(const ColumnPivot &proposal);
-    ColumnPivot proposePivot();
-    ColumnPivot proposeColumn();
-    void proposeRow(ColumnPivot &colProposal);
+    void processProposal(const ProposalPivot &proposal);
+    ProbabilisticColumnPivot proposePivot();
+    int proposeColumn();
 
 
     void toCanonicalState();
     std::vector<int> auxiliaries();
 
-    void addPivotToLPSolution(const ColumnPivot &pivot);
-    void subtractPivotFromLPSolution(const ColumnPivot &pivot);
+    void updateLPSolution(const ProposalPivot &pivot);
+    void revertLPSolution(const ProposalPivot &pivot);
 
+    bool solutionIsPrimaryFeasible();
 };
 
 
