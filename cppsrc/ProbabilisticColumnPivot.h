@@ -17,20 +17,26 @@
 class ProbabilisticColumnPivot: public ProposalPivot {
 public:
     static constexpr double tol = 1e-8;
-    static constexpr double kappa = -0.001; // exponential coefficient for probabilities of choosing row based on change in feasibility
+    static constexpr double kappa = -10; // exponential coefficient for probabilities of choosing row based on change in feasibility
 
-    bool leavingVarToUpperBound;
 //    double transitionProb;
-    std::vector<int> activeRows;
+    glp::Simplex &simplex;
+    std::vector<int> nonZeroRows;
     std::vector<double> pivotPMF; // index is (2*activeRowIndex + toUpperBound), value is probability mass
 
     ProbabilisticColumnPivot(glp::Simplex &simplex, int j): ProbabilisticColumnPivot(simplex, j, simplex.tableauCol(j)) { }
     ProbabilisticColumnPivot(glp::Simplex &simplex, int j, std::vector<double> column); // j = column to pivot on
 
+    // Test stuff
+    double feasibility(double deltaj);
 protected:
 
-    static double iFeasibilityGradient(glp::Simplex &lp, int i, bool forward);
-    double colFeasibilityGradient(glp::Simplex &lp, bool forward);
+    double iFeasibilityGradient(int i, bool forward);
+    double colFeasibilityGradient(bool forward);
+    double colFeasibilityGradient(double deltaj);
+    bool isActive(int pmfIndex);
+
+    double feasibilityGradient(double v, double lowerBound, double upperBound);
 };
 
 

@@ -24,23 +24,34 @@ void Experiments::PredPreyExpt() {
 
     std::cout << "Real trajectory: " << glp::SparseVec(realTrajectory) << std::endl;
     std::cout << "Observations: " << observations << std::endl;
+//    for(int i=1; i<=abm.nConstraints(); ++i) {
+//        std::cout << "Constraint bound " << abm.getRowLb(i) << ", " << abm.getRowUb(i) << std::endl;
+//    }
+//    for(int j=1; j<=abm.nVars(); ++j) {
+//        std::cout << "Constraint bound " << abm.getColLb(j) << ", " << abm.getColUb(j) << std::endl;
+//    }
 //    std::cout << "Linearised ABM:\n" << abm << std::endl;
 
     abm.solutionBasis(realTrajectory);
+    abm.advBasis(); // this shouldn't change the solution if all structural vars are on their bound (i.e. binary soln)
+                    // but should ensure that all auxiliaries are in the basis.
     abm.warmUp();
 
 
 
     SimplexMCMC mcmc(abm, abm.logProbFunc());
 
-    // do we have fixed variables in the basis here?
-    for(int i=1; i<=mcmc.m; ++i) {
-        if(mcmc.l[mcmc.head[i]] == mcmc.u[mcmc.head[i]]) std::cout << "Fixed var in basis " << i << std::endl;
+    // Check initial basis contains no fixed vars and all auxiliaries are in the basis
+    for(int k=1; k<=mcmc.nVars(); ++k) {
+        if(mcmc.l[k] == mcmc.u[k]) std::cout << "WARNING: Fixed var in SimplexMCMC " << k << std::endl;
+        if(mcmc.kSimTokProb[k] > abm.nConstraints() && (mcmc.l[k] != 0.0 || mcmc.u[k] != 1.0 ))
+            std::cout << "WARNING: non-binary structural var " << k << std::endl;
     }
-    for(int j=1; j<=mcmc.n-mcmc.m; ++j) {
-        if(mcmc.l[mcmc.head[mcmc.m+j]] == mcmc.u[mcmc.head[mcmc.m+j]]) std::cout << "Fixed null var " << j << std::endl;
+    for(int j=1; j<=mcmc.nNonBasic(); ++j) {
+        if(mcmc.kSimTokProb[mcmc.head[mcmc.nBasic()+j]] <= abm.nConstraints()) std::cout << "WARNING: Non-basic auxiliary " << j << std::endl;
     }
 
+    std::cout << "Starting with initial sample:" << std::endl;
     std::cout << glp::SparseVec(mcmc.X()) << std::endl;
     for(int n=0; n<99; ++n) {
         mcmc.nextSample();

@@ -15,12 +15,9 @@ SimplexMCMC::SimplexMCMC(glp::Problem &prob, const std::function<double (const s
         rowLatestCompletionPivot(m, -1),
         latestCompletionBegin(m, -1),
         lnRowPivotCount(m,0.0),
-        logProbFunc(logProb) {}
-//        probability(*this) {
-//    for(int i = 1; i<=m; ++i) {
-//        orderedBasis[head[i]] = i;
-//    }
-// }
+        logProbFunc(logProb) {
+    // TODO: ensure that all auxiliary vars are initially in the basis
+}
 
 
 
@@ -99,7 +96,16 @@ void SimplexMCMC::nextSample() {
 
 
 void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
-    std::cout << "Processing proposal " << proposalPivot.i << ", " << proposalPivot.j << std::endl;
+    std::cout << "Processing proposal " << proposalPivot.i << ", " << proposalPivot.j
+              << " leavingVarToUpperBound = " << proposalPivot.leavingVarToUpperBound
+              << " delta = " << proposalPivot.delta
+              << " incoming var = " << (isAtUpperBound(proposalPivot.j)?u[head[nBasic()+proposalPivot.j]]:l[head[nBasic()+proposalPivot.j]]);
+    if(proposalPivot.i > 0) {
+        std::cout << " b[i] = " << b[proposalPivot.i] << " leaving var limits " << l[head[proposalPivot.i]]
+                  << ":" << u[head[proposalPivot.i]] << std::endl;
+    }
+    std::cout << std::endl;
+
     double sourceProb = logProbFunc(X());
     updateLPSolution(proposalPivot);
     double destinationProb = logProbFunc(lpSolution);
@@ -208,6 +214,7 @@ bool SimplexMCMC::solutionIsPrimaryFeasible() {
     }
     return true;
 }
+
 
 
 

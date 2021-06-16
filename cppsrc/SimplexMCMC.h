@@ -43,7 +43,7 @@ public:
 
     void nextSample();
 //    double reverseTransitionProb(ProposalPivot proposal);
-    void pivot(const ProposalPivot &piv) { this->glp::Simplex::pivot(piv.i, piv.j, piv.col); }
+    void pivot(const ProposalPivot &piv) { this->glp::Simplex::pivot(piv.i, piv.j, piv.col, piv.leavingVarToUpperBound); }
 
 
 //    std::vector<int> calcPivotRows(int j, const std::vector<double> &colVec);
@@ -53,7 +53,6 @@ public:
 
     // TEST STUFF
     int countFractionalPivCols();
-
 
 protected:
     void processProposal(const ProposalPivot &proposal);
