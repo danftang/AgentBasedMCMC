@@ -17,7 +17,7 @@
 class ProbabilisticColumnPivot: public ProposalPivot {
 public:
     static constexpr double tol = 1e-8;
-    static constexpr double kappa = -10; // exponential coefficient for probabilities of choosing row based on change in feasibility
+    static constexpr double kappa = -8.0; // exponential coefficient for probabilities of choosing row based on change in feasibility
 
 //    double transitionProb;
     glp::Simplex &simplex;
@@ -31,8 +31,8 @@ public:
     double feasibility(double deltaj);
 protected:
 
-    double iFeasibilityGradient(int i, bool forward);
-    double colFeasibilityGradient(bool forward);
+//    double iFeasibilityGradient(int i, bool forward);
+//    double colFeasibilityGradient(bool forward);
     double colFeasibilityGradient(double deltaj);
     bool isActive(int pmfIndex);
 
