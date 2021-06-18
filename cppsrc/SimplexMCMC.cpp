@@ -112,7 +112,7 @@ void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
     revertLPSolution(proposalPivot);
     double logAcceptance = std::min(destinationProb - sourceProb - proposalPivot.logTransitionRatio, 0.0);
 //    if(isnan( logAcceptance )) println("NaN Acceptance $acceptanceNumerator / $acceptanceDenominator logPiv = ${state.logProbOfPivotState} transition prob = ${transitionProb(revertState.reversePivot)} columnWeight = ${columnWeights.P(revertState.reversePivot.col)} nPivots = ${nPivots(revertState.reversePivot.col)}");
-    std::cout << "Log acceptance is " << sourceProb << " - " << destinationProb << " - " << proposalPivot.logTransitionRatio <<" = " << logAcceptance << std::endl;
+    std::cout << "Log acceptance is " << destinationProb << " - " << sourceProb <<  " - " << proposalPivot.logTransitionRatio <<" = " << logAcceptance << std::endl;
     if (std::isnan(logAcceptance) || Random::nextDouble() <= exp(logAcceptance)) { // explicity accept if both numerator and denominator are -infinity
         // Accept proposal
         std::cout << "Accepting" << std::endl;
@@ -140,7 +140,8 @@ void SimplexMCMC::randomWalk() {
 }
 
 ProbabilisticColumnPivot SimplexMCMC::proposePivot() {
-    return ProbabilisticColumnPivot(*this, proposeColumn());
+//    return ProbabilisticColumnPivot(*this, proposeColumn());
+    return ProbabilisticColumnPivot(*this);
 }
 
 // To be based on rate of change of L1-norm feasibility objective?

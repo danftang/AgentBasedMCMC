@@ -11,11 +11,13 @@
 
 
 void Experiments::PredPreyExpt() {
-    PredPreyAgent::GRIDSIZE = 16;
-    int nTimesteps = 8;
+    PredPreyAgent::GRIDSIZE = 8;
+    int nTimesteps = 4;
     auto startState = ModelState<PredPreyAgent>::randomPoissonState([](const PredPreyAgent &agent) {
-        if(agent.type() == PredPreyAgent::PREDATOR) return 0.02;
-        return 0.04;
+//        if(agent.type() == PredPreyAgent::PREDATOR) return 0.02;
+//        return 0.04;
+        if(agent.type() == PredPreyAgent::PREDATOR) return 0.08;
+        return 0.16;
     });
     std::cout << "Start state: " << startState << std::endl;
     auto [observations, realTrajectory] =
@@ -32,11 +34,17 @@ void Experiments::PredPreyExpt() {
 //    }
 //    std::cout << "Linearised ABM:\n" << abm << std::endl;
 
-    abm.solutionBasis(realTrajectory);
+//    abm.solutionBasis(realTrajectory);
+
     abm.advBasis(); // this shouldn't change the solution if all structural vars are on their bound (i.e. binary soln)
                     // but should ensure that all auxiliaries are in the basis.
     abm.warmUp();
-
+    std::cout << "Adv basis:" << abm.primalSolution() << std::endl;
+    abm.setObjective(glp::SparseVec());
+    abm.setObjDir(glp::Problem::MINIMISE);
+//    abm.simplex(); // try a solve
+//    std::cout << "Solve status = " << abm.getStatus() << std::endl;
+//    std::cout << "Solution: " << abm.primalSolution() << std::endl;
 
 
     SimplexMCMC mcmc(abm, abm.logProbFunc());
@@ -51,11 +59,16 @@ void Experiments::PredPreyExpt() {
         if(mcmc.kSimTokProb[mcmc.head[mcmc.nBasic()+j]] <= abm.nConstraints()) std::cout << "WARNING: Non-basic auxiliary " << j << std::endl;
     }
 
+
     std::cout << "Starting with initial sample:" << std::endl;
     std::cout << glp::SparseVec(mcmc.X()) << std::endl;
+//    mcmc.nextSample();
+//    std::cout << "Sample: " << glp::SparseVec(mcmc.X()) << std::endl;
+//    return;
+
     for(int n=0; n<99; ++n) {
         mcmc.nextSample();
-        std::cout << glp::SparseVec(mcmc.X()) << std::endl;
+        std::cout << "Sample: " << glp::SparseVec(mcmc.X()) << std::endl;
 //        std::cout << "number of fractional pivots = " << mcmc.countFractionalPivCols() << " / " << mcmc.nNonBasic() << std::endl;
         assert(abm.isValidSolution(mcmc.X()));
     }

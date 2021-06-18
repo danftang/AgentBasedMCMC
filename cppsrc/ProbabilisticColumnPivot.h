@@ -25,7 +25,14 @@ public:
     std::vector<double> pivotPMF; // index is (2*activeRowIndex + toUpperBound), value is probability mass
 
     ProbabilisticColumnPivot(glp::Simplex &simplex, int j): ProbabilisticColumnPivot(simplex, j, simplex.tableauCol(j)) { }
-    ProbabilisticColumnPivot(glp::Simplex &simplex, int j, std::vector<double> column); // j = column to pivot on
+    ProbabilisticColumnPivot(glp::Simplex &simplex, int j, std::vector<double> column): ProposalPivot(-1, j, std::move(column)), simplex(simplex) {
+        chooseRow();
+    }
+    ProbabilisticColumnPivot(glp::Simplex &simplex): simplex(simplex) {
+        chooseCol();
+        col = simplex.tableauCol(j);
+        chooseRow();
+    }
 
     // Test stuff
     double feasibility(double deltaj);
@@ -35,6 +42,8 @@ protected:
 //    double colFeasibilityGradient(bool forward);
     double colFeasibilityGradient(double deltaj);
     bool isActive(int pmfIndex);
+    void chooseCol();
+    void chooseRow();
 
     double feasibilityGradient(double v, double lowerBound, double upperBound);
 };

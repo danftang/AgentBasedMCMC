@@ -7,8 +7,50 @@
 #include "ProbabilisticColumnPivot.h"
 #include "Random.h"
 
-// set up cumulative probability
-ProbabilisticColumnPivot::ProbabilisticColumnPivot(glp::Simplex &simplex, int j, std::vector<double> column): ProposalPivot(-1, j, std::move(column)), simplex(simplex)  {
+void ProbabilisticColumnPivot::chooseCol() {
+
+    // set objective to out-of-bounds rows
+    bool isFeasible = true;
+    for(int i=1; i<=simplex.nBasic(); ++i) {
+        int k = simplex.head[i];
+        if(simplex.b[i] < simplex.l[k] - tol) {
+            simplex.c[i] = -1.0;
+            isFeasible = false;
+        } else if(simplex.b[i] > simplex.u[k] + tol) {
+            simplex.c[i] = 1.0;
+            isFeasible = false;
+        } else {
+            simplex.c[i] = 0.0;
+        }
+    }
+    simplex.recalculatePi();
+
+
+    if(isFeasible) {
+        // null objective so just choose with uniform prob
+        j = Random::nextInt(1,simplex.nNonBasic() + 1);
+    } else {
+        // choose with prob proportional to exp of reduced objective
+        std::vector<double> cdf(simplex.nNonBasic() + 1, 0.0);
+        std::vector<double> reducedObjective = simplex.reducedObjective();
+        double cumulativeP = 0.0;
+
+        for(int j=1; j<= simplex.nNonBasic(); ++j) {
+            cumulativeP += reducedObjective[j]<0.0?1.0:0.0;
+            cdf[j] = cumulativeP;
+        }
+        double *it = std::lower_bound(
+                cdf.data(),
+                cdf.data() + simplex.nNonBasic() + 1,
+                Random::nextDouble(0.0, cdf[simplex.nNonBasic()])
+                );
+        j = it - cdf.data();
+    }
+
+}
+
+
+void ProbabilisticColumnPivot::chooseRow() {
 
     double feas = feasibility(0.0);
     std::cout << "Feasibility = " << feas << std::endl;
@@ -156,7 +198,7 @@ double ProbabilisticColumnPivot::feasibilityGradient(double v, double lowerBound
 // returns the feasibility of the current solution perturbed by this column changing by deltaj
 double ProbabilisticColumnPivot::feasibility(double deltaj) {
     double dist = 0.0;
-    for(int i=1; i < simplex.nBasic(); ++i) {
+    for(int i=1; i <= simplex.nBasic(); ++i) {
         int k = simplex.head[i];
         double v = simplex.b[i] + col[i]*deltaj;
         if(v < simplex.l[k]) {
