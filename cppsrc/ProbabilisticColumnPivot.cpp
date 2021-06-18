@@ -7,8 +7,22 @@
 #include "ProbabilisticColumnPivot.h"
 #include "Random.h"
 
+// Chooses columns based on whether the coefficient of the reduced infeasibility objective
+// is zero or not. Non-zero coefficients are alpha times more likely to be chosen than zero coefficients.
+//
+// The probability of choosing a non-zero coeff (if there is one) is alpha/((alpha-1)*nnz + n), where nnz is the number of
+// non-zero coefficients in the reduced objective and n is the total number of non-basics.
+// The probability of choosing a zero coeff is 1/((alpha-1)*nnz + n).
+// If we also penalise the probability of infeasible states by a factor of A*((alpha-1)*nnz + n)/(alpha*n_inf)
+// where n_inf is the number of infeasible columns
+// then the overall contribution to the acceptance prob is A*alpha and A for non-zero and zero coeff columns respectively
+// so the backwards/forwards ratio is
+//  * 1 for non-zero -> non-zero transitions
+//  * alpha^( 1-Dn_inf) for zero -> non-zero transitions
+//  * alpha^(-1-Dn_inf) for non-zero -> zero transitions
+// But in the case of a non-zero -> zero transition Dn_inf is likely to be negative, so we are likely to get acceptance
 void ProbabilisticColumnPivot::chooseCol() {
-
+    static constexpr double alpha = 100.0;
     // set objective to out-of-bounds rows
     bool isFeasible = true;
     for(int i=1; i<=simplex.nBasic(); ++i) {
@@ -36,7 +50,7 @@ void ProbabilisticColumnPivot::chooseCol() {
         double cumulativeP = 0.0;
 
         for(int j=1; j<= simplex.nNonBasic(); ++j) {
-            cumulativeP += reducedObjective[j]<0.0?1.0:0.0;
+            cumulativeP += fabs(reducedObjective[j])>tol?alpha:1.0;
             cdf[j] = cumulativeP;
         }
         double *it = std::lower_bound(
