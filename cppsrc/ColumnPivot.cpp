@@ -9,7 +9,7 @@
 
 ColumnPivot::ColumnPivot(glp::Simplex &lp, int j, std::vector<double> column): ProposalPivot(-1, j, std::move(column)) {
     int kIncoming = lp.head[lp.m + j];
-    delta = lp.u[kIncoming] - lp.l[kIncoming];
+    deltaj = lp.u[kIncoming] - lp.l[kIncoming];
     double DXi;
     double DXj;
     for(int i=1; i<col.size();++i) { // TODO: allow optionally degenerate pivots if both incoming and outgoing are on bounds?
@@ -22,17 +22,17 @@ ColumnPivot::ColumnPivot(glp::Simplex &lp, int j, std::vector<double> column): P
                 DXi = lp.l[kOutgoing] - lp.b[i];
             }
             DXj = fabs(DXi/col[i]);
-            if (DXj < delta) {
+            if (DXj < deltaj) {
                 pivotRows.clear();
                 pivotRows.push_back(i);
-                delta = DXj;
-            } else if (DXj == delta) {
+                deltaj = DXj;
+            } else if (DXj == deltaj) {
                 pivotRows.push_back(i);
             }
         }
     }
     if(!pivotRows.empty()) this->i = pivotRows.front();
-    if(lp.isAtUpperBound(j)) delta = -delta;
+    if(lp.isAtUpperBound(j)) deltaj = -deltaj;
     orderPivotRows(lp);
 }
 

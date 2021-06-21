@@ -17,25 +17,25 @@
 class ProbabilisticColumnPivot: public ProposalPivot {
 public:
     static constexpr double tol = 1e-8;
-    static constexpr double kappa = -8.0; // exponential coefficient for probabilities of choosing row based on change in feasibility
+    static constexpr double kappa = -8.0; // exponential coefficient for probabilities of choosing row based on change in infeasibility
+    static constexpr double alpha = 100.0; // relative probability of choosing column with non-zero reduced objective
 
 //    double transitionProb;
     glp::Simplex &simplex;
-    std::vector<int> nonZeroRows;
+    std::vector<int> nonZeroRows; // indices of rows in "col" that are non-zero
     std::vector<double> pivotPMF; // index is (2*activeRowIndex + toUpperBound), value is probability mass
+    bool sourceObjectiveIsZero;
+    int sourceInfeasibilityCount;
 
     ProbabilisticColumnPivot(glp::Simplex &simplex, int j): ProbabilisticColumnPivot(simplex, j, simplex.tableauCol(j)) { }
     ProbabilisticColumnPivot(glp::Simplex &simplex, int j, std::vector<double> column): ProposalPivot(-1, j, std::move(column)), simplex(simplex) {
         chooseRow();
     }
-    ProbabilisticColumnPivot(glp::Simplex &simplex): simplex(simplex) {
-        chooseCol();
-        col = simplex.tableauCol(j);
-        chooseRow();
-    }
+    explicit ProbabilisticColumnPivot(glp::Simplex &simplex);
 
     // Test stuff
-    double feasibility(double deltaj);
+    double infeasibility(double deltaj);
+    int infeasibilityCount(double deltaj);
 protected:
 
 //    double iFeasibilityGradient(int i, bool forward);
@@ -45,7 +45,7 @@ protected:
     void chooseCol();
     void chooseRow();
 
-    double feasibilityGradient(double v, double lowerBound, double upperBound);
+    double infeasibilityGradient(double v, double lowerBound, double upperBound);
 };
 
 

@@ -94,11 +94,15 @@ void SimplexMCMC::nextSample() {
 //    }
 }
 
-
+// TODO: How to assign probabilities to infeasible states?
+// - Could carry prob of feasible state in infeasible state when transitioning
+//   from feasible to infeasible? So infeasible states only transition to
+//   other infeasible states with the same probability. This could also be used
+//   to control the probability of transition from feasible to infeasible.
 void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
     std::cout << "Processing proposal " << proposalPivot.i << ", " << proposalPivot.j
               << " leavingVarToUpperBound = " << proposalPivot.leavingVarToUpperBound
-              << " delta = " << proposalPivot.delta
+              << " deltaj = " << proposalPivot.deltaj
               << " incoming var = " << (isAtUpperBound(proposalPivot.j)?u[head[nBasic()+proposalPivot.j]]:l[head[nBasic()+proposalPivot.j]]);
     if(proposalPivot.i > 0) {
         std::cout << " b[i] = " << b[proposalPivot.i] << " leaving var limits " << l[head[proposalPivot.i]]
@@ -110,9 +114,9 @@ void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
     updateLPSolution(proposalPivot);
     double destinationProb = logProbFunc(lpSolution);
     revertLPSolution(proposalPivot);
-    double logAcceptance = std::min(destinationProb - sourceProb - proposalPivot.logTransitionRatio, 0.0);
+    double logAcceptance = std::min(destinationProb - sourceProb + proposalPivot.logAcceptanceContribution, 0.0);
 //    if(isnan( logAcceptance )) println("NaN Acceptance $acceptanceNumerator / $acceptanceDenominator logPiv = ${state.logProbOfPivotState} transition prob = ${transitionProb(revertState.reversePivot)} columnWeight = ${columnWeights.P(revertState.reversePivot.col)} nPivots = ${nPivots(revertState.reversePivot.col)}");
-    std::cout << "Log acceptance is " << destinationProb << " - " << sourceProb <<  " - " << proposalPivot.logTransitionRatio <<" = " << logAcceptance << std::endl;
+    std::cout << "Log acceptance is " << destinationProb << " - " << sourceProb << " + " << proposalPivot.logAcceptanceContribution << " = " << logAcceptance << std::endl;
     if (std::isnan(logAcceptance) || Random::nextDouble() <= exp(logAcceptance)) { // explicity accept if both numerator and denominator are -infinity
         // Accept proposal
         std::cout << "Accepting" << std::endl;
@@ -144,7 +148,7 @@ ProbabilisticColumnPivot SimplexMCMC::proposePivot() {
     return ProbabilisticColumnPivot(*this);
 }
 
-// To be based on rate of change of L1-norm feasibility objective?
+// To be based on rate of change of L1-norm infeasibility objective?
 // uniform prob for now
 int SimplexMCMC::proposeColumn() {
     // choose a pivot column
@@ -187,7 +191,7 @@ int SimplexMCMC::countFractionalPivCols() {
     int nFractionals = 0;
     double delta;
     for(int j=1; j<=nNonBasic(); ++j) {
-        delta = fabs(ColumnPivot(*this, j).delta);
+        delta = fabs(ColumnPivot(*this, j).deltaj);
         if(delta < 0.9999 && delta > 0.0001) ++nFractionals;
     }
     return nFractionals;
@@ -195,15 +199,15 @@ int SimplexMCMC::countFractionalPivCols() {
 
 void SimplexMCMC::updateLPSolution(const ProposalPivot &pivot) {
     for(int i=1; i<=nBasic(); ++i) {
-        lpSolution[kSimTokProb[head[i]]] -= pivot.col[i] * pivot.delta;
+        lpSolution[kSimTokProb[head[i]]] -= pivot.col[i] * pivot.deltaj;
     }
-    lpSolution[kSimTokProb[head[nBasic() + pivot.j]]] += pivot.delta;
+    lpSolution[kSimTokProb[head[nBasic() + pivot.j]]] += pivot.deltaj;
 }
 
 void SimplexMCMC::revertLPSolution(const ProposalPivot &pivot) {
-    lpSolution[kSimTokProb[head[nBasic() + pivot.j]]] -= pivot.delta;
+    lpSolution[kSimTokProb[head[nBasic() + pivot.j]]] -= pivot.deltaj;
     for(int i=1; i<=nBasic(); ++i) {
-        lpSolution[kSimTokProb[head[i]]] += pivot.col[i] * pivot.delta;
+        lpSolution[kSimTokProb[head[i]]] += pivot.col[i] * pivot.deltaj;
     }
 }
 

@@ -14,7 +14,7 @@ class ColumnPivot: public ProposalPivot {
 public:
     static constexpr double tol = 1e-8; // tolerance to consider a value zero
 
-    std::vector<int>    pivotRows;  // rows on which this column can be pivoted while maintaining feasibility (structural vars precede auxiliary)
+    std::vector<int>    pivotRows;  // rows on which this column can be pivoted while maintaining infeasibility (structural vars precede auxiliary)
     int                 nStructuralPivotRows; // Number of entries in pivotRows that correspond to structural pivots (i.e. not auxiliary)
 
     ColumnPivot(glp::Simplex &simplex, int j): ColumnPivot(simplex, j, simplex.tableauCol(j)) { }
@@ -22,7 +22,7 @@ public:
 
 
     ColumnPivot reverse(glp::Simplex &lp) const;
-    bool isDegenerate() const { return fabs(delta) < tol; }
+    bool isDegenerate() const { return fabs(deltaj) < tol; }
 
 protected:
     void orderPivotRows(glp::Simplex &lp);

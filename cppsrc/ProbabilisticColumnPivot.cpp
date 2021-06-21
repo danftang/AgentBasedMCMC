@@ -7,44 +7,59 @@
 #include "ProbabilisticColumnPivot.h"
 #include "Random.h"
 
+
+
+ProbabilisticColumnPivot::ProbabilisticColumnPivot(glp::Simplex &simplex) : simplex(simplex) {
+    chooseCol();
+    col = simplex.tableauCol(j);
+    chooseRow();
+}
+
+
 // Chooses columns based on whether the coefficient of the reduced infeasibility objective
 // is zero or not. Non-zero coefficients are alpha times more likely to be chosen than zero coefficients.
 //
 // The probability of choosing a non-zero coeff (if there is one) is alpha/((alpha-1)*nnz + n), where nnz is the number of
 // non-zero coefficients in the reduced objective and n is the total number of non-basics.
 // The probability of choosing a zero coeff is 1/((alpha-1)*nnz + n).
-// If we also penalise the probability of infeasible states by a factor of A*((alpha-1)*nnz + n)/(alpha*n_inf)
+// If we also penalise the probability of infeasible states by a factor of A*((alpha-1)*nnz + n)*alpha^-n_inf
 // where n_inf is the number of infeasible columns
-// then the overall contribution to the acceptance prob is A*alpha and A for non-zero and zero coeff columns respectively
-// so the backwards/forwards ratio is
-//  * 1 for non-zero -> non-zero transitions
-//  * alpha^( 1-Dn_inf) for zero -> non-zero transitions
-//  * alpha^(-1-Dn_inf) for non-zero -> zero transitions
+// then the overall contribution to the acceptance prob is either A*alpha^(1-n_inf) or A*alpha^-n_inf depending on whether
+// the column has non-zero and zero coeff respectively.
+// So the backwards/forwards ratio is
+//  * alpha^(-Dn_Inf) for non-zero -> non-zero and zero -> zero transitions
+//  * alpha^(-(Dn_inf-1)) for zero -> non-zero transitions
+//  * alpha^(-(Dn_inf+1)) for non-zero -> zero transitions
 // But in the case of a non-zero -> zero transition Dn_inf is likely to be negative, so we are likely to get acceptance
+// and in the case of zero-> non-zero Dn_inf is likely to be positive so, again, we get acceptance.
+// Note, we only need to calculate n_inf and d_j for the source and destination, which we would have to calculate anyway
+// for the row calculation.
+// Note also that the destination d_j is zero if and only if the current column has d_j of zero under the destination B
+// so there's no need to re-calculate the column for the destination.
 void ProbabilisticColumnPivot::chooseCol() {
-    static constexpr double alpha = 100.0;
     // set objective to out-of-bounds rows
-    bool isFeasible = true;
+    sourceInfeasibilityCount = 0;
     for(int i=1; i<=simplex.nBasic(); ++i) {
         int k = simplex.head[i];
         if(simplex.b[i] < simplex.l[k] - tol) {
             simplex.c[i] = -1.0;
-            isFeasible = false;
+            ++sourceInfeasibilityCount;
         } else if(simplex.b[i] > simplex.u[k] + tol) {
             simplex.c[i] = 1.0;
-            isFeasible = false;
+            ++sourceInfeasibilityCount;
         } else {
             simplex.c[i] = 0.0;
         }
     }
-    simplex.recalculatePi();
 
 
-    if(isFeasible) {
+    if(sourceInfeasibilityCount == 0) {
         // null objective so just choose with uniform prob
+        sourceObjectiveIsZero = true;
         j = Random::nextInt(1,simplex.nNonBasic() + 1);
     } else {
-        // choose with prob proportional to exp of reduced objective
+        // choose with prob proportional to alpha if reduced objective is non-zero or 1 if zero
+        simplex.recalculatePi();
         std::vector<double> cdf(simplex.nNonBasic() + 1, 0.0);
         std::vector<double> reducedObjective = simplex.reducedObjective();
         double cumulativeP = 0.0;
@@ -58,6 +73,7 @@ void ProbabilisticColumnPivot::chooseCol() {
                 cdf.data() + simplex.nNonBasic() + 1,
                 Random::nextDouble(0.0, cdf[simplex.nNonBasic()])
                 );
+        sourceObjectiveIsZero = (*it == 1.0); // record this for calculation of acceptance contribution later.
         j = it - cdf.data();
     }
 
@@ -66,8 +82,10 @@ void ProbabilisticColumnPivot::chooseCol() {
 
 void ProbabilisticColumnPivot::chooseRow() {
 
-    double feas = feasibility(0.0);
+    ///////////////////////// debug only
+    double feas = infeasibility(0.0);
     std::cout << "Feasibility = " << feas << std::endl;
+    //////////////
 
     std::multimap<double, int> transitions; // from delta_j to PMF-index.
 
@@ -76,7 +94,7 @@ void ProbabilisticColumnPivot::chooseRow() {
         if(fabs(col[i]) > tol) nonZeroRows.push_back(i);
     }
 
-    // calculate delta_js for each possible pivot
+    // calculate delta_js for each possible pivot and place in "transitions" to sort
     for(int m=0; m < nonZeroRows.size(); ++m) {
         int i = nonZeroRows[m];
         int k = simplex.head[i];
@@ -92,23 +110,22 @@ void ProbabilisticColumnPivot::chooseRow() {
         }
     }
 
-    // add entry for bounds of this column
+    // add transitions entries for bounds of this column
     int colk = simplex.head[simplex.nBasic() + j];
     double boundSwapDelta = simplex.isAtUpperBound(j)?(simplex.l[colk]- simplex.u[colk]):(simplex.u[colk]- simplex.l[colk]);
     transitions.emplace(boundSwapDelta, 2 * nonZeroRows.size());
     transitions.emplace(0.0, 2 * nonZeroRows.size() + 1);
 
-    // now populate pivotPMF
+    // now populate pivotPMF by going from lowest to highest delta_j in order
     pivotPMF.resize(nonZeroRows.size() * 2 + 1, 0.0);
-
     double lastDj = transitions.begin()->first;
-    double DeltaF = feasibility(lastDj);
+    double DeltaF = infeasibility(lastDj);
     double dDf_dDj = colFeasibilityGradient(lastDj - tol);
     for(auto [Dj, pmfIndex] : transitions) {
         DeltaF += (Dj-lastDj)*dDf_dDj;
         lastDj = Dj;
         if(isActive(pmfIndex)) pivotPMF[pmfIndex] = exp(kappa * DeltaF);
-//        std::cout << "delta = " << Dj << " pivotProb = " << pivotPMF[pmfIndex] << " DeltaF = " << DeltaF << " dDf_dDj = " << dDf_dDj << " Feasibility = " << feasibility(Dj) << std::endl;
+//        std::cout << "deltaj = " << Dj << " pivotProb = " << pivotPMF[pmfIndex] << " DeltaF = " << DeltaF << " dDf_dDj = " << dDf_dDj << " Feasibility = " << infeasibility(Dj) << std::endl;
         if(pmfIndex < nonZeroRows.size()*2) {
             dDf_dDj += fabs(col[nonZeroRows[pmfIndex / 2]]);
         } else {
@@ -122,19 +139,39 @@ void ProbabilisticColumnPivot::chooseRow() {
         i = nonZeroRows[pivotChoice / 2];
         leavingVarToUpperBound = pivotChoice % 2;
         int leavingk = simplex.head[i];
-        delta = ((leavingVarToUpperBound?simplex.u[leavingk]:simplex.l[leavingk]) - simplex.b[i])/col[i];
+        deltaj = ((leavingVarToUpperBound ? simplex.u[leavingk] : simplex.l[leavingk]) - simplex.b[i]) / col[i];
     } else {
         i = -1; // column does bound swap.
         leavingVarToUpperBound = !simplex.isAtUpperBound(j);
-        delta = boundSwapDelta;
+        deltaj = boundSwapDelta;
     }
-//    std::cout << "Chose pivot with prob " << pivotPMF[pivotChoice] << " Delta = " << delta << std::endl;
-    logTransitionRatio = 0.0;
+//    std::cout << "Chose pivot with prob " << pivotPMF[pivotChoice] << " Delta = " << deltaj << std::endl;
 
+    // calculate acceptance contribution
+    int destinationInfeasibilityCount = 0;
+    double destinationObjective = 0.0;
+    for(int i=1; i<=simplex.nBasic(); ++i) {
+        int k = simplex.head[i];
+        double bi = simplex.b[i] + deltaj * col[i];
+        if(bi < simplex.l[k] - tol) {
+            ++destinationInfeasibilityCount;
+            destinationObjective -= col[i];
+        } else if(bi > simplex.u[k] + tol) {
+            ++destinationInfeasibilityCount;
+            destinationObjective += col[i];
+        }
+    }
+    int DInfeasibilityCount = destinationInfeasibilityCount - sourceInfeasibilityCount;
+    if(sourceInfeasibilityCount == 0) {
+        if(destinationInfeasibilityCount != 0) DInfeasibilityCount -= 1;
+    } else if(destinationInfeasibilityCount == 0) {
+        if(destinationInfeasibilityCount == 0) DInfeasibilityCount += 1;
+    }
+    logAcceptanceContribution = -DInfeasibilityCount * log(alpha);
 }
 
 
-// returns the gradient of the feasibility function with respect to changes in the value of
+// returns the gradient of the infeasibility function with respect to changes in the value of
 // this column in either the forward (increasing val) or backward (decreasing val) directions.
 // (since the col is on a boundary, the gradient is discontinuous at this point so direction
 // must be specified).
@@ -156,7 +193,7 @@ double ProbabilisticColumnPivot::colFeasibilityGradient(double deltaj) {
     double grad = 0.0;
     for(int nzi : nonZeroRows) {
         int rowk = simplex.head[nzi];
-        grad +=  col[nzi] * feasibilityGradient(simplex.b[nzi] + col[nzi]*deltaj,
+        grad += col[nzi] * infeasibilityGradient(simplex.b[nzi] + col[nzi] * deltaj,
                                                  simplex.l[rowk],
                                                  simplex.u[rowk]);
     }
@@ -164,12 +201,12 @@ double ProbabilisticColumnPivot::colFeasibilityGradient(double deltaj) {
     double xUpperBound = simplex.u[colk];
     double xLowerBound = simplex.l[colk];
     double xj = simplex.isAtUpperBound(j)?xUpperBound:xLowerBound;
-    grad += feasibilityGradient(xj + deltaj, xLowerBound, xUpperBound);
+    grad += infeasibilityGradient(xj + deltaj, xLowerBound, xUpperBound);
     return grad;
 }
 
 
-// returns the gradient of the feasibility function for the current value of the i'th row with
+// returns the gradient of the infeasibility function for the current value of the i'th row with
 // respect to the value of this row.
 // If 'forward' is true, returns the gradient in the forward direction, otherwise returns the grad
 // in the backward direction (these can be different at boundaries since the gradient
@@ -185,7 +222,7 @@ double ProbabilisticColumnPivot::colFeasibilityGradient(double deltaj) {
 //    return 0.0;
 //}
 
-double ProbabilisticColumnPivot::feasibilityGradient(double v, double lowerBound, double upperBound) {
+double ProbabilisticColumnPivot::infeasibilityGradient(double v, double lowerBound, double upperBound) {
     if(v >= upperBound) {
         return 1.0;
     } else if(v < lowerBound) {
@@ -195,8 +232,8 @@ double ProbabilisticColumnPivot::feasibilityGradient(double v, double lowerBound
 }
 
 
-//// returns the feasibility of the current solution in simplex
-//double ProbabilisticColumnPivot::feasibility(int j) {
+//// returns the infeasibility of the current solution in simplex
+//double ProbabilisticColumnPivot::infeasibility(int j) {
 //    double dist = 0.0;
 //    for(int i=1; i < simplex.nBasic(); ++i) {
 //        int k = simplex.head[i];
@@ -209,8 +246,8 @@ double ProbabilisticColumnPivot::feasibilityGradient(double v, double lowerBound
 //    return dist;
 //}
 
-// returns the feasibility of the current solution perturbed by this column changing by deltaj
-double ProbabilisticColumnPivot::feasibility(double deltaj) {
+// returns the infeasibility of the current solution perturbed by this column changing by deltaj
+double ProbabilisticColumnPivot::infeasibility(double deltaj) {
     double dist = 0.0;
     for(int i=1; i <= simplex.nBasic(); ++i) {
         int k = simplex.head[i];
@@ -238,4 +275,15 @@ bool ProbabilisticColumnPivot::isActive(int pmfIndex) {
     if(fabs(fabs(col[i])-1.0) > tol) return false;         // only pivot on unity elements
     int k = simplex.head[i];
     return simplex.kSimTokProb[k] > simplex.originalProblem.nConstraints(); // don't pivot on auxiliary vars
+}
+
+
+int ProbabilisticColumnPivot::infeasibilityCount(double deltaj) {
+    int count = 0;
+    for(int i=1; i<=simplex.nBasic(); ++i) {
+        int k = simplex.head[i];
+        if(double bi = simplex.b[i] + deltaj*col[i]; (bi < simplex.l[k] - tol) || (bi > simplex.u[k] + tol))
+            ++count;
+    }
+    return count;
 }
