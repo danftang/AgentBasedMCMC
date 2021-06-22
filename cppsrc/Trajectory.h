@@ -81,7 +81,7 @@ Trajectory<AGENT> Trajectory<AGENT>::run(const ModelState<AGENT> &startState, in
     Trajectory<AGENT> trajectory(nTimesteps);
     for(int t=0; t<nTimesteps; ++t) {
         for(const auto &[agent, occupation]: t0State) {
-            std::vector<double> actPMF = agent.timestep(t0State);
+            std::vector<double> actPMF = agent.timestep(t0State, 0.0);
             assert(occupation <= actPMF.size());
             for(int nthAgent=0; nthAgent < occupation; ++nthAgent) {
                 typename AGENT::Act act = Random::choose(actPMF);

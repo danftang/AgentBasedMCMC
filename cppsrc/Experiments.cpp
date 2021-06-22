@@ -62,16 +62,20 @@ void Experiments::PredPreyExpt() {
 
     std::cout << "Starting with initial sample:" << std::endl;
     std::cout << glp::SparseVec(mcmc.X()) << std::endl;
-//    mcmc.nextSample();
-//    std::cout << "Sample: " << glp::SparseVec(mcmc.X()) << std::endl;
-//    return;
+    mcmc.nextSample();
+    std::cout << "Sample: " << glp::SparseVec(mcmc.X()) << std::endl;
+    assert(abm.isValidSolution(mcmc.X()));
+    mcmc.nextSample();
+    std::cout << "Sample: " << glp::SparseVec(mcmc.X()) << std::endl;
+    assert(abm.isValidSolution(mcmc.X()));
+    return;
 
-    for(int n=0; n<99; ++n) {
-        mcmc.nextSample();
-        std::cout << "Sample: " << glp::SparseVec(mcmc.X()) << std::endl;
-//        std::cout << "number of fractional pivots = " << mcmc.countFractionalPivCols() << " / " << mcmc.nNonBasic() << std::endl;
-        assert(abm.isValidSolution(mcmc.X()));
-    }
+//    for(int n=0; n<99; ++n) {
+//        mcmc.nextSample();
+//        std::cout << "Sample: " << glp::SparseVec(mcmc.X()) << std::endl;
+////        std::cout << "number of fractional pivots = " << mcmc.countFractionalPivCols() << " / " << mcmc.nNonBasic() << std::endl;
+//        assert(abm.isValidSolution(mcmc.X()));
+//    }
 }
 
 

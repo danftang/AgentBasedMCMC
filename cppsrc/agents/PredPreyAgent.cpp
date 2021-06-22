@@ -6,7 +6,8 @@
 #include "PredPreyAgent.h"
 #include "../State.h"
 
-int PredPreyAgent::GRIDSIZE = 16;
+int PredPreyAgent::GRIDSIZE = 16; // default gridsize
+
 
 std::vector<PredPreyAgent> PredPreyAgent::consequences(PredPreyAgent::Act act) const {
     switch(act) {
@@ -27,33 +28,38 @@ std::vector<PredPreyAgent> PredPreyAgent::consequences(PredPreyAgent::Act act) c
     }
 }
 
-std::vector<double> PredPreyAgent::timestep(const ModelState<PredPreyAgent> &others) const {
-        static double pPredBirthGivenPrey = 0.5; // birth prob given prey
-        static double pPredDie = 0.07; // death prob
-        static double pPreyBirth = 0.06; // birth prob
-        static double pPreyDie = 0.03; // death prob
-        static double pPreyEatenGivenPred = 0.55; // death prob given pred
 
-        std::vector<double> actDistribution(actDomainSize());
-        if(type() == PREDATOR) {
-            actDistribution[DIE] = pPredDie;
-            if(surroundingCountOf(PREY, others) >= 1.0) {
-                actDistribution[GIVEBIRTH] = pPredBirthGivenPrey;
-            }
-        } else {
-            actDistribution[GIVEBIRTH] = pPreyBirth;
-            actDistribution[DIE] = pPreyDie;
-            if(surroundingCountOf(PREDATOR, others) >= 1.0) {
-                actDistribution[DIE] += pPreyEatenGivenPred;
-            }
+// If allowInfeasibleActs is true, then if an act is infeasible then its probability is not set to zero but
+// is the expectation averaged over the prior distribution of 'others' (note that this has the
+// consequence that the sum of the acts no longer adds to 1 since different acts are relative to different
+// distributions of 'others'). This is to enable different uses: for a forward run we set allowInfeasibleActs to
+// false and get a PMF over acts, whereas when calculating the probability of a trajectory by setting allowInfeasibleActs
+// we extend probability calculation to infeasible trajectories in a reasonably smooth manner.
+std::vector<double> PredPreyAgent::timestep(const ModelState<PredPreyAgent> &others, double infeasibilityProb) const {
+
+    std::vector<double> actDistribution(actDomainSize(),0.0);
+    if (type() == PREDATOR) {
+        actDistribution[DIE] = pPredDie;
+        if (surroundingCountOf(PREY, others) >= 1.0) {
+            actDistribution[GIVEBIRTH] = pPredBirthGivenPrey;
         }
-        double moveProb = 0.25*(1.0 - actDistribution[DIE] - actDistribution[GIVEBIRTH]);
-        actDistribution[MOVEUP] = moveProb;
-        actDistribution[MOVEDOWN] = moveProb;
-        actDistribution[MOVELEFT] = moveProb;
-        actDistribution[MOVERIGHT] = moveProb;
-        return actDistribution;
+    } else {
+        actDistribution[GIVEBIRTH] = pPreyBirth;
+        actDistribution[DIE] = pPreyDie;
+        if (surroundingCountOf(PREDATOR, others) >= 1.0) {
+            actDistribution[DIE] += pPreyEatenGivenPred;
+        }
+    }
+    double moveProb = 0.25 * (1.0 - actDistribution[DIE] - actDistribution[GIVEBIRTH]);
+    actDistribution[MOVEUP] = moveProb;
+    actDistribution[MOVEDOWN] = moveProb;
+    actDistribution[MOVELEFT] = moveProb;
+    actDistribution[MOVERIGHT] = moveProb;
+
+    if(actDistribution[GIVEBIRTH] == 0.0) actDistribution[GIVEBIRTH] = infeasibilityProb;
+    return actDistribution;
 }
+
 
 std::vector<glp::Constraint> PredPreyAgent::constraints(int time, PredPreyAgent::Act act) const {
     if(type() == PREDATOR && act == GIVEBIRTH) {

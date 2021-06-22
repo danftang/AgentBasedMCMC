@@ -16,6 +16,7 @@ template<typename AGENT>
 class ABMProblem: public glp::Problem {
 public:
     static constexpr double infinity = std::numeric_limits<double>::infinity();
+    static constexpr double infeasibilityPenalty = 0.01;
 
     int nTimesteps;
     std::vector<Observation<AGENT>> observations;
@@ -42,13 +43,14 @@ public:
 //    }
 
     double logProb(const std::vector<double> &X) {
+//        std::cout << "Calculating prob of " << glp::SparseVec(X) << std::endl;
         const double tol = 1e-8;
         double logP = 0.0;
         StateTrajectory<AGENT> stateTrajectory(X);
         for(int eventId=1; eventId < X.size(); ++eventId) {
             if(fabs(X[eventId]) > tol) {
                 auto event = Event<AGENT>(eventId);
-                logP += fabs(X[eventId]) * log(event.agent().timestep(stateTrajectory[event.time()])[event.act()]);
+                logP += fabs(X[eventId]) * log(event.agent().timestep(stateTrajectory[event.time()], infeasibilityPenalty)[event.act()]);
 //                   - CombinatoricsUtils.factorialLog(X[eventId]) // TODO: add this for non-state-fermionic trajectories
             }
         }
@@ -59,9 +61,14 @@ public:
 //            }
 //        }
 
+//        std::cout << "act logprob = " << logP << std::endl;
+
         for(const auto &observation: observations) {
-            logP += observation.logLikelihood(stateTrajectory);
+            logP += observation.logLikelihood(stateTrajectory, log(infeasibilityPenalty));
         }
+
+//        std::cout << " final logprob = " << logP << std::endl;
+
         return logP;
     }
 

@@ -32,11 +32,18 @@ public:
         PREY
     };
 
-    int stateId;
+    static constexpr double pPredBirthGivenPrey = 0.5; // birth prob given prey
+    static constexpr double pPredDie = 0.07; // death prob
+    static constexpr double pPreyBirth = 0.06; // birth prob
+    static constexpr double pPreyDie = 0.03; // death prob
+    static constexpr double pPreyEatenGivenPred = 0.55; // death prob given pred
+
 
     // Agent Domain stuff
     static int domainSize() { return GRIDSIZE*GRIDSIZE*2; }
     static constexpr int actDomainSize() { return 6; }
+
+    int stateId;
 
     PredPreyAgent(int ordinal): stateId(ordinal) {}
     PredPreyAgent( int x, int y, Type type): stateId(x + GRIDSIZE*y + GRIDSIZE*GRIDSIZE*type) { }
@@ -51,7 +58,7 @@ public:
     int yDown() const { return((stateId/GRIDSIZE + GRIDSIZE-1)%GRIDSIZE); }
 
 
-    std::vector<double> timestep(const ModelState<PredPreyAgent> &others) const;
+    std::vector<double> timestep(const ModelState<PredPreyAgent> &others, double infeasibilityProb) const;
     std::vector<PredPreyAgent> consequences(Act act) const; // the consequences of an act
     // returns the constraints implied by the given act
     std::vector<glp::Constraint> constraints(int time, Act act) const; // to be generated automatically by static analysis...eventually.

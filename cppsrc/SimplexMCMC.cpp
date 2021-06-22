@@ -95,10 +95,9 @@ void SimplexMCMC::nextSample() {
 }
 
 // TODO: How to assign probabilities to infeasible states?
-// - Could carry prob of feasible state in infeasible state when transitioning
-//   from feasible to infeasible? So infeasible states only transition to
-//   other infeasible states with the same probability. This could also be used
-//   to control the probability of transition from feasible to infeasible.
+// - treat negative occupation numbers as anti-agents
+// - have linear approximation of trajectory probability?
+// - have non-interacting approximation of probability?
 void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
     std::cout << "Processing proposal " << proposalPivot.i << ", " << proposalPivot.j
               << " leavingVarToUpperBound = " << proposalPivot.leavingVarToUpperBound
@@ -106,18 +105,20 @@ void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
               << " incoming var = " << (isAtUpperBound(proposalPivot.j)?u[head[nBasic()+proposalPivot.j]]:l[head[nBasic()+proposalPivot.j]]);
     if(proposalPivot.i > 0) {
         std::cout << " b[i] = " << b[proposalPivot.i] << " leaving var limits " << l[head[proposalPivot.i]]
-                  << ":" << u[head[proposalPivot.i]] << std::endl;
+                  << ":" << u[head[proposalPivot.i]];
     }
     std::cout << std::endl;
 
     double sourceProb = logProbFunc(X());
+    std::cout << "Source LP state is: " << glp::SparseVec(lpSolution) << std::endl;
     updateLPSolution(proposalPivot);
     double destinationProb = logProbFunc(lpSolution);
+    std::cout << "Destination LP state is: " << glp::SparseVec(lpSolution) << std::endl;
     revertLPSolution(proposalPivot);
-    double logAcceptance = std::min(destinationProb - sourceProb + proposalPivot.logAcceptanceContribution, 0.0);
+    double logAcceptance = destinationProb - sourceProb + proposalPivot.logAcceptanceContribution;
 //    if(isnan( logAcceptance )) println("NaN Acceptance $acceptanceNumerator / $acceptanceDenominator logPiv = ${state.logProbOfPivotState} transition prob = ${transitionProb(revertState.reversePivot)} columnWeight = ${columnWeights.P(revertState.reversePivot.col)} nPivots = ${nPivots(revertState.reversePivot.col)}");
     std::cout << "Log acceptance is " << destinationProb << " - " << sourceProb << " + " << proposalPivot.logAcceptanceContribution << " = " << logAcceptance << std::endl;
-    if (std::isnan(logAcceptance) || Random::nextDouble() <= exp(logAcceptance)) { // explicity accept if both numerator and denominator are -infinity
+    if (std::isnan(logAcceptance) || Random::nextDouble() <= exp(std::min(0.0,logAcceptance))) { // explicity accept if both numerator and denominator are -infinity
         // Accept proposal
         std::cout << "Accepting" << std::endl;
         pivot(proposalPivot);
@@ -198,16 +199,22 @@ int SimplexMCMC::countFractionalPivCols() {
 }
 
 void SimplexMCMC::updateLPSolution(const ProposalPivot &pivot) {
+    int nConstraints = originalProblem.nConstraints();
     for(int i=1; i<=nBasic(); ++i) {
-        lpSolution[kSimTokProb[head[i]]] -= pivot.col[i] * pivot.deltaj;
+        int kProb = kSimTokProb[head[i]];
+        if(kProb > nConstraints) lpSolution[kProb - nConstraints] += pivot.col[i] * pivot.deltaj;
     }
-    lpSolution[kSimTokProb[head[nBasic() + pivot.j]]] += pivot.deltaj;
+    int kCol = kSimTokProb[head[nBasic() + pivot.j]];
+    if(kCol > nConstraints) lpSolution[kCol - nConstraints] += pivot.deltaj;
 }
 
 void SimplexMCMC::revertLPSolution(const ProposalPivot &pivot) {
-    lpSolution[kSimTokProb[head[nBasic() + pivot.j]]] -= pivot.deltaj;
+    int nConstraints = originalProblem.nConstraints();
+    int kCol = kSimTokProb[head[nBasic() + pivot.j]];
+    if(kCol > nConstraints) lpSolution[kCol - nConstraints] -= pivot.deltaj;
     for(int i=1; i<=nBasic(); ++i) {
-        lpSolution[kSimTokProb[head[i]]] += pivot.col[i] * pivot.deltaj;
+        int kProb = kSimTokProb[head[i]];
+        if(kProb > nConstraints) lpSolution[kProb - nConstraints] -= pivot.col[i] * pivot.deltaj;
     }
 }
 

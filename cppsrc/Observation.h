@@ -38,10 +38,15 @@ public:
     }
 
 
-    double logLikelihood(const StateTrajectory<AGENT> &trajectory) const {
+    double logLikelihood(const StateTrajectory<AGENT> &trajectory, double infeasibilityLogProb) const {
         int n = trajectory[agentState];
-        if(n < numberObserved) return -std::numeric_limits<double>::infinity();
-        return log(boost::math::pdf(boost::math::binomial(n, pObserveIfPresent), numberObserved));
+        if(n < numberObserved) {
+//            std::cout << "Infeasible observation: observed " << numberObserved << " but only " << n << " present. Logprob = " << infeasibilityLogProb << std::endl;
+            return infeasibilityLogProb;
+        }
+        double logP = log(boost::math::pdf(boost::math::binomial(n, pObserveIfPresent), numberObserved));
+//        std::cout << "Observation log likelihood = " << logP << std::endl;
+        return logP;
     }
 
     // if we observed m agents, there cannot be less than m agents present (though there may be more if
