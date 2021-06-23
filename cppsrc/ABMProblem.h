@@ -51,15 +51,20 @@ public:
             if(fabs(X[eventId]) > tol) {
                 auto event = Event<AGENT>(eventId);
                 logP += fabs(X[eventId]) * log(event.agent().timestep(stateTrajectory[event.time()], infeasibilityPenalty)[event.act()]);
-//                   - CombinatoricsUtils.factorialLog(X[eventId]) // TODO: add this for non-state-fermionic trajectories
+//                   - CombinatoricsUtils.factorialLog(X[eventId]) // add this for non-act-fermionic trajectories
             }
         }
-// TODO: Add this as we're no longer assuming state-fermionicity
-//        for(state in stateTrajectory) {
-//            for((_, occupation) in state.entries) {
-//                logP += CombinatoricsUtils.factorialLog(occupation)
-//            }
-//        }
+
+        // If any state occupation number, m, is greater than 1 then we need to
+        // multiply the prob by !m since the m agents can be assigned to m acts in
+        // !m ways.
+        for(const ModelState<AGENT> &step: stateTrajectory) {
+            for(auto [agentState, occupation]: step) {
+                if(fabs(occupation) > 1.0 + tol) {
+                    logP += lgamma(fabs(occupation) + 1.0);
+                }
+            }
+        }
 
 //        std::cout << "act logprob = " << logP << std::endl;
 
@@ -68,7 +73,6 @@ public:
         }
 
 //        std::cout << " final logprob = " << logP << std::endl;
-
         return logP;
     }
 

@@ -23,9 +23,8 @@ std::vector<PredPreyAgent> PredPreyAgent::consequences(PredPreyAgent::Act act) c
             return std::vector<PredPreyAgent>( { PredPreyAgent(xPosition(),yDown(),type()) } );
         case GIVEBIRTH:
             return std::vector<PredPreyAgent>( { *this, PredPreyAgent(xRight(),yPosition(),type()) } );
-        default:
-            assert(false);
     }
+    assert(false); // unrecognized act
 }
 
 

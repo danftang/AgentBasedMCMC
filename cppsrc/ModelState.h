@@ -8,6 +8,7 @@
 #include <map>
 #include "Random.h"
 
+// represents occupation numbers of agent states in a single timestep.
 template<typename AGENT>
 class ModelState: public std::map<AGENT,double> {
 public:

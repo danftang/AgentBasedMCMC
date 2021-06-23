@@ -51,6 +51,8 @@ public:
 
     void randomWalk();
 
+    static glp::Problem &initialiseProblem(glp::Problem &lp);
+
     // TEST STUFF
     int countFractionalPivCols();
 

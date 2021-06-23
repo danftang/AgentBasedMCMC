@@ -12,7 +12,7 @@ ColumnPivot::ColumnPivot(glp::Simplex &lp, int j, std::vector<double> column): P
     deltaj = lp.u[kIncoming] - lp.l[kIncoming];
     double DXi;
     double DXj;
-    for(int i=1; i<col.size();++i) { // TODO: allow optionally degenerate pivots if both incoming and outgoing are on bounds?
+    for(int i=1; i<col.size();++i) {
         if(fabs(col[i]) > tol) {
             int kOutgoing = lp.head[i];
             bool outgoingToUpperBound = (col[i] > 0.0) ^ lp.isAtUpperBound(j);

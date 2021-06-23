@@ -35,23 +35,6 @@ public:
     }
 
 
-//    double logPrior() {
-//        double logP = 0.0;
-//        std::vector<std::map<AGENT,double>> stateTrajectory = toStateTrajectory();
-//        for(auto eventOccupation : *this) {
-//            auto event = Event<AGENT>(eventOccupation.index);
-//            logP += eventOccupation.value * ln( event.agent().timestep(stateTrajectory[event.time()])[event.act()] );
-////                   - CombinatoricsUtils.factorialLog(occupation) // TODO: add this for non-state-fermionic trajectories
-//        }
-//// TODO: Add this as we're no longer assuming state-fermionicity
-////        for(state in stateTrajectory) {
-////            for((_, occupation) in state.entries) {
-////                logP += CombinatoricsUtils.factorialLog(occupation)
-////            }
-////        }
-//        return logP;
-//    }
-
     static Trajectory<AGENT> run(const ModelState<AGENT> &startState, int nTimesteps);
 
 

@@ -9,7 +9,6 @@
 #include "SimplexMCMC.h"
 #include "agents/PredPreyAgent.h"
 
-
 void Experiments::PredPreyExpt() {
     PredPreyAgent::GRIDSIZE = 8;
     int nTimesteps = 4;
@@ -36,12 +35,11 @@ void Experiments::PredPreyExpt() {
 
 //    abm.solutionBasis(realTrajectory);
 
-    abm.advBasis(); // this shouldn't change the solution if all structural vars are on their bound (i.e. binary soln)
-                    // but should ensure that all auxiliaries are in the basis.
-    abm.warmUp();
-    std::cout << "Adv basis:" << abm.primalSolution() << std::endl;
-    abm.setObjective(glp::SparseVec());
-    abm.setObjDir(glp::Problem::MINIMISE);
+//    abm.advBasis();
+//    abm.warmUp();
+//    std::cout << "Adv basis:" << abm.primalSolution() << std::endl;
+//    abm.setObjective(glp::SparseVec());
+//    abm.setObjDir(glp::Problem::MINIMISE);
 //    abm.simplex(); // try a solve
 //    std::cout << "Solve status = " << abm.getStatus() << std::endl;
 //    std::cout << "Solution: " << abm.primalSolution() << std::endl;
@@ -78,7 +76,8 @@ void Experiments::PredPreyExpt() {
 //    }
 }
 
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Experiments::CatMouseExpt() {
     CatMouseAgent leftCat(CatMouseAgent::Type::CAT, CatMouseAgent::Position::LEFT);
     auto observations = std::vector(
@@ -105,7 +104,7 @@ void Experiments::CatMouseExpt() {
 //    initialTrajectory.add(Event(0,leftCat, CatMouseAgent::STAYPUT),1.0);
 //    std::cout << "Initial trajectory is" << std::endl;
 //    std::cout << initialTrajectory << std::endl;
-//    abm.stdBasis(); // TODO: make this automatic
+//    abm.stdBasis();
 //    abm.warmUp();
 
     SimplexMCMC mcmc(abm, abm.logProbFunc());
@@ -149,4 +148,61 @@ void Experiments::RandomWalk() {
 //    mySimplex.pivot(3,3);
 //    std::cout << mySimplex << std::endl;
 
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+void Experiments::GnuplotTest() {
+    Gnuplot gp; //(stdout);
+    auto state = ModelState<PredPreyAgent>::randomPoissonState([](const PredPreyAgent &agent) {
+        if(agent.type() == PredPreyAgent::PREDATOR) return 0.08;
+        return 0.16;
+    });
+    plotHeatMap(gp, state, state);
+}
+
+Gnuplot &Experiments::plotHeatMap(Gnuplot &gp, const ModelState<PredPreyAgent> &aggregateState,
+                                  const ModelState<PredPreyAgent> &realState) {
+    typedef std::tuple<double,double,double,double,double> HeatRecord;
+    std::vector<std::vector<HeatRecord>> heatData;
+    std::vector<std::tuple<double,double,double>> pointData;
+
+    double maxOccupancy = 0.0;
+    for(auto [agent, occupancy] : aggregateState) {
+        if(occupancy > maxOccupancy) maxOccupancy = occupancy;
+        pointData.emplace_back(agent.xPosition(), agent.yPosition(), agent.type()==PredPreyAgent::PREY?1:2);
+    }
+
+    double scale = 255.0/log(maxOccupancy + 1.0);
+    for(int x=0; x<PredPreyAgent::GRIDSIZE; ++x) {
+        std::vector<HeatRecord> &rabbitRow = heatData.emplace_back();
+        for(int y=0; y<PredPreyAgent::GRIDSIZE; ++y) {
+            double nRabbits = aggregateState[PredPreyAgent(x,y,PredPreyAgent::PREY)];
+            double nFoxes = aggregateState[PredPreyAgent(x,y,PredPreyAgent::PREDATOR)];
+            rabbitRow.emplace_back(x,y,log(nRabbits+1.0)*scale,0.0,log(nFoxes+1.0)*scale);
+        }
+    }
+
+    gp << "set linetype 1 lc 'red'\n";
+    gp << "set linetype 2 lc 'blue'\n";
+    gp << "plot [-0.5:" << PredPreyAgent::GRIDSIZE-0.5 << "][-0.5:" << PredPreyAgent::GRIDSIZE-0.5 << "] ";
+    gp << "'-' with rgbimage notitle, ";
+    gp << "'-' with points pointtype 5 pointsize 0.5 lc variable notitle\n";
+    gp.send2d(heatData);
+    gp.send1d(pointData);
+    return gp;
+}
+
+
+Gnuplot &Experiments::plotAgents(Gnuplot &gp, const ModelState<PredPreyAgent> &state) {
+    std::vector<std::tuple<double,double,double>> pointData;
+    for(auto [agent, occupation]: state) {
+        pointData.emplace_back(agent.xPosition(), agent.yPosition(), agent.type()==PredPreyAgent::PREY?1:2);
+    }
+    gp << "set linetype 1 lc 'red'\n";
+    gp << "set linetype 2 lc 'blue'\n";
+    gp << "plot [-0.5:" << PredPreyAgent::GRIDSIZE-0.5 << "][-0.5:" << PredPreyAgent::GRIDSIZE-0.5 << "] ";
+    gp << "'-' with points pointtype 5 pointsize 0.5 lc variable\n";
+    gp.send1d(pointData);
+    return gp;
 }

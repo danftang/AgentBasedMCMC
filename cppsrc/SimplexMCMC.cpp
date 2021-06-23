@@ -9,14 +9,16 @@
 #include <algorithm>
 #include <cmath>
 
+// Initial basis of 'prob' should contain no fixed vars and all remaining auxiliary vars
+// use
 SimplexMCMC::SimplexMCMC(glp::Problem &prob, const std::function<double (const std::vector<double> &)> &logProb) :
-        Simplex(prob),
+        Simplex(initialiseProblem(prob)),
         colLastNonZero(n,-1),
         rowLatestCompletionPivot(m, -1),
         latestCompletionBegin(m, -1),
         lnRowPivotCount(m,0.0),
         logProbFunc(logProb) {
-    // TODO: ensure that all auxiliary vars are initially in the basis
+    setObjective(glp::SparseVec());
 }
 
 
@@ -94,10 +96,7 @@ void SimplexMCMC::nextSample() {
 //    }
 }
 
-// TODO: How to assign probabilities to infeasible states?
-// - treat negative occupation numbers as anti-agents
-// - have linear approximation of trajectory probability?
-// - have non-interacting approximation of probability?
+
 void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
     std::cout << "Processing proposal " << proposalPivot.i << ", " << proposalPivot.j
               << " leavingVarToUpperBound = " << proposalPivot.leavingVarToUpperBound
@@ -225,6 +224,12 @@ bool SimplexMCMC::solutionIsPrimaryFeasible() {
         if(b[i] < l[k] - tol || b[i] > u[k] + tol) return false;
     }
     return true;
+}
+
+glp::Problem &SimplexMCMC::initialiseProblem(glp::Problem &lp) {
+    lp.advBasis();
+    lp.warmUp();
+    return(lp);
 }
 
 
