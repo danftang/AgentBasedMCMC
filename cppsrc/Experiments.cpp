@@ -10,43 +10,39 @@
 #include "agents/PredPreyAgent.h"
 
 void Experiments::PredPreyExpt() {
+    ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
     PredPreyAgent::GRIDSIZE = 8;
-    int nTimesteps = 4;
-    auto startState = ModelState<PredPreyAgent>::randomPoissonState([](const PredPreyAgent &agent) {
-//        if(agent.type() == PredPreyAgent::PREDATOR) return 0.02;
-//        return 0.04;
-        if(agent.type() == PredPreyAgent::PREDATOR) return 0.08;
-        return 0.16;
+    constexpr int nTimesteps = 4;
+    constexpr double pPredator = 0.08;
+    constexpr double pPrey = 2.0*pPredator;
+    constexpr double pMakeObservation = 0.05;
+
+    ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
+    ModelState<PredPreyAgent> startState = ModelState<PredPreyAgent>::randomPoissonState([](const PredPreyAgent &agent) {
+        if(agent.type() == PredPreyAgent::PREDATOR) return pPredator;
+        return pPrey;
     });
     std::cout << "Start state: " << startState << std::endl;
     auto [observations, realTrajectory] =
-            Observation<PredPreyAgent>::generateObservations(startState, nTimesteps, 0.01);
-    ABMProblem<PredPreyAgent> abm(nTimesteps, observations);
-
+            Observation<PredPreyAgent>::generateObservations(startState, nTimesteps, pMakeObservation);
+    ABMProblem<PredPreyAgent> abm(nTimesteps, observations, [](const Trajectory<PredPreyAgent> &trajectory) {
+        ModelState<PredPreyAgent> startState = trajectory(0);
+        double logP = 0.0;
+        for(auto [agent, occupation]: startState) {
+            double k = fabs(occupation);
+            double lambda = agent.type()==PredPreyAgent::PREDATOR?pPredator:pPrey;
+            logP += k*log(lambda) - lambda - lgamma(k+1); // log of Poisson
+        }
+        return logP;
+    });
     std::cout << "Real trajectory: " << glp::SparseVec(realTrajectory) << std::endl;
     std::cout << "Observations: " << observations << std::endl;
-//    for(int i=1; i<=abm.nConstraints(); ++i) {
-//        std::cout << "Constraint bound " << abm.getRowLb(i) << ", " << abm.getRowUb(i) << std::endl;
-//    }
-//    for(int j=1; j<=abm.nVars(); ++j) {
-//        std::cout << "Constraint bound " << abm.getColLb(j) << ", " << abm.getColUb(j) << std::endl;
-//    }
-//    std::cout << "Linearised ABM:\n" << abm << std::endl;
-
-//    abm.solutionBasis(realTrajectory);
-
-//    abm.advBasis();
-//    abm.warmUp();
-//    std::cout << "Adv basis:" << abm.primalSolution() << std::endl;
-//    abm.setObjective(glp::SparseVec());
-//    abm.setObjDir(glp::Problem::MINIMISE);
-//    abm.simplex(); // try a solve
-//    std::cout << "Solve status = " << abm.getStatus() << std::endl;
-//    std::cout << "Solution: " << abm.primalSolution() << std::endl;
-
 
     SimplexMCMC mcmc(abm, abm.logProbFunc());
+    mcmc.setLPState(realTrajectory);
 
+
+    ////////////////////////////////////////// DO SANITY CHECKS ////////////////////////////////////////
     // Check initial basis contains no fixed vars and all auxiliaries are in the basis
     for(int k=1; k<=mcmc.nVars(); ++k) {
         if(mcmc.l[k] == mcmc.u[k]) std::cout << "WARNING: Fixed var in SimplexMCMC " << k << std::endl;
@@ -56,25 +52,30 @@ void Experiments::PredPreyExpt() {
     for(int j=1; j<=mcmc.nNonBasic(); ++j) {
         if(mcmc.kSimTokProb[mcmc.head[mcmc.nBasic()+j]] <= abm.nConstraints()) std::cout << "WARNING: Non-basic auxiliary " << j << std::endl;
     }
-
-
     std::cout << "Starting with initial sample:" << std::endl;
     std::cout << glp::SparseVec(mcmc.X()) << std::endl;
-    mcmc.nextSample();
-    std::cout << "Sample: " << glp::SparseVec(mcmc.X()) << std::endl;
-    assert(abm.isValidSolution(mcmc.X()));
-    mcmc.nextSample();
-    std::cout << "Sample: " << glp::SparseVec(mcmc.X()) << std::endl;
-    assert(abm.isValidSolution(mcmc.X()));
-    return;
 
-//    for(int n=0; n<99; ++n) {
-//        mcmc.nextSample();
-//        std::cout << "Sample: " << glp::SparseVec(mcmc.X()) << std::endl;
-////        std::cout << "number of fractional pivots = " << mcmc.countFractionalPivCols() << " / " << mcmc.nNonBasic() << std::endl;
-//        assert(abm.isValidSolution(mcmc.X()));
-//    }
+
+    ////////////////////////////////////////// DO SAMPLING ///////////////////////////////////////////
+    ModelState<PredPreyAgent> meanState;
+    for(int n=0; n<100000; ++n) {
+        mcmc.nextSample();
+        if(n%100 == 0) std::cout << "Sample " << n << " : " << glp::SparseVec(mcmc.X()) << std::endl;
+//        std::cout << "number of fractional pivots = " << mcmc.countFractionalPivCols() << " / " << mcmc.nNonBasic() << std::endl;
+        assert(abm.isValidSolution(mcmc.X()));
+        meanState += (reinterpret_cast<const Trajectory<PredPreyAgent> *>(&mcmc.X()))->operator()(nTimesteps-1); // TODO: this is ugly
+    }
+
+
+    ////////////////////////////////////////// SHOW RESULTS ///////////////////////////////////////////
+    std::cout << "Mean state:\n" << meanState << std::endl;
+    std::cout << "Real state:\n" << realTrajectory(nTimesteps-1) << std::endl;
+    std::cout << "Observations: " << observations << std::endl;
+    Gnuplot gp;
+    StateTrajectory<PredPreyAgent> realStateTrajectory(realTrajectory);
+    plotHeatMap(gp, meanState, realTrajectory(nTimesteps-1));
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -88,7 +89,9 @@ void Experiments::CatMouseExpt() {
                     0.95)
             });
 
-    ABMProblem<CatMouseAgent> abm(2, observations);
+    ABMProblem<CatMouseAgent> abm(2, observations, [](const Trajectory<CatMouseAgent> &trajectory) {
+        return 0.0;
+    });
 
     std::cout << abm << std::endl;
 
@@ -173,7 +176,7 @@ Gnuplot &Experiments::plotHeatMap(Gnuplot &gp, const ModelState<PredPreyAgent> &
         pointData.emplace_back(agent.xPosition(), agent.yPosition(), agent.type()==PredPreyAgent::PREY?1:2);
     }
 
-    double scale = 255.0/log(maxOccupancy + 1.0);
+    double scale = 192.0/log(maxOccupancy + 1.0);
     for(int x=0; x<PredPreyAgent::GRIDSIZE; ++x) {
         std::vector<HeatRecord> &rabbitRow = heatData.emplace_back();
         for(int y=0; y<PredPreyAgent::GRIDSIZE; ++y) {

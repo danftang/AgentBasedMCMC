@@ -12,7 +12,17 @@
 template<typename AGENT>
 class ModelState: public std::map<AGENT,double> {
 public:
-    using std::map<AGENT,double>::operator [];
+
+    // ensure zero initialisation
+    double &operator[](const AGENT &agent) {
+        auto iter = this->find(agent);
+        if(iter == this->end()) {
+            double &newEntry = std::map<AGENT,double>::operator[](agent);
+            newEntry = 0.0;
+            return newEntry;
+        }
+        return iter->second;
+    }
 
     double operator[](const AGENT &agent) const {
         auto iter = this->find(agent);
@@ -26,6 +36,16 @@ public:
         }
         return *this;
     }
+
+
+    // Addition for aggregation of states
+    ModelState &operator +=(const ModelState<AGENT> &other) {
+        for(auto [agent, occupation]: other) {
+            (*this)[agent] += occupation;
+        }
+        return *this;
+    }
+
 
     static ModelState<AGENT> randomPoissonState(const std::function<double (const AGENT &)> &pmf) {
         ModelState<AGENT> state;

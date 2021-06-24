@@ -17,15 +17,17 @@ class ABMProblem: public glp::Problem {
 public:
     static constexpr double infinity = std::numeric_limits<double>::infinity();
     static constexpr double infeasibilityPenalty = 0.01;
+    static constexpr double tol = SimplexMCMC::tol;
 
     int nTimesteps;
     std::vector<Observation<AGENT>> observations;
+    std::function<double(const Trajectory<AGENT> &)> logPrior;
 
 
-
-    ABMProblem(int nTimesteps, std::vector<Observation<AGENT> > observations):
+    ABMProblem(int nTimesteps, std::vector<Observation<AGENT> > observations, const std::function<double(const Trajectory<AGENT> &)> &logPrior):
     nTimesteps(nTimesteps),
-    observations(observations) {
+    observations(observations),
+    logPrior(logPrior) {
         ensureNVars(AGENT::domainSize() * AGENT::actDomainSize() * nTimesteps);
         addContinuityConstraints();
         addInteractionConstraints();
@@ -44,7 +46,6 @@ public:
 
     double logProb(const std::vector<double> &X) {
 //        std::cout << "Calculating prob of " << glp::SparseVec(X) << std::endl;
-        const double tol = 1e-8;
         double logP = 0.0;
         StateTrajectory<AGENT> stateTrajectory(X);
         for(int eventId=1; eventId < X.size(); ++eventId) {
@@ -73,6 +74,7 @@ public:
         }
 
 //        std::cout << " final logprob = " << logP << std::endl;
+        logP += logPrior(reinterpret_cast<const Trajectory<AGENT> &>(X));
         return logP;
     }
 

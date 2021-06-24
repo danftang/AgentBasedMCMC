@@ -11,6 +11,7 @@
 #include "glpkpp.h"
 #include "State.h"
 #include "ModelState.h"
+#include "SimplexMCMC.h"
 
 // A vector of timesteps, whith each timestep a map from agent state to occupation number
 template<typename AGENT>
@@ -18,7 +19,7 @@ class StateTrajectory: public std::vector<ModelState<AGENT>> {
 public:
     using std::vector<ModelState<AGENT>>::operator [];
 
-    static constexpr double tol = 1e-8;
+    static constexpr double tol = SimplexMCMC::tol;
 
     StateTrajectory(const glp::SparseVec &actTrajectory) {
         for(int i=1; i <= actTrajectory.sparseSize(); ++i) {

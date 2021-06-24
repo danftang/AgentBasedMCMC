@@ -9,10 +9,11 @@
 
 #include <vector>
 #include "ProposalPivot.h"
+#include "SimplexMCMC.h"
 
 class ColumnPivot: public ProposalPivot {
 public:
-    static constexpr double tol = 1e-8; // tolerance to consider a value zero
+    static constexpr double tol = SimplexMCMC::tol; // tolerance to consider a value zero
 
     std::vector<int>    pivotRows;  // rows on which this column can be pivoted while maintaining infeasibility (structural vars precede auxiliary)
     int                 nStructuralPivotRows; // Number of entries in pivotRows that correspond to structural pivots (i.e. not auxiliary)

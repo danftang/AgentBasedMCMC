@@ -10,14 +10,12 @@
 #include <map>
 #include <random>
 #include "glpkpp.h"
-#include "BasisProbability.h"
 #include "ProposalPivot.h"
-#include "ColumnPivot.h"
-#include "ProbabilisticColumnPivot.h"
 
 class SimplexMCMC: public glp::Simplex {
 public:
     static constexpr double fractionalK = 0.1;
+    static constexpr double tol = 1e-8;
 
 //    using glp::Simplex::pivot;
 
@@ -30,7 +28,7 @@ public:
     int nSamples = 0;
     int nRejections = 0;
     int fractionalRunLength = 0;
-    const std::function<double (const std::vector<double> &)> &logProbFunc;
+    std::function<double (const std::vector<double> &)> logProbFunc;
 
 //    BasisProbability probability;
 
@@ -53,12 +51,14 @@ public:
 
     static glp::Problem &initialiseProblem(glp::Problem &lp);
 
+    void setLPState(const std::vector<double> &lpState);
+
     // TEST STUFF
     int countFractionalPivCols();
 
 protected:
     void processProposal(const ProposalPivot &proposal);
-    ProbabilisticColumnPivot proposePivot();
+    ProposalPivot proposePivot();
     int proposeColumn();
 
 

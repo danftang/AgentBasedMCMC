@@ -12,8 +12,9 @@ using glp::X;
 
 
 int main() {
-    Experiments::GnuplotTest();
-//    Experiments::PredPreyExpt();
+
+//    Experiments::GnuplotTest();
+    Experiments::PredPreyExpt();
 //    Experiments::CatMouseExpt();
 //    Experiments::RandomWalk();
 

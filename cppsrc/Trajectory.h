@@ -13,6 +13,8 @@
 template<typename AGENT>
 class Trajectory: public std::vector<double> {
 public:
+    static constexpr double tol = SimplexMCMC::tol;
+
     Trajectory(int nTimesteps): std::vector<double>(nTimesteps*AGENT::domainSize()*AGENT::actDomainSize()+1) { }
     Trajectory(std::vector<double> &&rvalue): std::vector<double>(std::move(rvalue)) { }
     Trajectory(const std::vector<double> &lvalue): std::vector<double>(lvalue) { }
@@ -34,6 +36,19 @@ public:
         return occupation;
     }
 
+    // time slice
+    ModelState<AGENT> operator()(int time) const {
+//        glp::SparseVec sparseThis(*this);
+//        std::cout << "Getting timeslice from trajectory:" << glp::SparseVec(*this) << std::endl;
+        ModelState<AGENT> timeslice;
+        int beginIndex = Event(time,AGENT(0),0);
+        int endIndex = beginIndex + AGENT::actDomainSize()*AGENT::domainSize();
+        for(int eventId=beginIndex; eventId<endIndex; ++eventId) {
+            if(double occupation = (*this)[eventId]; fabs(occupation) > tol)
+                timeslice[Event<AGENT>(eventId).agent()] += occupation;
+        }
+        return timeslice;
+    }
 
     static Trajectory<AGENT> run(const ModelState<AGENT> &startState, int nTimesteps);
 

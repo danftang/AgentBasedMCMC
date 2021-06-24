@@ -83,8 +83,8 @@ void ProbabilisticColumnPivot::chooseCol() {
 void ProbabilisticColumnPivot::chooseRow() {
 
     ///////////////////////// debug only
-    double feas = infeasibility(0.0);
-    std::cout << "Feasibility = " << feas << std::endl;
+    double infeas = infeasibility(0.0);
+    if(infeas > 0.0) std::cout << "Infeasibility = " << infeas << std::endl;
     //////////////
 
     std::multimap<double, int> transitions; // from delta_j to PMF-index.

@@ -25,6 +25,7 @@ std::vector<PredPreyAgent> PredPreyAgent::consequences(PredPreyAgent::Act act) c
             return std::vector<PredPreyAgent>( { *this, PredPreyAgent(xRight(),yPosition(),type()) } );
     }
     assert(false); // unrecognized act
+    return std::vector<PredPreyAgent>();
 }
 
 

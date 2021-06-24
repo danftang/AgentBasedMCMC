@@ -13,10 +13,11 @@
 
 
 #include "ProposalPivot.h"
+#include "SimplexMCMC.h"
 
 class ProbabilisticColumnPivot: public ProposalPivot {
 public:
-    static constexpr double tol = 1e-8;
+    static constexpr double tol = SimplexMCMC::tol;
     static constexpr double kappa = -8.0; // exponential coefficient for probabilities of choosing row based on change in infeasibility
     static constexpr double alpha = 100.0; // relative probability of choosing column with non-zero reduced objective
 

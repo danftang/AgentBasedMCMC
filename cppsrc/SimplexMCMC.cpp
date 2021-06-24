@@ -6,6 +6,7 @@
 #include "ProposalPivot.h"
 #include "Random.h"
 #include "ColumnPivot.h"
+#include "ProbabilisticColumnPivot.h"
 #include <algorithm>
 #include <cmath>
 
@@ -70,7 +71,6 @@ double SimplexMCMC::lnDegeneracyProb() {
 
 double SimplexMCMC::lnFractionalPenalty() {
     // fractions must be in the basis, so check b
-    const double tol = 1e-8;
     double penalty = 0.0;
     for(int i=1; i<=m; ++i) {
         if(fabs(round(b[i]) - b[i]) > tol) {
@@ -86,7 +86,7 @@ double SimplexMCMC::lnFractionalPenalty() {
 // returns the next sample
 void SimplexMCMC::nextSample() {
     do {
-        ProbabilisticColumnPivot proposalPivot = proposePivot();
+        ProposalPivot proposalPivot = proposePivot();
         processProposal(proposalPivot);
     } while(!solutionIsPrimaryFeasible());
     ++nSamples;
@@ -98,32 +98,31 @@ void SimplexMCMC::nextSample() {
 
 
 void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
-    std::cout << "Processing proposal " << proposalPivot.i << ", " << proposalPivot.j
-              << " leavingVarToUpperBound = " << proposalPivot.leavingVarToUpperBound
-              << " deltaj = " << proposalPivot.deltaj
-              << " incoming var = " << (isAtUpperBound(proposalPivot.j)?u[head[nBasic()+proposalPivot.j]]:l[head[nBasic()+proposalPivot.j]]);
-    if(proposalPivot.i > 0) {
-        std::cout << " b[i] = " << b[proposalPivot.i] << " leaving var limits " << l[head[proposalPivot.i]]
-                  << ":" << u[head[proposalPivot.i]];
-    }
-    std::cout << std::endl;
-
+//    std::cout << "Processing proposal " << proposalPivot.i << ", " << proposalPivot.j
+//              << " leavingVarToUpperBound = " << proposalPivot.leavingVarToUpperBound
+//              << " deltaj = " << proposalPivot.deltaj
+//              << " incoming var = " << (isAtUpperBound(proposalPivot.j)?u[head[nBasic()+proposalPivot.j]]:l[head[nBasic()+proposalPivot.j]]);
+//    if(proposalPivot.i > 0) {
+//        std::cout << " b[i] = " << b[proposalPivot.i] << " leaving var limits " << l[head[proposalPivot.i]]
+//                  << ":" << u[head[proposalPivot.i]];
+//    }
+//    std::cout << std::endl;
     double sourceProb = logProbFunc(X());
-    std::cout << "Source LP state is: " << glp::SparseVec(lpSolution) << std::endl;
+//    std::cout << "Source LP state is: " << glp::SparseVec(lpSolution) << std::endl;
     updateLPSolution(proposalPivot);
     double destinationProb = logProbFunc(lpSolution);
-    std::cout << "Destination LP state is: " << glp::SparseVec(lpSolution) << std::endl;
-    revertLPSolution(proposalPivot);
+//    std::cout << "Destination LP state is: " << glp::SparseVec(lpSolution) << std::endl;
+    revertLPSolution(proposalPivot); // TODO: change logic so we don't revert if we end up accepting
     double logAcceptance = destinationProb - sourceProb + proposalPivot.logAcceptanceContribution;
 //    if(isnan( logAcceptance )) println("NaN Acceptance $acceptanceNumerator / $acceptanceDenominator logPiv = ${state.logProbOfPivotState} transition prob = ${transitionProb(revertState.reversePivot)} columnWeight = ${columnWeights.P(revertState.reversePivot.col)} nPivots = ${nPivots(revertState.reversePivot.col)}");
-    std::cout << "Log acceptance is " << destinationProb << " - " << sourceProb << " + " << proposalPivot.logAcceptanceContribution << " = " << logAcceptance << std::endl;
+//    std::cout << "Log acceptance is " << destinationProb << " - " << sourceProb << " + " << proposalPivot.logAcceptanceContribution << " = " << logAcceptance << std::endl;
     if (std::isnan(logAcceptance) || Random::nextDouble() <= exp(std::min(0.0,logAcceptance))) { // explicity accept if both numerator and denominator are -infinity
         // Accept proposal
-        std::cout << "Accepting" << std::endl;
+//        std::cout << "Accepting deltaj = " << proposalPivot.deltaj << std::endl;
         pivot(proposalPivot);
     } else {
         // reject
-        std::cout << "Rejecting" << std::endl;
+//        std::cout << "Rejecting" << std::endl;
     }
 }
 
@@ -139,11 +138,23 @@ void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
 //    return -log(nNonBasic()) - log(degeneracyCount);
 //}
 
+
+// lpState should contain the values of the strucutral variables of the original LP
+void SimplexMCMC::setLPState(const std::vector<double> &lpState) {
+    for(int j=1; j <= nNonBasic(); ++j) {
+        int kSim = head[nBasic() + j];
+        int kLP = kSimTokProb[kSim];
+        double v = lpState[kLP - originalProblem.nConstraints()];
+        flag[j] = (fabs(u[kSim] - v) < fabs(l[kSim] - v));
+    }
+    spx_eval_beta(this, b);
+}
+
 void SimplexMCMC::randomWalk() {
     pivot(proposePivot());
 }
 
-ProbabilisticColumnPivot SimplexMCMC::proposePivot() {
+ProposalPivot SimplexMCMC::proposePivot() {
 //    return ProbabilisticColumnPivot(*this, proposeColumn());
     return ProbabilisticColumnPivot(*this);
 }
@@ -218,7 +229,6 @@ void SimplexMCMC::revertLPSolution(const ProposalPivot &pivot) {
 }
 
 bool SimplexMCMC::solutionIsPrimaryFeasible() {
-    const double tol = 1e-8;
     for(int i=1; i<nBasic(); ++i) {
         int k = head[i];
         if(b[i] < l[k] - tol || b[i] > u[k] + tol) return false;
