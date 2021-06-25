@@ -39,3 +39,4 @@ src/META-INF
 
 # c++ build
 cppsrc/cmake*
+cppsrc/.idea*
