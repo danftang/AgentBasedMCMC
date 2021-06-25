@@ -169,13 +169,17 @@ void ProbabilisticColumnPivot::chooseRow() {
     }
     logAcceptanceContribution = -DInfeasibilityCount * log(alpha);
 
-    if(i != -1) {
-        assert(deltaj == ((leavingVarToUpperBound ? simplex.u[simplex.head[i]] : simplex.l[simplex.head[i]]) -
-                         simplex.b[i]) / col[i]);
-    } else {
-        double Dj = simplex.u[simplex.head[simplex.nBasic() + j]] - simplex.l[simplex.head[simplex.nBasic() + j]];
-        assert(deltaj == leavingVarToUpperBound ? Dj:-Dj);
-    }
+    // test
+    std::cout << "Proposing pivot from " << !sourceObjectiveIsZero << " to " << destinationObjective << std::endl;
+
+    // check consistency of delta
+//    if(i != -1) {
+//        assert(deltaj == ((leavingVarToUpperBound ? simplex.u[simplex.head[i]] : simplex.l[simplex.head[i]]) -
+//                         simplex.b[i]) / col[i]);
+//    } else {
+//        double Dj = simplex.u[simplex.head[simplex.nBasic() + j]] - simplex.l[simplex.head[simplex.nBasic() + j]];
+//        assert(deltaj == leavingVarToUpperBound ? Dj:-Dj);
+//    }
 }
 
 

@@ -15,7 +15,7 @@ void Experiments::PredPreyExpt() {
     constexpr int nTimesteps = 4;
     constexpr double pPredator = 0.08;
     constexpr double pPrey = 2.0*pPredator;
-    constexpr double pMakeObservation = 0.05;
+    constexpr double pMakeObservation = 0.2;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
     ModelState<PredPreyAgent> startState = ModelState<PredPreyAgent>::randomPoissonState([](const PredPreyAgent &agent) {
@@ -39,7 +39,13 @@ void Experiments::PredPreyExpt() {
     std::cout << "Observations: " << observations << std::endl;
 
     SimplexMCMC mcmc(abm, abm.logProbFunc());
-    mcmc.setLPState(realTrajectory);
+
+    abm.simplex();
+
+    std::vector<double> initSol = abm.primalSolution();
+    assert(abm.isValidSolution(initSol));
+    std::cout << "Found initial solution: " << glp::SparseVec(initSol) << std::endl;
+    mcmc.setLPState(initSol);
 
 
     ////////////////////////////////////////// DO SANITY CHECKS ////////////////////////////////////////
@@ -58,7 +64,7 @@ void Experiments::PredPreyExpt() {
 
     ////////////////////////////////////////// DO SAMPLING ///////////////////////////////////////////
     ModelState<PredPreyAgent> meanState;
-    for(int n=0; n<100000; ++n) {
+    for(int n=0; n<10; ++n) {
         mcmc.nextSample();
         if(n%100 == 0) std::cout << "Sample " << n << " : " << glp::SparseVec(mcmc.X()) << std::endl;
 //        std::cout << "number of fractional pivots = " << mcmc.countFractionalPivCols() << " / " << mcmc.nNonBasic() << std::endl;
@@ -72,7 +78,7 @@ void Experiments::PredPreyExpt() {
     std::cout << "Real state:\n" << realTrajectory(nTimesteps-1) << std::endl;
     std::cout << "Observations: " << observations << std::endl;
     Gnuplot gp;
-    StateTrajectory<PredPreyAgent> realStateTrajectory(realTrajectory);
+//    StateTrajectory<PredPreyAgent> realStateTrajectory(realTrajectory);
     plotHeatMap(gp, meanState, realTrajectory(nTimesteps-1));
 }
 
@@ -170,19 +176,24 @@ Gnuplot &Experiments::plotHeatMap(Gnuplot &gp, const ModelState<PredPreyAgent> &
     std::vector<std::vector<HeatRecord>> heatData;
     std::vector<std::tuple<double,double,double>> pointData;
 
-    double maxOccupancy = 0.0;
-    for(auto [agent, occupancy] : aggregateState) {
-        if(occupancy > maxOccupancy) maxOccupancy = occupancy;
+    for(auto [agent, occupancy] : realState) {
         pointData.emplace_back(agent.xPosition(), agent.yPosition(), agent.type()==PredPreyAgent::PREY?1:2);
     }
 
-    double scale = 192.0/log(maxOccupancy + 1.0);
+    double maxOccupancy = 0.0;
+    for(auto [agent, occupancy] : aggregateState) {
+        if(occupancy > maxOccupancy) maxOccupancy = occupancy;
+    }
+
+//    double scale = 192.0/log(maxOccupancy + 1.0);
+    double scale = 192.0/maxOccupancy;
     for(int x=0; x<PredPreyAgent::GRIDSIZE; ++x) {
         std::vector<HeatRecord> &rabbitRow = heatData.emplace_back();
         for(int y=0; y<PredPreyAgent::GRIDSIZE; ++y) {
             double nRabbits = aggregateState[PredPreyAgent(x,y,PredPreyAgent::PREY)];
             double nFoxes = aggregateState[PredPreyAgent(x,y,PredPreyAgent::PREDATOR)];
-            rabbitRow.emplace_back(x,y,log(nRabbits+1.0)*scale,0.0,log(nFoxes+1.0)*scale);
+//            rabbitRow.emplace_back(x,y,log(nRabbits+1.0)*scale,0.0,log(nFoxes+1.0)*scale);
+            rabbitRow.emplace_back(x,y,nRabbits*scale,0.0,nFoxes*scale);
         }
     }
 
