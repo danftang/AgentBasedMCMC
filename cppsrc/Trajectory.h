@@ -13,7 +13,7 @@
 template<typename AGENT>
 class Trajectory: public std::vector<double> {
 public:
-    static constexpr double tol = SimplexMCMC::tol;
+//    static constexpr double tol = SimplexMCMC::tol;
 
     Trajectory(int nTimesteps): std::vector<double>(nTimesteps*AGENT::domainSize()*AGENT::actDomainSize()+1) { }
     Trajectory(std::vector<double> &&rvalue): std::vector<double>(std::move(rvalue)) { }

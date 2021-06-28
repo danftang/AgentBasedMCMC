@@ -4,10 +4,10 @@
 
 #include <cmath>
 #include <cassert>
-#include "ColumnPivot.h"
+#include "Phase2Pivot.h"
 #include "StlStream.h"
 
-ColumnPivot::ColumnPivot(glp::Simplex &lp, int j, std::vector<double> column): ProposalPivot(-1, j, std::move(column)) {
+Phase2Pivot::Phase2Pivot(glp::Simplex &lp, int j, std::vector<double> column): ProposalPivot(lp, -1, j, std::move(column)) {
     int kIncoming = lp.head[lp.m + j];
     deltaj = lp.u[kIncoming] - lp.l[kIncoming];
     double DXi;
@@ -37,15 +37,15 @@ ColumnPivot::ColumnPivot(glp::Simplex &lp, int j, std::vector<double> column): P
 }
 
 
-ColumnPivot ColumnPivot::reverse(glp::Simplex &lp) const {
-    ColumnPivot revCol(lp, j, reverseCol());
+Phase2Pivot Phase2Pivot::reverse(glp::Simplex &lp) const {
+    Phase2Pivot revCol(lp, j, reverseCol());
     revCol.i = i;
     return revCol;
 }
 
 
 // orders pivot rows so that all structural vars in the original LP come before auxiliary vars
-void ColumnPivot::orderPivotRows(glp::Simplex &lp) {
+void Phase2Pivot::orderPivotRows(glp::Simplex &lp) {
     nStructuralPivotRows = 0;
     while(lp.kSimTokProb[lp.head[pivotRows[nStructuralPivotRows]]] > lp.originalProblem.nConstraints() && nStructuralPivotRows < pivotRows.size()) {
         ++nStructuralPivotRows;

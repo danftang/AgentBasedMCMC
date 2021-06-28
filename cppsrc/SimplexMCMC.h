@@ -15,7 +15,7 @@
 class SimplexMCMC: public glp::Simplex {
 public:
     static constexpr double fractionalK = 0.1;
-    static constexpr double tol = 1e-8;
+//    static constexpr double tol = 1e-8;
 
 //    using glp::Simplex::pivot;
 
@@ -50,6 +50,8 @@ public:
     void randomWalk();
 
     static glp::Problem &initialiseProblem(glp::Problem &lp);
+
+    void findFeasibleStartPoint(); // phase 1
 
     void setLPState(const std::vector<double> &lpState);
 

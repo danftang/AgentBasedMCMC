@@ -5,7 +5,7 @@
 #include "SimplexMCMC.h"
 #include "ProposalPivot.h"
 #include "Random.h"
-#include "ColumnPivot.h"
+#include "Phase2Pivot.h"
 #include "ProbabilisticColumnPivot.h"
 #include <algorithm>
 #include <cmath>
@@ -22,6 +22,16 @@ SimplexMCMC::SimplexMCMC(glp::Problem &prob, const std::function<double (const s
     setObjective(glp::SparseVec());
 }
 
+
+// Starting with zero solution, find a solution that satisfies the observations and
+// the interaction rules.
+void SimplexMCMC::findFeasibleStartPoint() {
+    do {
+        ProposalPivot proposalPivot = proposePivot();
+
+    } while(!solutionIsPrimaryFeasible());
+
+}
 
 
 // Calculate the degeneracy probability of the current state
@@ -126,11 +136,11 @@ void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
     }
 }
 
-//double SimplexMCMC::logTransitionProb(const ColumnPivot &proposal) {
+//double SimplexMCMC::logTransitionProb(const Phase2Pivot &proposal) {
 //    return -log(nNonBasic())-log(proposal.pivotRows.size());
 //}
 //
-//double SimplexMCMC::logReverseTransitionProb(const ColumnPivot &proposal) {
+//double SimplexMCMC::logReverseTransitionProb(const Phase2Pivot &proposal) {
 //    int degeneracyCount = 1;
 //    for(int i=1; i<proposal.col.size(); ++i) {
 //        if(i != proposal.i && fabs(proposal.col[i]) > 1e-6 && (b[i] == u[head[i]] || b[i] == l[head[i]])) ++degeneracyCount;
@@ -168,7 +178,7 @@ int SimplexMCMC::proposeColumn() {
 
 
 // Moved to ProbabilisticColumnPivot
-//void SimplexMCMC::proposeRow(ColumnPivot &colProposal) {
+//void SimplexMCMC::proposeRow(Phase2Pivot &colProposal) {
 //    if(colProposal.pivotRows.size() > 0) {
 //        colProposal.i = colProposal.pivotRows[Random::nextInt(colProposal.pivotRows.size())];
 //    } else {
@@ -202,7 +212,7 @@ int SimplexMCMC::countFractionalPivCols() {
     int nFractionals = 0;
     double delta;
     for(int j=1; j<=nNonBasic(); ++j) {
-        delta = fabs(ColumnPivot(*this, j).deltaj);
+        delta = fabs(Phase2Pivot(*this, j).deltaj);
         if(delta < 0.9999 && delta > 0.0001) ++nFractionals;
     }
     return nFractionals;

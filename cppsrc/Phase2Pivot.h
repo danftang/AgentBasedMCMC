@@ -3,26 +3,26 @@
 //
 // Holds calculated information on a column during pivot operations
 
-#ifndef GLPKTEST_COLUMNPIVOT_H
-#define GLPKTEST_COLUMNPIVOT_H
+#ifndef GLPKTEST_PHASE2PIVOT_H
+#define GLPKTEST_PHASE2PIVOT_H
 
 
 #include <vector>
 #include "ProposalPivot.h"
 #include "SimplexMCMC.h"
 
-class ColumnPivot: public ProposalPivot {
+class Phase2Pivot: public ProposalPivot {
 public:
-    static constexpr double tol = SimplexMCMC::tol; // tolerance to consider a value zero
+//    static constexpr double tol = SimplexMCMC::tol; // tolerance to consider a value zero
 
     std::vector<int>    pivotRows;  // rows on which this column can be pivoted while maintaining infeasibility (structural vars precede auxiliary)
     int                 nStructuralPivotRows; // Number of entries in pivotRows that correspond to structural pivots (i.e. not auxiliary)
 
-    ColumnPivot(glp::Simplex &simplex, int j): ColumnPivot(simplex, j, simplex.tableauCol(j)) { }
-    ColumnPivot(glp::Simplex &simplex, int j, std::vector<double> column); // j = column to pivot on
+    Phase2Pivot(glp::Simplex &simplex, int j): Phase2Pivot(simplex, j, simplex.tableauCol(j)) { }
+    Phase2Pivot(glp::Simplex &simplex, int j, std::vector<double> column); // j = column to pivot on
 
 
-    ColumnPivot reverse(glp::Simplex &lp) const;
+    Phase2Pivot reverse(glp::Simplex &lp) const;
     bool isDegenerate() const { return fabs(deltaj) < tol; }
 
 protected:
@@ -30,4 +30,4 @@ protected:
 };
 
 
-#endif //GLPKTEST_COLUMNPIVOT_H
+#endif //GLPKTEST_PHASE2PIVOT_H

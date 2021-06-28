@@ -19,7 +19,7 @@ class StateTrajectory: public std::vector<ModelState<AGENT>> {
 public:
     using std::vector<ModelState<AGENT>>::operator [];
 
-    static constexpr double tol = SimplexMCMC::tol;
+//    static constexpr double tol = SimplexMCMC::tol;
 
     StateTrajectory(const glp::SparseVec &actTrajectory) {
         for(int i=1; i <= actTrajectory.sparseSize(); ++i) {

@@ -17,7 +17,7 @@ class ABMProblem: public glp::Problem {
 public:
     static constexpr double infinity = std::numeric_limits<double>::infinity();
     static constexpr double infeasibilityPenalty = 0.01;
-    static constexpr double tol = SimplexMCMC::tol;
+//    static constexpr double tol = SimplexMCMC::tol;
 
     int nTimesteps;
     std::vector<Observation<AGENT>> observations;
