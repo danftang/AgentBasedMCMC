@@ -24,6 +24,9 @@ protected:
     double infeasibilityGradient(double v, double lowerBound, double upperBound);
     int setSimplexToInfeasibilityObjective();
 
+    bool isActive(int pmfIndex);
+
+    double infeasibility(double deltaj);
 };
 
 

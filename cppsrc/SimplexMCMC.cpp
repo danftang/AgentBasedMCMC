@@ -26,10 +26,15 @@ SimplexMCMC::SimplexMCMC(glp::Problem &prob, const std::function<double (const s
 // Starting with zero solution, find a solution that satisfies the observations and
 // the interaction rules.
 void SimplexMCMC::findFeasibleStartPoint() {
+    int iterations = 0;
     do {
-        ProposalPivot proposalPivot = proposePivot();
-
-    } while(!solutionIsPrimaryFeasible());
+        ProposalPivot proposal = Phase1Pivot(*this);
+        pivot(proposal);
+        std::cout << "Pivoted on " << proposal.i << ", " << proposal.j << " " << proposal.deltaj << " " << proposal.leavingVarToUpperBound
+                  << " " << isAtUpperBound(proposal.j)
+                  << "  Infeasibility = " << infeasibility() << std::endl;
+        iterations++;
+    } while(!solutionIsPrimaryFeasible() && iterations < 3200);
 
 }
 
@@ -172,7 +177,7 @@ ProposalPivot SimplexMCMC::proposePivot() {
 // To be based on rate of change of L1-norm infeasibility objective?
 // uniform prob for now
 int SimplexMCMC::proposeColumn() {
-    // choose a pivot column
+    // chooseFromPMF a pivot column
     return Random::nextInt(1,n - m + 1);
 }
 
@@ -217,6 +222,31 @@ int SimplexMCMC::countFractionalPivCols() {
     }
     return nFractionals;
 }
+
+
+int SimplexMCMC::infeasibilityCount() {
+    int infeasibility = 0;
+    for(int i=1; i<=nBasic();++i) {
+        int k = head[i];
+        if(b[i] < l[k] - tol || b[i] > u[k] + tol) ++infeasibility;
+    }
+    return infeasibility;
+}
+
+double SimplexMCMC::infeasibility() {
+    double dist = 0.0;
+    for(int i=1; i <= nBasic(); ++i) {
+        int k = head[i];
+        double v = b[i];
+        if(v < l[k]) {
+            dist += l[k] - v;
+        } else if(v > u[k]) {
+            dist += v - u[k];
+        }
+    }
+    return dist;
+}
+
 
 void SimplexMCMC::updateLPSolution(const ProposalPivot &pivot) {
     int nConstraints = originalProblem.nConstraints();

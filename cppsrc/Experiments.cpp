@@ -40,13 +40,14 @@ void Experiments::PredPreyExpt() {
 
     SimplexMCMC mcmc(abm, abm.logProbFunc());
 
-    abm.simplex();
-
-    std::vector<double> initSol = abm.primalSolution();
-    assert(abm.isValidSolution(initSol));
-    std::cout << "Found initial solution: " << glp::SparseVec(initSol) << std::endl;
-    mcmc.setLPState(initSol);
-
+    //////////////////////////////////// FIND INITIAL SOLUTION ////////////////////////////////////////
+//    abm.simplex();
+//    std::vector<double> initSol = abm.primalSolution();
+//    assert(abm.isValidSolution(initSol));
+//    std::cout << "Found initial solution: " << glp::SparseVec(initSol) << std::endl;
+//    mcmc.setLPState(initSol);
+    std::cout << "Starting phase 1 in state: " << glp::SparseVec(mcmc.X()) << std::endl;
+    mcmc.findFeasibleStartPoint();
 
     ////////////////////////////////////////// DO SANITY CHECKS ////////////////////////////////////////
     // Check initial basis contains no fixed vars and all auxiliaries are in the basis
@@ -60,11 +61,11 @@ void Experiments::PredPreyExpt() {
     }
     std::cout << "Starting with initial sample:" << std::endl;
     std::cout << glp::SparseVec(mcmc.X()) << std::endl;
-
+    assert(abm.isValidSolution(mcmc.X()));
 
     ////////////////////////////////////////// DO SAMPLING ///////////////////////////////////////////
     ModelState<PredPreyAgent> meanState;
-    for(int n=0; n<10; ++n) {
+    for(int n=0; n<1; ++n) {
         mcmc.nextSample();
         if(n%100 == 0) std::cout << "Sample " << n << " : " << glp::SparseVec(mcmc.X()) << std::endl;
 //        std::cout << "number of fractional pivots = " << mcmc.countFractionalPivCols() << " / " << mcmc.nNonBasic() << std::endl;

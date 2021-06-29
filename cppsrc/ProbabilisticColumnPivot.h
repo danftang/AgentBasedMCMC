@@ -32,13 +32,13 @@ public:
     void chooseRow();
 
     // Test stuff
-    double infeasibility(double deltaj);
+//    double infeasibility(double deltaj);
 //    int infeasibilityCount(double deltaj);
 
 
 protected:
 
-    bool isActive(int pmfIndex);
+//    bool isActive(int pmfIndex);
     void calcAcceptanceContrib();
 };
 

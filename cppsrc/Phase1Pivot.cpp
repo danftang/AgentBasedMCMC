@@ -3,6 +3,7 @@
 //
 
 #include "Phase1Pivot.h"
+#include "Random.h"
 #include <float.h>
 #include <cassert>
 
@@ -15,26 +16,87 @@ Phase1Pivot::Phase1Pivot(glp::Simplex &simplex): ProposalPivot(simplex) {
 void Phase1Pivot::chooseCol() {
     setSimplexToInfeasibilityObjective();
     simplex.recalculatePi();
-    setCol(*std::min_element(simplex.pi.begin(), simplex.pi.end()));
+
+    std::vector<int> improvingCols;
+    for(int j=1; j <= simplex.nNonBasic(); ++j) {
+        if(simplex.isAtUpperBound(j)) {
+            if(simplex.reducedObjective(j) > tol) improvingCols.push_back(j);
+        } else {
+            if(simplex.reducedObjective(j) < -tol) improvingCols.push_back(j);
+        }
+    }
+    setCol(improvingCols[Random::nextInt(0, improvingCols.size())]);
+
+//    int bestCol = -1;
+//    double bestGrad = 1.0;
+//    for(int j=1; j <= simplex.nNonBasic(); ++j) {
+//        double objj = simplex.reducedObjective(j);
+//        if(simplex.isAtUpperBound(j)) {
+//            if(objj > tol && objj > -bestGrad) {
+//                bestGrad = -objj;
+//                bestCol = j;
+//            }
+//        } else {
+//            if(objj < -tol && objj < bestGrad) {
+//                bestGrad = objj;
+//                bestCol = j;
+//            }
+//        }
+//    }
+//    setCol(bestCol);
+
 }
 
 
 void Phase1Pivot::chooseRow() {
     std::multimap<double,int> pivots = getPivotsByDeltaJ();
 
+//    assert(simplex.reducedObjective(j) == colInfeasibilityGradient(0.0)); // TEST
+
     auto pivotIt = pivots.begin();
-    int pivotIndex = pivotIt->second;
-    double dDf_dDj = colInfeasibilityGradient(pivots.begin()->first - tol);
-    while( dDf_dDj < 0.0) {
-        ++pivotIt;
-        pivotIndex = pivotIt->second;
-        if(pivotIndex < nonZeroRows.size() * 2) {
-            dDf_dDj += fabs(col[nonZeroRows[pivotIndex / 2]]);
+    double lastDj = pivotIt->first;
+    int minPivotIndex = pivotIt->second;
+    double DeltaF = infeasibility(lastDj);
+    double minDeltaF = DeltaF;
+    double dDf_dDj = colInfeasibilityGradient(lastDj - tol);
+    for(auto [Dj, pmfIndex] : pivots) {
+        DeltaF += (Dj-lastDj)*dDf_dDj;
+//        std::cout << "Infeasibility error at " << Dj << " = " << DeltaF << " - " << infeasibility(Dj) << " = "
+//        << DeltaF - infeasibility(Dj) << std::endl;
+        assert(DeltaF == infeasibility(Dj));
+        lastDj = Dj;
+        if(pmfIndex < nonZeroRows.size()*2) {
+            dDf_dDj += fabs(col[nonZeroRows[pmfIndex / 2]]);
         } else {
             dDf_dDj += 1.0;
         }
+        if(DeltaF < minDeltaF) {
+            if(isActive(pmfIndex)) {
+                minDeltaF = DeltaF;
+                minPivotIndex = pmfIndex;
+            }
+        } else if(DeltaF == minDeltaF && Random::nextDouble() > 0.5 && isActive(pmfIndex)) {
+            minPivotIndex = pmfIndex;
+        }
     }
-    setToPivotIndex(pivotIndex);
+
+//    while(DeltaF <= minDeltaF && ++pivotIt != pivots.end()) {
+//        auto [Dj, pivotIndex] = *pivotIt;
+//        DeltaF += (Dj-lastDj)*dDf_dDj;
+//        assert(DeltaF == infeasibility(Dj));
+//        lastDj = Dj;
+//        if(pivotIndex < nonZeroRows.size() * 2) {
+//            dDf_dDj += fabs(col[nonZeroRows[pivotIndex / 2]]);
+//        } else {
+//            dDf_dDj += 1.0;
+//        }
+////        if((DeltaF < minDeltaF) && isActive(pivotIndex)) {
+//        if(DeltaF < minDeltaF) {
+//            minDeltaF = DeltaF;
+//            minPivotIndex = pivotIndex;
+//        }
+//    }
+    setToPivotIndex(minPivotIndex);
 }
 
 
@@ -58,13 +120,13 @@ int Phase1Pivot::setSimplexToInfeasibilityObjective() {
     for(int i=1; i<=simplex.nBasic(); ++i) {
         int k = simplex.head[i];
         if(simplex.b[i] < simplex.l[k] - tol) {
-            simplex.c[i] = -1.0;
+            simplex.c[k] = -1.0;
             ++infeasibilityCount;
         } else if(simplex.b[i] > simplex.u[k] + tol) {
-            simplex.c[i] = 1.0;
+            simplex.c[k] = 1.0;
             ++infeasibilityCount;
         } else {
-            simplex.c[i] = 0.0;
+            simplex.c[k] = 0.0;
         }
     }
     return infeasibilityCount;
@@ -90,10 +152,43 @@ double Phase1Pivot::colInfeasibilityGradient(double deltaj) {
 
 
 double Phase1Pivot::infeasibilityGradient(double v, double lowerBound, double upperBound) {
-    if(v >= upperBound) {
+    if(v > upperBound) {
         return 1.0;
     } else if(v < lowerBound) {
         return -1.0;
     }
     return 0.0;
+}
+
+// returns true if pmfIndex corresponds to a row that is a structural var and has a unity coefficient
+bool Phase1Pivot::isActive(int pmfIndex) { // bound swap active, null pivot inactive
+    if(pmfIndex >= 2*nonZeroRows.size()) return simplex.isAtUpperBound(j) ^ (pmfIndex%2);
+    int i = nonZeroRows[pmfIndex / 2];
+    if(fabs(fabs(col[i])-1.0) > tol) return false;         // only pivot on unity elements
+    int k = simplex.head[i];
+    return simplex.kSimTokProb[k] > simplex.originalProblem.nConstraints(); // don't pivot on auxiliary vars
+}
+
+
+// returns the infeasibility of the current solution perturbed by this column changing by deltaj
+double Phase1Pivot::infeasibility(double deltaj) {
+    double dist = 0.0;
+    for(int i=1; i <= simplex.nBasic(); ++i) {
+        int k = simplex.head[i];
+        double v = simplex.b[i] + col[i]*deltaj;
+        if(v < simplex.l[k]) {
+            dist += simplex.l[k] - v;
+        } else if(v > simplex.u[k]) {
+            dist += v - simplex.u[k];
+        }
+    }
+
+    int k = simplex.head[simplex.nBasic() + j];
+    double Xj = (simplex.isAtUpperBound(j)?simplex.u[k]:simplex.l[k]) + deltaj;
+    if(Xj < simplex.l[k]) {
+        dist += simplex.l[k] - Xj;
+    } else if(Xj > simplex.u[k]) {
+        dist += Xj - simplex.u[k];
+    }
+    return dist;
 }

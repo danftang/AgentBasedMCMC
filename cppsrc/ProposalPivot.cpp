@@ -91,8 +91,8 @@ std::multimap<double,int> ProposalPivot::getPivotsByDeltaJ() {
     // add entries for upper and lower bounds of this column
     int k = simplex.head[simplex.nBasic() + j];
     double Xj = simplex.isAtUpperBound(j)?simplex.u[k]:simplex.l[k];
-    allPivots.emplace(simplex.l[k] - Xj, 2 * nonZeroRows.size());
-    allPivots.emplace(simplex.u[k] - Xj, 2 * nonZeroRows.size() + 1);
+    if(simplex.l[k] > -DBL_MAX) allPivots.emplace(simplex.l[k] - Xj, 2 * nonZeroRows.size());
+    if(simplex.u[k] < DBL_MAX) allPivots.emplace(simplex.u[k] - Xj, 2 * nonZeroRows.size() + 1);
 
     return allPivots;
 }

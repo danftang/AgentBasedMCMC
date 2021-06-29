@@ -41,10 +41,10 @@ void ProbabilisticColumnPivot::chooseCol() {
     int infeasibilityCount = setSimplexToInfeasibilityObjective();
 
     if(infeasibilityCount == 0) {
-        // null objective so just choose with uniform prob
+        // null objective so just chooseFromPMF with uniform prob
         setCol(Random::nextInt(1,simplex.nNonBasic() + 1));
     } else {
-        // choose with prob proportional to alpha if reduced objective is non-zero or 1 if zero
+        // chooseFromPMF with prob proportional to alpha if reduced objective is non-zero or 1 if zero
         simplex.recalculatePi();
         std::vector<double> cdf(simplex.nNonBasic() + 1, 0.0);
         std::vector<double> reducedObjective = simplex.reducedObjective();
@@ -78,7 +78,7 @@ void ProbabilisticColumnPivot::chooseRow() {
     // now populate pivotPMF by going from lowest to highest delta_j in order
     std::vector<double> pivotPMF(nonZeroRows.size() * 2 + 1, 0.0); // index is (2*activeRowIndex + toUpperBound), value is probability mass
     double lastDj = transitions.begin()->first;
-    double DeltaF = infeasibility(lastDj);
+    double DeltaF = infeasibility(lastDj); // TODO: do we really need to calculate this?
     double dDf_dDj = colInfeasibilityGradient(lastDj - tol);
     for(auto [Dj, pmfIndex] : transitions) {
         DeltaF += (Dj-lastDj)*dDf_dDj;
@@ -92,8 +92,8 @@ void ProbabilisticColumnPivot::chooseRow() {
         }
     }
 
-    // choose row
-    setToPivotIndex(Random::choose(pivotPMF.begin(), pivotPMF.end()));
+    // chooseFromPMF row
+    setToPivotIndex(Random::chooseFromPMF(pivotPMF.begin(), pivotPMF.end()));
 //    std::cout << "Chose pivot with prob " << pivotPMF[pivotChoice] << " Delta = " << deltaj << std::endl;
 
     // test
@@ -135,35 +135,35 @@ void ProbabilisticColumnPivot::calcAcceptanceContrib() {
 
 
 // returns the infeasibility of the current solution perturbed by this column changing by deltaj
-double ProbabilisticColumnPivot::infeasibility(double deltaj) {
-    double dist = 0.0;
-    for(int i=1; i <= simplex.nBasic(); ++i) {
-        int k = simplex.head[i];
-        double v = simplex.b[i] + col[i]*deltaj;
-        if(v < simplex.l[k]) {
-            dist += simplex.l[k] - v;
-        } else if(v > simplex.u[k]) {
-            dist += v - simplex.u[k];
-        }
-    }
-    if(simplex.isAtUpperBound(j)) {
-        if(deltaj > 0) dist += deltaj;
-    } else {
-        if(deltaj < 0) dist -= deltaj;
-    }
-    return dist;
-}
+//double ProbabilisticColumnPivot::infeasibility(double deltaj) {
+//    double dist = 0.0;
+//    for(int i=1; i <= simplex.nBasic(); ++i) {
+//        int k = simplex.head[i];
+//        double v = simplex.b[i] + col[i]*deltaj;
+//        if(v < simplex.l[k]) {
+//            dist += simplex.l[k] - v;
+//        } else if(v > simplex.u[k]) {
+//            dist += v - simplex.u[k];
+//        }
+//    }
+//    if(simplex.isAtUpperBound(j)) {
+//        if(deltaj > 0) dist += deltaj;
+//    } else {
+//        if(deltaj < 0) dist -= deltaj;
+//    }
+//    return dist;
+//}
 
 
 // returns true if pmfIndex corresponds to a row that is a structural var and has a unity coefficient
-bool ProbabilisticColumnPivot::isActive(int pmfIndex) {
-    if(pmfIndex == 2 * nonZeroRows.size()) return true;         // bound swap always active
-    if(pmfIndex == 2 * nonZeroRows.size() + 1) return false;    // null pivot never active
-    int i = nonZeroRows[pmfIndex / 2];
-    if(fabs(fabs(col[i])-1.0) > tol) return false;         // only pivot on unity elements
-    int k = simplex.head[i];
-    return simplex.kSimTokProb[k] > simplex.originalProblem.nConstraints(); // don't pivot on auxiliary vars
-}
+//bool ProbabilisticColumnPivot::isActive(int pmfIndex) {
+//    if(pmfIndex == 2 * nonZeroRows.size()) return true;         // bound swap always active
+//    if(pmfIndex == 2 * nonZeroRows.size() + 1) return false;    // null pivot never active
+//    int i = nonZeroRows[pmfIndex / 2];
+//    if(fabs(fabs(col[i])-1.0) > tol) return false;         // only pivot on unity elements
+//    int k = simplex.head[i];
+//    return simplex.kSimTokProb[k] > simplex.originalProblem.nConstraints(); // don't pivot on auxiliary vars
+//}
 
 
 //int ProbabilisticColumnPivot::infeasibilityCount(double deltaj) {

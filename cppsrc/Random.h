@@ -26,12 +26,12 @@ public:
         return std::uniform_int_distribution<int>(from, until-1)(gen);
     }
 
-    static int choose(const std::vector<double> &probabilities) {
-        return choose(probabilities.begin(), probabilities.end());
+    static int chooseFromPMF(const std::vector<double> &probabilities) {
+        return chooseFromPMF(probabilities.begin(), probabilities.end());
     }
 
     template<typename InputIterator>
-    static int choose(InputIterator begin, InputIterator end) {
+    static int chooseFromPMF(InputIterator begin, InputIterator end) {
         return std::discrete_distribution<int>(begin, end)(gen);
     }
 

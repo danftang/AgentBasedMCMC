@@ -57,6 +57,7 @@ public:
 
     // TEST STUFF
     int countFractionalPivCols();
+    int infeasibilityCount();
 
 protected:
     void processProposal(const ProposalPivot &proposal);
@@ -71,6 +72,8 @@ protected:
     void revertLPSolution(const ProposalPivot &pivot);
 
     bool solutionIsPrimaryFeasible();
+
+    double infeasibility();
 };
 
 
