@@ -20,8 +20,6 @@ public:
     void setToPivotIndex(int pivotIndex);
 
 protected:
-    double colInfeasibilityGradient(double deltaj);
-    double infeasibilityGradient(double v, double lowerBound, double upperBound);
     int setSimplexToInfeasibilityObjective();
 
     bool isActive(int pmfIndex);

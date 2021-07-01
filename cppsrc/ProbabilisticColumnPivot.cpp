@@ -47,11 +47,11 @@ void ProbabilisticColumnPivot::chooseCol() {
         // chooseFromPMF with prob proportional to alpha if reduced objective is non-zero or 1 if zero
         simplex.recalculatePi();
         std::vector<double> cdf(simplex.nNonBasic() + 1, 0.0);
-        std::vector<double> reducedObjective = simplex.reducedObjective();
+        std::vector<double> reducedCost = simplex.reducedCost();
         double cumulativeP = 0.0;
 
         for(int j=1; j<= simplex.nNonBasic(); ++j) {
-            cumulativeP += fabs(reducedObjective[j])>tol?alpha:1.0;
+            cumulativeP += fabs(reducedCost[j]) > tol ? alpha : 1.0;
             cdf[j] = cumulativeP;
         }
         double *it = std::lower_bound(
@@ -76,7 +76,7 @@ void ProbabilisticColumnPivot::chooseRow() {
     std::multimap<double, int> transitions = getPivotsByDeltaJ(); // from delta_j to PMF-index.
 
     // now populate pivotPMF by going from lowest to highest delta_j in order
-    std::vector<double> pivotPMF(nonZeroRows.size() * 2 + 1, 0.0); // index is (2*activeRowIndex + toUpperBound), value is probability mass
+    std::vector<double> pivotPMF(nonZeroRows.size() * 2 + 2, 0.0); // index is (2*activeRowIndex + toUpperBound), value is probability mass
     double lastDj = transitions.begin()->first;
     double DeltaF = infeasibility(lastDj); // TODO: do we really need to calculate this?
     double dDf_dDj = colInfeasibilityGradient(lastDj - tol);

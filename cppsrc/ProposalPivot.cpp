@@ -98,3 +98,56 @@ std::multimap<double,int> ProposalPivot::getPivotsByDeltaJ() {
 }
 
 
+std::multimap<double,int> ProposalPivot::getPivotsByInfeasibility() {
+    std::multimap<double,int> pivotsByDeltaj = getPivotsByDeltaJ();
+    std::multimap<double,int> pivotsByInf;
+//    assert(simplex.reducedObjective(j) == colInfeasibilityGradient(0.0)); // TEST
+
+    auto pivotIt = pivotsByDeltaj.begin();
+    double lastDj = pivotIt->first;
+    int minPivotIndex = pivotIt->second;
+    double infeas = 0.0; // infeasibility(lastDj);
+    double minDeltaF = infeas;
+    double dDf_dDj = colInfeasibilityGradient(lastDj - tol);
+    for(auto [Dj, pivotId] : pivotsByDeltaj) {
+        infeas += (Dj - lastDj) * dDf_dDj;
+        pivotsByInf.emplace(infeas, pivotId);
+//        std::cout << "Infeasibility error at " << Dj << " = " << infeas << " - " << infeasibility(Dj) << " = "
+//        << infeas - infeasibility(Dj) << std::endl;
+//        assert(infeas == infeasibility(Dj));
+        lastDj = Dj;
+        if(pivotId < nonZeroRows.size() * 2) {
+            dDf_dDj += fabs(col[nonZeroRows[pivotId / 2]]);
+        } else {
+            dDf_dDj += 1.0;
+        }
+    }
+    return pivotsByInf;
+}
+
+// returns gradient after perturbation of this column by deltaj
+double ProposalPivot::colInfeasibilityGradient(double deltaj) {
+    double grad = 0.0;
+    for(int nzi : nonZeroRows) {
+        int rowk = simplex.head[nzi];
+        grad += col[nzi] * infeasibilityGradient(simplex.b[nzi] + col[nzi] * deltaj,
+                                                 simplex.l[rowk],
+                                                 simplex.u[rowk]);
+    }
+    int colk = simplex.head[simplex.nBasic() + j];
+    double xUpperBound = simplex.u[colk];
+    double xLowerBound = simplex.l[colk];
+    double xj = simplex.isAtUpperBound(j)?xUpperBound:xLowerBound;
+    grad += infeasibilityGradient(xj + deltaj, xLowerBound, xUpperBound);
+    return grad;
+}
+
+
+double ProposalPivot::infeasibilityGradient(double v, double lowerBound, double upperBound) {
+    if(v > upperBound) {
+        return 1.0;
+    } else if(v < lowerBound) {
+        return -1.0;
+    }
+    return 0.0;
+}

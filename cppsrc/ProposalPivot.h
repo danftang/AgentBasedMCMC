@@ -52,6 +52,10 @@ public:
     void initNonZeroRows();
 
     std::multimap<double,int> getPivotsByDeltaJ();
+    std::multimap<double, int> getPivotsByInfeasibility();
+
+    double colInfeasibilityGradient(double deltaj);
+    static double infeasibilityGradient(double v, double lowerBound, double upperBound);
 
     //    operator std::tuple<int &,int &>() { return std::tie(i,j); }
     std::vector<double> reverseCol() const;

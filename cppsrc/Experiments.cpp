@@ -11,8 +11,8 @@
 
 void Experiments::PredPreyExpt() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
-    PredPreyAgent::GRIDSIZE = 8;
-    constexpr int nTimesteps = 4;
+    PredPreyAgent::GRIDSIZE = 16;
+    constexpr int nTimesteps = 8;
     constexpr double pPredator = 0.08;
     constexpr double pPrey = 2.0*pPredator;
     constexpr double pMakeObservation = 0.2;
