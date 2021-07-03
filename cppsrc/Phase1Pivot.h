@@ -25,6 +25,10 @@ protected:
     bool isActive(int pmfIndex);
 
     double infeasibility(double deltaj);
+
+    double infeasibility();
+
+    int infeasibilityCount();
 };
 
 

@@ -48,17 +48,23 @@ void Phase1Pivot::chooseCol() {
 
     // choose random column with positive potential
     std::vector<int> improvingCols;
+    int nnz = 0;
     for(int j=1; j <= simplex.nNonBasic(); ++j) {
-        if(simplex.isAtUpperBound(j)) {
-            if(simplex.reducedCost(j) > tol) {
-                improvingCols.push_back(j);
-            }
-        } else {
-            if(simplex.reducedCost(j) < -tol) {
-                improvingCols.push_back(j);
-            }
+        double dj = simplex.reducedCost(j);
+        if(dj > tol) {
+            ++nnz;
+            if(simplex.isAtUpperBound(j)) improvingCols.push_back(j);
+        } else if(dj < -tol) {
+            ++nnz;
+            if(!simplex.isAtUpperBound(j)) improvingCols.push_back(j);
         }
     }
+//    std::cout << "potential ratio = " << improvingCols.size() << " / " << nnz << " = " << improvingCols.size()*improvingCols.size()*1.0/nnz << std::endl;
+//    std::cout << improvingCols.size()*improvingCols.size()*1.0/nnz << std::endl; // seems to be a good monotonically(ish) decreasing value
+//    std::cout << improvingCols.size()*infeasibility()*1.0/nnz << std::endl; // seems to be a very good monotonically decreasing value
+    std::cout << improvingCols.size() << " " << nnz << " " << infeasibility() << " " << infeasibilityCount() << std::endl; // seems to be a good monotonically(ish) decreasing value
+
+//    std::cout << nnz << std::endl;
     setCol(improvingCols[Random::nextInt(0, improvingCols.size())]);
 
 //    // choose the first column with maximum potential
@@ -126,7 +132,7 @@ void Phase1Pivot::chooseRow() {
                 minScore = infeas;
                 bestPivotIndices.push_back(pivotIndex);
             }
-//        } else if(infeas == minScore && (!highPotential || Random::nextDouble() > 0.5) && isActive(pivotIndex)) {
+//        } else if(infeas == minScore && (highPotential || Random::nextDouble() < 0.1) && isActive(pivotIndex)) {
         } else if(infeas == minScore && isActive(pivotIndex)) {
             bestPivotIndices.push_back(pivotIndex);
         }
@@ -272,4 +278,27 @@ double Phase1Pivot::infeasibility(double deltaj) {
         dist += Xj - simplex.u[k];
     }
     return dist;
+}
+
+double Phase1Pivot::infeasibility() {
+    double dist = 0.0;
+    for(int i=1; i <= simplex.nBasic(); ++i) {
+        int k = simplex.head[i];
+        double v = simplex.b[i];
+        if(v < simplex.l[k]) {
+            dist += simplex.l[k] - v;
+        } else if(v > simplex.u[k]) {
+            dist += v - simplex.u[k];
+        }
+    }
+    return dist;
+}
+
+int Phase1Pivot::infeasibilityCount() {
+    int infeasibility = 0;
+    for(int i=1; i<=simplex.nBasic();++i) {
+        int k = simplex.head[i];
+        if(simplex.b[i] < simplex.l[k] - tol || simplex.b[i] > simplex.u[k] + tol) ++infeasibility;
+    }
+    return infeasibility;
 }

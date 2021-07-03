@@ -30,9 +30,9 @@ void SimplexMCMC::findFeasibleStartPoint() {
     do {
         ProposalPivot proposal = Phase1Pivot(*this);
         pivot(proposal);
-        std::cout << iterations << " Pivoted on " << proposal.i << ", " << proposal.j << " " << proposal.deltaj << " " << proposal.leavingVarToUpperBound
-                  << " " << isAtUpperBound(proposal.j)
-                  << "  Infeasibility = " << infeasibility() << std::endl;
+//        std::cout << iterations << " Pivoted on " << proposal.i << ", " << proposal.j << " " << proposal.deltaj << " " << proposal.leavingVarToUpperBound
+//                  << " " << isAtUpperBound(proposal.j)
+//                  << "  Infeasibility = " << infeasibility() << std::endl;
         iterations++;
     } while(!solutionIsPrimaryFeasible() && iterations < 3200);
 
