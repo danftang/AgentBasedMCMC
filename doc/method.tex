@@ -1,5 +1,5 @@
 % !TEX root = ABMCMC.tex
-\section{ABMCMC}
+\section{Formulation of the problem}
 %##########################################
 
 
@@ -14,25 +14,55 @@ Suppose we have a timestepping ABM where agents have a finite number of possible
 \item An \textit{action function}, $F: \mathcal{S} \times \mathcal{A} \to \mathbb{Z}^m$, which defines the effect of an action on the world, where $F(\psi, a)$ gives a (sparse) vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $i$ that result from an agent in state $\psi$ performing act $a$ (this includes the final state of the acting agent).
 \end{itemize}
 
-As a very simple demonstration, we'll take a spatial predator-prey model where agents are either predator or prey moving about a 2-dimensional grid. In this case, the domain of actions are $\mathbb{A} = \{ a_0=\textrm{move-left}, a_1=\textrm{move-right}, a_2=\textrm{move-up}, a_3=\textrm{move-down}, a_4=\textrm{give-birth}, a_5=\textrm{die}\}$, and the domain of agent states, $\mathcal{S}$, can be thought of as the class 
+As a simple demonstration model, we'll take a spatial predator-prey model where agents are either predator or prey moving about a 2-dimensional grid. In this case, the domain of actions are $\mathcal{A} = \{ a_0=\textrm{move-left}, a_1=\textrm{move-right}, a_2=\textrm{move-up}, a_3=\textrm{move-down}, a_4=\textrm{give-birth}, a_5=\textrm{die}\}$, and the domain of agent states, $\mathcal{S}$, can be thought of as the class 
 \begin{lstlisting}
 class Agent {
 	Boolean	isaPredator
-	Integer	xPosition
 	Integer	yPosition
-}
+}	Integer	xPosition
+
 \end{lstlisting}
-To simplify our methodological explanation further, we will use a worked example of a $2\times2$ predator-prey model, with a single predator and a single prey. See Figure~\ref{fig:AB-MCMC-1}.
+
+It will be useful in the following to define an ordering of agent states. The ordering we choose isn't important but we choose to place agent \texttt{a} in the (\texttt{a.isaPredator*G$^2$ + a.yPositition*G + a.xPosition})$^{th}$ position, where \texttt{G} is the number of positions along one side of the grid. So, for example, in the $2\times 2$ grid of Figure~\ref{fig:AB-MCMC-1} there are a total of 8 \texttt{Agent} states:
+\begin{align*}
+\psi_0 &= [0, 0, 0] \\
+\psi_1 &= [0, 0, 1] \\
+\psi_2 &= [0, 1, 0] \\
+\psi_3 &= [0, 1, 1] \\
+\psi_4 &= [1, 0, 0] \\
+\psi_5 &= [1, 0, 1] \\
+\psi_6 &= [1, 1, 0] \\
+\psi_7 &= [1, 1, 1]  \\
+\end{align*}
+where $[p,y,x]$ denotes an \texttt{Agent} in state (\texttt{isaPredator=p, yPosition=y, xPosition=x}).
 
 \begin{figure}
 	\centering
 	\resizebox{0.5\textwidth}{!}{
 		\includegraphics[scale=0.5]{figs/AB-MCMC-1}
 	}
-	\caption{An simple predator-prey example.\label{fig:AB-MCMC-1}}
-\end{figure} % Figure produced with: https://drive.google.com/drive/folders/1JGJZX9NQOmLhGuOMHrrYrgjh1cOpPBdW 
+	\caption{A simple predator-prey example.\label{fig:AB-MCMC-1}}
+\end{figure}
 
-It will be useful in the following to define an ordering of agent states. The ordering we choose isn't important but we choose to place agent \texttt{a} in the (\texttt{a.isaPredator*G$^2$ + a.yPositition*G + a.xPosition})$^{th}$ position, where \texttt{G} is the size of the grid.
+Let a model timestep consist of a matrix $E$ whose elements $e_{\psi a}$ are the number of agents in state $\psi$ that perform act $a$ in this timestep. Note that this matrix will generally be sparse. For example, the timestep shown in Figure~\ref{fig:AB-MCMC-1} would be
+\[
+E = \kbordermatrix{
+	& a_0 & a_1 & a_2 & a_3 & a_4 & a_5 \\
+	\psi_0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+	\psi_1 & 0 & 0 & 1 & 0 & 0 & 0 \\
+	\psi_2 & 0  & 0 & 0 & 0 & 0 & 0 \\
+	\psi_3 & 0 & 0 & 0 & 0 & 0 & 0 \\
+	\psi_4 & 0  & 0 & 0 & 0 & 0 & 0 \\
+	\psi_5 & 0 & 0 & 0 & 0 & 0 & 0 \\
+	\psi_6 & 0 & 0 & 0 & 0 & 0 & 0 \\
+	\psi_7 & 1 & 0 & 0 & 0 & 0 & 0 \\ 
+}
+\]
+where all elements are zero except those representing agent $\psi_1$ performing action $a_2$ and agent $\psi_7$ performing action $a_0$.
+
+Finally, let a model trajectory be a tensor, $T$, consisting of a number of model timesteps. ie. a slice of $T$, $T^t$, is the timestep matrix for time $t$, and an element of $T$, $T^t_{\psi a}$, is the number of agents in state $\psi$ that perform act $a$ in timestep $t$.
+
+The timestep function for a predator/prey agent is shown in algorithm \ref{agentTimestep} (where we assume the grid has periodic boundary conditions).
 
 \begin{algorithm}
 \caption{Timestep of a predator/prey agent}
@@ -63,40 +93,7 @@ It will be useful in the following to define an ordering of agent states. The or
 \end{algorithmic}
 \end{algorithm}
 
-The timestep function for a predator/prey agent is shown in algorithm \ref{agentTimestep} (where we assume the grid has periodic boundary conditions so we don't need to worry about its edges). The action function encodes the results of the various actions. So, for example, the zero$^{th}$ state, $\psi_0$, corresponds to a prey ($\textrm{isaPredator}=0$) at position $(\textrm{yPositition}=0,\textrm{xPositition}=0)$, i.e. $\psi_0=[0,0,0]$. If this agent moves right (i.e. performs action $a_1$) then the result is a prey at position (1,0) (i.e. in state $\psi_1=[0,1,0]$) so $F(0,1) = \left<0,1,0...\right>$ etc.
-
-
-The following illustrates all possible states in our simple $2\times2$ model, as per Figure~\ref{fig:AB-MCMC-1}, where $\psi_2$ represents the state of the prey and $\psi_7$ represents the state of the predator:
-
-\begin{align*}
-\psi_0 &= [0, 0, 0] \\
-\psi_1 &= [1, 0, 0 ] \\
-\psi_2 &= [0, 1, 0 ] && \text{state of the prey} \\
-\psi_3 &= [1,  1, 0] \\
-\psi_4 &= [0, 0, 1] \\
-\psi_5 &= [1, 0, 1] \\
-\psi_6 &= [0, 1, 1] \\
-\psi_7 &= [1, 1, 1]  && \text{state of the predator} \\
-\end{align*}
-
-Let a model timestep consist of a matrix $E$ whose elements $e_{\psi a}$ are the number of agents in state $\psi$ that perform act $a$ in this timestep. The matrix sparse; in our simple case all cells are empty except those representing the states and actions of the predator prey agents; $(\psi_2,a_2)$ and $(\psi_7,a_0)$ respectively:
-
-\[
-E = \kbordermatrix{
-    & a_0 & a_1 & a_2 & a_3 & a_4 & a_5 \\
-    \psi_0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-    \psi_1 & 0 & 0 & 0 & 0 & 0 & 0 \\
-    \psi_2 & 0  & 0 & 1 & 0 & 0 & 0 \\
-    \psi_3 & 0 & 0 & 0 & 0 & 0 & 0 \\
-    \psi_4 & 0  & 0 & 0 & 0 & 0 & 0 \\
-    \psi_5 & 0 & 0 & 0 & 0 & 0 & 0 \\
-    \psi_6 & 0 & 0 & 0 & 0 & 0 & 0 \\
-    \psi_7 & 1 & 0 & 0 & 0 & 0 & 0 \\ 
-  }
-\]
-
-Now let a model trajectory be a tensor, $T$, whose elements, $T^t_{\psi a}$, are the number of agents in state $\psi$ that perform act $a$ in timestep $t$. I.e. in the first timestep, $t=0$, then $T^0_{\psi a} = E$, and in subsequent timesteps the trajectory consists of multiple $E$ matricies, one for each timestep.
-
+\subsection{The posterior}
 A trajectory must satisfy a number of constraints in order to be a possible trajectory of an ABM. Since the elements of a trajectory are counts, they must all be non-negative integers, we'll call this the \textit{non-negative integer constraint}
 \begin{equation}
 \forall t,\psi, a: T^t_{\psi a} \ge 0, T^t_{\psi a} \in \mathbb{Z}
