@@ -70,7 +70,7 @@ void ProbabilisticColumnPivot::chooseRow() {
 
     ///////////////////////// debug only
     double infeas = infeasibility(0.0);
-    if(infeas > 0.0) std::cout << "Infeasibility = " << infeas << std::endl;
+ //   if(infeas > 0.0) std::cout << "Infeasibility = " << infeas << std::endl;
     //////////////
 
     std::multimap<double, int> transitions = getPivotsByDeltaJ(); // from delta_j to PMF-index.
@@ -83,7 +83,7 @@ void ProbabilisticColumnPivot::chooseRow() {
     for(auto [Dj, pmfIndex] : transitions) {
         DeltaF += (Dj-lastDj)*dDf_dDj;
         lastDj = Dj;
-        if(isActive(pmfIndex)) pivotPMF[pmfIndex] = exp(kappa * DeltaF);
+        if(isActive(pmfIndex)) pivotPMF[pmfIndex] = exp(kappa * DeltaF) + DBL_EPSILON;
 //        std::cout << "deltaj = " << Dj << " pivotProb = " << pivotPMF[pmfIndex] << " DeltaF = " << DeltaF << " dDf_dDj = " << dDf_dDj << " Feasibility = " << infeasibility(Dj) << std::endl;
         if(pmfIndex < nonZeroRows.size()*2) {
             dDf_dDj += fabs(col[nonZeroRows[pmfIndex / 2]]);

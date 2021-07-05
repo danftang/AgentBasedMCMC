@@ -11,11 +11,13 @@
 
 void Experiments::PredPreyExpt() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
-    PredPreyAgent::GRIDSIZE = 16;
-    constexpr int nTimesteps = 8;
-    constexpr double pPredator = 0.08;
-    constexpr double pPrey = 2.0*pPredator;
-    constexpr double pMakeObservation = 0.2;
+    PredPreyAgent::GRIDSIZE = 8;
+    constexpr int nTimesteps = 32;
+    constexpr double pPredator = 0.04;//0.08;          // Poisson prob of predator in each gridsquare at t=0
+    constexpr double pPrey = 4.0*pPredator;//2.0*pPredator;     // Poisson prob of prey in each gridsquare at t=0
+    constexpr double pMakeObservation = 0.04;    // prob of making an observation of each gridsquare at each timestep
+    constexpr int nSamples = 100000;
+    constexpr int plotTimestep = 0; // nTimesteps-1;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
     ModelState<PredPreyAgent> startState = ModelState<PredPreyAgent>::randomPoissonState([](const PredPreyAgent &agent) {
@@ -52,12 +54,25 @@ void Experiments::PredPreyExpt() {
     ////////////////////////////////////////// DO SANITY CHECKS ////////////////////////////////////////
     // Check initial basis contains no fixed vars and all auxiliaries are in the basis
     for(int k=1; k<=mcmc.nVars(); ++k) {
-        if(mcmc.l[k] == mcmc.u[k]) std::cout << "WARNING: Fixed var in SimplexMCMC " << k << std::endl;
-        if(mcmc.kSimTokProb[k] > abm.nConstraints() && (mcmc.l[k] != 0.0 || mcmc.u[k] != 1.0 ))
+        if(mcmc.l[k] == mcmc.u[k]) {
+            std::cout << "WARNING: Fixed variable in the Simplex" << k << std::endl;
+            return;
+        }
+        if(mcmc.kSimTokProb[k] > abm.nConstraints() && (mcmc.l[k] != 0.0 || mcmc.u[k] != 1.0 )) {
             std::cout << "WARNING: non-binary structural var " << k << std::endl;
+            return;
+        }
     }
     for(int j=1; j<=mcmc.nNonBasic(); ++j) {
-        if(mcmc.kSimTokProb[mcmc.head[mcmc.nBasic()+j]] <= abm.nConstraints()) std::cout << "WARNING: Non-basic auxiliary " << j << std::endl;
+        int k = mcmc.head[mcmc.nBasic()+j];
+        if(mcmc.kSimTokProb[k] <= abm.nConstraints()) {
+            std::cout << "WARNING: Non-basic auxiliary variable " << j << std::endl;
+            return;
+        }
+        if(mcmc.l[k] == -DBL_MAX || mcmc.u[k] == DBL_MAX) {
+            std::cout << "WARNING: Non-basic variable with infinite bound " << j << std::endl;
+            return;
+        }
     }
     std::cout << "Starting with initial sample:" << std::endl;
     std::cout << glp::SparseVec(mcmc.X()) << std::endl;
@@ -65,22 +80,24 @@ void Experiments::PredPreyExpt() {
 
     ////////////////////////////////////////// DO SAMPLING ///////////////////////////////////////////
     ModelState<PredPreyAgent> meanState;
-    for(int n=0; n<1; ++n) {
+    for(int n=0; n<nSamples; ++n) {
         mcmc.nextSample();
-        if(n%100 == 0) std::cout << "Sample " << n << " : " << glp::SparseVec(mcmc.X()) << std::endl;
-//        std::cout << "number of fractional pivots = " << mcmc.countFractionalPivCols() << " / " << mcmc.nNonBasic() << std::endl;
+        if(nSamples<1000 || n%100 == 0) {
+            std::cout << "Sample " << n << std::endl;
+//            std::cout << "Sample " << n << " : " << glp::SparseVec(mcmc.X()) << std::endl;
+        }
         assert(abm.isValidSolution(mcmc.X()));
-        meanState += (reinterpret_cast<const Trajectory<PredPreyAgent> *>(&mcmc.X()))->operator()(nTimesteps-1); // TODO: this is ugly
+        meanState += (reinterpret_cast<const Trajectory<PredPreyAgent> *>(&mcmc.X()))->operator()(plotTimestep); // TODO: this is ugly
     }
 
 
     ////////////////////////////////////////// SHOW RESULTS ///////////////////////////////////////////
     std::cout << "Mean state:\n" << meanState << std::endl;
-    std::cout << "Real state:\n" << realTrajectory(nTimesteps-1) << std::endl;
+    std::cout << "Real state:\n" << realTrajectory(plotTimestep) << std::endl;
     std::cout << "Observations: " << observations << std::endl;
     Gnuplot gp;
 //    StateTrajectory<PredPreyAgent> realStateTrajectory(realTrajectory);
-    plotHeatMap(gp, meanState, realTrajectory(nTimesteps-1));
+    plotHeatMap(gp, meanState, realTrajectory(plotTimestep));
 }
 
 

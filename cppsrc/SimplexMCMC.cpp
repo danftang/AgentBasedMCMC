@@ -33,9 +33,11 @@ void SimplexMCMC::findFeasibleStartPoint() {
 //        std::cout << iterations << " Pivoted on " << proposal.i << ", " << proposal.j << " " << proposal.deltaj << " " << proposal.leavingVarToUpperBound
 //                  << " " << isAtUpperBound(proposal.j)
 //                  << "  Infeasibility = " << infeasibility() << std::endl;
+        if(iterations%256 == 0) std::cout << "iteration:" << iterations << " infeasibility = " << infeasibility() << std::endl;
         iterations++;
-    } while(!solutionIsPrimaryFeasible() && iterations < 3200);
 
+    } while(!solutionIsPrimaryFeasible());
+    std::cout << "Found solution in " << iterations << " iterations" << std::endl;
 }
 
 
@@ -100,9 +102,12 @@ double SimplexMCMC::lnFractionalPenalty() {
 // and reject based on Metropolis-Hastings
 // returns the next sample
 void SimplexMCMC::nextSample() {
+    int infeasibleCount = 0;
     do {
+        if(infeasibleCount%1000 == 1) std::cout << infeasibleCount << " Infeasibility = " << infeasibility() << std::endl;
         ProposalPivot proposalPivot = proposePivot();
         processProposal(proposalPivot);
+        ++infeasibleCount;
     } while(!solutionIsPrimaryFeasible());
     ++nSamples;
 //    if(probability.logFractionalPenalty != 0.0) {
@@ -122,6 +127,10 @@ void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
 //                  << ":" << u[head[proposalPivot.i]];
 //    }
 //    std::cout << std::endl;
+
+//    if(proposalPivot.i > 0  && kSimTokProb[head[proposalPivot.i]] <= originalProblem.nConstraints()) std::cout << "Warning: Proposing auxiliary var to leave basis" << std::endl;
+
+
     double sourceProb = logProbFunc(X());
 //    std::cout << "Source LP state is: " << glp::SparseVec(lpSolution) << std::endl;
     updateLPSolution(proposalPivot);
@@ -134,6 +143,7 @@ void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
     if (std::isnan(logAcceptance) || Random::nextDouble() <= exp(std::min(0.0,logAcceptance))) { // explicity accept if both numerator and denominator are -infinity
         // Accept proposal
 //        std::cout << "Accepting deltaj = " << proposalPivot.deltaj << std::endl;
+        assert(proposalPivot.i == -1 || (kSimTokProb[head[proposalPivot.i]] > originalProblem.nConstraints()));
         pivot(proposalPivot);
     } else {
         // reject
@@ -208,7 +218,7 @@ void SimplexMCMC::toCanonicalState() {
 std::vector<int> SimplexMCMC::auxiliaries() {
     std::vector<int> nbAux;
     for(int j = 1; j<=nNonBasic(); ++j) {
-        if(kSimTokProb[head[j]] <= originalProblem.nConstraints()) nbAux.push_back(j);
+        if(kSimTokProb[head[nBasic() + j]] <= originalProblem.nConstraints()) nbAux.push_back(j);
     }
     return nbAux;
 }

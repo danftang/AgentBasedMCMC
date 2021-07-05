@@ -33,9 +33,9 @@ public:
     };
 
     static constexpr double pPredBirthGivenPrey = 0.5; // birth prob given prey
-    static constexpr double pPredDie = 0.07; // death prob
+    static constexpr double pPredDie = 2e-6;//0.07; // death prob
     static constexpr double pPreyBirth = 0.06; // birth prob
-    static constexpr double pPreyDie = 0.03; // death prob
+    static constexpr double pPreyDie = 1e-6; //0.03; // death prob
     static constexpr double pPreyEatenGivenPred = 0.55; // death prob given pred
 
 

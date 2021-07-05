@@ -9,6 +9,7 @@
 #include <set>
 #include <map>
 #include <random>
+#include <cassert>
 #include "glpkpp.h"
 #include "ProposalPivot.h"
 
@@ -41,7 +42,9 @@ public:
 
     void nextSample();
 //    double reverseTransitionProb(ProposalPivot proposal);
-    void pivot(const ProposalPivot &piv) { this->glp::Simplex::pivot(piv.i, piv.j, piv.col, piv.leavingVarToUpperBound); }
+    void pivot(const ProposalPivot &piv) {
+        this->glp::Simplex::pivot(piv.i, piv.j, piv.col, piv.leavingVarToUpperBound);
+    }
 
 
 //    std::vector<int> calcPivotRows(int j, const std::vector<double> &colVec);

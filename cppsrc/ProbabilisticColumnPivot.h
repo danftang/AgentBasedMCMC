@@ -18,7 +18,7 @@
 
 class ProbabilisticColumnPivot: public Phase1Pivot {
 public:
-    static constexpr double kappa = -8.0; // exponential coefficient for probabilities of choosing row based on change in infeasibility
+    static constexpr double kappa = -5.0; // exponential coefficient for probabilities of choosing row based on change in infeasibility
     static constexpr double alpha = 100.0; // relative probability of choosing column with non-zero reduced objective
 
 

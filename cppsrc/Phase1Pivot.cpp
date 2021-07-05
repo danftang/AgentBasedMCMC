@@ -62,7 +62,7 @@ void Phase1Pivot::chooseCol() {
 //    std::cout << "potential ratio = " << improvingCols.size() << " / " << nnz << " = " << improvingCols.size()*improvingCols.size()*1.0/nnz << std::endl;
 //    std::cout << improvingCols.size()*improvingCols.size()*1.0/nnz << std::endl; // seems to be a good monotonically(ish) decreasing value
 //    std::cout << improvingCols.size()*infeasibility()*1.0/nnz << std::endl; // seems to be a very good monotonically decreasing value
-    std::cout << improvingCols.size() << " " << nnz << " " << infeasibility() << " " << infeasibilityCount() << std::endl; // seems to be a good monotonically(ish) decreasing value
+//    std::cout << improvingCols.size() << " " << nnz << " " << infeasibility() << " " << infeasibilityCount() << std::endl; // seems to be a good monotonically(ish) decreasing value
 
 //    std::cout << nnz << std::endl;
     setCol(improvingCols[Random::nextInt(0, improvingCols.size())]);
@@ -137,6 +137,7 @@ void Phase1Pivot::chooseRow() {
             bestPivotIndices.push_back(pivotIndex);
         }
     }
+    assert(bestPivotIndices.size() != 0);
     setToPivotIndex(bestPivotIndices[Random::nextInt(0, bestPivotIndices.size())]);
 
 
