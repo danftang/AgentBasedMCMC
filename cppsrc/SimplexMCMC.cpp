@@ -169,6 +169,7 @@ void SimplexMCMC::setLPState(const std::vector<double> &lpState) {
     for(int j=1; j <= nNonBasic(); ++j) {
         int kSim = head[nBasic() + j];
         int kLP = kSimTokProb[kSim];
+        assert(kLP > originalProblem.nConstraints());
         double v = lpState[kLP - originalProblem.nConstraints()];
         flag[j] = (fabs(u[kSim] - v) < fabs(l[kSim] - v));
     }

@@ -11,13 +11,13 @@
 
 void Experiments::PredPreyExpt() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
-    PredPreyAgent::GRIDSIZE = 8;
+    PredPreyAgent::GRIDSIZE = 10;
     constexpr int nTimesteps = 32;
     constexpr double pPredator = 0.04;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 4.0*pPredator;//2.0*pPredator;     // Poisson prob of prey in each gridsquare at t=0
-    constexpr double pMakeObservation = 0.04;    // prob of making an observation of each gridsquare at each timestep
-    constexpr int nSamples = 100000;
-    constexpr int plotTimestep = 0; // nTimesteps-1;
+    constexpr double pMakeObservation = 0.02;    // prob of making an observation of each gridsquare at each timestep
+    constexpr int nSamples = 1; //250000;
+    constexpr int plotTimestep = 0; //nTimesteps-1;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
     ModelState<PredPreyAgent> startState = ModelState<PredPreyAgent>::randomPoissonState([](const PredPreyAgent &agent) {
@@ -43,11 +43,17 @@ void Experiments::PredPreyExpt() {
     SimplexMCMC mcmc(abm, abm.logProbFunc());
 
     //////////////////////////////////// FIND INITIAL SOLUTION ////////////////////////////////////////
+//    // solve by simplex
 //    abm.simplex();
 //    std::vector<double> initSol = abm.primalSolution();
 //    assert(abm.isValidSolution(initSol));
 //    std::cout << "Found initial solution: " << glp::SparseVec(initSol) << std::endl;
 //    mcmc.setLPState(initSol);
+
+    // use real trajectory as initial state
+//    mcmc.setLPState(realTrajectory);
+
+    // solve by phase1
     std::cout << "Starting phase 1 in state: " << glp::SparseVec(mcmc.X()) << std::endl;
     mcmc.findFeasibleStartPoint();
 
@@ -82,11 +88,11 @@ void Experiments::PredPreyExpt() {
     ModelState<PredPreyAgent> meanState;
     for(int n=0; n<nSamples; ++n) {
         mcmc.nextSample();
-        if(nSamples<1000 || n%100 == 0) {
+        if(nSamples<1000 || n%100 == 1) {
             std::cout << "Sample " << n << std::endl;
+            assert(abm.isValidSolution(mcmc.X()));
 //            std::cout << "Sample " << n << " : " << glp::SparseVec(mcmc.X()) << std::endl;
         }
-        assert(abm.isValidSolution(mcmc.X()));
         meanState += (reinterpret_cast<const Trajectory<PredPreyAgent> *>(&mcmc.X()))->operator()(plotTimestep); // TODO: this is ugly
     }
 
@@ -198,20 +204,27 @@ Gnuplot &Experiments::plotHeatMap(Gnuplot &gp, const ModelState<PredPreyAgent> &
         pointData.emplace_back(agent.xPosition(), agent.yPosition(), agent.type()==PredPreyAgent::PREY?1:2);
     }
 
-    double maxOccupancy = 0.0;
+    double predMaxOccupancy = 0.0;
+    double preyMaxOccupancy = 0.0;
     for(auto [agent, occupancy] : aggregateState) {
-        if(occupancy > maxOccupancy) maxOccupancy = occupancy;
+        if(agent.type() == PredPreyAgent::PREDATOR) {
+            if(occupancy > predMaxOccupancy) predMaxOccupancy = occupancy;
+        } else {
+            if(occupancy > preyMaxOccupancy) preyMaxOccupancy = occupancy;
+        }
     }
 
-//    double scale = 192.0/log(maxOccupancy + 1.0);
-    double scale = 192.0/maxOccupancy;
+//    double predScale = 200.0/log(predMaxOccupancy + 1.0);
+//    double preyScale = 200.0/log(preyMaxOccupancy + 1.0);
+    double predScale = 224.0/predMaxOccupancy;
+    double preyScale = 224.0/preyMaxOccupancy;
     for(int x=0; x<PredPreyAgent::GRIDSIZE; ++x) {
-        std::vector<HeatRecord> &rabbitRow = heatData.emplace_back();
+        std::vector<HeatRecord> &record = heatData.emplace_back();
         for(int y=0; y<PredPreyAgent::GRIDSIZE; ++y) {
-            double nRabbits = aggregateState[PredPreyAgent(x,y,PredPreyAgent::PREY)];
-            double nFoxes = aggregateState[PredPreyAgent(x,y,PredPreyAgent::PREDATOR)];
-//            rabbitRow.emplace_back(x,y,log(nRabbits+1.0)*scale,0.0,log(nFoxes+1.0)*scale);
-            rabbitRow.emplace_back(x,y,nRabbits*scale,0.0,nFoxes*scale);
+            double nPrey = aggregateState[PredPreyAgent(x, y, PredPreyAgent::PREY)];
+            double nPred = aggregateState[PredPreyAgent(x, y, PredPreyAgent::PREDATOR)];
+//            record.emplace_back(x, y, log(nPrey + 1.0) * preyScale, 0.0, log(nPred + 1.0) * predScale);
+            record.emplace_back(x,y,nPrey*preyScale,0.0,nPred*predScale);
         }
     }
 

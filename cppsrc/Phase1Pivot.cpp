@@ -49,8 +49,10 @@ void Phase1Pivot::chooseCol() {
     // choose random column with positive potential
     std::vector<int> improvingCols;
     int nnz = 0;
+    double potential = 0.0;
     for(int j=1; j <= simplex.nNonBasic(); ++j) {
         double dj = simplex.reducedCost(j);
+        potential += dj * (simplex.isAtUpperBound(j)?0.5:-0.5); // TODO: for Debug only
         if(dj > tol) {
             ++nnz;
             if(simplex.isAtUpperBound(j)) improvingCols.push_back(j);
@@ -62,9 +64,11 @@ void Phase1Pivot::chooseCol() {
 //    std::cout << "potential ratio = " << improvingCols.size() << " / " << nnz << " = " << improvingCols.size()*improvingCols.size()*1.0/nnz << std::endl;
 //    std::cout << improvingCols.size()*improvingCols.size()*1.0/nnz << std::endl; // seems to be a good monotonically(ish) decreasing value
 //    std::cout << improvingCols.size()*infeasibility()*1.0/nnz << std::endl; // seems to be a very good monotonically decreasing value
+//    std::cout << improvingCols.size()-(nnz-improvingCols.size()) << std::endl; // seems to be a very good monotonically decreasing value not using infeasibility
 //    std::cout << improvingCols.size() << " " << nnz << " " << infeasibility() << " " << infeasibilityCount() << std::endl; // seems to be a good monotonically(ish) decreasing value
 
 //    std::cout << nnz << std::endl;
+    std::cout << potential << std::endl;
     setCol(improvingCols[Random::nextInt(0, improvingCols.size())]);
 
 //    // choose the first column with maximum potential
@@ -104,7 +108,7 @@ void Phase1Pivot::chooseRow() {
     std::multimap<double,int> pivots = getPivotsByDeltaJ();
 //    assert(simplex.reducedObjective(j) == colInfeasibilityGradient(0.0)); // TEST
 
-    // Choose from among minimum infeasibility
+    // Choose from among minimum infeasibility with uniform prob
 //    static constexpr double deltaPotential = 0.0;
     bool djNegative = simplex.reducedCost(j) < 0.0;
     auto pivotIt = pivots.begin();
