@@ -7,6 +7,7 @@
 #include "Random.h"
 #include "Phase2Pivot.h"
 #include "ProbabilisticColumnPivot.h"
+#include "PotentialEnergyPivot.h"
 #include <algorithm>
 #include <cmath>
 
@@ -33,7 +34,7 @@ void SimplexMCMC::findFeasibleStartPoint() {
 //        std::cout << iterations << " Pivoted on " << proposal.i << ", " << proposal.j << " " << proposal.deltaj << " " << proposal.leavingVarToUpperBound
 //                  << " " << isAtUpperBound(proposal.j)
 //                  << "  Infeasibility = " << infeasibility() << std::endl;
-        if(iterations%256 == 0) std::cout << "iteration:" << iterations << " infeasibility = " << infeasibility() << std::endl;
+//        if(iterations%256 == 0) std::cout << "iteration:" << iterations << " infeasibility = " << infeasibility() << std::endl;
         iterations++;
 
     } while(!solutionIsPrimaryFeasible());
@@ -182,7 +183,8 @@ void SimplexMCMC::randomWalk() {
 
 ProposalPivot SimplexMCMC::proposePivot() {
 //    return ProbabilisticColumnPivot(*this, proposeColumn());
-    return ProbabilisticColumnPivot(*this);
+//    return ProbabilisticColumnPivot(*this);
+    return PotentialEnergyPivot(*this);
 }
 
 // To be based on rate of change of L1-norm infeasibility objective?

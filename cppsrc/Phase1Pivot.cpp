@@ -50,9 +50,12 @@ void Phase1Pivot::chooseCol() {
     std::vector<int> improvingCols;
     int nnz = 0;
     double potential = 0.0;
+    double sumOfReducedCost = 0.0;
     for(int j=1; j <= simplex.nNonBasic(); ++j) {
         double dj = simplex.reducedCost(j);
         potential += dj * (simplex.isAtUpperBound(j)?0.5:-0.5); // TODO: for Debug only
+//        potential += dj * (simplex.isAtUpperBound(j)?1.0:0.0); // TODO: for Debug only
+        sumOfReducedCost += dj;
         if(dj > tol) {
             ++nnz;
             if(simplex.isAtUpperBound(j)) improvingCols.push_back(j);
@@ -61,6 +64,7 @@ void Phase1Pivot::chooseCol() {
             if(!simplex.isAtUpperBound(j)) improvingCols.push_back(j);
         }
     }
+    setCol(improvingCols[Random::nextInt(0, improvingCols.size())]);
 //    std::cout << "potential ratio = " << improvingCols.size() << " / " << nnz << " = " << improvingCols.size()*improvingCols.size()*1.0/nnz << std::endl;
 //    std::cout << improvingCols.size()*improvingCols.size()*1.0/nnz << std::endl; // seems to be a good monotonically(ish) decreasing value
 //    std::cout << improvingCols.size()*infeasibility()*1.0/nnz << std::endl; // seems to be a very good monotonically decreasing value
@@ -68,8 +72,10 @@ void Phase1Pivot::chooseCol() {
 //    std::cout << improvingCols.size() << " " << nnz << " " << infeasibility() << " " << infeasibilityCount() << std::endl; // seems to be a good monotonically(ish) decreasing value
 
 //    std::cout << nnz << std::endl;
-    std::cout << potential << std::endl;
-    setCol(improvingCols[Random::nextInt(0, improvingCols.size())]);
+//    std::cout << infeasibility() - 0.01*sumOfReducedCost << " " << potential << std::endl;
+//    std::cout << 6*infeasibility() - sumOfReducedCost << std::endl;
+
+//    std::cout << potential - simplex.reducedCost(j) * (simplex.isAtUpperBound(j)?0.5:-0.5) << std::endl;
 
 //    // choose the first column with maximum potential
 //    int bestCol = -1;
@@ -110,7 +116,7 @@ void Phase1Pivot::chooseRow() {
 
     // Choose from among minimum infeasibility with uniform prob
 //    static constexpr double deltaPotential = 0.0;
-    bool djNegative = simplex.reducedCost(j) < 0.0;
+    int reducedCostj = simplex.reducedCost(j);
     auto pivotIt = pivots.begin();
     double lastDj = pivotIt->first;
     std::vector<int> bestPivotIndices;
@@ -123,9 +129,9 @@ void Phase1Pivot::chooseRow() {
 //        double score = infeas;
 //        bool highPotential;
         if(pivotIndex < 2*nonZeroRows.size()) {
-            double Mij = col[nonZeroRows[pivotIndex/2]];
+            double Tij = col[nonZeroRows[pivotIndex/2]];
 //            highPotential = djNegative ^ (pivotIndex % 2) ^ (Mij < 0);
-            dDf_dDj += fabs(Mij);
+            dDf_dDj += fabs(Tij);
         } else {
 //            highPotential = djNegative ^ (pivotIndex % 2);
             dDf_dDj += 1.0;
@@ -144,6 +150,12 @@ void Phase1Pivot::chooseRow() {
     assert(bestPivotIndices.size() != 0);
     setToPivotIndex(bestPivotIndices[Random::nextInt(0, bestPivotIndices.size())]);
 
+//    if(deltaj == 0.0) {
+//        std::cout << "Change in potential = " << (reducedCostj/col[i])*(leavingVarToUpperBound?0.5:-0.5) << " - " << reducedCostj*(simplex.isAtUpperBound(j)?0.5:-0.5)
+//        << " = " << (reducedCostj/col[i])*(leavingVarToUpperBound?0.5:-0.5) - reducedCostj*(simplex.isAtUpperBound(j)?0.5:-0.5) << std::endl;
+//    }
+//    if(deltaj==0.0 && i>0 && !((reducedCostj<0) ^ leavingVarToUpperBound ^ (col[i]<0))) std::cout << "chosen low potential leaving var" << std::endl;
+//    if(deltaj==0.0 && i<=0 && !((reducedCostj<0) ^ leavingVarToUpperBound)) std::cout << "chosen low potential bound swap" << std::endl;
 
 //    // choose minimum infeasibility with exponentially decreasing prob in the ordering of 'pivots'.
 //    auto pivotIt = pivots.begin();

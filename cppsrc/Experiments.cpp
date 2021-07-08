@@ -11,12 +11,12 @@
 
 void Experiments::PredPreyExpt() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
-    PredPreyAgent::GRIDSIZE = 10;
+    PredPreyAgent::GRIDSIZE = 8;
     constexpr int nTimesteps = 32;
     constexpr double pPredator = 0.04;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 4.0*pPredator;//2.0*pPredator;     // Poisson prob of prey in each gridsquare at t=0
     constexpr double pMakeObservation = 0.02;    // prob of making an observation of each gridsquare at each timestep
-    constexpr int nSamples = 1; //250000;
+    constexpr int nSamples = 100000; //250000;
     constexpr int plotTimestep = 0; //nTimesteps-1;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
@@ -51,11 +51,11 @@ void Experiments::PredPreyExpt() {
 //    mcmc.setLPState(initSol);
 
     // use real trajectory as initial state
-//    mcmc.setLPState(realTrajectory);
+    mcmc.setLPState(realTrajectory);
 
     // solve by phase1
-    std::cout << "Starting phase 1 in state: " << glp::SparseVec(mcmc.X()) << std::endl;
-    mcmc.findFeasibleStartPoint();
+//    std::cout << "Starting phase 1 in state: " << glp::SparseVec(mcmc.X()) << std::endl;
+//    mcmc.findFeasibleStartPoint();
 
     ////////////////////////////////////////// DO SANITY CHECKS ////////////////////////////////////////
     // Check initial basis contains no fixed vars and all auxiliaries are in the basis
