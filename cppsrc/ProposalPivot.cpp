@@ -79,11 +79,11 @@ std::multimap<double,int> ProposalPivot::getPivotsByDeltaJ() {
         double rowLowerBound = simplex.l[k];
         double rowUpperBound = simplex.u[k];
         if(rowLowerBound > -DBL_MAX) {
-            double deltaLB = (rowLowerBound - simplex.b[i]) / col[i];
+            double deltaLB = (rowLowerBound - simplex.beta[i]) / col[i];
             allPivots.emplace(deltaLB, 2 * m);
         }
         if(rowUpperBound < DBL_MAX) {
-            double deltaUB = (rowUpperBound - simplex.b[i]) / col[i];
+            double deltaUB = (rowUpperBound - simplex.beta[i]) / col[i];
             allPivots.emplace(deltaUB, 2 * m + 1);
         }
     }
@@ -130,7 +130,7 @@ double ProposalPivot::colInfeasibilityGradient(double deltaj) {
     double grad = 0.0;
     for(int nzi : nonZeroRows) {
         int rowk = simplex.head[nzi];
-        grad += col[nzi] * infeasibilityGradient(simplex.b[nzi] + col[nzi] * deltaj,
+        grad += col[nzi] * infeasibilityGradient(simplex.beta[nzi] + col[nzi] * deltaj,
                                                  simplex.l[rowk],
                                                  simplex.u[rowk]);
     }

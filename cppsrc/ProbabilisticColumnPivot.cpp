@@ -108,7 +108,7 @@ void ProbabilisticColumnPivot::calcAcceptanceContrib() {
 
     for(int i=1; i<=simplex.nBasic(); ++i) {
         int k = simplex.head[i];
-        double bis = simplex.b[i];
+        double bis = simplex.beta[i];
         double bid = bis + deltaj * col[i];
         double lowerBound = simplex.l[k] - tol;
         double upperBound = simplex.u[k] + tol;

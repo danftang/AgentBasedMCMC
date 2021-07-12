@@ -17,9 +17,9 @@ Phase2Pivot::Phase2Pivot(glp::Simplex &lp, int j, std::vector<double> column): P
             int kOutgoing = lp.head[i];
             bool outgoingToUpperBound = (col[i] > 0.0) ^ lp.isAtUpperBound(j);
             if(outgoingToUpperBound) {
-                DXi = lp.u[kOutgoing] - lp.b[i];
+                DXi = lp.u[kOutgoing] - lp.beta[i];
             } else {
-                DXi = lp.l[kOutgoing] - lp.b[i];
+                DXi = lp.l[kOutgoing] - lp.beta[i];
             }
             DXj = fabs(DXi/col[i]);
             if (DXj < deltaj) {

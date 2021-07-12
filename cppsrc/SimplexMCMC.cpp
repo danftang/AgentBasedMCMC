@@ -91,7 +91,7 @@ double SimplexMCMC::lnFractionalPenalty() {
     // fractions must be in the basis, so check b
     double penalty = 0.0;
     for(int i=1; i<=m; ++i) {
-        if(fabs(round(b[i]) - b[i]) > tol) {
+        if(fabs(round(beta[i]) - beta[i]) > tol) {
             penalty += fractionalK;
         }
     }
@@ -145,6 +145,19 @@ void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
         // Accept proposal
 //        std::cout << "Accepting deltaj = " << proposalPivot.deltaj << std::endl;
         assert(proposalPivot.i == -1 || (kSimTokProb[head[proposalPivot.i]] > originalProblem.nConstraints()));
+        assert(proposalPivot.i == -1 || proposalPivot.col[proposalPivot.i] > 0.9 || proposalPivot.col[proposalPivot.i] < -0.9);
+        if(proposalPivot.deltaj != 0.0) {
+            if(proposalPivot.i > 0) {
+                std::cout << "Pivoting " << proposalPivot.deltaj << " " << proposalPivot.col[proposalPivot.i] << " "
+                          << proposalPivot.i << " / " << nBasic() << " " << proposalPivot.j << " / " << nNonBasic()
+                          << std::endl;
+            } else {
+                std::cout << "Swapping " << proposalPivot.deltaj << " "
+                          << proposalPivot.j << " / " << nNonBasic()
+                          << std::endl;
+
+            }
+        }
         pivot(proposalPivot);
     } else {
         // reject
@@ -174,7 +187,7 @@ void SimplexMCMC::setLPState(const std::vector<double> &lpState) {
         double v = lpState[kLP - originalProblem.nConstraints()];
         flag[j] = (fabs(u[kSim] - v) < fabs(l[kSim] - v));
     }
-    spx_eval_beta(this, b);
+    spx_eval_beta(this, beta);
 }
 
 void SimplexMCMC::randomWalk() {
@@ -241,7 +254,7 @@ int SimplexMCMC::infeasibilityCount() {
     int infeasibility = 0;
     for(int i=1; i<=nBasic();++i) {
         int k = head[i];
-        if(b[i] < l[k] - tol || b[i] > u[k] + tol) ++infeasibility;
+        if(beta[i] < l[k] - tol || beta[i] > u[k] + tol) ++infeasibility;
     }
     return infeasibility;
 }
@@ -250,10 +263,12 @@ double SimplexMCMC::infeasibility() {
     double dist = 0.0;
     for(int i=1; i <= nBasic(); ++i) {
         int k = head[i];
-        double v = b[i];
+        double v = beta[i];
         if(v < l[k]) {
+//            std::cout << "l[k]= " << l[k] << " v = " << v << std::endl;
             dist += l[k] - v;
         } else if(v > u[k]) {
+//            std::cout << "v =  " << v << " u[k] =  " << u[k] << std::endl;
             dist += v - u[k];
         }
     }
@@ -284,7 +299,7 @@ void SimplexMCMC::revertLPSolution(const ProposalPivot &pivot) {
 bool SimplexMCMC::solutionIsPrimaryFeasible() {
     for(int i=1; i<nBasic(); ++i) {
         int k = head[i];
-        if(b[i] < l[k] - tol || b[i] > u[k] + tol) return false;
+        if(beta[i] < l[k] - tol || beta[i] > u[k] + tol) return false;
     }
     return true;
 }

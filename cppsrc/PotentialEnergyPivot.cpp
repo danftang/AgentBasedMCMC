@@ -64,29 +64,39 @@ void PotentialEnergyPivot::chooseRow() {
     std::multimap<double, int> transitions = getPivotsByDeltaJ(); // from delta_j to PMF-index.
 
     // now populate pivotPMF by going from lowest to highest delta_j in order
-    std::vector<double> pivotPMF(nonZeroRows.size() * 2 + 2, 0.0); // index is (2*activeRowIndex + toUpperBound), value is probability mass
+    std::vector<double> pivotPMF(nonZeroRows.size() * 2 + 2, DBL_MAX); // index is (2*activeRowIndex + toUpperBound), value is probability mass
     double lastDj = transitions.begin()->first;
-    double DeltaF = infeasibility(lastDj); // TODO: do we really need to calculate this?
+    double feas = 0.0; //infeasibility(lastDj) - infeasibility(0.0);
+    double feasMin = DBL_MAX;
     double dDf_dDj = colInfeasibilityGradient(lastDj - tol);
     for(auto [Dj, pmfIndex] : transitions) {
-        DeltaF += (Dj-lastDj)*dDf_dDj;
+        feas += (Dj - lastDj) * dDf_dDj;
         lastDj = Dj;
-        if(isActive(pmfIndex)) pivotPMF[pmfIndex] = exp(kappaRow * DeltaF) + DBL_EPSILON;
-//        std::cout << "deltaj = " << Dj << " pivotProb = " << pivotPMF[pmfIndex] << " DeltaF = " << DeltaF << " dDf_dDj = " << dDf_dDj << " Feasibility = " << infeasibility(Dj) << std::endl;
+        if(isActive(pmfIndex)) {
+            pivotPMF[pmfIndex] = feas;
+            if(feas < feasMin) feasMin = feas;
+        }
+//        std::cout << "deltaj = " << Dj << " pivotProb = " << pivotPMF[pmfIndex] << " feas = " << feas << " dDf_dDj = " << dDf_dDj << " Feasibility = " << infeasibility(Dj) << std::endl;
         if(pmfIndex < nonZeroRows.size()*2) {
             dDf_dDj += fabs(col[nonZeroRows[pmfIndex / 2]]);
         } else {
             dDf_dDj += 1.0;
         }
     }
+    assert(feasMin != DBL_MAX);
+
+    // rescale and take exponential
+    for(int i=0; i<pivotPMF.size(); ++i) {
+        pivotPMF[i] = exp(kappaRow*(pivotPMF[i] - feasMin));
+    }
+    pivotPMF[2*nonZeroRows.size() + simplex.isAtUpperBound(j)] *= 0.1; // preference against null pivot if other possibilities exist
 
     // chooseFromPMF row
+
     setToPivotIndex(Random::chooseFromPMF(pivotPMF.begin(), pivotPMF.end()));
-//    std::cout << "Chose pivot with prob " << pivotPMF[pivotChoice] << " Delta = " << deltaj << std::endl;
 
-    // test
-//    std::cout << "Proposing pivot from " << !sourceObjectiveIsZero << " to " << destinationObjective << std::endl;
-
+    //    std::cout << "Chose pivot with prob " << pivotPMF[pivotChoice] << " Delta = " << deltaj << std::endl;
+//  std::cout << "Proposing pivot from " << !sourceObjectiveIsZero << " to " << destinationObjective << std::endl;
 }
 
 
@@ -101,27 +111,27 @@ void PotentialEnergyPivot::chooseRow() {
 //
 // In the case of a bound swap, the reduced cost does not change so DE-DEj = 0.
 void PotentialEnergyPivot::calcAcceptanceContrib() {
-    logAcceptanceContribution = 0.0;
-//    if(i <= 0 || infeasibilityCount == 0 || reducedCost[j] == 0.0) {
-//        logAcceptanceContribution = 0.0;
-//    } else {
-//        if(deltaj != 0.0) {
-//            // TODO: Calculate contribution non-degenerate pivots
-//            logAcceptanceContribution = 0.0;
-//        } else {
-//            std::vector<double> Ti = simplex.tableauRow(i);
-//            double DEnergy = 0.0;
-//            double dj_Tij = reducedCost[j] / Ti[j];
-//            for (int q = 1; q <= simplex.nNonBasic(); ++q) {
-//                if (q != j) {
-//                    double newdq = reducedCost[q] - dj_Tij * Ti[q];
-//                    double DEq = ((newdq > tol) - (reducedCost[q] > tol)) * (simplex.isAtUpperBound(q) ? 1.0 : -1.0);
-//                    DEnergy += DEq;
-//                }
-//            }
-////        DEnergy *= -reducedCost[j] / Ti[j];
-////            std::cout << "DEnergy = " << DEnergy << std::endl;
-//            logAcceptanceContribution = -kappaCol * DEnergy;
-//        }
-//    }
+//    logAcceptanceContribution = 0.0;
+    if(i <= 0 || infeasibilityCount == 0 || reducedCost[j] == 0.0) {
+        logAcceptanceContribution = 0.0;
+    } else {
+        if(deltaj != 0.0) {
+            // TODO: Calculate contribution non-degenerate pivots
+            logAcceptanceContribution = 0.0;
+        } else {
+            std::vector<double> Ti = simplex.tableauRow(i);
+            double DEnergy = 0.0;
+            double dj_Tij = reducedCost[j] / Ti[j];
+            for (int q = 1; q <= simplex.nNonBasic(); ++q) {
+                if (q != j) {
+                    double newdq = reducedCost[q] - dj_Tij * Ti[q];
+                    double DEq = ((newdq > tol) - (reducedCost[q] > tol)) * (simplex.isAtUpperBound(q) ? 1.0 : -1.0);
+                    DEnergy += DEq;
+                }
+            }
+//        DEnergy *= -reducedCost[j] / Ti[j];
+//            std::cout << "DEnergy = " << DEnergy << std::endl;
+            logAcceptanceContribution = -kappaCol * DEnergy;
+        }
+    }
 }

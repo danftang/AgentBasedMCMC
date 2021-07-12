@@ -209,11 +209,13 @@ void Phase1Pivot::setToPivotIndex(int pivotIndex) {
     if(pivotIndex < 2 * nonZeroRows.size()) {
         i = nonZeroRows[pivotIndex / 2];
         int leavingk = simplex.head[i];
-        deltaj = ((leavingVarToUpperBound ? simplex.u[leavingk] : simplex.l[leavingk]) - simplex.b[i]) / col[i];
+        deltaj = ((leavingVarToUpperBound ? simplex.u[leavingk] : simplex.l[leavingk]) - simplex.beta[i]) / col[i];
+        assert(fabs(col[i]) > 1e-7);
+        assert(fabs(deltaj) < 10.0);
     } else {
         i = -1; // column does bound swap.
         int k = simplex.head[simplex.nBasic() + j];
-        deltaj = leavingVarToUpperBound?(simplex.u[k]-simplex.l[k]):(simplex.l[k]-simplex.u[k]);
+        deltaj = (leavingVarToUpperBound?simplex.u[k]:simplex.l[k]) - (simplex.isAtUpperBound(j)?simplex.u[k]:simplex.l[k]);
     }
 }
 
@@ -223,10 +225,10 @@ int Phase1Pivot::setSimplexToInfeasibilityObjective() {
     int infeasibilityCount = 0;
     for(int i=1; i<=simplex.nBasic(); ++i) {
         int k = simplex.head[i];
-        if(simplex.b[i] < simplex.l[k] - tol) {
+        if(simplex.beta[i] < simplex.l[k] - tol) {
             simplex.c[k] = -1.0;
             ++infeasibilityCount;
-        } else if(simplex.b[i] > simplex.u[k] + tol) {
+        } else if(simplex.beta[i] > simplex.u[k] + tol) {
             simplex.c[k] = 1.0;
             ++infeasibilityCount;
         } else {
@@ -265,8 +267,9 @@ int Phase1Pivot::setSimplexToInfeasibilityObjective() {
 //}
 
 // returns true if pmfIndex corresponds to a row that is a structural var and has a unity coefficient
-bool Phase1Pivot::isActive(int pmfIndex) { // bound swap active, null pivot inactive
-    if(pmfIndex >= 2*nonZeroRows.size()) return simplex.isAtUpperBound(j) ^ (pmfIndex%2);
+bool Phase1Pivot::isActive(int pmfIndex) {
+    if(pmfIndex >= 2*nonZeroRows.size()) return true; // bound swaps active (including null pivot)
+        // return simplex.isAtUpperBound(j) ^ (pmfIndex%2); // null pivot inactive
     int i = nonZeroRows[pmfIndex / 2];
     if(fabs(fabs(col[i])-1.0) > tol) return false;         // only pivot on unity elements
     int k = simplex.head[i];
@@ -279,7 +282,7 @@ double Phase1Pivot::infeasibility(double deltaj) {
     double dist = 0.0;
     for(int i=1; i <= simplex.nBasic(); ++i) {
         int k = simplex.head[i];
-        double v = simplex.b[i] + col[i]*deltaj;
+        double v = simplex.beta[i] + col[i]*deltaj;
         if(v < simplex.l[k]) {
             dist += simplex.l[k] - v;
         } else if(v > simplex.u[k]) {
@@ -301,7 +304,7 @@ double Phase1Pivot::infeasibility() {
     double dist = 0.0;
     for(int i=1; i <= simplex.nBasic(); ++i) {
         int k = simplex.head[i];
-        double v = simplex.b[i];
+        double v = simplex.beta[i];
         if(v < simplex.l[k]) {
             dist += simplex.l[k] - v;
         } else if(v > simplex.u[k]) {
@@ -315,7 +318,7 @@ int Phase1Pivot::infeasibilityCount() {
     int infeasibility = 0;
     for(int i=1; i<=simplex.nBasic();++i) {
         int k = simplex.head[i];
-        if(simplex.b[i] < simplex.l[k] - tol || simplex.b[i] > simplex.u[k] + tol) ++infeasibility;
+        if(simplex.beta[i] < simplex.l[k] - tol || simplex.beta[i] > simplex.u[k] + tol) ++infeasibility;
     }
     return infeasibility;
 }
