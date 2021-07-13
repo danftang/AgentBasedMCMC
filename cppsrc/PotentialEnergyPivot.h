@@ -25,6 +25,7 @@ public:
     void chooseRow();
 
     void calcAcceptanceContrib();
+
 };
 
 

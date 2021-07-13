@@ -8,6 +8,7 @@
 
 PotentialEnergyPivot::PotentialEnergyPivot(glp::Simplex &simplex):
 Phase1Pivot(simplex,0,0) {
+    infeasibilityCount = initInfeasibilityGradient();
     chooseCol();
     chooseRow();
     calcAcceptanceContrib();
@@ -26,22 +27,24 @@ Phase1Pivot(simplex,0,0) {
 // e^-k(DE - DEj) where DE and DEj are the change in total and column energy respectively, during the pivot.
 void PotentialEnergyPivot::chooseCol() {
     // set objective to out-of-bounds rows
-    infeasibilityCount = setSimplexToInfeasibilityObjective();
+
+    logAcceptanceContribution = 0.0;
 
     if(infeasibilityCount == 0) {
         // null objective so just chooseFromPMF with uniform prob
         setCol(Random::nextInt(1,simplex.nNonBasic() + 1));
     } else {
         // chooseFromPMF with prob proportional to exponential of potential energy
-        simplex.recalculatePi();
-        reducedCost = simplex.reducedCost();
+        simplex.btran(infeasibilityGradient);
+        reducedCost = simplex.piTimesMinusN(infeasibilityGradient);
         std::vector<double> cdf(simplex.nNonBasic() + 1, 0.0);
         double cumulativeP = 0.0;
-        for(int j=1; j<= simplex.nNonBasic(); ++j) {
-            double colPotential = reducedCost[j] * (simplex.isAtUpperBound(j) ? 1.0 : -1.0);
+        for(int q=1; q <= simplex.nNonBasic(); ++q) {
+            double colPotential = reducedCost[q] * (simplex.isAtUpperBound(q) ? 1.0 : -1.0);
             if(colPotential > tol) colPotential = 1.0; else colPotential = 0.0; // TODO: TEST
             cumulativeP += exp(kappaCol*colPotential);
-            cdf[j] = cumulativeP;
+            logAcceptanceContribution += kappaCol*colPotential;
+            cdf[q] = cumulativeP;
         }
         double *it = std::lower_bound(
                 cdf.data(),
@@ -49,6 +52,7 @@ void PotentialEnergyPivot::chooseCol() {
                 Random::nextDouble(0.0, cdf[simplex.nNonBasic()])
         );
         setCol(it - cdf.data());
+        logAcceptanceContribution -= kappaCol*((reducedCost[j] * (simplex.isAtUpperBound(j) ? 1.0 : -1.0)) > tol);
     }
 }
 
@@ -102,36 +106,97 @@ void PotentialEnergyPivot::chooseRow() {
 
 // The acceptance contribution is given by
 // A = e^-kCol(DE - DEj)
-// where DE is the change in potential energy and DEj is the change in potential energy of the pivot column.
+// where DE is the change in total potential energy and DEj is the change in potential energy of the pivot column.
 // We make use of the fact that the change in the reduced cost of column q!=j is given by
 // Ddq = Tiq (dj / Tij)
 // where Ti is the pivot row in the tableau.
-// And, since the values of the columns q!=j do not change
+// And, since the values of the tableau columns q!=j do not change
 // DE-DEj = (dj / -Tij) sum_{q!=j} Tiq (2Xq - 1.0)
 //
 // In the case of a bound swap, the reduced cost does not change so DE-DEj = 0.
+//
+// In the case of a non-degenerate
+//void PotentialEnergyPivot::calcAcceptanceContrib() {
+////    logAcceptanceContribution = 0.0;
+//    if(i <= 0 || infeasibilityCount == 0 || reducedCost[j] == 0.0) {
+//        logAcceptanceContribution = 0.0;
+//    } else {
+//        if(deltaj != 0.0) {
+//            // TODO: Calculate contribution non-degenerate pivots
+//            logAcceptanceContribution = 0.0;
+//        } else {
+//            std::vector<double> Ti = simplex.tableauRow(i);
+//            double DEnergy = 0.0;
+//            double dj_Tij = reducedCost[j] / Ti[j];
+//            for (int q = 1; q <= simplex.nNonBasic(); ++q) {
+//                if (q != j) {
+//                    double newdq = reducedCost[q] - dj_Tij * Ti[q];
+//                    double DEq = ((newdq > tol) - (reducedCost[q] > tol)) * (simplex.isAtUpperBound(q) ? 1.0 : -1.0);
+//                    DEnergy += DEq;
+//                }
+//            }
+////        DEnergy *= -reducedCost[j] / Ti[j];
+////            std::cout << "DEnergy = " << DEnergy << std::endl;
+//            logAcceptanceContribution = -kappaCol * DEnergy;
+//        }
+//    }
+//}
+
+
+// Calculates C'_bB'^-1 after the pivot by expressing as
+// (C'_bE)B^-1 where B^-1 is the pre-pivot basis inverse
+// and E is the pivot update matrix.
 void PotentialEnergyPivot::calcAcceptanceContrib() {
-//    logAcceptanceContribution = 0.0;
-    if(i <= 0 || infeasibilityCount == 0 || reducedCost[j] == 0.0) {
+    std::vector<double> postPivotGrad(simplex.nBasic()+1);
+
+    if(deltaj == 0.0 && (infeasibilityCount == 0 || i<1 || reducedCost[j] == 0.0)) {
         logAcceptanceContribution = 0.0;
-    } else {
-        if(deltaj != 0.0) {
-            // TODO: Calculate contribution non-degenerate pivots
-            logAcceptanceContribution = 0.0;
+        return;
+    }
+
+    // TODO: minimise calculation when deltaj = 0
+
+    // calculate post pivot gradient
+    for(int p=1; p <= simplex.nBasic(); ++p) {
+        int k;
+        double betap;
+        if(p != i) {
+            k = simplex.head[p];
+            betap = simplex.beta[p] + deltaj * col[p];
         } else {
-            std::vector<double> Ti = simplex.tableauRow(i);
-            double DEnergy = 0.0;
-            double dj_Tij = reducedCost[j] / Ti[j];
-            for (int q = 1; q <= simplex.nNonBasic(); ++q) {
-                if (q != j) {
-                    double newdq = reducedCost[q] - dj_Tij * Ti[q];
-                    double DEq = ((newdq > tol) - (reducedCost[q] > tol)) * (simplex.isAtUpperBound(q) ? 1.0 : -1.0);
-                    DEnergy += DEq;
-                }
-            }
-//        DEnergy *= -reducedCost[j] / Ti[j];
-//            std::cout << "DEnergy = " << DEnergy << std::endl;
-            logAcceptanceContribution = -kappaCol * DEnergy;
+            k = simplex.head[simplex.nBasic() + j];
+            betap = (simplex.isAtUpperBound(j)?simplex.u[k]:simplex.l[k]) + deltaj;
+        }
+        if(betap < simplex.l[k] - tol) {
+            postPivotGrad[p] = -1.0;
+        } else if(betap > simplex.u[k] + tol) {
+            postPivotGrad[p] = 1.0;
+        } else {
+            postPivotGrad[p] = 0.0;
         }
     }
+
+    if(i > 0) {
+        // E = postPivotGrad * E
+        double Ci = 0.0;
+        for (int p = 1; p <= simplex.nBasic(); ++p) {
+            if (p != i) {
+                Ci -= col[p] / col[i];
+            } else {
+                Ci -= 1.0 / col[i]; // -ve because col is tableau, not B^-1N_j
+            }
+        }
+        postPivotGrad[i] = Ci;
+    }
+    simplex.btran(postPivotGrad);
+    std::vector<double> postPivotReducedCost = simplex.piTimesMinusN(postPivotGrad);
+
+    double logPostPivotPotential = 0.0;
+    for(int q=0; q<simplex.nNonBasic(); ++q) {
+        if(q != j && (postPivotReducedCost[q] * (simplex.isAtUpperBound(q) ? 1.0 : -1.0)) > tol) {
+            logPostPivotPotential += kappaCol;
+        }
+    }
+    logAcceptanceContribution -= logPostPivotPotential;
+    std::cout << "Acceptance contrib = " << logAcceptanceContribution << std::endl;
 }

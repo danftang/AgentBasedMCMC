@@ -38,16 +38,16 @@ ProbabilisticColumnPivot::ProbabilisticColumnPivot(glp::Simplex &simplex) : Phas
 // so there's no need to re-calculate the column for the destination.
 void ProbabilisticColumnPivot::chooseCol() {
     // set objective to out-of-bounds rows
-    int infeasibilityCount = setSimplexToInfeasibilityObjective();
+    int infeasibilityCount = initInfeasibilityGradient();
 
     if(infeasibilityCount == 0) {
         // null objective so just chooseFromPMF with uniform prob
         setCol(Random::nextInt(1,simplex.nNonBasic() + 1));
     } else {
         // chooseFromPMF with prob proportional to alpha if reduced objective is non-zero or 1 if zero
-        simplex.recalculatePi();
+        simplex.btran(infeasibilityGradient);
         std::vector<double> cdf(simplex.nNonBasic() + 1, 0.0);
-        std::vector<double> reducedCost = simplex.reducedCost();
+        std::vector<double> reducedCost = simplex.piTimesMinusN(infeasibilityGradient);
         double cumulativeP = 0.0;
 
         for(int j=1; j<= simplex.nNonBasic(); ++j) {

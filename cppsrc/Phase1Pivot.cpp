@@ -7,7 +7,9 @@
 #include <float.h>
 #include <cassert>
 
-Phase1Pivot::Phase1Pivot(glp::Simplex &simplex): ProposalPivot(simplex) {
+Phase1Pivot::Phase1Pivot(glp::Simplex &simplex): ProposalPivot(simplex), infeasibilityGradient(simplex.nBasic()+1) {
+    initInfeasibilityGradient();
+    simplex.btran(infeasibilityGradient); // turn objective into pi.
     chooseCol();
     chooseRow();
 }
@@ -18,8 +20,8 @@ Phase1Pivot::Phase1Pivot(glp::Simplex &simplex): ProposalPivot(simplex) {
 // infeasibility, or the absolute value of the gradient if a feasible
 // perturbation would decrease the infeasibility.
 void Phase1Pivot::chooseCol() {
-    setSimplexToInfeasibilityObjective();
-    simplex.recalculatePi();
+//    initInfeasibilityGradient();
+//    simplex.recalculatePi();
 
 //    // choose random colum with maximum potential
 //    std::vector<int> bestCols;
@@ -51,8 +53,9 @@ void Phase1Pivot::chooseCol() {
     int nnz = 0;
     double potential = 0.0;
     double sumOfReducedCost = 0.0;
+    std::vector<double> reducedCost = simplex.piTimesMinusN(infeasibilityGradient);
     for(int j=1; j <= simplex.nNonBasic(); ++j) {
-        double dj = simplex.reducedCost(j);
+        double dj = reducedCost[j];
         potential += dj * (simplex.isAtUpperBound(j)?0.5:-0.5); // TODO: for Debug only
 //        potential += dj * (simplex.isAtUpperBound(j)?1.0:0.0); // TODO: for Debug only
         sumOfReducedCost += dj;
@@ -116,7 +119,7 @@ void Phase1Pivot::chooseRow() {
 
     // Choose from among minimum infeasibility with uniform prob
 //    static constexpr double deltaPotential = 0.0;
-    int reducedCostj = simplex.reducedCost(j);
+//    int reducedCostj = simplex.reducedCost(j);
     auto pivotIt = pivots.begin();
     double lastDj = pivotIt->first;
     std::vector<int> bestPivotIndices;
@@ -220,19 +223,20 @@ void Phase1Pivot::setToPivotIndex(int pivotIndex) {
 }
 
 
-int Phase1Pivot::setSimplexToInfeasibilityObjective() {
+int Phase1Pivot::initInfeasibilityGradient() {
     // set objective to out-of-bounds rows
+
     int infeasibilityCount = 0;
     for(int i=1; i<=simplex.nBasic(); ++i) {
         int k = simplex.head[i];
         if(simplex.beta[i] < simplex.l[k] - tol) {
-            simplex.c[k] = -1.0;
+            infeasibilityGradient[i] = -1.0;
             ++infeasibilityCount;
         } else if(simplex.beta[i] > simplex.u[k] + tol) {
-            simplex.c[k] = 1.0;
+            infeasibilityGradient[i] = 1.0;
             ++infeasibilityCount;
         } else {
-            simplex.c[k] = 0.0;
+            infeasibilityGradient[i] = 0.0;
         }
     }
     return infeasibilityCount;

@@ -12,7 +12,9 @@
 class Phase1Pivot: public ProposalPivot {
 public:
     explicit Phase1Pivot(glp::Simplex &simplex);
-    Phase1Pivot(glp::Simplex &simplex, int i, int j): ProposalPivot(simplex, i, j) { }
+    Phase1Pivot(glp::Simplex &simplex, int i, int j): ProposalPivot(simplex, i, j), infeasibilityGradient(simplex.nBasic()+1) { }
+
+    std::vector<double> infeasibilityGradient;  // gradient by row [1...nBasic()]
 
     void chooseCol();
     void chooseRow();
@@ -20,7 +22,7 @@ public:
     void setToPivotIndex(int pivotIndex);
 
 protected:
-    int setSimplexToInfeasibilityObjective();
+    int initInfeasibilityGradient();
 
     bool isActive(int pmfIndex);
 
