@@ -16,7 +16,7 @@ void Experiments::PredPreyExpt() {
     constexpr double pPredator = 0.04;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 4.0*pPredator;//2.0*pPredator;     // Poisson prob of prey in each gridsquare at t=0
     constexpr double pMakeObservation = 0.02;    // prob of making an observation of each gridsquare at each timestep
-    constexpr int nSamples = 100000; //250000;
+    constexpr int nSamples = 1000; //250000;
     constexpr int plotTimestep = 0; //nTimesteps-1;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
@@ -98,6 +98,9 @@ void Experiments::PredPreyExpt() {
 
 
     ////////////////////////////////////////// SHOW RESULTS ///////////////////////////////////////////
+    std::cout << std::endl;
+    std::cout << "Feasible sample statistics:" << std::endl << mcmc.feasibleStatistics << std::endl;
+    std::cout << "Infeasible sample statistics:" << std::endl << mcmc.infeasibleStatistics << std::endl;
     std::cout << "Mean state:\n" << meanState << std::endl;
     std::cout << "Real state:\n" << realTrajectory(plotTimestep) << std::endl;
     std::cout << "Observations: " << observations << std::endl;

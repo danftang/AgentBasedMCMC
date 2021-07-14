@@ -39,8 +39,9 @@ void PotentialEnergyPivot::chooseCol() {
         std::vector<double> cdf(simplex.nNonBasic() + 1, 0.0);
         double cumulativeP = 0.0;
         for(int q=1; q <= simplex.nNonBasic(); ++q) {
-            double colPotential = reducedCost[q] * (simplex.isAtUpperBound(q) ? 0.5 : -0.5);
-            if(colPotential > tol) colPotential = 1.0; else colPotential = 0.0; // TODO: TEST
+//            double colPotential = reducedCost[q] * (simplex.isAtUpperBound(q) ? 0.5 : -0.5);
+//            if(colPotential > tol) colPotential = 1.0; else colPotential = 0.0; // TODO: TEST
+            double colPotential = sign(reducedCost[q]) * (simplex.isAtUpperBound(q) ? 0.5 : -0.5);
             cumulativeP += exp(kappaCol*colPotential);
             cdf[q] = cumulativeP;
         }
@@ -90,7 +91,7 @@ void PotentialEnergyPivot::chooseRow() {
     for(int i=0; i<pivotPMF.size(); ++i) {
         pivotPMF[i] = exp(kappaRow*(pivotPMF[i] - feasMin));
     }
-    pivotPMF[2*nonZeroRows.size() + simplex.isAtUpperBound(j)] *= 0.1; // preference against null pivot if other possibilities exist
+    pivotPMF[2*nonZeroRows.size() + simplex.isAtUpperBound(j)] *= 0.01; // preference against null pivot if other possibilities exist
 
     // chooseFromPMF row
 
@@ -191,25 +192,31 @@ void PotentialEnergyPivot::calcAcceptanceContrib() {
     logAcceptanceContribution = 0.0;
     if(reducedCost.size()>0) {
         for (int q = 1; q <= simplex.nNonBasic(); ++q) {
-            double x = simplex.isAtUpperBound(q) ? 0.5 : -0.5;
-            logAcceptanceContribution += kappaCol * x * (reducedCost[q] - postPivotReducedCost[q]);
-//                logAcceptanceContribution += kappaCol * x *
-//                                             ((reducedCost[q] > tol) - (reducedCost[q] < tol) -
-//                                              (postPivotReducedCost[q] > tol) + (postPivotReducedCost[q] < tol));
+            if(q != j) {
+                double x = simplex.isAtUpperBound(q) ? 0.5 : -0.5;
+                logAcceptanceContribution += kappaCol * x * (reducedCost[q] - postPivotReducedCost[q]);
+            }
         }
-        logAcceptanceContribution -= kappaCol * (simplex.isAtUpperBound(j)?0.5:-0.5) *
-                                             ((reducedCost[j] > tol) - (reducedCost[j] < tol) -
-                                              (postPivotReducedCost[j] > tol) + (postPivotReducedCost[j] < tol));
+        logAcceptanceContribution += kappaCol
+                *(
+                        (simplex.isAtUpperBound(j)?0.5:-0.5)*(reducedCost[j]-sign(reducedCost[j]))
+                        +(leavingVarToUpperBound?0.5:-0.5)*(sign(postPivotReducedCost[j])-postPivotReducedCost[j])
+                );
     } else {
         for (int q = 1; q <= simplex.nNonBasic(); ++q) {
-            double x = simplex.isAtUpperBound(q) ? 0.5 : -0.5;
-            logAcceptanceContribution -= kappaCol * x * postPivotReducedCost[q];
-//                logAcceptanceContribution += kappaCol * x *
-//                                             (-(postPivotReducedCost[q] > tol) + (postPivotReducedCost[q] < tol));
+            if(q != j) {
+                double x = simplex.isAtUpperBound(q) ? 0.5 : -0.5;
+                logAcceptanceContribution -= kappaCol * x * postPivotReducedCost[q];
+            }
         }
-        logAcceptanceContribution -= kappaCol * (simplex.isAtUpperBound(j)?0.5:-0.5) *
-                                     (-(postPivotReducedCost[j] > tol) + (postPivotReducedCost[j] < tol));
+        logAcceptanceContribution += kappaCol
+                *(leavingVarToUpperBound?0.5:-0.5)*(sign(postPivotReducedCost[j])-postPivotReducedCost[j]);
 
     }
 //    std::cout << "Acceptance contrib = " << logAcceptanceContribution << std::endl;
+}
+
+// returns -1, 0 or +1
+int PotentialEnergyPivot::sign(double x) {
+    return (x > tol) - (x < -tol);
 }

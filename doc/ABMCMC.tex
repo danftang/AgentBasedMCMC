@@ -49,9 +49,9 @@
 \maketitle
 
 \begin{abstract}
-The discipline of data assimilation (DA) addresses the problem of making use of partial and noisy experimental observations to provide information about the time evolution of a dynamical system. DA has developed rapidly in applications such as weather forecasting \cite{kalnay_atmospheric_2003} but relatively little progress has been made in developing data assimilation techniques that are applicable to agent based models. Data Assimilation in ABMs is challenging because ABMs consist of `agents' which often make discrete choices from a number of possible actions, meaning the space of model trajectories is not continuous and we cannot use assimilation techniques that require the gradient of the posterior. In addition, a set of observations will typically refute a large proportion of model trajectories, making it difficult to even identify trajectories that have non-zero probability, given the observations, and providing an obstacle to the use of algorithms that rely on sampling.
+The discipline of data assimilation (DA) addresses the problem of how to make use of partial, noisy experimental observations to provide information about the time evolution of a dynamical system. DA has developed rapidly in applications such as weather forecasting \cite{kalnay_atmospheric_2003} but relatively little progress has been made in developing techniques that are applicable to agent based models. ABMs often consist of `agents' which make discrete choices from a number of possible actions, meaning the space of model trajectories is not continuous and we cannot use assimilation techniques that require the gradient of the posterior in this space. In addition, a set of observations will typically refute a large proportion of model trajectories, making it difficult to even identify trajectories that have non-zero probability, given the observations, making it challenging to make use of algorithms that rely on sampling.
 
-Here we present an algorithm that generates samples of the time evolution of an agent based model, taken from the posterior probability distribution given a set of noisy, incomplete experimental observations of the system. The algorithm approximates the set of possible trajectories as a linear program and uses extensions of the algorithms used in linear programming to provide a proposal function for Markov-Chain-Monte-Carlo sampling.
+Here we present an algorithm that generates samples of the time evolution of an agent based model, given a set of noisy, incomplete experimental observations of the system. The algorithm approximates the set of possible trajectories as a linear program and uses an extension of the simplex algorithm to provide a proposal function for Markov-Chain-Monte-Carlo sampling.
 
 We demonstrate the algorithm by performing data assimilation in an agent-based, spatial predator-prey model.
 \end{abstract}
@@ -315,8 +315,8 @@ is equivalent to
 All the constraints can now be gathered into a standard matrix form
 \begin{equation}
 \begin{split}
-AX &= B \\
-\text{subject to}\ x_i &\ge 0\\
+AX &= b \\
+\text{subject to }\ l_i \le x_i &\le u_i\\
 x_i &\in \mathbb{Z}
 \end{split}
 \label{Axy}
@@ -328,7 +328,7 @@ where the vector $X$ contains the elements of the trajectory tensor $T^t_{\psi a
 
 Given a set of inequalities that contain the support of the posterior, we next need to define a stochastic proposal function $f:\mathbb{S} \to \mathbb{S}$ on a set of Markov states, $\mathbb{S}$, where each state, $S$, is associated with a trajectory $T(S)$. The proposal function should have the following properties:
 \begin{itemize}
-	\item There should be a set of transitions with non-zero probability between any two Markov states. This ensures proper mixing as time tends to infinity.
+	\item The graph whose nodes are Markov states and whose edges are possible transitions, should be a connected graph (i.e. there should be a path between any two Markov states). This ensures proper mixing as time tends to infinity.
 	
 	\item At the stationary point, the probability of being in a state associated with trajectory $T$ should be our target posterior probability $P(T \mid \Omega)$.
 	
@@ -341,17 +341,14 @@ Given a set of inequalities that contain the support of the posterior, we next n
 \label{Fermionic}
 %#############################################
 
-We define a Fermionic ABM to be one where no two agents can share the same state at the same time. i.e. in addition to the validity constraints of equations \ref{nonNegativeInt} and \ref{continuous} the trajectory of a Fermionic ABM also satisfies the \textit{Fermionic constraint}
+We define a Fermionic ABM to be one where no two agents in the same state can perform the same action. i.e. in addition to the validity constraints of equations \ref{nonNegativeInt} and \ref{continuous} the trajectory of a Fermionic ABM also satisfies the \textit{Fermionic constraint}
 \begin{equation}
-\begin{split}
-\forall t,\psi: \sum_a T^t_{\psi a} \le 1 \\
-\forall \phi: \sum_{\psi, a} F(\psi, a)_\phi T^n_{\psi a} \le 1
-\end{split}
+T^t_{\psi a} \in \left\{ 0,1 \right\}
 \label{fermionic}
 \end{equation}
-in which case we call it a \textit{Fermionic trajectory} [this can be weakened to $T^t_{\psi a} \le 1$].
+in which case we call it a \textit{Fermionic trajectory}. In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so the Fermionic constraint will have very little effect on the dynamics of the model. However, if the Fermionic constraint is not acceptable, section ** describes how to remove this constraint.
 
-It is clear that every element of a Fermionic trajectory must be either 0 or 1. This means we can easily convert the union term in equation \ref{linearSupport} 
+Given a Fermionic trajectory we can easily convert the union term in equation \ref{linearSupport} 
 \[
 \mathcal{P}(\pi'(t,\psi,.), a) \cup \left\{T^s_{\xi b}: T^t_{\psi a} = 0\right\}
 \]
@@ -359,7 +356,7 @@ into a set of linear constraints. Expanding $\mathcal{P}$ we have
 \[
 \left(\bigcap_j \sum_i a_{ij}x_i \le b_j \right) \cup \left\{X: x_k = 0\right\} = \bigcap_j \left( \sum_i a_{ij}x_i \le b_j  \cup \left\{X: x_k = 0\right\}\right)
 \]
-where we've projected the elements of the trajectory $T^t_{\psi a}$ into a vector $X$. But
+where, for conveinence, we've projected the elements of the trajectory $T^t_{\psi a}$ into a vector $X$. But
 \[
 \sum_i a_{ij}x_i \le b_j  \cup \left\{X: x_k = 0\right\} = \sum_i a_{ij}x_i + \left(\sum_i \frac{|a_{ij}| + a_{ij}}{2} - b_j\right)x_k \le \sum_i \frac{|a_{ij}| + a_{ij}}{2} 
 \]
@@ -394,15 +391,16 @@ where $N^t_\psi$ is the set of indices that correspond to elements of $T^t_{\phi
 %[Take the difference A-B and decompose into integer null vectors (loops)]
 %\end{proof}
 
-This seemingly abstract fact has a profound practical consequence for the efficiency of our proposal function.
+This seemingly abstract fact leads to a computationally very efficient way of proposing new trajectories that have non-zero probability.
+
 Given a system of $m$ linear constraints on $n$ variables expressed in the form $AX=B$, let a \textit{pivot state} be a partition of the variables into $m$ \textit{basic variables} and $n-m$ \textit{non-basic variables} so we can express the constraints in the form
 \begin{equation}
-A_bX_b + A_nX_n = B
+BX_B + NX_N = b
 \label{tableau1}
 \end{equation}
-where $X_b$ and $X_n$ are the basic and non-basic variables respectively, $A_b$ is the matrix formed from the columns in $A$ that correspond to the basic variables and $A_n$ is the matrix formed from the columns of $A$ that correspond to the non-basic variables. If we now constrain all non-basic variables to zero then we're left with $A_bX_b = B$ but since $A_b$ is an $m \times m$ square matrix then $X_b = A_b^{-1}B$ gives a unique solution, as long as $A_b$ is invertable. If $A_b$ is invertable and $X_b$ has no negative entries then we say that the pivot state is valid. It can be shown that all valid pivot states of equations \ref{Axy} correspond to extreme points\cite{dantzig1955generalized}.
+where $X_B$ and $X_N$ are the basic and non-basic variables respectively, $B$ is the matrix formed from the columns in $A$ that correspond to the basic variables and $N$ is the matrix formed from the columns of $A$ that correspond to the non-basic variables. If we now constrain all non-basic variables to be on one of their bounds (in the case of action variables, this is either 0 or 1) then we're left with $BX_B = b - NX_N$ but since $B$ is an $m \times m$ square matrix then $X_B = B^{-1}b - B^{-1}NX_N$ gives a unique solution, as long as $B$ is invertable. If $B$ is invertable and $X_B$ has no negative entries then we say that the pivot state is valid. It can be shown that all valid pivot states of equations \ref{Axy} correspond to extreme points\cite{dantzig1955generalized}.
 
-This idea leads to a computationally very efficient way of perturbing trajectories. We begin by representing the constraints and the current trajectory in the form of equation \ref{tableau1}. If we multiply any row of $A_b$ by some constant, $c$, then the truth of equation \ref{tableau1} can be maintained by multiplying the same row of $A_n$ and of $B$ by $c$ as well. Similarly if we add one row of $A_b$ to another row, the equations can be maintained by performing the same row operation on $A_n$ and $B$. If the pivot state is valid, then $A_b$ is invertable so we can use Gaussian elimination, by performing a sequence of row additions and multiplications, to transform $A_b$ into a form such that each row and column is zero on all elements except one, which is 1. We'll call this the standard form. Once in this form, if we assume $X_n = 0$ the solution for $X_b$ can be read off directly from $B$.
+ We begin by representing the constraints and the current trajectory in the form of equation \ref{tableau1}. If we multiply any row of $A_b$ by some constant, $c$, then the truth of equation \ref{tableau1} can be maintained by multiplying the same row of $A_n$ and of $B$ by $c$ as well. Similarly if we add one row of $A_b$ to another row, the equations can be maintained by performing the same row operation on $A_n$ and $B$. If the pivot state is valid, then $A_b$ is invertable so we can use Gaussian elimination, by performing a sequence of row additions and multiplications, to transform $A_b$ into a form such that each row and column is zero on all elements except one, which is 1. We'll call this the standard form. Once in this form, if we assume $X_n = 0$ the solution for $X_b$ can be read off directly from $B$.
 
 Given a valid pivot state in standard form, a perturbed valid solution can be generated by choosing a column, $C$, of $A_n$, with at least one positive-valued row, and choosing from among those rows the one, $C_i$, that minimises $B_i/C_i$. We then make the variable corresponding to column $C$ a basic variable and make the basic variable corresponding to row $i$ of $A_b$ non-basic by swapping column $C$ with the column on row $i$ of $A_b$ that has value 1. $A_b$ is now not in standard form as column $C$ will, in general, have more than one non-zero value so we perform Gaussian elimination (row additions and multiplications) to return it to standard form. This perturbation is known as a \textit{pivot} operation and is the same method as employed in the Simplex algorithm\cite{dantzig1955generalized}\cite{vanderbei2015linear}. This is exactly what we need for our proposal function since it efficiently generates a new valid trajectory from a current one.
 

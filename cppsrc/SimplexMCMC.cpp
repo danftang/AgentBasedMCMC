@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <cmath>
 
+
+
 // Initial basis of 'prob' should contain no fixed vars and all remaining auxiliary vars
 // use
 SimplexMCMC::SimplexMCMC(glp::Problem &prob, const std::function<double (const std::vector<double> &)> &logProb) :
@@ -104,21 +106,23 @@ double SimplexMCMC::lnFractionalPenalty() {
 // returns the next sample
 void SimplexMCMC::nextSample() {
     int infeasibleCount = 0;
+    bool sampleIsFeasible;
     do {
-        if(infeasibleCount%1000 == 1) std::cout << infeasibleCount << " Infeasibility = " << infeasibility() << std::endl;
         ProposalPivot proposalPivot = proposePivot();
-        processProposal(proposalPivot);
-        ++infeasibleCount;
-    } while(!solutionIsPrimaryFeasible());
-    ++nSamples;
-//    if(probability.logFractionalPenalty != 0.0) {
-//        ++fractionalRunLength;
-//        std::cout << "${nSamples} In fractional state. Fractional penalty ${state.logFractionalPenalty}";
-//    }
+        bool accepted = processProposal(proposalPivot);
+        sampleIsFeasible = solutionIsPrimaryFeasible();
+        if(sampleIsFeasible) {
+            feasibleStatistics.update(accepted, proposalPivot);
+        } else {
+            infeasibleStatistics.update(accepted, proposalPivot);
+            if(infeasibleCount%1000 == 0) std::cout << infeasibleCount << " Infeasibility = " << infeasibility() << std::endl;
+            ++infeasibleCount;
+        }
+    } while(!sampleIsFeasible);
 }
 
 
-void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
+bool SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
 //    std::cout << "Processing proposal " << proposalPivot.i << ", " << proposalPivot.j
 //              << " leavingVarToUpperBound = " << proposalPivot.leavingVarToUpperBound
 //              << " deltaj = " << proposalPivot.deltaj
@@ -159,10 +163,9 @@ void SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
             }
         }
         pivot(proposalPivot);
-    } else {
-        // reject
-//        std::cout << "Rejecting" << std::endl;
+        return true;
     }
+    return false; // reject
 }
 
 //double SimplexMCMC::logTransitionProb(const Phase2Pivot &proposal) {
@@ -229,6 +232,7 @@ void SimplexMCMC::toCanonicalState() {
     } while(pivoted);
 }
 
+
 // returns the set of nonBasic variables (by j-value) that correspond
 // to auxiliary variables in the original problem.
 std::vector<int> SimplexMCMC::auxiliaries() {
@@ -238,6 +242,7 @@ std::vector<int> SimplexMCMC::auxiliaries() {
     }
     return nbAux;
 }
+
 
 int SimplexMCMC::countFractionalPivCols() {
     int nFractionals = 0;
@@ -258,6 +263,7 @@ int SimplexMCMC::infeasibilityCount() {
     }
     return infeasibility;
 }
+
 
 double SimplexMCMC::infeasibility() {
     double dist = 0.0;
@@ -286,6 +292,7 @@ void SimplexMCMC::updateLPSolution(const ProposalPivot &pivot) {
     if(kCol > nConstraints) lpSolution[kCol - nConstraints] += pivot.deltaj;
 }
 
+
 void SimplexMCMC::revertLPSolution(const ProposalPivot &pivot) {
     int nConstraints = originalProblem.nConstraints();
     int kCol = kSimTokProb[head[nBasic() + pivot.j]];
@@ -296,6 +303,7 @@ void SimplexMCMC::revertLPSolution(const ProposalPivot &pivot) {
     }
 }
 
+
 bool SimplexMCMC::solutionIsPrimaryFeasible() {
     for(int i=1; i<nBasic(); ++i) {
         int k = head[i];
@@ -304,10 +312,36 @@ bool SimplexMCMC::solutionIsPrimaryFeasible() {
     return true;
 }
 
+
 glp::Problem &SimplexMCMC::initialiseProblem(glp::Problem &lp) {
     lp.advBasis();
     lp.warmUp();
     return(lp);
+}
+
+
+void SimplexMCMC::SampleStatistics::update(bool accepted, const ProposalPivot &proposal) {
+    ++nSamples;
+    if(accepted) {
+        ++nAccepted;
+        if(fabs(proposal.deltaj) < tol) {
+            if(proposal.i < 1) ++nNulls;
+        } else {
+            ++nNonDegenerate;
+            if(proposal.i < 1) ++nSwaps;
+        }
+    }
+}
+
+
+std::ostream &operator <<(std::ostream &out, const SimplexMCMC::SampleStatistics &stats) {
+    out << "Total samples           " << stats.nSamples << std::endl;
+    out << "accepted/total          " << stats.nAccepted*100.0/stats.nSamples << "%" << std::endl;
+    out << "non-degenerate/accepted " << stats.nNonDegenerate*100.0/stats.nAccepted << "%" << std::endl;
+    out << "pivots/non-degenerate   " << (stats.nNonDegenerate-stats.nSwaps)*100.0/stats.nNonDegenerate << "%" << std::endl;
+    out << "swaps/non-degenerate    " << stats.nSwaps*100.0/stats.nNonDegenerate << "%" << std::endl;
+    out << "nulls/degenerate        " << stats.nNulls*100.0/(stats.nAccepted-stats.nNonDegenerate) << "%" << std::endl;
+    return out;
 }
 
 

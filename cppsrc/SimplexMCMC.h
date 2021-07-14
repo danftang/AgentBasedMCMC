@@ -18,7 +18,17 @@ public:
     static constexpr double fractionalK = 0.1;
 //    static constexpr double tol = 1e-8;
 
-//    using glp::Simplex::pivot;
+    class SampleStatistics {
+    public:
+        int nSamples = 0;
+        int nAccepted = 0;
+        int nNonDegenerate = 0;
+        int nSwaps = 0;
+        int nNulls = 0;
+
+        void update(bool accepted, const ProposalPivot &proposal);
+        friend std::ostream &operator <<(std::ostream &out, const SampleStatistics &stats);
+    };
 
     std::vector<int>    colLastNonZero;             // row-index of the last non-zero entry in this col
     std::vector<int>    rowLatestCompletionPivot; // k-col-index of the earliest col of the final basis that can pivot on this row
@@ -26,9 +36,10 @@ public:
     std::vector<double> lnRowPivotCount;            // ln of number of possible choices of next in-sequence var of degenerate state
    // std::set<int>       finalBasis;                 // the final degenerate state (ordered)
 //    std::map<int,int>   orderedBasis;               // the current basis ordered map from k-index to i-index
-    int nSamples = 0;
-    int nRejections = 0;
-    int fractionalRunLength = 0;
+
+    SampleStatistics feasibleStatistics;
+    SampleStatistics infeasibleStatistics;
+
     std::function<double (const std::vector<double> &)> logProbFunc;
 
 //    BasisProbability probability;
@@ -63,7 +74,7 @@ public:
     int infeasibilityCount();
 
 protected:
-    void processProposal(const ProposalPivot &proposal);
+    bool processProposal(const ProposalPivot &proposal);
     ProposalPivot proposePivot();
     int proposeColumn();
 
