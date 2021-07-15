@@ -115,7 +115,7 @@ void SimplexMCMC::nextSample() {
             feasibleStatistics.update(accepted, proposalPivot);
         } else {
             infeasibleStatistics.update(accepted, proposalPivot);
-            if(infeasibleCount%1000 == 0) std::cout << infeasibleCount << " Infeasibility = " << infeasibility() << std::endl;
+//            if(infeasibleCount%1000 == 0) std::cout << infeasibleCount << " Infeasibility = " << infeasibility() << std::endl;
             ++infeasibleCount;
         }
     } while(!sampleIsFeasible);
@@ -150,18 +150,18 @@ bool SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
 //        std::cout << "Accepting deltaj = " << proposalPivot.deltaj << std::endl;
         assert(proposalPivot.i == -1 || (kSimTokProb[head[proposalPivot.i]] > originalProblem.nConstraints()));
         assert(proposalPivot.i == -1 || proposalPivot.col[proposalPivot.i] > 0.9 || proposalPivot.col[proposalPivot.i] < -0.9);
-        if(proposalPivot.deltaj != 0.0) {
-            if(proposalPivot.i > 0) {
-                std::cout << "Pivoting " << proposalPivot.deltaj << " " << proposalPivot.col[proposalPivot.i] << " "
-                          << proposalPivot.i << " / " << nBasic() << " " << proposalPivot.j << " / " << nNonBasic()
-                          << std::endl;
-            } else {
-                std::cout << "Swapping " << proposalPivot.deltaj << " "
-                          << proposalPivot.j << " / " << nNonBasic()
-                          << std::endl;
-
-            }
-        }
+//        if(proposalPivot.deltaj != 0.0) {
+//            if(proposalPivot.i > 0) {
+//                std::cout << "Pivoting " << proposalPivot.deltaj << " " << proposalPivot.col[proposalPivot.i] << " "
+//                          << proposalPivot.i << " / " << nBasic() << " " << proposalPivot.j << " / " << nNonBasic()
+//                          << std::endl;
+//            } else {
+//                std::cout << "Swapping " << proposalPivot.deltaj << " "
+//                          << proposalPivot.j << " / " << nNonBasic()
+//                          << std::endl;
+//
+//            }
+//        }
         pivot(proposalPivot);
         return true;
     }

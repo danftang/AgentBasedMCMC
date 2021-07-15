@@ -8,16 +8,63 @@
 #include "ABMProblem.h"
 #include "SimplexMCMC.h"
 #include "agents/PredPreyAgent.h"
+#include "PoissonState.h"
+#include "AssimilationWindow.h"
+
+void Experiments::PredPreyAssimilation() {
+    ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
+    PredPreyAgent::GRIDSIZE = 8;
+    constexpr int windowSize = 8;
+    constexpr int nWindows = 2;
+    constexpr double pPredator = 0.16;//0.08;          // Poisson prob of predator in each gridsquare at t=0
+    constexpr double pPrey = 0.32;//2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
+    constexpr double pMakeObservation = 0.8;//0.04;    // prob of making an observation of each gridsquare at each timestep
+    constexpr int nSamplesPerWindow = 100000; //250000;
+//    constexpr int plotTimestep = nTimesteps-1;
+
+    ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
+    PoissonState<PredPreyAgent> poissonModelState([](const PredPreyAgent &agent) {
+//        return agent.type()==PredPreyAgent::PREDATOR?pPredator:pPrey;
+        return agent.type()==PredPreyAgent::PREDATOR?(pPredator*(agent.xPosition() < PredPreyAgent::GRIDSIZE/2)):(pPrey*(agent.xPosition() >= PredPreyAgent::GRIDSIZE/2));
+    });
+
+    ModelState<PredPreyAgent> realState = poissonModelState.sample();
+
+    Gnuplot gp0;
+    plotHeatMap(gp0, poissonModelState, realState);
+
+    for(int window=0; window<nWindows; ++window) {
+        std::cout << "Real state: " << realState << std::endl;
+        std::cout << "Poission state: " << poissonModelState << std::endl;
+        auto [observations, realTrajectory] =
+        Observation<PredPreyAgent>::generateObservations(realState, windowSize, pMakeObservation);
+//        std::cout << "Real trajectory: " << glp::SparseVec(realTrajectory) << std::endl;
+//        std::cout << "Observations: " << observations << std::endl;
+
+        poissonModelState = AssimilationWindow<PredPreyAgent>::assimilate(
+                windowSize,
+                observations,
+                poissonModelState,
+                realTrajectory,
+                nSamplesPerWindow
+                );
+        realState = realTrajectory(windowSize);
+        Gnuplot gp;
+        plotHeatMap(gp, poissonModelState, realState);
+    }
+
+}
+
 
 void Experiments::PredPreyExpt() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
     PredPreyAgent::GRIDSIZE = 8;
-    constexpr int nTimesteps = 32;
-    constexpr double pPredator = 0.04;//0.08;          // Poisson prob of predator in each gridsquare at t=0
-    constexpr double pPrey = 4.0*pPredator;//2.0*pPredator;     // Poisson prob of prey in each gridsquare at t=0
+    constexpr int nTimesteps = 4;
+    constexpr double pPredator = 0.08;          // Poisson prob of predator in each gridsquare at t=0
+    constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
     constexpr double pMakeObservation = 0.02;    // prob of making an observation of each gridsquare at each timestep
-    constexpr int nSamples = 1000; //250000;
-    constexpr int plotTimestep = 0; //nTimesteps-1;
+    constexpr int nSamples = 10000; //250000;
+    constexpr int plotTimestep = nTimesteps-1;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
     ModelState<PredPreyAgent> startState = ModelState<PredPreyAgent>::randomPoissonState([](const PredPreyAgent &agent) {
@@ -93,7 +140,8 @@ void Experiments::PredPreyExpt() {
             assert(abm.isValidSolution(mcmc.X()));
 //            std::cout << "Sample " << n << " : " << glp::SparseVec(mcmc.X()) << std::endl;
         }
-        meanState += (reinterpret_cast<const Trajectory<PredPreyAgent> *>(&mcmc.X()))->operator()(plotTimestep); // TODO: this is ugly
+        const Trajectory<PredPreyAgent> &trajectory = reinterpret_cast<const Trajectory<PredPreyAgent> &>(mcmc.X());
+        meanState += trajectory(plotTimestep);
     }
 
 
@@ -203,24 +251,38 @@ Gnuplot &Experiments::plotHeatMap(Gnuplot &gp, const ModelState<PredPreyAgent> &
     std::vector<std::vector<HeatRecord>> heatData;
     std::vector<std::tuple<double,double,double>> pointData;
 
-    for(auto [agent, occupancy] : realState) {
-        pointData.emplace_back(agent.xPosition(), agent.yPosition(), agent.type()==PredPreyAgent::PREY?1:2);
+//    for(auto [agent, occupancy] : realState) {
+//        pointData.emplace_back(agent.xPosition(), agent.yPosition(), agent.type()==PredPreyAgent::PREY?1:2);
+//    }
+
+    for(int x=0; x<PredPreyAgent::GRIDSIZE; ++x) {
+        for(int y=0; y<PredPreyAgent::GRIDSIZE; ++y) {
+            int colour = 2*(realState[PredPreyAgent(x,y,PredPreyAgent::PREDATOR)]>0.0)
+                    + (realState[PredPreyAgent(x,y,PredPreyAgent::PREY)]>0.0);
+            if(colour != 0)
+                pointData.emplace_back(x, y, colour);
+        }
     }
 
-    double predMaxOccupancy = 0.0;
-    double preyMaxOccupancy = 0.0;
+
+//    double predMaxOccupancy = 0.0;
+//    double preyMaxOccupancy = 0.0;
+//    for(auto [agent, occupancy] : aggregateState) {
+//        if(agent.type() == PredPreyAgent::PREDATOR) {
+//            if(occupancy > predMaxOccupancy) predMaxOccupancy = occupancy;
+//        } else {
+//            if(occupancy > preyMaxOccupancy) preyMaxOccupancy = occupancy;
+//        }
+//    }
+    double maxOccupancy = 0.0;
     for(auto [agent, occupancy] : aggregateState) {
-        if(agent.type() == PredPreyAgent::PREDATOR) {
-            if(occupancy > predMaxOccupancy) predMaxOccupancy = occupancy;
-        } else {
-            if(occupancy > preyMaxOccupancy) preyMaxOccupancy = occupancy;
-        }
+        if(occupancy > maxOccupancy) maxOccupancy = occupancy;
     }
 
 //    double predScale = 200.0/log(predMaxOccupancy + 1.0);
 //    double preyScale = 200.0/log(preyMaxOccupancy + 1.0);
-    double predScale = 224.0/predMaxOccupancy;
-    double preyScale = 224.0/preyMaxOccupancy;
+    double predScale = 200.0/maxOccupancy; // predMaxOccupancy;
+    double preyScale = 200.0/maxOccupancy; // preyMaxOccupancy;
     for(int x=0; x<PredPreyAgent::GRIDSIZE; ++x) {
         std::vector<HeatRecord> &record = heatData.emplace_back();
         for(int y=0; y<PredPreyAgent::GRIDSIZE; ++y) {
@@ -233,6 +295,7 @@ Gnuplot &Experiments::plotHeatMap(Gnuplot &gp, const ModelState<PredPreyAgent> &
 
     gp << "set linetype 1 lc 'red'\n";
     gp << "set linetype 2 lc 'blue'\n";
+    gp << "set linetype 3 lc 'magenta'\n";
     gp << "plot [-0.5:" << PredPreyAgent::GRIDSIZE-0.5 << "][-0.5:" << PredPreyAgent::GRIDSIZE-0.5 << "] ";
     gp << "'-' with rgbimage notitle, ";
     gp << "'-' with points pointtype 5 pointsize 0.5 lc variable notitle\n";

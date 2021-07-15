@@ -15,9 +15,10 @@ public:
 
     Event(int eventId): X(eventId) {}
 
-    int time() const { return (id-1)/(AGENT::domainSize()*AGENT::actDomainSize()); }
-    AGENT agent() const { return ((id-1)%(AGENT::domainSize()*AGENT::actDomainSize()))/AGENT::actDomainSize(); }
+    int time() const        { return (id-1)/(AGENT::domainSize()*AGENT::actDomainSize()); }
+    AGENT agent() const     { return ((id-1)%(AGENT::domainSize()*AGENT::actDomainSize()))/AGENT::actDomainSize(); }
     typename AGENT::Act act() const { return (id-1)%AGENT::actDomainSize(); }
+    std::vector<AGENT> consequences() const { return agent().consequences(act()); }
 
     friend std::ostream &operator <<(std::ostream &out, const Event &event) {
         out << "[" << event.time() << ", " << event.agent() << " -> " << event.act() << "]";

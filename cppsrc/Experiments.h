@@ -21,6 +21,8 @@ public:
 
     static Gnuplot &plotHeatMap(Gnuplot &gp, const ModelState<PredPreyAgent> &aggregateState, const ModelState<PredPreyAgent> &realState);
     static Gnuplot &plotAgents(Gnuplot &gp, const ModelState<PredPreyAgent> &state);
+
+    static void PredPreyAssimilation();
 };
 
 

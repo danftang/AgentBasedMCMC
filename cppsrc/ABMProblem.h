@@ -74,6 +74,7 @@ public:
         }
 
 //        std::cout << " final logprob = " << logP << std::endl;
+//        logP += logPrior(X);
         logP += logPrior(reinterpret_cast<const Trajectory<AGENT> &>(X));
         return logP;
     }

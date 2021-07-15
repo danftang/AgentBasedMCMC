@@ -15,18 +15,20 @@ class Trajectory: public std::vector<double> {
 public:
 //    static constexpr double tol = SimplexMCMC::tol;
 
-    Trajectory(int nTimesteps): std::vector<double>(nTimesteps*AGENT::domainSize()*AGENT::actDomainSize()+1) { }
-    Trajectory(std::vector<double> &&rvalue): std::vector<double>(std::move(rvalue)) { }
-    Trajectory(const std::vector<double> &lvalue): std::vector<double>(lvalue) { }
+    explicit Trajectory(int nTimesteps): std::vector<double>(nTimesteps*AGENT::domainSize()*AGENT::actDomainSize()+1) { }
+    explicit Trajectory(std::vector<double> &&rvalue): std::vector<double>(std::move(rvalue)) { }
+    explicit Trajectory(const std::vector<double> &lvalue): std::vector<double>(lvalue) { }
 
     // event count
     double operator()(int time, const AGENT &agent, const typename AGENT::Act &act) const {
         return (*this)[Event(time,agent,act)];
     }
 
-    // occupation number
+    // occupation number of an agent state at a particular time
+    // time must be between 0 and nTimesteps-1 (final state not implemented at present)
     double operator()(int time, const AGENT &agent) const {
         int beginIndex = Event(time,agent,0);
+        assert(beginIndex < size()); // TODO: Implement final state occupation numbers
         int endIndex = beginIndex + AGENT::actDomainSize();
         double occupation = 0.0;
         int eventId;
@@ -36,16 +38,30 @@ public:
         return occupation;
     }
 
-    // time slice
+    // time slice for time is in [0...nTimesteps]
+    // i.e. final state is implemented
     ModelState<AGENT> operator()(int time) const {
 //        glp::SparseVec sparseThis(*this);
 //        std::cout << "Getting timeslice from trajectory:" << glp::SparseVec(*this) << std::endl;
         ModelState<AGENT> timeslice;
         int beginIndex = Event(time,AGENT(0),0);
-        int endIndex = beginIndex + AGENT::actDomainSize()*AGENT::domainSize();
-        for(int eventId=beginIndex; eventId<endIndex; ++eventId) {
-            if(double occupation = (*this)[eventId]; fabs(occupation) > tol)
-                timeslice[Event<AGENT>(eventId).agent()] += occupation;
+        if(beginIndex >= size()) { // must be final timestep: use act consequence count
+            beginIndex = Event(time-1,AGENT(0),0);
+            assert(beginIndex < size()); // previous timestep must be in-range
+            int endIndex = beginIndex + AGENT::actDomainSize() * AGENT::domainSize();
+            for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
+                if (double occupation = (*this)[eventId]; fabs(occupation) > tol) {
+                    for(const AGENT &consequence : Event<AGENT>(eventId).consequences()) {
+                        timeslice[consequence] += occupation;
+                    }
+                }
+            }
+        } else {
+            int endIndex = beginIndex + AGENT::actDomainSize() * AGENT::domainSize();
+            for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
+                if (double occupation = (*this)[eventId]; fabs(occupation) > tol)
+                    timeslice[Event<AGENT>(eventId).agent()] += occupation;
+            }
         }
         return timeslice;
     }
