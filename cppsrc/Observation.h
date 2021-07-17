@@ -61,20 +61,20 @@ public:
         return out;
     }
 
-    static std::pair<std::vector<Observation<AGENT>>,Trajectory<AGENT>> generateObservations(const ModelState<AGENT> &startState, int nTimesteps, double pMakeObservation);
+    static std::pair<std::vector<Observation<AGENT>>,Trajectory<AGENT>> generateObservations(const ModelState<AGENT> &startState, int nTimesteps, double pMakeObservation, double pObserveIfPresent);
 };
 
 
 template<typename AGENT>
 std::pair<std::vector<Observation<AGENT>>,Trajectory<AGENT>>
-Observation<AGENT>::generateObservations(const ModelState<AGENT> &startState, int nTimesteps, double pMakeObservation) {
+Observation<AGENT>::generateObservations(const ModelState<AGENT> &startState, int nTimesteps, double pMakeObservation, double pObserveIfPresent) {
     Trajectory<AGENT> trajectory = Trajectory<AGENT>::run(startState, nTimesteps);
     std::vector<Observation<AGENT>> observations;
     observations.reserve(nTimesteps * AGENT::domainSize() * pMakeObservation * 1.5);
     for (int t=0; t<nTimesteps;++t) {
         for (int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
             if (Random::nextDouble() < pMakeObservation) {
-                observations.push_back(Observation(t,AGENT(agentId), 0.9, trajectory));
+                observations.push_back(Observation(t,AGENT(agentId), pObserveIfPresent, trajectory));
             }
         }
     }

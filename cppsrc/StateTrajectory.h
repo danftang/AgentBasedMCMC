@@ -21,17 +21,17 @@ public:
 
 //    static constexpr double tol = SimplexMCMC::tol;
 
-    StateTrajectory(const glp::SparseVec &actTrajectory) {
-        for(int i=1; i <= actTrajectory.sparseSize(); ++i) {
-            auto event = Event<AGENT>(actTrajectory.indices[i]);
-            if(event.time() >= this->size()) this->resize(event.time()+1);
-            (*this)[event.time()][event.agent()] += actTrajectory.values[i];
-        }
-    }
+//    StateTrajectory(const glp::SparseVec &actTrajectory) {
+//        for(int i=1; i <= actTrajectory.sparseSize(); ++i) {
+//            auto event = Event<AGENT>(actTrajectory.indices[i]);
+//            if(event.time() >= this->size()) this->resize(event.time()+1);
+//            (*this)[event.time()][event.agent()] += actTrajectory.values[i];
+//        }
+//    }
 
 
-    StateTrajectory(const std::vector<double> &eventTrajectory) {
-        this->resize((eventTrajectory.size() - 1) / (AGENT::domainSize() * AGENT::actDomainSize()));
+    StateTrajectory(const std::vector<double> &eventTrajectory):
+    std::vector<ModelState<AGENT>>((eventTrajectory.size() - 1) / (AGENT::domainSize() * AGENT::actDomainSize())) {
         for(int eventId=1; eventId < eventTrajectory.size(); ++eventId) {
             double occupation = fabs(eventTrajectory[eventId]);
             if(occupation > tol) {
@@ -43,7 +43,7 @@ public:
 
 
     double operator [](const State<AGENT> &agentState) const {
-        if(agentState.time >= this->size()) return 0;
+        if(agentState.time >= this->size()) return 0.0;
         return (*this)[agentState.time][agentState.agent];
     }
 

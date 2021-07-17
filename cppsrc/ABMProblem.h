@@ -32,7 +32,7 @@ public:
         addContinuityConstraints();
         addInteractionConstraints();
         addActFermionicConstraints();
-        addObservations(observations);
+        addObservations(this->observations);
     }
 
 //    double logProb(const glp::SparseVec & X) {
@@ -60,7 +60,7 @@ public:
         // multiply the prob by !m since the m agents can be assigned to m acts in
         // !m ways.
         for(const ModelState<AGENT> &step: stateTrajectory) {
-            for(auto [agentState, occupation]: step) {
+            for(double occupation: step) {
                 if(fabs(occupation) > 1.0 + tol) {
                     logP += lgamma(fabs(occupation) + 1.0);
                 }
@@ -69,7 +69,7 @@ public:
 
 //        std::cout << "act logprob = " << logP << std::endl;
 
-        for(const auto &observation: observations) {
+        for(const Observation<AGENT> &observation: observations) {
             logP += observation.logLikelihood(stateTrajectory, log(infeasibilityPenalty));
         }
 

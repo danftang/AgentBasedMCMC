@@ -94,17 +94,18 @@ Trajectory<AGENT> Trajectory<AGENT>::run(const ModelState<AGENT> &startState, in
     ModelState<AGENT> t1State;
     Trajectory<AGENT> trajectory(nTimesteps);
     for(int t=0; t<nTimesteps; ++t) {
-        for(const auto &[agent, occupation]: t0State) {
+        for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
+            AGENT agent(agentId);
             std::vector<double> actPMF = agent.timestep(t0State, 0.0);
             assert(occupation <= actPMF.size());
-            for(int nthAgent=0; nthAgent < occupation; ++nthAgent) {
+            for(int nthAgent=0; nthAgent < t0State[agentId]; ++nthAgent) {
                 typename AGENT::Act act = Random::chooseFromPMF(actPMF);
                 trajectory[Event(t,agent,act)] = 1.0;
                 t1State += agent.consequences(act);
                 actPMF[act] = 0.0;
             }
         }
-        t0State.clear();
+        t0State.setToZero();
         t0State.swap(t1State);
     }
     return trajectory;

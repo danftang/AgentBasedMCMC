@@ -37,8 +37,8 @@ public:
         return *this;
     }
 
-    double lambda(const AGENT &agent) const {
-        return ((*this)[agent]+0.5)/nSamples;
+    double lambda(int agentId) const {
+        return ((*this)[agentId]+0.5)/nSamples;
     }
 
 
@@ -51,9 +51,9 @@ public:
 template<typename AGENT>
 double PoissonState<AGENT>::logProb(const ModelState<AGENT> &instance) const {
     double logP = 0.0;
-    for(auto [agent, occupation]: instance) {
-        double k = fabs(occupation);
-        double l = lambda(agent);
+    for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+        double k = fabs(instance[agentId]);
+        double l = lambda(agentId);
         logP += k*log(l) - l - lgamma(k+1); // log of Poisson
     }
     return logP;
