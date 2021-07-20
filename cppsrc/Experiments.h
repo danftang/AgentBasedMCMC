@@ -9,6 +9,7 @@
 #include "gnuplot-iostream/gnuplot-iostream.h"
 #include "StateTrajectory.h"
 #include "agents/PredPreyAgent.h"
+#include "PoissonState.h"
 
 class Experiments {
 public:
@@ -19,10 +20,12 @@ public:
 
     static double nullPMF(const std::vector<double> &X) { return 0.0; }
 
-    static Gnuplot &plotHeatMap(Gnuplot &gp, const ModelState<PredPreyAgent> &aggregateState, const ModelState<PredPreyAgent> &realState);
+    static Gnuplot &plotHeatMap(Gnuplot &gp, const PoissonState<PredPreyAgent> &aggregateState, const ModelState<PredPreyAgent> &realState);
     static Gnuplot &plotAgents(Gnuplot &gp, const ModelState<PredPreyAgent> &state);
 
     static void PredPreyAssimilation();
+
+    static std::vector<double> informationIncrease(int argc, char **argv);
 };
 
 

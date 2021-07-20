@@ -9,9 +9,9 @@
 
 using glp::X;
 
+int main(int argc, char *argv[]) {
 
-
-int main() {
+//    std::cout << Experiments::informationIncrease(argc, argv) << std::endl;
 
     Experiments::PredPreyAssimilation();
     //    Experiments::GnuplotTest();

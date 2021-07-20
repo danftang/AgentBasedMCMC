@@ -19,13 +19,11 @@ template<typename AGENT>
 class Observation {
 public:
     State<AGENT> agentState;
-//    int time;
-//    AGENT agent;
     int numberObserved;
     double pObserveIfPresent;
 
-    Observation(int time, const AGENT &agent, int numberObserved, const double &pObserveIfPresent):
-            agentState(time,agent),
+    Observation(const State<AGENT> &agentState, int numberObserved, double pObserveIfPresent):
+            agentState(agentState),
             numberObserved(numberObserved),
             pObserveIfPresent(pObserveIfPresent) {}
 
@@ -35,6 +33,13 @@ public:
             pObserveIfPresent(pObserveIfPresent)
     {
         numberObserved = Random::nextBinomial(trajectory(time,agent), pObserveIfPresent);
+    }
+
+    Observation(int time, const AGENT &agent, double pObserveIfPresent, int realOccupationNumber):
+            agentState(time,agent),
+            pObserveIfPresent(pObserveIfPresent)
+    {
+        numberObserved = Random::nextBinomial(realOccupationNumber, pObserveIfPresent);
     }
 
 
@@ -61,27 +66,43 @@ public:
         return out;
     }
 
-    static std::pair<std::vector<Observation<AGENT>>,Trajectory<AGENT>> generateObservations(const ModelState<AGENT> &startState, int nTimesteps, double pMakeObservation, double pObserveIfPresent);
-};
-
-
-template<typename AGENT>
-std::pair<std::vector<Observation<AGENT>>,Trajectory<AGENT>>
-Observation<AGENT>::generateObservations(const ModelState<AGENT> &startState, int nTimesteps, double pMakeObservation, double pObserveIfPresent) {
-    Trajectory<AGENT> trajectory = Trajectory<AGENT>::run(startState, nTimesteps);
-    std::vector<Observation<AGENT>> observations;
-    observations.reserve(nTimesteps * AGENT::domainSize() * pMakeObservation * 1.5);
-    for (int t=0; t<nTimesteps;++t) {
-        for (int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
-            if (Random::nextDouble() < pMakeObservation) {
-                observations.push_back(Observation(t,AGENT(agentId), pObserveIfPresent, trajectory));
+    static std::pair<std::vector<Observation<AGENT>>,Trajectory<AGENT>>
+    generateObservations(const ModelState<AGENT> &startState, int nTimesteps, double pMakeObservation, double pObserveIfPresent) {
+        Trajectory<AGENT> trajectory(nTimesteps, startState);
+        std::vector<Observation<AGENT>> observations;
+        observations.reserve((trajectory.size()-1) * pMakeObservation * 1.5);
+        for (int t=0; t<nTimesteps;++t) {
+            for (int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+                if (Random::nextDouble() < pMakeObservation) {
+                    AGENT agent(agentId);
+                    observations.push_back(Observation(t,agent, pObserveIfPresent, trajectory(t,agent)));
+                }
             }
         }
-    }
 //        checkTrajectorySatisfiesObervations(trajectory, observations)
-    return std::pair(observations, trajectory);
-}
+        return std::pair(observations, trajectory);
+    }
 
+
+    static std::vector<Observation<AGENT>>
+    generateObservations(const Trajectory<AGENT> &realTrajectory, double pMakeObservation, double pObserveIfPresent) {
+        int nTimesteps = realTrajectory.nTimesteps();
+        std::vector<Observation<AGENT>> observations;
+        observations.reserve((realTrajectory.size()-1)*pMakeObservation*1.5);
+        for (int t=0; t<nTimesteps;++t) {
+            for (int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+                if (Random::nextDouble() < pMakeObservation) {
+                    AGENT agent(agentId);
+                    observations.push_back(Observation(t,agent, pObserveIfPresent, realTrajectory(t,agent)));
+                }
+            }
+        }
+//        checkTrajectorySatisfiesObervations(trajectory, observations)
+        return observations;
+    }
+
+
+};
 
 
 #endif //GLPKTEST_OBSERVATION_H

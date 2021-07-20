@@ -10,17 +10,63 @@
 #include "agents/PredPreyAgent.h"
 #include "PoissonState.h"
 #include "DataAssimilation.h"
+#include "debug.h"
+
+std::vector<double> Experiments::informationIncrease(int argc, char *argv[]) {
+    std::vector<double> informationGain;
+    if(argc != 9) {
+        std::cout << "Wrong number of arguments. Should be <GRIDSIZE> <nTimestepsPerWindow> <nWindows> <pPredator> <pPrey> <pMakeObservation> <pObserveIfPresent> <nSamplesPerWindow>" << std::endl;
+    } else {
+        glp_term_out(GLP_OFF); // turn off GLPK terminal output
+        PredPreyAgent::GRIDSIZE = atoi(argv[1]);
+        int windowSize = atoi(argv[2]);
+        int nWindows = atoi(argv[3]);
+        double pPredator = atof(argv[4]);//0.08;          // Poisson prob of predator in each gridsquare at t=0
+        double pPrey = atof(argv[5]);//2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
+        double pMakeObservation = atof(
+                argv[6]);//0.04;    // prob of making an observation of each gridsquare at each timestep
+        double pObserveIfPresent = atof(argv[7]); // 0.9;
+        int nSamplesPerWindow = atoi(argv[8]); //250000;
+
+
+        PoissonState<PredPreyAgent> startState([&](const PredPreyAgent &agent) {
+            return agent.type() == PredPreyAgent::PREDATOR ? (pPredator *
+                                                              (agent.xPosition() < PredPreyAgent::GRIDSIZE / 2)) : (
+                           pPrey * (agent.xPosition() >= PredPreyAgent::GRIDSIZE / 2));
+        });
+
+        DataAssimilation<PredPreyAgent> assimilation(nWindows, windowSize, startState, pMakeObservation, pObserveIfPresent, nSamplesPerWindow);
+
+
+//        std::vector<PoissonState<PredPreyAgent>> priors = DataAssimilation<PredPreyAgent>::prior(nWindows, windowSize,
+//                                                                                                nSamplesPerWindow,
+//                                                                                                startState);
+//
+//        DataAssimilation<PredPreyAgent>::runAndObserve(nWindows, windowSize, pMakeObservation, pObserveIfPresent, startState.sample());
+//
+//        std::vector<PoissonState<PredPreyAgent>> posterior = DataAssimilation<PredPreyAgent>::posterior(nWindows,
+//                                                                                                        windowSize,
+//                                                                                                        nSamplesPerWindow,
+//                                                                                                        startState);
+//
+//        for (int t = 0; t < nWindows; ++t) {
+//            informationGain.push_back(DataAssimilation<PredPreyAgent>::informationGain());
+//        }
+    }
+    return informationGain;
+}
+
 
 void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
     PredPreyAgent::GRIDSIZE = 12;
-    constexpr int windowSize = 8;
+    constexpr int windowSize = 6;
     constexpr int nWindows = 2;
     constexpr double pPredator = 0.16;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 0.32;//2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
     constexpr double pMakeObservation = 0.25;//0.04;    // prob of making an observation of each gridsquare at each timestep
     constexpr double pObserveIfPresent = 0.95; // 0.9;
-    constexpr int nSamplesPerWindow = 100000; //250000;
+    constexpr int nSamplesPerWindow = 50000; //250000;
 //    constexpr int plotTimestep = nTimesteps-1;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
@@ -29,30 +75,32 @@ void Experiments::PredPreyAssimilation() {
         return agent.type()==PredPreyAgent::PREDATOR?(pPredator*(agent.xPosition() < PredPreyAgent::GRIDSIZE/2)):(pPrey*(agent.xPosition() >= PredPreyAgent::GRIDSIZE/2));
     });
 
-    ModelState<PredPreyAgent> realState = poissonModelState.sample();
+    DataAssimilation<PredPreyAgent> assimilation(nWindows, windowSize, poissonModelState, pMakeObservation, pObserveIfPresent, nSamplesPerWindow);
 
-    Gnuplot gp0;
-    plotHeatMap(gp0, poissonModelState, realState);
 
-    for(int window=0; window<nWindows; ++window) {
-        std::cout << "Real state: " << realState << std::endl;
-        std::cout << "Poission state: " << poissonModelState << std::endl;
-        auto [observations, realTrajectory] =
-        Observation<PredPreyAgent>::generateObservations(realState, windowSize, pMakeObservation, pObserveIfPresent);
-//        std::cout << "Real trajectory: " << glp::SparseVec(realTrajectory) << std::endl;
-        std::cout << "Observations: " << observations << std::endl;
-
-        poissonModelState = DataAssimilation<PredPreyAgent>::assimilateWindow(
-                windowSize,
-                observations,
-                poissonModelState,
-                realTrajectory,
-                nSamplesPerWindow
-        );
-        realState = realTrajectory(windowSize);
-        Gnuplot gp;
-        plotHeatMap(gp, poissonModelState, realState);
-    }
+//    ModelState<PredPreyAgent> realState = poissonModelState.sample();
+//
+//    Gnuplot gp0;
+//    plotHeatMap(gp0, poissonModelState, realState);
+//
+//    for(int window=0; window<nWindows; ++window) {
+//        debug(std::cout << "Real state: " << realState << std::endl);
+//        debug(std::cout << "Poission state: " << poissonModelState << std::endl);
+//        auto [observations, realTrajectory] =
+//        Observation<PredPreyAgent>::generateObservations(realState, windowSize, pMakeObservation, pObserveIfPresent);
+////        std::cout << "Real trajectory: " << glp::SparseVec(realTrajectory) << std::endl;
+//        debug(std::cout << "Observations: " << observations << std::endl);
+//
+//        poissonModelState = AssimilationWindow<PredPreyAgent>(
+//                windowSize,
+//                observations,
+//                poissonModelState,
+//                nSamplesPerWindow
+//        );
+//        realState = realTrajectory(windowSize);
+//        Gnuplot gp;
+//        plotHeatMap(gp, poissonModelState, realState);
+//    }
 
 }
 
@@ -106,35 +154,15 @@ void Experiments::PredPreyExpt() {
 //    std::cout << "Starting phase 1 in state: " << glp::SparseVec(mcmc.X()) << std::endl;
 //    mcmc.findFeasibleStartPoint();
 
-    ////////////////////////////////////////// DO SANITY CHECKS ////////////////////////////////////////
-    // Check initial basis contains no fixed vars and all auxiliaries are in the basis
-    for(int k=1; k<=mcmc.nVars(); ++k) {
-        if(mcmc.l[k] == mcmc.u[k]) {
-            std::cout << "WARNING: Fixed variable in the Simplex" << k << std::endl;
-            return;
-        }
-        if(mcmc.kSimTokProb[k] > abm.nConstraints() && (mcmc.l[k] != 0.0 || mcmc.u[k] != 1.0 )) {
-            std::cout << "WARNING: non-binary structural var " << k << std::endl;
-            return;
-        }
-    }
-    for(int j=1; j<=mcmc.nNonBasic(); ++j) {
-        int k = mcmc.head[mcmc.nBasic()+j];
-        if(mcmc.kSimTokProb[k] <= abm.nConstraints()) {
-            std::cout << "WARNING: Non-basic auxiliary variable " << j << std::endl;
-            return;
-        }
-        if(mcmc.l[k] == -DBL_MAX || mcmc.u[k] == DBL_MAX) {
-            std::cout << "WARNING: Non-basic variable with infinite bound " << j << std::endl;
-            return;
-        }
-    }
     std::cout << "Starting with initial sample:" << std::endl;
     std::cout << glp::SparseVec(mcmc.X()) << std::endl;
-    assert(abm.isValidSolution(mcmc.X()));
+
+    ////////////////////////////////////////// DO SANITY CHECKS ////////////////////////////////////////
+    assert(mcmc.abmSanityChecks());
+
 
     ////////////////////////////////////////// DO SAMPLING ///////////////////////////////////////////
-    ModelState<PredPreyAgent> meanState;
+    PoissonState<PredPreyAgent> meanState;
     for(int n=0; n<nSamples; ++n) {
         mcmc.nextSample();
         if(nSamples<1000 || n%100 == 1) {
@@ -164,13 +192,7 @@ void Experiments::PredPreyExpt() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Experiments::CatMouseExpt() {
     CatMouseAgent leftCat(CatMouseAgent::Type::CAT, CatMouseAgent::Position::LEFT);
-    auto observations = std::vector(
-            {Observation(
-                    1,
-                    leftCat,
-                    1,
-                    0.95)
-            });
+    auto observations = std::vector({ Observation(State<CatMouseAgent>(1,leftCat), 1, 0.95) });
 
     ABMProblem<CatMouseAgent> abm(2, observations, [](const Trajectory<CatMouseAgent> &trajectory) {
         return 0.0;
@@ -238,16 +260,17 @@ void Experiments::RandomWalk() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-void Experiments::GnuplotTest() {
-    Gnuplot gp; //(stdout);
-    auto state = ModelState<PredPreyAgent>::randomPoissonState([](const PredPreyAgent &agent) {
-        if(agent.type() == PredPreyAgent::PREDATOR) return 0.08;
-        return 0.16;
-    });
-    plotHeatMap(gp, state, state);
-}
+//void Experiments::GnuplotTest() {
+//    Gnuplot gp; //(stdout);
+//    auto state = ModelState<PredPreyAgent>::randomPoissonState([](const PredPreyAgent &agent) {
+//        if(agent.type() == PredPreyAgent::PREDATOR) return 0.08;
+//        return 0.16;
+//    });
+//
+//    plotHeatMap(gp, state, state);
+//}
 
-Gnuplot &Experiments::plotHeatMap(Gnuplot &gp, const ModelState<PredPreyAgent> &aggregateState,
+Gnuplot &Experiments::plotHeatMap(Gnuplot &gp, const PoissonState<PredPreyAgent> &aggregateState,
                                   const ModelState<PredPreyAgent> &realState) {
     typedef std::tuple<double,double,double,double,double> HeatRecord;
     std::vector<std::vector<HeatRecord>> heatData;
@@ -277,7 +300,7 @@ Gnuplot &Experiments::plotHeatMap(Gnuplot &gp, const ModelState<PredPreyAgent> &
 //        }
 //    }
     double maxOccupancy = 0.0;
-    for(double occupancy : aggregateState) {
+    for(double occupancy : aggregateState.stateCounts) {
         if(occupancy > maxOccupancy) maxOccupancy = occupancy;
     }
 //    std::cout << "Max occupancy = " << maxOccupancy << " at " << maxState << std::endl;
@@ -289,8 +312,8 @@ Gnuplot &Experiments::plotHeatMap(Gnuplot &gp, const ModelState<PredPreyAgent> &
     for(int x=0; x<PredPreyAgent::GRIDSIZE; ++x) {
         std::vector<HeatRecord> &record = heatData.emplace_back();
         for(int y=0; y<PredPreyAgent::GRIDSIZE; ++y) {
-            double nPrey = aggregateState[PredPreyAgent(x, y, PredPreyAgent::PREY)];
-            double nPred = aggregateState[PredPreyAgent(x, y, PredPreyAgent::PREDATOR)];
+            double nPrey = aggregateState.stateCounts[PredPreyAgent(x, y, PredPreyAgent::PREY)];
+            double nPred = aggregateState.stateCounts[PredPreyAgent(x, y, PredPreyAgent::PREDATOR)];
 //            record.emplace_back(x, y, log(nPrey + 1.0) * preyScale, 0.0, log(nPred + 1.0) * predScale);
             record.emplace_back(x,y,nPrey*preyScale,0.0,nPred*predScale);
         }
@@ -326,3 +349,4 @@ Gnuplot &Experiments::plotAgents(Gnuplot &gp, const ModelState<PredPreyAgent> &s
     gp.send1d(pointData);
     return gp;
 }
+

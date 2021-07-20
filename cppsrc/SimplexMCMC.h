@@ -72,6 +72,7 @@ public:
     // TEST STUFF
     int countFractionalPivCols();
     int infeasibilityCount();
+    bool abmSanityChecks();
 
 protected:
     bool processProposal(const ProposalPivot &proposal);
@@ -88,6 +89,7 @@ protected:
     bool solutionIsPrimaryFeasible();
 
     double infeasibility();
+
 };
 
 

@@ -8,9 +8,10 @@
 #include "Phase2Pivot.h"
 #include "ProbabilisticColumnPivot.h"
 #include "PotentialEnergyPivot.h"
+#include "debug.h"
 #include <algorithm>
 #include <cmath>
-
+#include <cfloat>
 
 
 // Initial basis of 'prob' should contain no fixed vars and all remaining auxiliary vars
@@ -36,11 +37,11 @@ void SimplexMCMC::findFeasibleStartPoint() {
 //        std::cout << iterations << " Pivoted on " << proposal.i << ", " << proposal.j << " " << proposal.deltaj << " " << proposal.leavingVarToUpperBound
 //                  << " " << isAtUpperBound(proposal.j)
 //                  << "  Infeasibility = " << infeasibility() << std::endl;
-//        if(iterations%256 == 0) std::cout << "iteration:" << iterations << " infeasibility = " << infeasibility() << std::endl;
+        debug(if(iterations%256 == 0) std::cout << "iteration:" << iterations << " infeasibility = " << infeasibility() << std::endl);
         iterations++;
 
     } while(!solutionIsPrimaryFeasible());
-    std::cout << "Found solution in " << iterations << " iterations" << std::endl;
+    debug(std::cout << "Found initial solution in " << iterations << " iterations" << std::endl);
 }
 
 
@@ -331,6 +332,34 @@ void SimplexMCMC::SampleStatistics::update(bool accepted, const ProposalPivot &p
             if(proposal.i < 1) ++nSwaps;
         }
     }
+}
+
+
+// Check initial basis contains no fixed vars and all auxiliaries are in the basis
+bool SimplexMCMC::abmSanityChecks() {
+    for(int k=1; k<=nVars(); ++k) {
+        if(l[k] == u[k]) {
+            std::cerr << "WARNING: Fixed variable in the Simplex" << k << std::endl;
+            return false;
+        }
+        if(kSimTokProb[k] > originalProblem.nConstraints() && (l[k] != 0.0 || u[k] != 1.0 )) {
+            std::cerr << "WARNING: non-binary structural var " << k << std::endl;
+            return false;
+        }
+    }
+    for(int j=1; j<=nNonBasic(); ++j) {
+        int k = head[nBasic()+j];
+        if(kSimTokProb[k] <= originalProblem.nConstraints()) {
+            std::cerr << "WARNING: Non-basic auxiliary variable " << j << std::endl;
+            return false;
+        }
+        if(l[k] == -DBL_MAX || u[k] == DBL_MAX) {
+            std::cerr << "WARNING: Non-basic variable with infinite bound " << j << std::endl;
+            return false;
+        }
+    }
+    assert(originalProblem.isValidSolution(X()));
+    return true;
 }
 
 
