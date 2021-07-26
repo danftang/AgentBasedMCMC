@@ -5,6 +5,7 @@
 #include <ostream>
 #include <vector>
 #include <iterator>
+#include <map>
 
 #ifndef GLPKTEST_STLSTREAM_H
 #define GLPKTEST_STLSTREAM_H

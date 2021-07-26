@@ -84,6 +84,8 @@ public:
         return [&](const std::vector<double> &X) { return this->logProb(X); };
     }
 
+    SimplexMCMC mcmcSampler() { return(SimplexMCMC(*this, logProbFunc())); }
+
 protected:
 
     void addContinuityConstraints() {

@@ -13,6 +13,7 @@
 
 class Experiments {
 public:
+
     static void PredPreyExpt();
     static void CatMouseExpt();
     static void RandomWalk();
@@ -26,6 +27,10 @@ public:
     static void PredPreyAssimilation();
 
     static std::vector<double> informationIncrease(int argc, char **argv);
+
+    static std::vector<double>
+    informationIncrease(int gridsize, int windowSize, int nWindows, double pPredator, double pPrey,
+                        double pMakeObservation, int nSamplesPerWindow, int nBurnInSamples);
 };
 
 

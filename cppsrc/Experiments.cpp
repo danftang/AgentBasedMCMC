@@ -12,96 +12,88 @@
 #include "DataAssimilation.h"
 #include "debug.h"
 
+
 std::vector<double> Experiments::informationIncrease(int argc, char *argv[]) {
-    std::vector<double> informationGain;
-    if(argc != 9) {
-        std::cout << "Wrong number of arguments. Should be <GRIDSIZE> <nTimestepsPerWindow> <nWindows> <pPredator> <pPrey> <pMakeObservation> <pObserveIfPresent> <nSamplesPerWindow>" << std::endl;
-    } else {
-        glp_term_out(GLP_OFF); // turn off GLPK terminal output
-        PredPreyAgent::GRIDSIZE = atoi(argv[1]);
-        int windowSize = atoi(argv[2]);
-        int nWindows = atoi(argv[3]);
-        double pPredator = atof(argv[4]);//0.08;          // Poisson prob of predator in each gridsquare at t=0
-        double pPrey = atof(argv[5]);//2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
-        double pMakeObservation = atof(
-                argv[6]);//0.04;    // prob of making an observation of each gridsquare at each timestep
-        double pObserveIfPresent = atof(argv[7]); // 0.9;
-        int nSamplesPerWindow = atoi(argv[8]); //250000;
-
-
-        PoissonState<PredPreyAgent> startState([&](const PredPreyAgent &agent) {
-            return agent.type() == PredPreyAgent::PREDATOR ? (pPredator *
-                                                              (agent.xPosition() < PredPreyAgent::GRIDSIZE / 2)) : (
-                           pPrey * (agent.xPosition() >= PredPreyAgent::GRIDSIZE / 2));
-        });
-
-        DataAssimilation<PredPreyAgent> assimilation(nWindows, windowSize, startState, pMakeObservation, pObserveIfPresent, nSamplesPerWindow);
-
-
-//        std::vector<PoissonState<PredPreyAgent>> priors = DataAssimilation<PredPreyAgent>::prior(nWindows, windowSize,
-//                                                                                                nSamplesPerWindow,
-//                                                                                                startState);
-//
-//        DataAssimilation<PredPreyAgent>::runAndObserve(nWindows, windowSize, pMakeObservation, pObserveIfPresent, startState.sample());
-//
-//        std::vector<PoissonState<PredPreyAgent>> posterior = DataAssimilation<PredPreyAgent>::posterior(nWindows,
-//                                                                                                        windowSize,
-//                                                                                                        nSamplesPerWindow,
-//                                                                                                        startState);
-//
-//        for (int t = 0; t < nWindows; ++t) {
-//            informationGain.push_back(DataAssimilation<PredPreyAgent>::informationGain());
-//        }
+    if(argc != 8) {
+        std::cout << "Wrong number of arguments. Should be <GRIDSIZE> <nTimestepsPerWindow> <nWindows> <pPredator> <pPrey> <pMakeObservation> <nSamplesPerWindow> <nBurnInSamples>" << std::endl;
+        return std::vector<double>();
     }
-    return informationGain;
+    glp_term_out(GLP_OFF); // turn off GLPK terminal output
+    int gridsize = atoi(argv[1]);
+    int windowSize = atoi(argv[2]);
+    int nWindows = atoi(argv[3]);
+    double pPredator = atof(argv[4]);         // Poisson prob of predator in each gridsquare at t=0
+    double pPrey = atof(argv[5]);             // Poisson prob of prey in each gridsquare at t=0
+    double pMakeObservation = atof(argv[6]);  // prob of making an observation of each gridsquare at each timestep
+//    double pObserveIfPresent = atof(argv[7]); // prob of detecting an agent given that it is present
+    int nSamplesPerWindow = atoi(argv[7]);
+    int nBurnInSamples = atoi(argv[8]);
+    return informationIncrease(gridsize, windowSize, nWindows, pPredator, pPrey,
+                               pMakeObservation, nSamplesPerWindow, nBurnInSamples);
+}
+
+
+std::vector<double> Experiments::informationIncrease(
+        int gridsize,
+        int windowSize,
+        int nWindows,
+        double pPredator,         // Poisson prob of predator in each gridsquare at t=0
+        double pPrey,             // Poisson prob of prey in each gridsquare at t=0
+        double pMakeObservation,  // prob of making an observation of each gridsquare at each timestep
+//        double pObserveIfPresent, // prob of detecting an agent given that it is present
+        int nSamplesPerWindow,
+        int nBurnInSamples
+        ) {
+    glp_term_out(GLP_OFF); // turn off GLPK terminal output
+    PredPreyAgent::GRIDSIZE = gridsize;
+
+    PoissonState<PredPreyAgent> startState([&](const PredPreyAgent &agent) {
+        return agent.type()==PredPreyAgent::PREDATOR?pPredator:pPrey;
+//        return agent.type() == PredPreyAgent::PREDATOR ?
+//               (pPredator *(agent.xPosition() < PredPreyAgent::GRIDSIZE / 2)) :
+//               (pPrey * (agent.xPosition() >= PredPreyAgent::GRIDSIZE / 2));
+    });
+
+    auto observationOperator = [=](const Trajectory<PredPreyAgent> &trajectory) {
+        return Observation<PredPreyAgent>::generateObservations(trajectory, pMakeObservation);
+    };
+
+    DataAssimilation<PredPreyAgent> assimilation(nWindows, windowSize, startState, observationOperator,
+                                                 nSamplesPerWindow, nBurnInSamples);
+    return assimilation.calculateInformationGain();
 }
 
 
 void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
-    PredPreyAgent::GRIDSIZE = 12;
-    constexpr int windowSize = 6;
+    PredPreyAgent::GRIDSIZE = 8;
+    constexpr int windowSize = 8;
     constexpr int nWindows = 2;
     constexpr double pPredator = 0.16;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 0.32;//2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
-    constexpr double pMakeObservation = 0.25;//0.04;    // prob of making an observation of each gridsquare at each timestep
-    constexpr double pObserveIfPresent = 0.95; // 0.9;
-    constexpr int nSamplesPerWindow = 50000; //250000;
+    constexpr double pMakeObservation = 0.1;//0.04;    // prob of making an observation of each gridsquare at each timestep
+//    constexpr double pObserveIfPresent = 0.999; // 0.9;
+    constexpr int nSamplesPerWindow = 1000; //250000;
+    constexpr int nBurninSamples = 1000;
 //    constexpr int plotTimestep = nTimesteps-1;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
-    PoissonState<PredPreyAgent> poissonModelState([](const PredPreyAgent &agent) {
-//        return agent.type()==PredPreyAgent::PREDATOR?pPredator:pPrey;
-        return agent.type()==PredPreyAgent::PREDATOR?(pPredator*(agent.xPosition() < PredPreyAgent::GRIDSIZE/2)):(pPrey*(agent.xPosition() >= PredPreyAgent::GRIDSIZE/2));
+    PoissonState<PredPreyAgent> prior([](const PredPreyAgent &agent) {
+        return agent.type()==PredPreyAgent::PREDATOR?pPredator:pPrey;
+//        return agent.type()==PredPreyAgent::PREDATOR?(pPredator*(agent.xPosition() < PredPreyAgent::GRIDSIZE/2)):(pPrey*(agent.xPosition() >= PredPreyAgent::GRIDSIZE/2));
     });
 
-    DataAssimilation<PredPreyAgent> assimilation(nWindows, windowSize, poissonModelState, pMakeObservation, pObserveIfPresent, nSamplesPerWindow);
+    auto observationOperator = [=](const Trajectory<PredPreyAgent> &trajectory) {
+        return Observation<PredPreyAgent>::generateObservations(trajectory, pMakeObservation);
+    };
 
+    DataAssimilation<PredPreyAgent> assimilation(prior, observationOperator);
 
-//    ModelState<PredPreyAgent> realState = poissonModelState.sample();
-//
-//    Gnuplot gp0;
-//    plotHeatMap(gp0, poissonModelState, realState);
-//
-//    for(int window=0; window<nWindows; ++window) {
-//        debug(std::cout << "Real state: " << realState << std::endl);
-//        debug(std::cout << "Poission state: " << poissonModelState << std::endl);
-//        auto [observations, realTrajectory] =
-//        Observation<PredPreyAgent>::generateObservations(realState, windowSize, pMakeObservation, pObserveIfPresent);
-////        std::cout << "Real trajectory: " << glp::SparseVec(realTrajectory) << std::endl;
-//        debug(std::cout << "Observations: " << observations << std::endl);
-//
-//        poissonModelState = AssimilationWindow<PredPreyAgent>(
-//                windowSize,
-//                observations,
-//                poissonModelState,
-//                nSamplesPerWindow
-//        );
-//        realState = realTrajectory(windowSize);
-//        Gnuplot gp;
-//        plotHeatMap(gp, poissonModelState, realState);
-//    }
-
+    for(int w=0; w<nWindows; ++w) {
+        assimilation.addWindow(windowSize, nSamplesPerWindow, nBurninSamples);
+        Gnuplot gp;
+        gp << assimilation.windows[w];
+    }
 }
 
 
@@ -112,79 +104,31 @@ void Experiments::PredPreyExpt() {
     constexpr double pPredator = 0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
     constexpr double pMakeObservation = 0.02;    // prob of making an observation of each gridsquare at each timestep
-    constexpr double pObserveIfPresent = 0.95; // 0.9;
+//    constexpr double pObserveIfPresent = 0.95; // 0.9;
     constexpr int nSamples = 10000; //250000;
-    constexpr int plotTimestep = nTimesteps-1;
+    constexpr int nBurnInSamples = 1000;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
-    ModelState<PredPreyAgent> startState = ModelState<PredPreyAgent>::randomPoissonState([](const PredPreyAgent &agent) {
-        if(agent.type() == PredPreyAgent::PREDATOR) return pPredator;
-        return pPrey;
+    PoissonState<PredPreyAgent> prior([](const PredPreyAgent &agent) {
+        return agent.type()==PredPreyAgent::PREDATOR?pPredator:pPrey;
     });
+
+    ModelState<PredPreyAgent> startState = prior.sample();
+
     std::cout << "Start state: " << startState << std::endl;
-    auto [observations, realTrajectory] =
-            Observation<PredPreyAgent>::generateObservations(startState, nTimesteps, pMakeObservation, pObserveIfPresent);
-    ABMProblem<PredPreyAgent> abm(nTimesteps, observations, [](const Trajectory<PredPreyAgent> &trajectory) {
-        ModelState<PredPreyAgent> startState = trajectory(0);
-        double logP = 0.0;
-        for(int agentId=0; agentId < PredPreyAgent::domainSize(); ++agentId) {
-            double k = fabs(startState[agentId]);
-            double lambda = PredPreyAgent(agentId).type()==PredPreyAgent::PREDATOR?pPredator:pPrey;
-            logP += k*log(lambda) - lambda - lgamma(k+1); // log of Poisson
-        }
-        return logP;
-    });
+    Trajectory<PredPreyAgent> realTrajectory(nTimesteps, startState);
+    std::vector<Observation<PredPreyAgent>> observations =
+            Observation<PredPreyAgent>::generateObservations(realTrajectory, pMakeObservation);
     std::cout << "Real trajectory: " << glp::SparseVec(realTrajectory) << std::endl;
     std::cout << "Observations: " << observations << std::endl;
 
-    SimplexMCMC mcmc(abm, abm.logProbFunc());
-
-    //////////////////////////////////// FIND INITIAL SOLUTION ////////////////////////////////////////
-//    // solve by simplex
-//    abm.simplex();
-//    std::vector<double> initSol = abm.primalSolution();
-//    assert(abm.isValidSolution(initSol));
-//    std::cout << "Found initial solution: " << glp::SparseVec(initSol) << std::endl;
-//    mcmc.setLPState(initSol);
-
-    // use real trajectory as initial state
-    mcmc.setLPState(realTrajectory);
-
-    // solve by phase1
-//    std::cout << "Starting phase 1 in state: " << glp::SparseVec(mcmc.X()) << std::endl;
-//    mcmc.findFeasibleStartPoint();
-
-    std::cout << "Starting with initial sample:" << std::endl;
-    std::cout << glp::SparseVec(mcmc.X()) << std::endl;
-
-    ////////////////////////////////////////// DO SANITY CHECKS ////////////////////////////////////////
-    assert(mcmc.abmSanityChecks());
-
-
-    ////////////////////////////////////////// DO SAMPLING ///////////////////////////////////////////
-    PoissonState<PredPreyAgent> meanState;
-    for(int n=0; n<nSamples; ++n) {
-        mcmc.nextSample();
-        if(nSamples<1000 || n%100 == 1) {
-            std::cout << "Sample " << n << std::endl;
-            assert(abm.isValidSolution(mcmc.X()));
-//            std::cout << "Sample " << n << " : " << glp::SparseVec(mcmc.X()) << std::endl;
-        }
-        const Trajectory<PredPreyAgent> &trajectory = reinterpret_cast<const Trajectory<PredPreyAgent> &>(mcmc.X());
-        meanState += trajectory(plotTimestep);
-    }
+    AssimilationWindow<PredPreyAgent> window(realTrajectory, prior, observations, nSamples, nBurnInSamples);
 
 
     ////////////////////////////////////////// SHOW RESULTS ///////////////////////////////////////////
     std::cout << std::endl;
-    std::cout << "Feasible sample statistics:" << std::endl << mcmc.feasibleStatistics << std::endl;
-    std::cout << "Infeasible sample statistics:" << std::endl << mcmc.infeasibleStatistics << std::endl;
-    std::cout << "Mean state:\n" << meanState << std::endl;
-    std::cout << "Real state:\n" << realTrajectory(plotTimestep) << std::endl;
-    std::cout << "Observations: " << observations << std::endl;
     Gnuplot gp;
-//    StateTrajectory<PredPreyAgent> realStateTrajectory(realTrajectory);
-    plotHeatMap(gp, meanState, realTrajectory(plotTimestep));
+    plotHeatMap(gp, window.analysis, window.realTrajectory.endState());
 }
 
 
@@ -192,7 +136,7 @@ void Experiments::PredPreyExpt() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Experiments::CatMouseExpt() {
     CatMouseAgent leftCat(CatMouseAgent::Type::CAT, CatMouseAgent::Position::LEFT);
-    auto observations = std::vector({ Observation(State<CatMouseAgent>(1,leftCat), 1, 0.95) });
+    auto observations = std::vector({ Observation(1,leftCat, 1) });
 
     ABMProblem<CatMouseAgent> abm(2, observations, [](const Trajectory<CatMouseAgent> &trajectory) {
         return 0.0;

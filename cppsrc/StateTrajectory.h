@@ -50,6 +50,8 @@ public:
     double &operator [](const State<AGENT> &agentState) {
         return (*this)[agentState.time][agentState.agent];
     }
+
+
 };
 
 

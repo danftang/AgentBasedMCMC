@@ -116,7 +116,7 @@ void SimplexMCMC::nextSample() {
             feasibleStatistics.update(accepted, proposalPivot);
         } else {
             infeasibleStatistics.update(accepted, proposalPivot);
-//            if(infeasibleCount%1000 == 0) std::cout << infeasibleCount << " Infeasibility = " << infeasibility() << std::endl;
+            debug(if(infeasibleCount%1000 == 0) std::cout << infeasibleCount << " Infeasibility = " << infeasibility() << std::endl);
             ++infeasibleCount;
         }
     } while(!sampleIsFeasible);
@@ -144,11 +144,15 @@ bool SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
 //    std::cout << "Destination LP state is: " << glp::SparseVec(lpSolution) << std::endl;
     revertLPSolution(proposalPivot); // TODO: change logic so we don't revert if we end up accepting
     double logAcceptance = destinationProb - sourceProb + proposalPivot.logAcceptanceContribution;
+    debug(
+            if(std::isnan(logAcceptance)) std::cout << "Log acceptance is " << logAcceptance << std::endl
+            );
 //    if(isnan( logAcceptance )) println("NaN Acceptance $acceptanceNumerator / $acceptanceDenominator logPiv = ${state.logProbOfPivotState} transition prob = ${transitionProb(revertState.reversePivot)} columnWeight = ${columnWeights.P(revertState.reversePivot.col)} nPivots = ${nPivots(revertState.reversePivot.col)}");
-//    std::cout << "Log acceptance is " << destinationProb << " - " << sourceProb << " + " << proposalPivot.logAcceptanceContribution << " = " << logAcceptance << std::endl;
+//    debug(std::cout << "Log acceptance is " << destinationProb << " - " << sourceProb << " + " << proposalPivot.logAcceptanceContribution << " = " << logAcceptance << std::endl);
     if (std::isnan(logAcceptance) || Random::nextDouble() <= exp(std::min(0.0,logAcceptance))) { // explicity accept if both numerator and denominator are -infinity
         // Accept proposal
-//        std::cout << "Accepting deltaj = " << proposalPivot.deltaj << std::endl;
+//        debug(std::cout << "Accepted proposal with log acceptance = " << logAcceptance << std::endl);
+        //        std::cout << "Accepting deltaj = " << proposalPivot.deltaj << std::endl;
         assert(proposalPivot.i == -1 || (kSimTokProb[head[proposalPivot.i]] > originalProblem.nConstraints()));
         assert(proposalPivot.i == -1 || proposalPivot.col[proposalPivot.i] > 0.9 || proposalPivot.col[proposalPivot.i] < -0.9);
 //        if(proposalPivot.deltaj != 0.0) {
@@ -166,6 +170,7 @@ bool SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
         pivot(proposalPivot);
         return true;
     }
+//    debug(std::cout << "Rejecting" << std::endl);
     return false; // reject
 }
 
@@ -338,8 +343,8 @@ void SimplexMCMC::SampleStatistics::update(bool accepted, const ProposalPivot &p
 // Check initial basis contains no fixed vars and all auxiliaries are in the basis
 bool SimplexMCMC::abmSanityChecks() {
     for(int k=1; k<=nVars(); ++k) {
-        if(l[k] == u[k]) {
-            std::cerr << "WARNING: Fixed variable in the Simplex" << k << std::endl;
+        if(l[k] == u[k] && kSimTokProb[k] > originalProblem.nConstraints()) {
+            std::cerr << "WARNING: Non-auxiliary, fixed variable in the Simplex" << k << std::endl;
             return false;
         }
         if(kSimTokProb[k] > originalProblem.nConstraints() && (l[k] != 0.0 || u[k] != 1.0 )) {
