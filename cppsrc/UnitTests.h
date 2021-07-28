@@ -7,9 +7,13 @@
 
 
 #include <vector>
+#include <boost/math/distributions/binomial.hpp>
 #include "ActFermionicDistribution.h"
 #include "StlStream.h"
 #include "ConvexPMF.h"
+#include "agents/BinomialAgent.h"
+#include "ABMPrior.h"
+#include "DeltaPMF.h"
 
 class UnitTests {
 public:
@@ -71,6 +75,29 @@ public:
 
         for(int id=0; id <8; ++id) {
             std::cout << id << " " << sampleCounts[id] << std::endl;
+        }
+    }
+
+    static void testABMPrior() {
+        const int nTimesteps = 2;
+        BinomialAgent::GRIDSIZE = nTimesteps+1;
+        ModelState<BinomialAgent> startState;
+        startState[0] = 1;
+        DeltaPMF startPMF(startState);
+
+        ABMPrior<BinomialAgent,DeltaPMF> prior(startPMF, nTimesteps);
+
+        std::cout << prior.convexSupport << std::endl;
+
+        ModelState<BinomialAgent> finalState;
+        for(int s=0; s<100000; ++s) {
+            finalState += Trajectory<BinomialAgent>(prior.nextSample()).endState();
+        }
+        std::cout << finalState << std::endl;
+
+        boost::math::binomial binom = boost::math::binomial(nTimesteps, BinomialAgent::pMove);
+        for(int i=0; i<=nTimesteps; ++i) {
+            std::cout << i << " -> " << boost::math::pdf(binom, i) << std::endl;
         }
     }
 };

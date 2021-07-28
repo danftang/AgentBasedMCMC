@@ -10,30 +10,22 @@
 #include "Trajectory.h"
 
 // Prior PMF over ABM trajectories, given a PMF over start states
-template<typename AGENT>
+template<typename AGENT, typename STARTPMF>
 class ABMPrior: public ConvexPMF {
 public:
 //    STARTSTATEPMF startState; // PMF over start states. Shoud implement logPMF and nextSample.
-    PMF *t0PMF;
+    STARTPMF t0PMF;
     int nTimesteps;
 
-    template<typename STARTSTATEPMF>
-    ABMPrior(STARTSTATEPMF &startState, int nTimesteps): nTimesteps(nTimesteps) {
-        t0PMF = new STARTSTATEPMF(startState);
-        logPrior = [this](const std::vector<double> &X) { return t0PMF->logProb(X); };
-    }
-
-    template<typename STARTSTATEPMF>
-    ABMPrior(STARTSTATEPMF &&startState, int nTimesteps): nTimesteps(nTimesteps) {
-        t0PMF = new typename std::remove_reference<STARTSTATEPMF>::type(std::move(startState));
-    }
-
-    ~ABMPrior() {
-        delete t0PMF;
+    ABMPrior(STARTPMF startState, int nTimesteps): t0PMF(std::move(startState)), nTimesteps(nTimesteps) {
+        logPrior = [this](const std::vector<double> &X) { return t0PMF.logProb(X); };
+        convexSupport.addConstraints(continuityConstraints(nTimesteps));
+        convexSupport.addConstraints(interactionConstraints(nTimesteps));
+        convexSupport.addConstraints(actFermionicConstraints(nTimesteps));
     }
 
     std::vector<double> nextSample() {
-        return Trajectory<AGENT>(nTimesteps, t0PMF->nextSample());
+        return Trajectory<AGENT>(nTimesteps, t0PMF.nextSample());
     }
 
 protected:

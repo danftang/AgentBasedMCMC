@@ -33,17 +33,20 @@ using glp::X;
 //    void myTFunc(T &&other) { std::cout << "myTFunc rValue ref" << std::endl;}
 //
 //};
-
-
+//
+//class MyClass2 {
+//public:
+//    MyClass c;
+//    MyClass2(MyClass m): c(std::move(m)) {}
+//};
 
 
 int main(int argc, char *argv[]) {
 
-
 //    PoissonState<PredPreyAgent> startState;
 //    ABMPrior<PredPreyAgent> myPrior(startState, 8);
 
-    UnitTests::testConvexPMF();
+    UnitTests::testABMPrior();
 
 //    std::cout << Experiments::informationIncrease(
 //            8,

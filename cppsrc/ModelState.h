@@ -15,6 +15,10 @@ public:
 
     ModelState(): std::vector<double>(AGENT::domainSize(),0.0) { };
 
+    ModelState(std::vector<double> &&X): std::vector<double>(X) {
+        assert(size() == AGENT::domainSize());
+    }
+
     // ensure zero initialisation
 //    double &operator[](const AGENT &agent) {
 //        auto iter = this->find(agent);
