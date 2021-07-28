@@ -35,7 +35,7 @@ public:
 
     ActFermionicDistribution(std::vector<double> probabilities): p(probabilities) {
         s.push_back(std::vector<double>({p[0]}));
-        std::cout << "Distribution = " << p << std::endl;
+//        std::cout << "Distribution = " << p << std::endl;
     }
 
 

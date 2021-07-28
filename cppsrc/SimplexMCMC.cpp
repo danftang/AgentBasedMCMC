@@ -104,7 +104,7 @@ double SimplexMCMC::lnFractionalPenalty() {
 
 // Choose a pivot
 // and reject based on Metropolis-Hastings
-// returns the next sample
+// returns the next nextSample
 void SimplexMCMC::nextSample() {
     int infeasibleCount = 0;
     bool sampleIsFeasible;

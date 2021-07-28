@@ -9,6 +9,7 @@
 #include <vector>
 #include "ActFermionicDistribution.h"
 #include "StlStream.h"
+#include "ConvexPMF.h"
 
 class UnitTests {
 public:
@@ -21,12 +22,6 @@ public:
     static void testActFermionicDistribution() {
         std::vector<double> p = {0.8, 0.15, 0.05};
         ActFermionicDistribution myDist(p);
-
-//        for(int N=1; N<=3; ++N) {
-//            for(int m=1; m<=N; ++m) {
-//                std::cout << N << "," << m << " = " << myDist.sigma(N,m) << std::endl;
-//            }
-//        }
 
         std::vector<int> actCounts(3,0);
         for(int s = 0; s<1000000; ++s) {
@@ -52,15 +47,31 @@ public:
         assert(abs(actCounts[0]-actCounts2[0]) < 1000);
         assert(abs(actCounts[1]-actCounts2[1]) < 1000);
         assert(abs(actCounts[2]-actCounts2[2]) < 1000);
+    }
 
-        //
-//        for(auto row : myDist.s) {
-//            for(double p : row) {
-//                std::cout << p << " ";
-//            }
-//            std::cout << std::endl;
-//        }
 
+    static void testConvexPMF() {
+        using glp::X;
+        ConvexPMF myPMF;
+
+        myPMF.logPrior = [](const std::vector<double> &X) { return log(X[1] + X[2] + X[3]); };
+        myPMF.convexSupport.addConstraint(0 <= 1.0*X(1) + 1.0*X(2) + 1.0*X(3) <= 2);
+        myPMF.convexSupport.addConstraint(0 <= 1.0*X(1) <= 1);
+        myPMF.convexSupport.addConstraint(0 <= 1.0*X(2) <= 1);
+        myPMF.convexSupport.addConstraint(0 <= 1.0*X(3) <= 1);
+        std::cout << myPMF.convexSupport << std::endl;
+
+        std::vector<int> sampleCounts(8,0);
+        for(int s=0; s<100000; ++s) {
+            std::vector<double> sample = myPMF.nextSample();
+            int vertexId = sample[1] + sample[2]*2 + sample[3]*4;
+            ++sampleCounts[vertexId];
+//            std::cout << sample[3] << sample[2] << sample[1] << std::endl;
+        }
+
+        for(int id=0; id <8; ++id) {
+            std::cout << id << " " << sampleCounts[id] << std::endl;
+        }
     }
 };
 

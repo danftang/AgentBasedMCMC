@@ -32,11 +32,11 @@ public:
         PREY
     };
 
-    static constexpr double pPredBirthGivenPrey = 0.2; // birth prob given prey
-    static constexpr double pPredDie = 0.125;//0.07; // death prob
-    static constexpr double pPreyBirth = 0.065;//0.06; // birth prob
-    static constexpr double pPreyDie = 0.00125;//0.03; // death prob
-    static constexpr double pPreyEatenGivenPred = 0.15; // death prob given pred
+    static constexpr double pPredBirthGivenPrey = 0.1; // 0.5; // birth prob given prey
+    static constexpr double pPredDie = 0.07; // death prob
+    static constexpr double pPreyBirth = 0.06; // birth prob
+    static constexpr double pPreyDie = 0.02;//0.03; // death prob
+    static constexpr double pPreyEatenGivenPred = 0.15; // 0.55; // death prob given pred
 
 
     // Agent Domain stuff

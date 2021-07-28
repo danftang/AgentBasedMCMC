@@ -48,7 +48,7 @@ public:
 
     void addWindow(int nTimesteps, int nSamples, int nBurnInSamples) {
         const PoissonState<AGENT> &prior = windows.size()==0?startStatePrior:windows.back().analysis;
-        const ModelState<AGENT> &startState = windows.size()==0?startStatePrior.sample():windows.back().realTrajectory.endState();
+        const ModelState<AGENT> &startState = windows.size()==0 ? startStatePrior.nextSample() : windows.back().realTrajectory.endState();
         Trajectory<AGENT> realTrajectory(nTimesteps, startState);
         windows.emplace_back(realTrajectory, prior, observationOperator(realTrajectory), nSamples, nBurnInSamples);
     }
@@ -106,8 +106,8 @@ public:
 //        debug(
 //                std::cout << "Occupation histogram " << occupationHistogram << std::endl;
 //                std::cout << "infeasible/feasible: " << mcmc.infeasibleStatistics.nSamples *100.0/mcmc.feasibleStatistics.nSamples << "%" << std::endl;
-//                std::cout << "Feasible sample statistics:" << std::endl << mcmc.feasibleStatistics << std::endl;
-//                std::cout << "Infeasible sample statistics:" << std::endl << mcmc.infeasibleStatistics << std::endl;
+//                std::cout << "Feasible nextSample statistics:" << std::endl << mcmc.feasibleStatistics << std::endl;
+//                std::cout << "Infeasible nextSample statistics:" << std::endl << mcmc.infeasibleStatistics << std::endl;
 //        );
 //        return finalState;
 //    }
@@ -123,7 +123,7 @@ public:
         }
         std::vector<PoissonState<AGENT>> endOfWindowStates(windows.size());
         for(int s=0; s<nSamples; ++s) {
-            Trajectory<AGENT> trajectory(sumOfTimesteps, startStatePrior.sample());
+            Trajectory<AGENT> trajectory(sumOfTimesteps, startStatePrior.nextSample());
             int t = 0;
             for(int w=0; w<windows.size(); ++w) {
                 t += windows[w].realTrajectory.nTimesteps();
@@ -140,7 +140,7 @@ public:
 //            int nSamplesPerWindow,
 //            const PoissonState<AGENT> &startState,
 //            const std::vector<std::vector<Observation<AGENT>>> &observations) {
-//        ModelState<AGENT> realState = startState.sample();
+//        ModelState<AGENT> realState = startState.nextSample();
 //        std::vector<PoissonState<AGENT>> endOfWindowStates(nWindows);
 //
 //        const PoissonState<AGENT> *windowStart = &startState;

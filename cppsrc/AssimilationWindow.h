@@ -33,7 +33,7 @@ public:
         });
         SimplexMCMC mcmc(abm, abm.logProbFunc());
 
-        Trajectory<AGENT> firstGuessTrajectory(realTrajectory.nTimesteps(), priorStartState.sample());
+        Trajectory<AGENT> firstGuessTrajectory(realTrajectory.nTimesteps(), priorStartState.nextSample());
         mcmc.setLPState(firstGuessTrajectory);
         mcmc.findFeasibleStartPoint();
         assert(mcmc.abmSanityChecks());
@@ -43,15 +43,15 @@ public:
             mcmc.nextSample();
             debug(if(nSamples<1000 || n%1000 == 1) {
                 assert(abm.isValidSolution(mcmc.X()));
-                std::cout << "Got sample " << mcmc.X() << std::endl;
+                std::cout << "Got nextSample " << mcmc.X() << std::endl;
             });
             const Trajectory<AGENT> &trajectory = reinterpret_cast<const Trajectory<AGENT> &>(mcmc.X());
             analysis += trajectory.endState();
         }
         debug(std::cout
                       << "infeasible/feasible: " << mcmc.infeasibleStatistics.nSamples *100.0/mcmc.feasibleStatistics.nSamples << "%" << std::endl
-                      << "Feasible sample statistics:" << std::endl << mcmc.feasibleStatistics << std::endl
-                      << "Infeasible sample statistics:" << std::endl << mcmc.infeasibleStatistics << std::endl;
+                      << "Feasible nextSample statistics:" << std::endl << mcmc.feasibleStatistics << std::endl
+                      << "Infeasible nextSample statistics:" << std::endl << mcmc.infeasibleStatistics << std::endl;
         );
     }
 

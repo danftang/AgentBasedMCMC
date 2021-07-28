@@ -7,8 +7,11 @@
 
 
 class PMF {
+public:
     virtual double              logProb(const std::vector<double> &X) = 0;
     virtual std::vector<double> nextSample() = 0;
+
+    virtual ~PMF();
 };
 
 

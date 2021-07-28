@@ -67,13 +67,13 @@ std::vector<double> Experiments::informationIncrease(
 void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
     PredPreyAgent::GRIDSIZE = 8;
-    constexpr int windowSize = 8;
-    constexpr int nWindows = 2;
+    constexpr int windowSize = 2;
+    constexpr int nWindows = 1;
     constexpr double pPredator = 0.16;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 0.32;//2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
-    constexpr double pMakeObservation = 0.1;//0.04;    // prob of making an observation of each gridsquare at each timestep
+    constexpr double pMakeObservation = 0.05;//0.04;    // prob of making an observation of each gridsquare at each timestep
 //    constexpr double pObserveIfPresent = 0.999; // 0.9;
-    constexpr int nSamplesPerWindow = 1000; //250000;
+    constexpr int nSamplesPerWindow = 25000; //250000;
     constexpr int nBurninSamples = 1000;
 //    constexpr int plotTimestep = nTimesteps-1;
 
@@ -89,12 +89,21 @@ void Experiments::PredPreyAssimilation() {
 
     DataAssimilation<PredPreyAgent> assimilation(prior, observationOperator);
 
+
     for(int w=0; w<nWindows; ++w) {
         assimilation.addWindow(windowSize, nSamplesPerWindow, nBurninSamples);
         Gnuplot gp;
         gp << assimilation.windows[w];
     }
+
+//    std::vector<PoissonState<PredPreyAgent>> priors = assimilation.priorWindows(1000);
+//    for(int w=0; w<nWindows; ++w) {
+//        Gnuplot gp;
+//        gp << priors[w];
+//    }
 }
+
+
 
 
 void Experiments::PredPreyExpt() {
@@ -113,7 +122,7 @@ void Experiments::PredPreyExpt() {
         return agent.type()==PredPreyAgent::PREDATOR?pPredator:pPrey;
     });
 
-    ModelState<PredPreyAgent> startState = prior.sample();
+    ModelState<PredPreyAgent> startState = prior.nextSample();
 
     std::cout << "Start state: " << startState << std::endl;
     Trajectory<PredPreyAgent> realTrajectory(nTimesteps, startState);
