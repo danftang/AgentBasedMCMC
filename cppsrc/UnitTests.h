@@ -56,9 +56,10 @@ public:
 
     static void testConvexPMF() {
         using glp::X;
-        ConvexPMF myPMF;
+        ConvexPMF myPMF([](const std::vector<double> &X) {
+            return log(X[1] + X[2] + X[3]);
+        });
 
-        myPMF.logPrior = [](const std::vector<double> &X) { return log(X[1] + X[2] + X[3]); };
         myPMF.convexSupport.addConstraint(0 <= 1.0*X(1) + 1.0*X(2) + 1.0*X(3) <= 2);
         myPMF.convexSupport.addConstraint(0 <= 1.0*X(1) <= 1);
         myPMF.convexSupport.addConstraint(0 <= 1.0*X(2) <= 1);
@@ -90,10 +91,26 @@ public:
         std::cout << prior.convexSupport << std::endl;
 
         ModelState<BinomialAgent> finalState;
-        for(int s=0; s<100000; ++s) {
-            finalState += Trajectory<BinomialAgent>(prior.nextSample()).endState();
+        for(int s=0; s<10000; ++s) {
+            Trajectory<BinomialAgent> sample = prior.nextSample();
+            finalState += sample.endState();
         }
         std::cout << finalState << std::endl;
+
+        ModelState<BinomialAgent> mcmcFinalState;
+        ConvexPMF &convexPmf = prior;
+        for(int burnIn=0; burnIn<100; ++burnIn) {
+            convexPmf.nextSample();
+        }
+        std::cout << "Sampler:\n" << *convexPmf.sampler << std::endl;
+        for(int s=0; s<10000; ++s) {
+            Trajectory<BinomialAgent> sample = convexPmf.nextSample();
+//            std::cout << sample << std::endl;
+            mcmcFinalState += sample.endState();
+        }
+        std::cout << "Feasible stats:\n" << convexPmf.sampler->feasibleStatistics << std::endl;
+        std::cout << "Infeasible stats:\n" << convexPmf.sampler->infeasibleStatistics << std::endl;
+        std::cout << mcmcFinalState << std::endl;
 
         boost::math::binomial binom = boost::math::binomial(nTimesteps, BinomialAgent::pMove);
         for(int i=0; i<=nTimesteps; ++i) {

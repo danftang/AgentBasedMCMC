@@ -13,8 +13,9 @@ class ConvexPMF {
 public:
     glp::Problem    convexSupport; // all non-zero probability point lie on the vertices of this polyhedron
     std::function<double(const std::vector<double> &)>    logPrior;   // function from vertex to log probability
-    SimplexMCMC *sampler;
+    SimplexMCMC *sampler = NULL;
 
+    ConvexPMF(std::function<double(const std::vector<double> &)> logPrior): logPrior(std::move(logPrior)) { }
 
     ~ConvexPMF() {
         if(sampler != NULL) delete sampler;

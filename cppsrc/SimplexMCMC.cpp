@@ -16,13 +16,9 @@
 
 // Initial basis of 'prob' should contain no fixed vars and all remaining auxiliary vars
 // use
-SimplexMCMC::SimplexMCMC(glp::Problem &prob, const std::function<double (const std::vector<double> &)> &logProb) :
+SimplexMCMC::SimplexMCMC(glp::Problem &prob, std::function<double (const std::vector<double> &)> logProb) :
         Simplex(initialiseProblem(prob)),
-        colLastNonZero(n,-1),
-        rowLatestCompletionPivot(m, -1),
-        latestCompletionBegin(m, -1),
-        lnRowPivotCount(m,0.0),
-        logProbFunc(logProb) {
+        logProbFunc(std::move(logProb)) {
     setObjective(glp::SparseVec());
 }
 

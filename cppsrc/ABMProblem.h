@@ -95,12 +95,12 @@ protected:
             for(int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
                 // outgoing edges
                 for (int act = 0; act < AGENT::actDomainSize(); ++act) {
-                    constraint.coefficients.add(Event<AGENT>(time, agentState, act), 1.0);
+                    constraint.coefficients.insert(Event<AGENT>(time, agentState, act), 1.0);
                 }
                 // incoming edges
                 int timeOffset = (time-1)*AGENT::domainSize()*AGENT::actDomainSize();
                 for (int inEdge: incomingEdges[agentState]) {
-                    constraint.coefficients.add(timeOffset + inEdge, -1.0);
+                    constraint.coefficients.insert(timeOffset + inEdge, -1.0);
                 }
                 addConstraint(constraint);
                 constraint.coefficients.clear();
@@ -132,18 +132,18 @@ protected:
             glp::Constraint upperBoundConstraint(-infinity, 0.0);
             for (int i=0; i < y.coefficients.sparseSize(); ++i) {
                 if (y.coefficients.values[i] > 0.0) upperBoundConstraint.upperBound += y.coefficients.values[i];
-                upperBoundConstraint.coefficients.add(y.coefficients.indices[i], y.coefficients.values[i]);
+                upperBoundConstraint.coefficients.insert(y.coefficients.indices[i], y.coefficients.values[i]);
             }
-            upperBoundConstraint.coefficients.add(x, upperBoundConstraint.upperBound - y.upperBound);
+            upperBoundConstraint.coefficients.insert(x, upperBoundConstraint.upperBound - y.upperBound);
             addConstraint(upperBoundConstraint);
         }
         if(y.lowerBound != -infinity) {
             glp::Constraint lowerBoundConstraint(-infinity, 0.0);
             for (int i=0; i < y.coefficients.sparseSize(); ++i) {
                 if (y.coefficients.values[i] < 0.0) lowerBoundConstraint.upperBound -= y.coefficients.values[i];
-                lowerBoundConstraint.coefficients.add(y.coefficients.indices[i], -y.coefficients.values[i]);
+                lowerBoundConstraint.coefficients.insert(y.coefficients.indices[i], -y.coefficients.values[i]);
             }
-            lowerBoundConstraint.coefficients.add(x, lowerBoundConstraint.upperBound + y.lowerBound);
+            lowerBoundConstraint.coefficients.insert(x, lowerBoundConstraint.upperBound + y.lowerBound);
             addConstraint(lowerBoundConstraint);
         }
     }

@@ -20,12 +20,12 @@ public:
     agent(agent) { }
 
     glp::LinearSum operator *(double c) const {
-        glp::LinearSum sum;
+        glp::LinearSum eventVector;
         int beginIndex = Event<AGENT>(time, agent, 0);
         for(int actId=0; actId < AGENT::actDomainSize(); ++actId) {
-            sum.add(beginIndex+actId, c);
+            eventVector += c*glp::X(beginIndex+actId);
         }
-        return sum;
+        return eventVector;
     }
 
     friend glp::LinearSum operator *(double c, const State<AGENT> &state) {

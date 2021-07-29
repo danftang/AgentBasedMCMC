@@ -30,13 +30,6 @@ public:
         friend std::ostream &operator <<(std::ostream &out, const SampleStatistics &stats);
     };
 
-    std::vector<int>    colLastNonZero;             // row-index of the last non-zero entry in this col
-    std::vector<int>    rowLatestCompletionPivot; // k-col-index of the earliest col of the final basis that can pivot on this row
-    std::vector<int>    latestCompletionBegin;   // k-col-index of the earliest col of the final completion
-    std::vector<double> lnRowPivotCount;            // ln of number of possible choices of next in-sequence var of degenerate state
-   // std::set<int>       finalBasis;                 // the final degenerate state (ordered)
-//    std::map<int,int>   orderedBasis;               // the current basis ordered map from k-index to i-index
-
     SampleStatistics feasibleStatistics;
     SampleStatistics infeasibleStatistics;
 
@@ -45,7 +38,7 @@ public:
 //    BasisProbability probability;
 
 
-    SimplexMCMC(glp::Problem &prob, const std::function<double (const std::vector<double> &)> &logProb);
+    SimplexMCMC(glp::Problem &prob, std::function<double (const std::vector<double> &)> logProb);
 
     double lnDegeneracyProb();
     double lnProb() { return logProbFunc(X()); }

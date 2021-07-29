@@ -17,7 +17,7 @@ public:
 //    static constexpr double tol = SimplexMCMC::tol;
 
     explicit Trajectory(int nTimesteps): std::vector<double>(nTimesteps*AGENT::domainSize()*AGENT::actDomainSize()+1) { }
-    explicit Trajectory(std::vector<double> &&rvalue): std::vector<double>(rvalue) { }
+    Trajectory(std::vector<double> &&rvalue): std::vector<double>(rvalue) { }
     explicit Trajectory(const std::vector<double> &lvalue): std::vector<double>(lvalue) { }
 
     // execute forward from start state
