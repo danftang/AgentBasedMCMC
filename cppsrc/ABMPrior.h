@@ -13,53 +13,38 @@
 template<typename AGENT, typename STARTPMF>
 class ABMPrior: public ConvexPMF {
 public:
-    STARTPMF startStatePMF;
+    STARTPMF startStatePMF; // An ABM start-state PMF must implement logProb over states, nextSample over states and trajectoryConstraints()
     int nTimesteps;
 
-    ABMPrior(STARTPMF startState, int nTimesteps):
-    ConvexPMF([&](const std::vector<double> &X) { return this->trajectoryLogProb(reinterpret_cast<const Trajectory<AGENT> &>(X)); }),
-    startStatePMF(std::move(startState)),
+    ABMPrior(STARTPMF startStateDistribution, int nTimesteps):
+    ConvexPMF([this](const std::vector<double> &X) { return trajectoryLogProb(X); }),
+    startStatePMF(std::move(startStateDistribution)),
     nTimesteps(nTimesteps) {
         convexSupport.addConstraints(continuityConstraints(nTimesteps));
         convexSupport.addConstraints(interactionConstraints(nTimesteps));
         convexSupport.addConstraints(actFermionicConstraints(nTimesteps));
     }
 
+
+//    ABMPrior(const ModelState<AGENT> &fixedStartState, int nTimesteps):
+//            ConvexPMF(this->trajectoryLogProb),
+//            startStatePMF(std::move(startStateDistribution)),
+//            nTimesteps(nTimesteps) {
+//        convexSupport.addConstraints(continuityConstraints(nTimesteps));
+//        convexSupport.addConstraints(interactionConstraints(nTimesteps));
+//        convexSupport.addConstraints(actFermionicConstraints(nTimesteps));
+//    }
+
+
     std::vector<double> nextSample() {
         return Trajectory<AGENT>(nTimesteps, startStatePMF.nextSample());
     }
 
 
-    double trajectoryLogProb(const Trajectory<AGENT> &T) {
+    double trajectoryLogProb(const std::vector<double> &X) {
+        const Trajectory<AGENT> &T = reinterpret_cast<const Trajectory<AGENT> &>(X);
         assert(T.nTimesteps() == nTimesteps);
-        const double infeasibilityPenalty = 1.0;
-        StateTrajectory<AGENT> stateTrajectory(T);
-        double logP = startStatePMF.logProb(stateTrajectory[0]);
-        for(int t=0; t<nTimesteps; ++t) {
-            for(int agentId = 0; agentId<AGENT::domainSize(); ++agentId) {
-                std::vector<double> actPMF = AGENT(agentId).timestep(stateTrajectory[t], infeasibilityPenalty);
-                for(int actId=0; actId<AGENT::actDomainSize(); ++actId) {
-                    double occupation = fabs(T[Event<AGENT>(t, agentId, actId)]);
-                    if(occupation > tol) {
-                        logP += occupation * log(actPMF[actId]);
-//                   - CombinatoricsUtils.factorialLog(X[eventId]) // add this for non-act-fermionic trajectories
-                    }
-                }
-            }
-        }
-
-        // If any state occupation number, m, is greater than 1 then we need to
-        // multiply the prob by !m since the m agents can be assigned to m acts in
-        // !m ways.
-        for(const ModelState<AGENT> &step: stateTrajectory) {
-            for(double occupation: step) {
-                if(fabs(occupation) > 1.0 + tol) {
-                    logP += lgamma(fabs(occupation) + 1.0);
-                }
-            }
-        }
-
-        return logP;
+        return T.logProb() + startStatePMF.logProb(T(0));
     }
 
 protected:

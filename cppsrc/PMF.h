@@ -8,10 +8,7 @@
 
 class PMF {
 public:
-    virtual double              logProb(const std::vector<double> &X) = 0;
-    virtual std::vector<double> nextSample() = 0;
-
-    virtual ~PMF();
+    static double uniform(const std::vector<double> &X) { return 0.0; }
 };
 
 

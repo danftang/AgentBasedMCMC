@@ -25,7 +25,7 @@ public:
     double logProb(const std::vector<double> &X) const { return convexSupport.isValidSolution(X)?logPrior(X):0.0; }
 
 
-    std::vector<double> nextSample() {
+    virtual std::vector<double> nextSample() {
         if(sampler == NULL) initSampler();
         sampler->nextSample();
         return sampler->X();

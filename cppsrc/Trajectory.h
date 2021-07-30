@@ -99,6 +99,37 @@ public:
 
     int nTimesteps() const { return (size()-1)/(AGENT::domainSize()*AGENT::actDomainSize()); }
 
+    double logProb() const {
+        const double infeasibilityPenalty = 0.01;
+
+        StateTrajectory<AGENT> stateTrajectory(*this);
+        double logP = 0.0;
+        int tEnd = nTimesteps();
+        for (int t = 0; t < tEnd; ++t) {
+            for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+                std::vector<double> actPMF = AGENT(agentId).timestep(stateTrajectory[t], infeasibilityPenalty);
+                for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+                    double occupation = fabs((*this)[Event<AGENT>(t, agentId, actId)]);
+                    if (occupation > tol) {
+                        logP += occupation * log(actPMF[actId]);
+//                   - CombinatoricsUtils.factorialLog(occupation) // add this for non-act-fermionic trajectories
+                    }
+                }
+            }
+        }
+
+        // If any state occupation number, m, is greater than 1 then we need to
+        // multiply the prob by !m since the m agents can be assigned to m acts in
+        // !m ways.
+        for(const ModelState<AGENT> &step: stateTrajectory) {
+            for(double occupation: step) {
+                if(fabs(occupation) > 1.0 + tol) {
+                    logP += lgamma(fabs(occupation) + 1.0);
+                }
+            }
+        }
+        return logP;
+    }
 
 
 

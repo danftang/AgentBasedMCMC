@@ -8,6 +8,7 @@
 #include "Random.h"
 #include "UnitTests.h"
 #include "ABMPrior.h"
+#include "ConvexPolyhedron.h"
 
 using glp::X;
 
@@ -25,28 +26,21 @@ using glp::X;
 //    void myFunc(const MyClass &other) { std::cout << "myFunc const lValue ref" << std::endl;}
 //    void myFunc(MyClass &&other) { std::cout << "myFunc rValue ref" << std::endl;}
 //
-////    template<typename T>
-////    void myTFunc(const T &other) { std::cout << "myTFunc const lValue ref" << std::endl;}
 //    template<typename T>
 //    void myTFunc(T &other) { std::cout << "myTFunc lValue ref" << std::endl;}
 //    template<typename T>
 //    void myTFunc(T &&other) { std::cout << "myTFunc rValue ref" << std::endl;}
 //
 //};
-//
-//class MyClass2 {
-//public:
-//    MyClass c;
-//    MyClass2(MyClass m): c(std::move(m)) {}
-//};
 
 
 int main(int argc, char *argv[]) {
 
+
 //    PoissonState<PredPreyAgent> startState;
 //    ABMPrior<PredPreyAgent> myPrior(startState, 8);
 
-    UnitTests::testABMPrior();
+//    UnitTests::testABMPrior();
 
 //    std::cout << Experiments::informationIncrease(
 //            8,
