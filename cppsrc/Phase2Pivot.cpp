@@ -47,12 +47,12 @@ Phase2Pivot Phase2Pivot::reverse(glp::Simplex &lp) const {
 // orders pivot rows so that all structural vars in the original LP come before auxiliary vars
 void Phase2Pivot::orderPivotRows(glp::Simplex &lp) {
     nStructuralPivotRows = 0;
-    while(lp.kSimTokProb[lp.head[pivotRows[nStructuralPivotRows]]] > lp.originalProblem.nConstraints() && nStructuralPivotRows < pivotRows.size()) {
+    while(nStructuralPivotRows < pivotRows.size() && lp.isStructural(lp.head[pivotRows[nStructuralPivotRows]])) {
         ++nStructuralPivotRows;
     }
     for(int entry = nStructuralPivotRows + 1; entry < pivotRows.size(); ++entry) {
         int i = pivotRows[entry];
-        if(lp.kSimTokProb[lp.head[i]] > lp.originalProblem.nConstraints()) {
+        if(lp.isStructural(lp.head[i])) {
             // swap current entry with first non-structural
             pivotRows[entry] = pivotRows[nStructuralPivotRows];
             pivotRows[nStructuralPivotRows++] = i;

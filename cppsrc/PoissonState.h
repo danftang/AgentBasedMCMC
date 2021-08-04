@@ -61,8 +61,7 @@ public:
     ModelState<AGENT> nextSample() const {
         ModelState<AGENT> state;
         for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
-            int occupation = Random::nextPoisson(lambda(agentId));
-            if(occupation > 0) state[agentId] = occupation;
+            state[agentId] = Random::nextPoisson(lambda(agentId));
         }
         return state;
     }

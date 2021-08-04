@@ -11,8 +11,28 @@
 
 class ConvexPolyhedron: public std::vector<glp::Constraint> {
 public:
+    ConvexPolyhedron(): std::vector<glp::Constraint>() {}
+    explicit ConvexPolyhedron(const std::vector<glp::Constraint> &constraints): std::vector<glp::Constraint>(constraints) {}
+    explicit ConvexPolyhedron(std::vector<glp::Constraint> &&constraints): std::vector<glp::Constraint>(constraints) {}
 
-    ConvexPolyhedron &operator +=(const ConvexPolyhedron &other) {
+    bool isValidSolution(const std::vector<double> &X) const {
+        for(const glp::Constraint &constraint: *this) {
+            if(!constraint.isValidSolution(X)) return false;
+        }
+        return true;
+
+    }
+
+    glp::Problem toLPProblem() const {
+        std::cout << "Constraints are:\n" << *this << std::endl;
+        glp::Problem lp(*this);
+        lp.advBasis();
+        lp.warmUp();
+        std::cout << "Problem is:\n" << lp << std::endl;
+        return lp;
+    }
+
+    ConvexPolyhedron &operator +=(const std::vector<glp::Constraint> &other) {
         reserve(size()+other.size());
         for(const glp::Constraint &constraint: other) {
             push_back(constraint);
@@ -20,7 +40,7 @@ public:
         return *this;
     }
 
-    ConvexPolyhedron &operator +=(ConvexPolyhedron &&other) {
+    ConvexPolyhedron &operator +=(std::vector<glp::Constraint> &&other) {
         reserve(size()+other.size());
         for(glp::Constraint &constraint: other) {
             push_back(std::move(constraint));
@@ -28,27 +48,23 @@ public:
         return *this;
     }
 
-
-    ConvexPolyhedron operator +(const ConvexPolyhedron &other) && {
-        std::cout << "Doung lhs move\n";
+    ConvexPolyhedron operator +(const std::vector<glp::Constraint> &other) && {
         (*this) += other;
         return std::move(*this);
     }
 
-    ConvexPolyhedron operator +(ConvexPolyhedron &&other) && {
-        std::cout << "Doung double move\n";
+    ConvexPolyhedron operator +(std::vector<glp::Constraint> &&other) && {
         (*this) += std::move(other);
         return std::move(*this);
     }
 
-    ConvexPolyhedron operator +(ConvexPolyhedron &&other) const & {
-        std::cout << "Doung rhs move\n";
-        other += *this;
-        return std::move(other);
+    ConvexPolyhedron operator +(std::vector<glp::Constraint> &&other) const & {
+        ConvexPolyhedron result(std::move(other));
+        result += *this;
+        return result;
     }
 
-    ConvexPolyhedron operator +(const ConvexPolyhedron &other) const & {
-        std::cout << "Doung plain addition\n";
+    ConvexPolyhedron operator +(const std::vector<glp::Constraint> &other) const & {
         ConvexPolyhedron result(*this);
         result += other;
         return result;

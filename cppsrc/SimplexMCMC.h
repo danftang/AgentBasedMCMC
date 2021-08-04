@@ -12,6 +12,7 @@
 #include <cassert>
 #include "glpkpp.h"
 #include "ProposalPivot.h"
+class ConvexPMF;
 
 class SimplexMCMC: public glp::Simplex {
 public:
@@ -38,13 +39,14 @@ public:
 //    BasisProbability probability;
 
 
-    SimplexMCMC(glp::Problem &prob, std::function<double (const std::vector<double> &)> logProb);
+    SimplexMCMC(const glp::Problem &prob, std::function<double (const std::vector<double> &)> logProb);
+    SimplexMCMC(const ConvexPMF &);
 
     double lnDegeneracyProb();
     double lnProb() { return logProbFunc(X()); }
     double lnFractionalPenalty();
 
-    void nextSample();
+    const std::vector<double> & nextSample();
 //    double reverseTransitionProb(ProposalPivot proposal);
     void pivot(const ProposalPivot &piv) {
         this->glp::Simplex::pivot(piv.i, piv.j, piv.col, piv.leavingVarToUpperBound);
@@ -73,8 +75,8 @@ protected:
     int proposeColumn();
 
 
-    void toCanonicalState();
-    std::vector<int> auxiliaries();
+//    void toCanonicalState();
+//    std::vector<int> auxiliaries();
 
     void updateLPSolution(const ProposalPivot &pivot);
     void revertLPSolution(const ProposalPivot &pivot);

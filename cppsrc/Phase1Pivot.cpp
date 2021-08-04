@@ -277,7 +277,7 @@ bool Phase1Pivot::isActive(int pmfIndex) {
     int i = nonZeroRows[pmfIndex / 2];
     if(fabs(fabs(col[i])-1.0) > tol) return false;         // only pivot on unity elements
     int k = simplex.head[i];
-    return simplex.kSimTokProb[k] > simplex.originalProblem.nConstraints(); // don't pivot on auxiliary vars
+    return !simplex.isAuxiliary(k); // don't pivot on auxiliary vars
 }
 
 

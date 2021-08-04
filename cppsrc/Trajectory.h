@@ -21,29 +21,40 @@ public:
     explicit Trajectory(const std::vector<double> &lvalue): std::vector<double>(lvalue) { }
 
     // execute forward from start state
-    Trajectory(int nTimesteps, const ModelState<AGENT> &startState): Trajectory(nTimesteps) {
-        ModelState<AGENT> t0State = startState;
-        ModelState<AGENT> t1State;
-        for(int t=0; t<nTimesteps; ++t) {
-            for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
-                AGENT agent(agentId);
-                int nAgents = t0State[agentId];
-                ActFermionicDistribution actPMF = ActFermionicDistribution(agent.timestep(t0State, 0.0));
-                std::vector<bool> acts = actPMF.sampleUnordered(nAgents);
-                assert(acts.size() == AGENT::actDomainSize());
-                assert(nAgents <= acts.size());
-                for(int actId=0; actId < actPMF.nActs(); ++actId) {
-                    if(acts[actId]) {
-                        operator[](Event(t, agent, actId)) = 1.0;
-                        t1State += agent.consequences(actId);
+    Trajectory(int nTimesteps, const ModelState<AGENT> &startState) : Trajectory(nTimesteps) {
+        bool isValid;
+        int nAttempts=0;
+        do {
+            ModelState<AGENT> t0State = startState;
+            ModelState<AGENT> t1State;
+            isValid = true;
+            for (int t = 0; t < nTimesteps; ++t) {
+                for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+                    AGENT agent(agentId);
+                    int nAgents = t0State[agentId];
+                    ActFermionicDistribution actPMF = ActFermionicDistribution(agent.timestep(t0State, 0.0));
+                    std::vector<bool> acts = actPMF.sampleUnordered(nAgents);
+                    if(acts.size() == AGENT::actDomainSize()) {
+                        for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+                            if (acts[actId]) {
+                                operator[](Event(t, agent, actId)) = 1.0;
+                                t1State += agent.consequences(actId);
+                            } else {
+                                operator[](Event(t, agent, actId)) = 0.0;
+                            }
+                        }
+                    } else {
+                        isValid = false;
+                        t = nTimesteps;
+                        agentId = AGENT::domainSize();
                     }
                 }
+                t0State.setToZero();
+                t0State.swap(t1State);
             }
-            t0State.setToZero();
-            t0State.swap(t1State);
-        }
+            if(++nAttempts > 1000) throw(std::runtime_error("Can't create act-Fermionic prior sample of Trajectory. Probably too many agents for Fermionicity."));
+        } while(!isValid);
     }
-
 
     // event count (use Event(time,agent,act) instead)
 //    double operator()(int time, const AGENT &agent, const typename AGENT::Act &act) const {

@@ -9,6 +9,7 @@
 #include "UnitTests.h"
 #include "ABMPrior.h"
 #include "ConvexPolyhedron.h"
+#include "ABMConstraints.h"
 
 using glp::X;
 
@@ -40,7 +41,7 @@ int main(int argc, char *argv[]) {
 //    PoissonState<PredPreyAgent> startState;
 //    ABMPrior<PredPreyAgent> myPrior(startState, 8);
 
-//    UnitTests::testABMPrior();
+    UnitTests::testABMPrior();
 
 //    std::cout << Experiments::informationIncrease(
 //            8,

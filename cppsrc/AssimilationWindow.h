@@ -31,6 +31,8 @@ public:
         ABMProblem<AGENT> abm(realTrajectory.nTimesteps(), observations, [&](const Trajectory<AGENT> &trajectory) {
             return priorStartState.logProb(trajectory(0));
         });
+        abm.advBasis();
+        abm.warmUp();
         SimplexMCMC mcmc(abm, abm.logProbFunc());
 
         Trajectory<AGENT> firstGuessTrajectory(realTrajectory.nTimesteps(), priorStartState.nextSample());

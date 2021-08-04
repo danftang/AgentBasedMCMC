@@ -167,7 +167,8 @@ void Experiments::CatMouseExpt() {
 //    std::cout << initialTrajectory << std::endl;
 //    abm.stdBasis();
 //    abm.warmUp();
-
+    abm.advBasis();
+    abm.warmUp();
     SimplexMCMC mcmc(abm, abm.logProbFunc());
     std::cout << mcmc.X() << std::endl;
     for(int n=0; n<100; ++n) {

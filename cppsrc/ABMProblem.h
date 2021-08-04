@@ -37,7 +37,7 @@ public:
 
 //    double logProb(const glp::SparseVec & X) {
 //            const auto &trajectory = (const Trajectory<AGENT> &)X;
-//            double logP = trajectory.logPrior();
+//            double logP = trajectory.logProb();
 //            for(auto observation: observations) {
 //                logP += observation.logLikelihood(trajectory);
 //            }
@@ -74,7 +74,7 @@ public:
         }
 
 //        std::cout << " final logprob = " << logP << std::endl;
-//        logP += logPrior(X);
+//        logP += logProb(X);
         logP += logPrior(reinterpret_cast<const Trajectory<AGENT> &>(X));
         return logP;
     }
@@ -84,7 +84,7 @@ public:
         return [&](const std::vector<double> &X) { return this->logProb(X); };
     }
 
-    SimplexMCMC mcmcSampler() { return(SimplexMCMC(*this, logProbFunc())); }
+//    SimplexMCMC mcmcSampler() { return(SimplexMCMC(*this, logProbFunc())); }
 
 protected:
 

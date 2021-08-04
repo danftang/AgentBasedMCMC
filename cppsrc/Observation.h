@@ -31,8 +31,6 @@ public:
 //    agentState(time,agent),
 //    numberObserved(trajectory(time,agent)) { }
 
-
-
     double logLikelihood(const StateTrajectory<AGENT> &trajectory, double infeasibilityLogProb) const {
         return trajectory[agentState]==numberObserved?0.0:infeasibilityLogProb;
     }

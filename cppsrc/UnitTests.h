@@ -14,6 +14,8 @@
 #include "agents/BinomialAgent.h"
 #include "ABMPrior.h"
 #include "DeltaPMF.h"
+#include "PoissonPMF.h"
+#include "BinomialPMF.h"
 
 class UnitTests {
 public:
@@ -60,15 +62,16 @@ public:
             return log(X[1] + X[2] + X[3]);
         });
 
-        myPMF.convexSupport.addConstraint(0 <= 1.0*X(1) + 1.0*X(2) + 1.0*X(3) <= 2);
-        myPMF.convexSupport.addConstraint(0 <= 1.0*X(1) <= 1);
-        myPMF.convexSupport.addConstraint(0 <= 1.0*X(2) <= 1);
-        myPMF.convexSupport.addConstraint(0 <= 1.0*X(3) <= 1);
+        myPMF.convexSupport.push_back(0 <= 1.0*X(1) + 1.0*X(2) + 1.0*X(3) <= 2);
+        myPMF.convexSupport.push_back(0 <= 1.0*X(1) <= 1);
+        myPMF.convexSupport.push_back(0 <= 1.0*X(2) <= 1);
+        myPMF.convexSupport.push_back(0 <= 1.0*X(3) <= 1);
         std::cout << myPMF.convexSupport << std::endl;
 
         std::vector<int> sampleCounts(8,0);
+        ConvexPMF::DefaultSampler sampler(myPMF);
         for(int s=0; s<100000; ++s) {
-            std::vector<double> sample = myPMF.nextSample();
+            const std::vector<double> sample = sampler.nextSample();
             int vertexId = sample[1] + sample[2]*2 + sample[3]*4;
             ++sampleCounts[vertexId];
 //            std::cout << sample[3] << sample[2] << sample[1] << std::endl;
@@ -82,13 +85,15 @@ public:
     static void testABMPrior() {
         const int nTimesteps = 2;
         BinomialAgent::GRIDSIZE = nTimesteps+1;
-        ModelState<BinomialAgent> startState;
-        startState[0] = 1;
-        DeltaPMF startPMF(startState);
 
-        ABMPrior<BinomialAgent,DeltaPMF> prior(startPMF, nTimesteps);
+//        DeltaPMF startPMF({1.0, 0.0, 0.0});
+        BinomialPMF startPMF({0.4, 0.01, 0.01}, 2);
 
-        std::cout << prior.convexSupport << std::endl;
+        std::cout << "Start state support is:\n" << startPMF.convexSupport << std::endl;
+
+        ABMPrior<BinomialAgent,BinomialPMF> prior(startPMF, nTimesteps);
+
+        std::cout << "Prior support:\n" << prior.convexSupport << std::endl;
 
         ModelState<BinomialAgent> finalState;
         for(int s=0; s<10000; ++s) {
@@ -98,24 +103,24 @@ public:
         std::cout << finalState << std::endl;
 
         ModelState<BinomialAgent> mcmcFinalState;
-        ConvexPMF &convexPmf = prior;
+        SimplexMCMC sampler(prior);
         for(int burnIn=0; burnIn<100; ++burnIn) {
-            convexPmf.nextSample();
+            sampler.nextSample();
         }
-        std::cout << "Sampler:\n" << *convexPmf.sampler << std::endl;
+        std::cout << "Sampler:\n" << sampler << std::endl;
         for(int s=0; s<10000; ++s) {
-            Trajectory<BinomialAgent> sample = convexPmf.nextSample();
+            Trajectory<BinomialAgent> sample(sampler.nextSample());
 //            std::cout << sample << std::endl;
             mcmcFinalState += sample.endState();
         }
-        std::cout << "Feasible stats:\n" << convexPmf.sampler->feasibleStatistics << std::endl;
-        std::cout << "Infeasible stats:\n" << convexPmf.sampler->infeasibleStatistics << std::endl;
+        std::cout << "Feasible stats:\n" << sampler.feasibleStatistics << std::endl;
+        std::cout << "Infeasible stats:\n" << sampler.infeasibleStatistics << std::endl;
         std::cout << mcmcFinalState << std::endl;
 
-        boost::math::binomial binom = boost::math::binomial(nTimesteps, BinomialAgent::pMove);
-        for(int i=0; i<=nTimesteps; ++i) {
-            std::cout << i << " -> " << boost::math::pdf(binom, i) << std::endl;
-        }
+//        boost::math::binomial binom = boost::math::binomial(nTimesteps, BinomialAgent::pMove);
+//        for(int i=0; i<=nTimesteps; ++i) {
+//            std::cout << i << " -> " << boost::math::pdf(binom, i) << std::endl;
+//        }
     }
 };
 

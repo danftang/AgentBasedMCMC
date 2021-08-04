@@ -8,6 +8,7 @@
 #include "Phase2Pivot.h"
 #include "ProbabilisticColumnPivot.h"
 #include "PotentialEnergyPivot.h"
+#include "ConvexPMF.h"
 #include "debug.h"
 #include <algorithm>
 #include <cmath>
@@ -16,12 +17,14 @@
 
 // Initial basis of 'prob' should contain no fixed vars and all remaining auxiliary vars
 // use
-SimplexMCMC::SimplexMCMC(glp::Problem &prob, std::function<double (const std::vector<double> &)> logProb) :
-        Simplex(initialiseProblem(prob)),
+SimplexMCMC::SimplexMCMC(const glp::Problem &prob, std::function<double (const std::vector<double> &)> logProb) :
+        Simplex(prob),
         logProbFunc(std::move(logProb)) {
     setObjective(glp::SparseVec());
 }
 
+SimplexMCMC::SimplexMCMC(const ConvexPMF &pmf): SimplexMCMC(pmf.convexSupport.toLPProblem(), pmf.logProb) {
+}
 
 // Starting with zero solution, find a solution that satisfies the observations and
 // the interaction rules.
@@ -101,7 +104,7 @@ double SimplexMCMC::lnFractionalPenalty() {
 // Choose a pivot
 // and reject based on Metropolis-Hastings
 // returns the next nextSample
-void SimplexMCMC::nextSample() {
+const std::vector<double> & SimplexMCMC::nextSample() {
     int infeasibleCount = 0;
     bool sampleIsFeasible;
     do {
@@ -116,6 +119,7 @@ void SimplexMCMC::nextSample() {
             ++infeasibleCount;
         }
     } while(!sampleIsFeasible);
+    return X();
 }
 
 
@@ -149,7 +153,7 @@ bool SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
         // Accept proposal
 //        debug(std::cout << "Accepted proposal with log acceptance = " << logAcceptance << std::endl);
         //        std::cout << "Accepting deltaj = " << proposalPivot.deltaj << std::endl;
-        assert(proposalPivot.i == -1 || (kSimTokProb[head[proposalPivot.i]] > originalProblem.nConstraints()));
+        assert(proposalPivot.i == -1 || isStructural(head[proposalPivot.i]));
         assert(proposalPivot.i == -1 || proposalPivot.col[proposalPivot.i] > 0.9 || proposalPivot.col[proposalPivot.i] < -0.9);
 //        if(proposalPivot.deltaj != 0.0) {
 //            if(proposalPivot.i > 0) {
@@ -187,9 +191,9 @@ bool SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
 void SimplexMCMC::setLPState(const std::vector<double> &lpState) {
     for(int j=1; j <= nNonBasic(); ++j) {
         int kSim = head[nBasic() + j];
+        assert(isStructural(kSim));
         int kLP = kSimTokProb[kSim];
-        assert(kLP > originalProblem.nConstraints());
-        double v = lpState[kLP - originalProblem.nConstraints()];
+        double v = lpState[kLP - nBasic()];
         flag[j] = (fabs(u[kSim] - v) < fabs(l[kSim] - v));
     }
     spx_eval_beta(this, beta);
@@ -226,24 +230,24 @@ int SimplexMCMC::proposeColumn() {
 // pivots-in any auxiliary variables if there exists a basic variable on a bound
 // that has non-zero value in the incoming column.
 // Uses a greedy algorithm, pivoting in the candidate variable
-void SimplexMCMC::toCanonicalState() {
-    std::vector<int> nonBasicAux = auxiliaries();
-    bool pivoted = false;
-    do {
-
-    } while(pivoted);
-}
+//void SimplexMCMC::toCanonicalState() {
+//    std::vector<int> nonBasicAux = auxiliaries();
+//    bool pivoted = false;
+//    do {
+//
+//    } while(pivoted);
+//}
 
 
 // returns the set of nonBasic variables (by j-value) that correspond
 // to auxiliary variables in the original problem.
-std::vector<int> SimplexMCMC::auxiliaries() {
-    std::vector<int> nbAux;
-    for(int j = 1; j<=nNonBasic(); ++j) {
-        if(kSimTokProb[head[nBasic() + j]] <= originalProblem.nConstraints()) nbAux.push_back(j);
-    }
-    return nbAux;
-}
+//std::vector<int> SimplexMCMC::auxiliaries() {
+//    std::vector<int> nbAux;
+//    for(int j = 1; j<=nNonBasic(); ++j) {
+//        if(kSimTokProb[head[nBasic() + j]] <= originalProblem.nConstraints()) nbAux.push_back(j);
+//    }
+//    return nbAux;
+//}
 
 
 int SimplexMCMC::countFractionalPivCols() {
@@ -285,7 +289,7 @@ double SimplexMCMC::infeasibility() {
 
 
 void SimplexMCMC::updateLPSolution(const ProposalPivot &pivot) {
-    int nConstraints = originalProblem.nConstraints();
+    int nConstraints = nBasic();
     for(int i=1; i<=nBasic(); ++i) {
         int kProb = kSimTokProb[head[i]];
         if(kProb > nConstraints) lpSolution[kProb - nConstraints] += pivot.col[i] * pivot.deltaj;
@@ -296,7 +300,7 @@ void SimplexMCMC::updateLPSolution(const ProposalPivot &pivot) {
 
 
 void SimplexMCMC::revertLPSolution(const ProposalPivot &pivot) {
-    int nConstraints = originalProblem.nConstraints();
+    int nConstraints = nBasic();
     int kCol = kSimTokProb[head[nBasic() + pivot.j]];
     if(kCol > nConstraints) lpSolution[kCol - nConstraints] -= pivot.deltaj;
     for(int i=1; i<=nBasic(); ++i) {
@@ -339,18 +343,18 @@ void SimplexMCMC::SampleStatistics::update(bool accepted, const ProposalPivot &p
 // Check initial basis contains no fixed vars and all auxiliaries are in the basis
 bool SimplexMCMC::abmSanityChecks() {
     for(int k=1; k<=nVars(); ++k) {
-        if(l[k] == u[k] && kSimTokProb[k] > originalProblem.nConstraints()) {
+        if(l[k] == u[k] && isStructural(k)) {
             std::cerr << "WARNING: Non-auxiliary, fixed variable in the Simplex" << k << std::endl;
             return false;
         }
-        if(kSimTokProb[k] > originalProblem.nConstraints() && (l[k] != 0.0 || u[k] != 1.0 )) {
+        if(isStructural(k) && (l[k] != 0.0 || u[k] != 1.0 )) {
             std::cerr << "WARNING: non-binary structural var " << k << std::endl;
             return false;
         }
     }
     for(int j=1; j<=nNonBasic(); ++j) {
         int k = head[nBasic()+j];
-        if(kSimTokProb[k] <= originalProblem.nConstraints()) {
+        if(!isStructural(k)) {
             std::cerr << "WARNING: Non-basic auxiliary variable " << j << std::endl;
             return false;
         }
@@ -359,7 +363,7 @@ bool SimplexMCMC::abmSanityChecks() {
             return false;
         }
     }
-    assert(originalProblem.isValidSolution(X()));
+//    assert(originalProblem.isValidSolution(X()));
     return true;
 }
 
