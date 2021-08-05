@@ -32,6 +32,7 @@ public:
         return lp;
     }
 
+
     ConvexPolyhedron &operator +=(const std::vector<glp::Constraint> &other) {
         reserve(size()+other.size());
         for(const glp::Constraint &constraint: other) {

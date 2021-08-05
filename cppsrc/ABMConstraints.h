@@ -17,7 +17,7 @@ public:
 
     static ConvexPolyhedron continuityConstraints(int nTimesteps) {
         ConvexPolyhedron constraints;
-        std::vector<std::vector<int>> incomingEdges = consequencesByEndState();
+        std::vector<std::vector<Event<AGENT>>> incomingEdges = consequencesByEndState();
         for(int time = 1; time < nTimesteps; ++time) {
             for(int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
                 glp::Constraint &constraint = constraints.emplace_back(0.0 ,0.0);
@@ -26,9 +26,9 @@ public:
                     constraint.coefficients.insert(Event<AGENT>(time, agentState, act), 1.0);
                 }
                 // incoming edges
-                int timeOffset = (time-1)*AGENT::domainSize()*AGENT::actDomainSize();
-                for (int inEdge: incomingEdges[agentState]) {
-                    constraint.coefficients.insert(timeOffset + inEdge, -1.0);
+//                int timeOffset = (time-1)*AGENT::domainSize()*AGENT::actDomainSize();
+                for (const Event<AGENT> &inEdge: incomingEdges[agentState]) {
+                    constraint.coefficients.insert(Event<AGENT>(time-1,inEdge.agent(),inEdge.act()), -1.0);
                 }
             }
         }
@@ -90,8 +90,8 @@ public:
     }
 
 
-    static std::vector<std::vector<int>> consequencesByEndState() {
-        std::vector<std::vector<int> > endStateToEvents(AGENT::domainSize());
+    static std::vector<std::vector<Event<AGENT>>> consequencesByEndState() {
+        std::vector<std::vector<Event<AGENT>>> endStateToEvents(AGENT::domainSize());
         std::vector<AGENT> consequences;
         for(int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
             AGENT agent(agentState);

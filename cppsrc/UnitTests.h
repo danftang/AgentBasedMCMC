@@ -60,7 +60,7 @@ public:
         using glp::X;
         ConvexPMF myPMF([](const std::vector<double> &X) {
             return log(X[1] + X[2] + X[3]);
-        });
+        },4);
 
         myPMF.convexSupport.push_back(0 <= 1.0*X(1) + 1.0*X(2) + 1.0*X(3) <= 2);
         myPMF.convexSupport.push_back(0 <= 1.0*X(1) <= 1);
@@ -69,7 +69,7 @@ public:
         std::cout << myPMF.convexSupport << std::endl;
 
         std::vector<int> sampleCounts(8,0);
-        ConvexPMF::DefaultSampler sampler(myPMF);
+        SimplexMCMC sampler(myPMF);
         for(int s=0; s<100000; ++s) {
             const std::vector<double> sample = sampler.nextSample();
             int vertexId = sample[1] + sample[2]*2 + sample[3]*4;
@@ -87,17 +87,20 @@ public:
         BinomialAgent::GRIDSIZE = nTimesteps+1;
 
 //        DeltaPMF startPMF({1.0, 0.0, 0.0});
-        BinomialPMF startPMF({0.4, 0.01, 0.01}, 2);
+        BinomialPMF startDist({0.4, 0.01, 0.01}, 2);
 
-        std::cout << "Start state support is:\n" << startPMF.convexSupport << std::endl;
+        std::cout << "Start state support is:\n" << startDist.PMF().convexSupport << std::endl;
 
-        ABMPrior<BinomialAgent,BinomialPMF> prior(startPMF, nTimesteps);
+//        ABMPrior<BinomialAgent,BinomialPMF> prior(startPMF, nTimesteps);
+
+        ConvexPMF prior = ABMPrior<BinomialAgent>::PMF(startDist.PMF(), nTimesteps);
+        auto priorSampler = ABMPrior<BinomialAgent>::sampler(startDist.sampler(), nTimesteps);
 
         std::cout << "Prior support:\n" << prior.convexSupport << std::endl;
 
         ModelState<BinomialAgent> finalState;
         for(int s=0; s<10000; ++s) {
-            Trajectory<BinomialAgent> sample = prior.nextSample();
+            Trajectory<BinomialAgent> sample = priorSampler();
             finalState += sample.endState();
         }
         std::cout << finalState << std::endl;

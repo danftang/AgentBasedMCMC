@@ -10,7 +10,6 @@
 class BinomialPMF {
 public:
     std::vector<double> weights;
-    std::vector<glp::Constraint> convexSupport;
     int trials;
 
     explicit BinomialPMF(std::vector<double> weights, int trials): weights(std::move(weights)), trials(trials) {}
@@ -18,7 +17,7 @@ public:
     double p(int i) const { return weights.at(i); }
     double &p(int i) { return weights[i]; }
 
-    double operator ()(const std::vector<double> &X) const {
+    double logP(const std::vector<double> &X) const {
         double logP = 0.0;
         for(int i=0; i < weights.size(); ++i) {
             double successes = fabs(X[i]);
@@ -28,13 +27,23 @@ public:
         return logP;
     }
 
-    std::vector<double> nextSample() {
+    std::vector<double> nextSample() const {
         std::vector<double> state(weights.size());
         for(int i=0; i<weights.size(); ++i) {
             state[i] = Random::nextBinomial(trials,p(i));
-            std::cout << "Occupation " << i <<  " is " << state[i] << std::endl;
+//            std::cout << "Occupation " << i <<  " is " << state[i] << std::endl;
         }
         return state;
+    }
+
+    ConvexPMF PMF() {
+        return ConvexPMF([*this](const std::vector<double> &X) {
+            return logP(X);
+        },weights.size());
+    }
+
+    std::function<std::vector<double>()> sampler() {
+        return [*this]() { return this->nextSample(); };
     }
 
 };

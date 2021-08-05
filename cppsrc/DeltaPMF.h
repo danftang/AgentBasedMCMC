@@ -14,7 +14,7 @@ public:
     std::vector<double> deltaPoint;
 
     DeltaPMF(std::vector<double> nonZeroPoint):
-    ConvexPMF([this](const std::vector<double> &X) { return (*this)(X); }),
+    ConvexPMF([this](const std::vector<double> &X) { return (*this)(X); }, nonZeroPoint.size()),
     deltaPoint(std::move(nonZeroPoint)) {
         convexSupport.reserve(deltaPoint.size()-1);
         for(int i=0; i<deltaPoint.size(); ++i) {

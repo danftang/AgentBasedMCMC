@@ -10,20 +10,37 @@
 #include "SimplexMCMC.h"
 #include "ConvexPolyhedron.h"
 
+// Represents a probability mass function defined on the vertices of a convex polyhedron.
 class ConvexPMF {
 public:
-    typedef SimplexMCMC DefaultSampler;
+    typedef SimplexMCMC DefaultSampler; // put this in the Distribution class?
 
-    ConvexPolyhedron            convexSupport; // all non-zero probability point lie on the vertices of this polyhedron
-    std::function<double(const std::vector<double> &)>    logProb;   // function from vertex to log probability
+    std::function<double(const std::vector<double> &)>    logProb;   // function from vertex co-ord to log probability
+    int                         nDimensions;    // the number of dimensions of the convex polyhedron of points
+    ConvexPolyhedron            convexSupport;  // all non-zero probability points lie on the vertices of this polyhedron
 
-    ConvexPMF(std::function<double(const std::vector<double> &)> logPrior): logProb(std::move(logPrior)) { }
-    ConvexPMF(std::function<double(const std::vector<double> &)> logPrior,
-              ConvexPolyhedron constraints): logProb(std::move(logPrior)), convexSupport(std::move(constraints)) { }
+//    ConvexPMF(std::function<double(const std::vector<double> &)> logPrior): logProb(std::move(logPrior)) { }
+    ConvexPMF(
+            std::function<double(const std::vector<double> &)> logPrior,
+            int nDimensions,
+            ConvexPolyhedron constraints = ConvexPolyhedron()
+                      ):
+              logProb(std::move(logPrior)),
+              nDimensions(nDimensions),
+              convexSupport(std::move(constraints)) { }
 
 
     double operator()(const std::vector<double> &X) const { return convexSupport.isValidSolution(X) ? logProb(X) : 0.0; }
 
+    double logP(const std::vector<double> &X) const {
+        assert(X.size() == nDimensions);
+        return convexSupport.isValidSolution(X) ? logProb(X) : 0.0;
+    }
+    double P(const std::vector<double> &X) const { return exp(logP(X)); }
+
+    std::function<std::vector<double>()> sampler() {
+        return [mcmc = SimplexMCMC(*this)]() mutable { return std::vector<double>(mcmc.nextSample()); };
+    }
 
 //    virtual std::vector<double> nextSample() {
 //        if(sampler == NULL) initSampler();

@@ -11,43 +11,24 @@
 #include "ABMConstraints.h"
 
 // Prior PMF over ABM trajectories, given a PMF over start states
-template<typename AGENT, typename STARTSTATEPMF>
-class ABMPrior: public ConvexPMF {
+template<typename AGENT>
+class ABMPrior {
 public:
-    typedef ABMPrior<AGENT,STARTSTATEPMF> DefaultSampler;
 
-    STARTSTATEPMF startStatePMF; // a sampleable, convex PMF
-    int nTimesteps;
-
-
-    ABMPrior(STARTSTATEPMF startStateDistribution, int nTimesteps):
-    ConvexPMF([this](const std::vector<double> &X) { return (*this)(X); },
-              ABMConstraints<AGENT>::actFermionicABMConstraints(nTimesteps)),
-    startStatePMF(std::move(startStateDistribution)),
-    nTimesteps(nTimesteps) {
-        for(const glp::Constraint &constraint: startStatePMF.convexSupport) {
-            convexSupport.push_back(startStateConstraintToTrajectoryConstraint(constraint));
-        }
+    static ConvexPMF PMF(ConvexPMF startStatePMF, int nTimesteps) {
+        return ConvexPMF([startState = std::move(startStatePMF.logProb)](const std::vector<double> &X) {
+            const Trajectory<AGENT> &T = reinterpret_cast<const Trajectory<AGENT> &>(X);
+            return T.logProb() + startState(T(0));
+            },
+                         nTimesteps*AGENT::domainSize()*AGENT::actDomainSize()+1,
+                         ABMConstraints<AGENT>::actFermionicABMConstraints(nTimesteps) +
+                                 startStateConstraintsToTrajectoryConstraints(startStatePMF.convexSupport));
     }
 
-
-    ABMPrior(const ModelState<AGENT> &fixedStartState, int nTimesteps):
-            ConvexPMF(this->trajectoryLogProb),
-            startStatePMF(),
-            nTimesteps(nTimesteps) {
-    }
-
-
-
-    std::vector<double> nextSample() {
-        return Trajectory<AGENT>(nTimesteps, ModelState<AGENT>(startStatePMF.nextSample()));
-    }
-
-
-    double operator()(const std::vector<double> &X) {
-        const Trajectory<AGENT> &T = reinterpret_cast<const Trajectory<AGENT> &>(X);
-        assert(T.nTimesteps() == nTimesteps);
-        return T.logProb() + startStatePMF(T(0));
+    static std::function<std::vector<double>()> sampler(std::function<std::vector<double>()> startStateSampler, int nTimesteps) {
+        return [startSampler = std::move(startStateSampler),nTimesteps]() {
+            return Trajectory<AGENT>(nTimesteps, ModelState<AGENT>(startSampler()));
+        };
     }
 
 
@@ -59,6 +40,13 @@ public:
         return startStateConstraint.lowerBound <= trajectoryCoeffs <= startStateConstraint.upperBound;
     }
 
+    static ConvexPolyhedron startStateConstraintsToTrajectoryConstraints(const ConvexPolyhedron &startStateConstraints) {
+        ConvexPolyhedron trajectoryConstraints;
+        for(const glp::Constraint &constraint: startStateConstraints) {
+            trajectoryConstraints.push_back(startStateConstraintToTrajectoryConstraint(constraint));
+        }
+        return trajectoryConstraints;
+    }
 };
 
 
