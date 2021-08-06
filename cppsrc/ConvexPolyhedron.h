@@ -14,6 +14,7 @@ public:
     ConvexPolyhedron(): std::vector<glp::Constraint>() {}
     explicit ConvexPolyhedron(const std::vector<glp::Constraint> &constraints): std::vector<glp::Constraint>(constraints) {}
     explicit ConvexPolyhedron(std::vector<glp::Constraint> &&constraints): std::vector<glp::Constraint>(constraints) {}
+    ConvexPolyhedron(const std::initializer_list<glp::Constraint> &constraints): std::vector<glp::Constraint>(constraints) {}
 
     bool isValidSolution(const std::vector<double> &X) const {
         for(const glp::Constraint &constraint: *this) {

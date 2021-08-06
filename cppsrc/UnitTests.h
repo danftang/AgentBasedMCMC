@@ -12,7 +12,7 @@
 #include "StlStream.h"
 #include "ConvexPMF.h"
 #include "agents/BinomialAgent.h"
-#include "ABMPrior.h"
+#include "ABMWindow.h"
 #include "DeltaPMF.h"
 #include "PoissonPMF.h"
 #include "BinomialPMF.h"
@@ -91,10 +91,11 @@ public:
 
         std::cout << "Start state support is:\n" << startDist.PMF().convexSupport << std::endl;
 
-//        ABMPrior<BinomialAgent,BinomialPMF> prior(startPMF, nTimesteps);
+//        ABMWindow<BinomialAgent,BinomialPMF> prior(startPMF, nTimesteps);
 
-        ConvexPMF prior = ABMPrior<BinomialAgent>::PMF(startDist.PMF(), nTimesteps);
-        auto priorSampler = ABMPrior<BinomialAgent>::sampler(startDist.sampler(), nTimesteps);
+        ABMWindow<BinomialAgent> window(nTimesteps);
+        ConvexPMF prior = window.prior(startDist.PMF());
+        auto priorSampler = window.priorSampler(startDist.sampler());
 
         std::cout << "Prior support:\n" << prior.convexSupport << std::endl;
 

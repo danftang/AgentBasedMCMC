@@ -7,40 +7,41 @@
 #include "StlStream.h"
 #include "Random.h"
 #include "UnitTests.h"
-#include "ABMPrior.h"
+#include "ABMWindow.h"
 #include "ConvexPolyhedron.h"
 #include "ABMConstraints.h"
 
 using glp::X;
 
-
-class MyClass {
-public:
-    int i;
-
-    MyClass(): i(0) { std::cout << "Default constructing" << std::endl;}
-    MyClass(int j): i(j) { std::cout << "Initialising" << std::endl; }
-    MyClass(const MyClass &other): i(other.i) { std::cout << "Copying" << std::endl;}
-    MyClass(MyClass &&other): i(other.i) { other.i = -1; std::cout << "Moving" << std::endl;}
-
-    int operator()() const { return i; }
-
-    void myFunc(const MyClass &other) { std::cout << "myFunc const lValue ref" << std::endl;}
-    void myFunc(MyClass &&other) { std::cout << "myFunc rValue ref" << std::endl;}
-
-    template<typename T>
-    void myTFunc(T &other) { std::cout << "myTFunc lValue ref" << std::endl;}
-    template<typename T>
-    void myTFunc(T &&other) { std::cout << "myTFunc rValue ref" << std::endl;}
-
-};
-
+//
+//class MyClass {
+//public:
+//    int i;
+//
+//    MyClass(): i(0) { std::cout << "Default constructing" << std::endl;}
+//    MyClass(int j): i(j) { std::cout << "Initialising" << std::endl; }
+//    MyClass(const MyClass &other): i(other.i) { std::cout << "Copying" << std::endl;}
+//    MyClass(MyClass &&other): i(other.i) { other.i = -1; std::cout << "Moving" << std::endl;}
+//
+//    int operator()() const { return i; }
+//
+//    operator std::function<int()>() const & { return [*this]() { return i; }; }
+//    operator std::function<int()>() && { return [c = MyClass(std::move(*this))]() { return c.i; }; }
+//
+//    void myFunc(const MyClass &other) { std::cout << "myFunc const lValue ref" << std::endl;}
+//    void myFunc(MyClass &&other) { std::cout << "myFunc rValue ref" << std::endl;}
+//
+//    template<typename T>
+//    void myTFunc(T &other) { std::cout << "myTFunc lValue ref" << std::endl;}
+//    template<typename T>
+//    void myTFunc(T &&other) { std::cout << "myTFunc rValue ref" << std::endl;}
+//};
 
 
 int main(int argc, char *argv[]) {
 
 //    PoissonState<PredPreyAgent> startState;
-//    ABMPrior<PredPreyAgent> myPrior(startState, 8);
+//    ABMWindow<PredPreyAgent> myPrior(startState, 8);
 
     UnitTests::testABMPrior();
 

@@ -14,14 +14,16 @@
 class ConvexPMF {
 public:
     typedef SimplexMCMC DefaultSampler; // put this in the Distribution class?
+    typedef std::function<double(const std::vector<double> &)> PMF;
 
-    std::function<double(const std::vector<double> &)>    logProb;   // function from vertex co-ord to log probability
-    int                         nDimensions;    // the number of dimensions of the convex polyhedron of points
-    ConvexPolyhedron            convexSupport;  // all non-zero probability points lie on the vertices of this polyhedron
+    static const ConvexPMF INVALID_PMF;
 
-//    ConvexPMF(std::function<double(const std::vector<double> &)> logPrior): logProb(std::move(logPrior)) { }
+    PMF                 logProb;   // function from vertex co-ord to log probability
+    int                 nDimensions;    // the number of dimensions of the convex polyhedron of points
+    ConvexPolyhedron    convexSupport;  // all non-zero probability points lie on the vertices of this polyhedron
+
     ConvexPMF(
-            std::function<double(const std::vector<double> &)> logPrior,
+            PMF logPrior,
             int nDimensions,
             ConvexPolyhedron constraints = ConvexPolyhedron()
                       ):
@@ -41,12 +43,6 @@ public:
     std::function<std::vector<double>()> sampler() {
         return [mcmc = SimplexMCMC(*this)]() mutable { return std::vector<double>(mcmc.nextSample()); };
     }
-
-//    virtual std::vector<double> nextSample() {
-//        if(sampler == NULL) initSampler();
-//        sampler->nextSample();
-//        return sampler->X();
-//    }
 
 
     ConvexPMF &operator *=(const ConvexPMF &other) {
@@ -77,25 +73,13 @@ public:
         return std::move(*this);
     }
 
-
-    // union of supports... removed because could be confusing to mix multiplication of PMF and addition of constraints(?)
-//    ConvexPMF &operator *=(const std::vector<glp::Constraint> &otherSupport) {
-//        convexSupport += otherSupport;
-//        return *this;
-//    }
+//    // Standard 1-dimensional PMFs
+//
+//    static ConvexPMF binomial(int nTrials, double p);
+//    static ConvexPMF delta(int n);
 
 
 protected:
-//    SimplexMCMC *sampler = NULL;
-//    glp::Problem *lpProblem = NULL;
-
-//    void initSampler()          { sampler = new SimplexMCMC(convexSupport, logProb); }
-//    void invalidateSampler()    {
-//        if(sampler != NULL) {
-//            delete sampler;
-//            sampler = NULL;
-//        }
-//    }
 
 };
 

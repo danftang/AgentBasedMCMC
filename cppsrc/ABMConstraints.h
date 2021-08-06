@@ -106,6 +106,23 @@ public:
     }
 
 
+
+    static glp::Constraint startStateConstraintToTrajectoryConstraint(const glp::Constraint &startStateConstraint) {
+        glp::LinearSum trajectoryCoeffs;
+        for(int i=0; i<startStateConstraint.coefficients.sparseSize(); ++i) {
+            trajectoryCoeffs += startStateConstraint.coefficients.values[i]*State<AGENT>(0, startStateConstraint.coefficients.indices[i]);
+        }
+        return startStateConstraint.lowerBound <= trajectoryCoeffs <= startStateConstraint.upperBound;
+    }
+
+
+    static ConvexPolyhedron startStateConstraintsToTrajectoryConstraints(const ConvexPolyhedron &startStateConstraints) {
+        ConvexPolyhedron trajectoryConstraints;
+        for(const glp::Constraint &constraint: startStateConstraints) {
+            trajectoryConstraints.push_back(startStateConstraintToTrajectoryConstraint(constraint));
+        }
+        return trajectoryConstraints;
+    }
 };
 
 
