@@ -6,7 +6,6 @@
 #define GLPKTEST_CONVEXPMF_H
 
 #include "glpkpp.h"
-#include "PMF.h"
 #include "SimplexMCMC.h"
 #include "ConvexPolyhedron.h"
 
@@ -23,11 +22,11 @@ public:
     ConvexPolyhedron    convexSupport;  // all non-zero probability points lie on the vertices of this polyhedron
 
     ConvexPMF(
-            PMF logPrior,
+            PMF logP,
             int nDimensions,
             ConvexPolyhedron constraints = ConvexPolyhedron()
                       ):
-              logProb(std::move(logPrior)),
+              logProb(std::move(logP)),
               nDimensions(nDimensions),
               convexSupport(std::move(constraints)) { }
 

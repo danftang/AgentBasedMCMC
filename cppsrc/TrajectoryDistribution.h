@@ -2,23 +2,24 @@
 // Created by daniel on 27/07/2021.
 //
 
-#ifndef GLPKTEST_ABMWINDOW_H
-#define GLPKTEST_ABMWINDOW_H
+#ifndef GLPKTEST_TRAJECTORYDISTRIBUTION_H
+#define GLPKTEST_TRAJECTORYDISTRIBUTION_H
 
 #include <math.h>
 #include "ConvexPMF.h"
 #include "Trajectory.h"
 #include "ABMConstraints.h"
 #include "AgentStateObservation.h"
+#include "Distribution.h"
 
 // Represents the (measurable) space of trajectories of an ABM with a given number of timesteps,
 // from which we can generate various useful PMFs
 template<typename AGENT>
-class ABMWindow {
+class TrajectoryDistribution {
 public:
-    int nTimesteps;
+    int             nTimesteps;
 
-    ABMWindow(int nTimesteps): nTimesteps(nTimesteps) {
+    TrajectoryDistribution(int nTimesteps): nTimesteps(nTimesteps) {
         assert(nTimesteps != 0); // don't allow null space
     }
 
@@ -64,4 +65,4 @@ public:
 };
 
 
-#endif //GLPKTEST_ABMWINDOW_H
+#endif //GLPKTEST_TRAJECTORYDISTRIBUTION_H

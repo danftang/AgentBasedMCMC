@@ -6,7 +6,6 @@
 #define GLPKTEST_POISSONSTATE_H
 
 #include "ModelState.h"
-#include "PMF.h"
 
 template<typename AGENT>
 class PoissonState {

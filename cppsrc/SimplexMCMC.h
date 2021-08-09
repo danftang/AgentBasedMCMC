@@ -16,6 +16,7 @@ class ConvexPMF;
 
 class SimplexMCMC: public glp::Simplex {
 public:
+
     static constexpr double fractionalK = 0.1;
 //    static constexpr double tol = 1e-8;
 
@@ -39,8 +40,10 @@ public:
 //    BasisProbability probability;
 
 
-    SimplexMCMC(const glp::Problem &prob, std::function<double (const std::vector<double> &)> logProb);
-    SimplexMCMC(const ConvexPMF &);
+    SimplexMCMC(const glp::Problem &prob,
+                std::function<double(const std::vector<double> &)> logProb,
+                const std::vector<double> &initialState = std::vector<double>());
+    SimplexMCMC(const ConvexPMF &, const std::vector<double> &initialState = std::vector<double>());
 
     double lnDegeneracyProb();
     double lnProb() { return logProbFunc(X()); }

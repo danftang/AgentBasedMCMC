@@ -6,8 +6,9 @@
 #define GLPKTEST_BINOMIALPMF_H
 
 #include "Random.h"
+#include "Distribution.h"
 
-class BinomialPMF {
+class BinomialPMF: public Distribution {
 public:
     std::vector<double> weights;
     int trials;
@@ -19,7 +20,7 @@ public:
 
     double logP(const std::vector<double> &X) const {
         double logP = 0.0;
-        for(int i=0; i < weights.size(); ++i) {
+        for(int i=0; i < dimension(); ++i) {
             double successes = fabs(X[i]);
             double p = weights[i];
             logP +=  successes*log(p) + (trials-successes)*log(1.0-p) + lgamma(trials+1) - lgamma(trials-successes+1) - lgamma(successes+1); // log of Binomial
@@ -36,15 +37,17 @@ public:
         return state;
     }
 
-    ConvexPMF PMF() {
+    ConvexPMF PMF() const {
         return ConvexPMF([*this](const std::vector<double> &X) {
             return logP(X);
-        },weights.size());
+        },dimension());
     }
 
-    std::function<std::vector<double>()> sampler() {
+    std::function<std::vector<double>()> sampler() const {
         return [*this]() { return this->nextSample(); };
     }
+
+    int dimension() const { return weights.size(); }
 
 };
 

@@ -5,7 +5,7 @@
 #ifndef GLPKTEST_ABMIMPORTANCESAMPLER_H
 #define GLPKTEST_ABMIMPORTANCESAMPLER_H
 
-// PROBLEM should be an Assimilation Problem with traits and members as in ABMAssimilationProblem
+// PROBLEM should be an Assimilation Problem with traits and members as in AssimilationProblem
 template<typename PROBLEM>
 class ABMImportanceSampler {
 public:

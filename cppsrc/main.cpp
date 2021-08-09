@@ -7,9 +7,10 @@
 #include "StlStream.h"
 #include "Random.h"
 #include "UnitTests.h"
-#include "ABMWindow.h"
+#include "TrajectoryDistribution.h"
 #include "ConvexPolyhedron.h"
 #include "ABMConstraints.h"
+#include "AssimilationProblem.h"
 
 using glp::X;
 
@@ -41,7 +42,7 @@ using glp::X;
 int main(int argc, char *argv[]) {
 
 //    PoissonState<PredPreyAgent> startState;
-//    ABMWindow<PredPreyAgent> myPrior(startState, 8);
+//    TrajectoryDistribution<PredPreyAgent> myPrior(startState, 8);
 
     UnitTests::testABMPrior();
 

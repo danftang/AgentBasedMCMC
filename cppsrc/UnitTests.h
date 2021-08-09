@@ -12,10 +12,11 @@
 #include "StlStream.h"
 #include "ConvexPMF.h"
 #include "agents/BinomialAgent.h"
-#include "ABMWindow.h"
+#include "TrajectoryDistribution.h"
 #include "DeltaPMF.h"
 #include "PoissonPMF.h"
 #include "BinomialPMF.h"
+#include "AssimilationProblem.h"
 
 class UnitTests {
 public:
@@ -91,23 +92,27 @@ public:
 
         std::cout << "Start state support is:\n" << startDist.PMF().convexSupport << std::endl;
 
-//        ABMWindow<BinomialAgent,BinomialPMF> prior(startPMF, nTimesteps);
+//        TrajectoryDistribution<BinomialAgent,BinomialPMF> prior(startPMF, nTimesteps);
 
-        ABMWindow<BinomialAgent> window(nTimesteps);
-        ConvexPMF prior = window.prior(startDist.PMF());
-        auto priorSampler = window.priorSampler(startDist.sampler());
+        TrajectoryDistribution<BinomialAgent> window(nTimesteps);
+//        ConvexPMF prior = window.prior(startDist.PMF());
+//        auto priorSampler = window.priorSampler(startDist.sampler());
 
-        std::cout << "Prior support:\n" << prior.convexSupport << std::endl;
+        AssimilationProblem problem(
+                window.prior(startDist.PMF()),
+                window.priorSampler(startDist.sampler()));
+
+        std::cout << "Prior support:\n" << problem.priorPMF.convexSupport << std::endl;
 
         ModelState<BinomialAgent> finalState;
         for(int s=0; s<10000; ++s) {
-            Trajectory<BinomialAgent> sample = priorSampler();
+            Trajectory<BinomialAgent> sample = problem.priorSampler();
             finalState += sample.endState();
         }
-        std::cout << finalState << std::endl;
+        std::cout << "Prior samples: " <<  finalState << std::endl;
 
         ModelState<BinomialAgent> mcmcFinalState;
-        SimplexMCMC sampler(prior);
+        SimplexMCMC sampler = problem.simplexSampler();
         for(int burnIn=0; burnIn<100; ++burnIn) {
             sampler.nextSample();
         }

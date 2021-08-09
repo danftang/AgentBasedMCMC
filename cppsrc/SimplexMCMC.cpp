@@ -17,20 +17,27 @@
 
 // Initial basis of 'prob' should contain no fixed vars and all remaining auxiliary vars
 // use
-SimplexMCMC::SimplexMCMC(const glp::Problem &prob, std::function<double (const std::vector<double> &)> logProb) :
-        Simplex(prob),
-        logProbFunc(std::move(logProb)) {
+SimplexMCMC::SimplexMCMC(
+        const glp::Problem &prob,
+        std::function<double (const std::vector<double> &)> logProb,
+        const std::vector<double> &initialState)
+        : Simplex(prob), logProbFunc(std::move(logProb)) {
     setObjective(glp::SparseVec());
+    if(initialState.size() != 0) setLPState(initialState);
+    findFeasibleStartPoint();
 }
 
-SimplexMCMC::SimplexMCMC(const ConvexPMF &pmf): SimplexMCMC(pmf.convexSupport.toLPProblem(), pmf.logProb) {
-}
+
+SimplexMCMC::SimplexMCMC(
+        const ConvexPMF &pmf,
+        const std::vector<double> &initialState)
+        : SimplexMCMC(pmf.convexSupport.toLPProblem(), pmf.logProb, initialState) { }
 
 // Starting with zero solution, find a solution that satisfies the observations and
 // the interaction rules.
 void SimplexMCMC::findFeasibleStartPoint() {
     int iterations = 0;
-    do {
+    while(!solutionIsPrimaryFeasible()) {
         ProposalPivot proposal = Phase1Pivot(*this);
         pivot(proposal);
 //        std::cout << iterations << " Pivoted on " << proposal.i << ", " << proposal.j << " " << proposal.deltaj << " " << proposal.leavingVarToUpperBound
@@ -39,7 +46,7 @@ void SimplexMCMC::findFeasibleStartPoint() {
         debug(if(iterations%256 == 0) std::cout << "iteration:" << iterations << " infeasibility = " << infeasibility() << std::endl);
         iterations++;
 
-    } while(!solutionIsPrimaryFeasible());
+    } ;
     debug(std::cout << "Found initial solution in " << iterations << " iterations" << std::endl);
 }
 
