@@ -30,7 +30,7 @@ public:
 
 
     void addObservation(ConvexPMF observationLikelihood) {
-        likelihoodPMF.atomicPMFs.push_back(std::move(observationLikelihood));
+        likelihoodPMF *= std::move(observationLikelihood);
     }
 
 

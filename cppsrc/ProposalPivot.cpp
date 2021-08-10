@@ -71,7 +71,7 @@ void ProposalPivot::initNonZeroRows() {
 std::multimap<double,int> ProposalPivot::getPivotsByDeltaJ() {
     assert(j > 0);
 
-    std::multimap<double, int> allPivots; // from delta_j to PMF-index.
+    std::multimap<double, int> allPivots; // from delta_j to LogPMF-index.
 
     for(int m=0; m < nonZeroRows.size(); ++m) {
         int i = nonZeroRows[m];

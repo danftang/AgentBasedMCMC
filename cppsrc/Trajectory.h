@@ -20,7 +20,8 @@ public:
     Trajectory(std::vector<double> &&rvalue): std::vector<double>(rvalue) { }
     explicit Trajectory(const std::vector<double> &lvalue): std::vector<double>(lvalue) { }
 
-    // execute forward from start state
+    // execute forward from start state, choosing a trajectory with probability
+    // equal to the joint conditioned on the start state
     Trajectory(int nTimesteps, const ModelState<AGENT> &startState) : Trajectory(nTimesteps) {
         bool isValid;
         int nAttempts=0;

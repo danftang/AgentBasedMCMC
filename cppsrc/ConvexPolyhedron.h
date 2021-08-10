@@ -7,6 +7,7 @@
 
 
 #include <vector>
+#include "StlStream.h"
 #include "glpkpp.h"
 
 class ConvexPolyhedron: public std::vector<glp::Constraint> {
@@ -18,6 +19,7 @@ public:
 
     bool isValidSolution(const std::vector<double> &X) const {
         for(const glp::Constraint &constraint: *this) {
+//            std::cout << "Checking if " << X << " satisfies " << constraint << std::endl;
             if(!constraint.isValidSolution(X)) return false;
         }
         return true;

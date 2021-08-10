@@ -8,6 +8,7 @@
 
 #include <vector>
 #include "ConvexPMF.h"
+#include "PMFProduct.h"
 
 // If we're multiplying a very large number of terms, better to
 // hold them separately to avoid stack overflow when optimisation
@@ -16,9 +17,10 @@
 // The cast operator allows this class to be cast to an ordinaary
 // ConvexPMF when required.
 class ConvexPMFProduct {
+protected:
+    PMFProduct atomicPMFs;
 public:
-    std::vector<ConvexPMF::PMF> atomicPMFs;
-    ConvexPolyhedron support;
+    ConvexPolyhedron convexSupport;
     int nDimensions;
 
     ConvexPMFProduct(int nDimensions): nDimensions(nDimensions) { }
@@ -35,31 +37,32 @@ public:
 
     int size() const { return atomicPMFs.size(); }
 
+    double logP(const std::vector<double> &X) const {
+        return atomicPMFs.logP(X);
+    }
+
     ConvexPMFProduct &operator *=(ConvexPMF atom) {
         assert(nDimensions == atom.nDimensions);
-        atomicPMFs.push_back(std::move(atom.logProb));
-        support += std::move(atom.convexSupport);
+        atomicPMFs *= std::move(atom.logProb);
+        convexSupport += std::move(atom.convexSupport);
         return *this;
     }
 
 
     ConvexPMFProduct &operator *=(ConvexPMFProduct others) {
         assert(nDimensions == others.nDimensions);
-        atomicPMFs.reserve(atomicPMFs.size() + others.atomicPMFs.size());
-        for(ConvexPMF::PMF &atom: others.atomicPMFs) {
-            atomicPMFs.push_back(std::move(atom));
-        }
-        support += std::move(others.support);
+        atomicPMFs *= others.atomicPMFs;
+        convexSupport += std::move(others.convexSupport);
         return *this;
     }
 
     ConvexPMFProduct operator *(ConvexPMF other) const & {
         assert(nDimensions == other.nDimensions);
         ConvexPMFProduct prod(nDimensions);
-        prod.atomicPMFs.reserve(atomicPMFs.size()+1);
-        for(const ConvexPMF::PMF &pmf: atomicPMFs) prod.atomicPMFs.push_back(pmf);
-        prod.atomicPMFs.push_back(std::move(other.logProb));
-        prod.support += std::move(other.convexSupport);
+        prod.atomicPMFs = atomicPMFs * std::move(other.logProb);
+        prod.convexSupport.reserve(convexSupport.size() + other.convexSupport.size());
+        prod.convexSupport += convexSupport;
+        prod.convexSupport += std::move(other.convexSupport);
         return prod;
     }
 
@@ -69,20 +72,10 @@ public:
     }
 
 
-    operator ConvexPMF() const & {
-        return ConvexPMF([atoms = this->atomicPMFs](const std::vector<double> &X) {
-            double logP = 0.0;
-            for(const ConvexPMF::PMF &pmf: atoms) logP += pmf(X);
-            return logP;
-        }, nDimensions, support);
-    }
+    operator ConvexPMF() const & { return ConvexPMF(atomicPMFs.PMF(), nDimensions, convexSupport); }
 
     operator ConvexPMF() && {
-        return ConvexPMF([atoms = std::move(atomicPMFs)](const std::vector<double> &X) {
-            double logP = 0.0;
-            for(const ConvexPMF::PMF &pmf: atoms) logP += pmf(X);
-            return logP;
-            }, nDimensions, std::move(support));
+        return ConvexPMF(std::move(atomicPMFs).PMF(), nDimensions, std::move(convexSupport));
     }
 
 

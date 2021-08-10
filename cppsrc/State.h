@@ -22,26 +22,12 @@ public:
     agent(agent) { }
 
 
-    double forwardOccupationNumber(const std::vector<double> &trajectory) {
-        double occupation = 0;
-        for(int act=0; act<AGENT::actDomainSize; ++act) {
-            occupation += trajectory[Event(time,agent,act)];
-        }
-        return occupation;
-    }
+    double forwardOccupationNumber(const std::vector<double> &trajectory) const;
 
+    double backwardOccupationNumber(const std::vector<double> &trajectory) const;
 
-    double backwardOccupationNumber(const std::vector<double> &trajectory) {
-        assert(time != 0);
-        double occupation = 0;
-        for(const Event<AGENT> &incomingEvent : incomingEventsByState[agent]) {
-            occupation += trajectory[Event(time-1, incomingEvent.agent(), incomingEvent.act())];
-        }
-        return occupation;
-    }
-
-    int occupationUpperBound() const {
-        return std::min(AGENT::actDomianSize(), incomingEventsByState[agent].size());
+    double occupationUpperBound() const {
+        return std::min(AGENT::actDomainSize()*1.0, incomingEventsByState[agent].size()*1.0);
     }
 
 
@@ -90,9 +76,28 @@ public:
 
 };
 
-template<typename AGENT>
-const std::vector<std::vector<Event<AGENT>>> incomingEventsByState = State<AGENT>::calculateIncomingEventsByState();
 
+template<typename AGENT>
+const std::vector<std::vector<Event<AGENT>>> State<AGENT>::incomingEventsByState = State<AGENT>::calculateIncomingEventsByState();
+
+template<typename AGENT>
+double State<AGENT>::backwardOccupationNumber(const std::vector<double> &trajectory) const {
+    assert(time != 0);
+    double occupation = 0;
+    for(const Event<AGENT> &incomingEvent : incomingEventsByState[agent]) {
+        occupation += trajectory[Event(time-1, incomingEvent.agent(), incomingEvent.act())];
+    }
+    return occupation;
+}
+
+template<typename AGENT>
+double State<AGENT>::forwardOccupationNumber(const std::vector<double> &trajectory) const {
+    double occupation = 0;
+    for(int act=0; act<AGENT::actDomainSize(); ++act) {
+        occupation += trajectory[Event(time,agent,act)];
+    }
+    return occupation;
+}
 
 
 #endif //GLPKTEST_STATE_H

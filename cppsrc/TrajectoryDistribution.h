@@ -24,6 +24,9 @@ public:
     }
 
 
+    // Takes a PMF over the start state of an ABM and returns the PMF over trajectories of this window length
+    // such that the probability of a trajectory is the prior probability of the trajectory times the probability
+    // of the start state.
     ConvexPMF prior(ConvexPMF startStatePMF) {
         return ConvexPMF([startState = std::move(startStatePMF.logProb)](const std::vector<double> &X) {
             const Trajectory<AGENT> &T = reinterpret_cast<const Trajectory<AGENT> &>(X);

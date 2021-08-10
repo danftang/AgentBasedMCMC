@@ -38,13 +38,25 @@ using glp::X;
 //    void myTFunc(T &&other) { std::cout << "myTFunc rValue ref" << std::endl;}
 //};
 
+//class MyClass {
+//public:
+//    int i = 1234;
+//
+//    double logP(const std::vector<double> &X) { return i; }
+//
+//    int operator()() { return i; }
+//    double operator()(double x) { return i+x; }
+//
+//
+//};
 
 int main(int argc, char *argv[]) {
 
 //    PoissonState<PredPreyAgent> startState;
 //    TrajectoryDistribution<PredPreyAgent> myPrior(startState, 8);
 
-    UnitTests::testABMPrior();
+    UnitTests::testValidTrajectorySet();
+//    UnitTests::testRejectionSampler();
 
 //    std::cout << Experiments::informationIncrease(
 //            8,

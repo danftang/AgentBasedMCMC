@@ -63,7 +63,7 @@ void PotentialEnergyPivot::chooseRow() {
     //   if(infeas > 0.0) std::cout << "Infeasibility = " << infeas << std::endl;
     //////////////
 
-    std::multimap<double, int> transitions = getPivotsByDeltaJ(); // from delta_j to PMF-index.
+    std::multimap<double, int> transitions = getPivotsByDeltaJ(); // from delta_j to LogPMF-index.
 
     // now populate pivotPMF by going from lowest to highest delta_j in order
     std::vector<double> pivotPMF(nonZeroRows.size() * 2 + 2, DBL_MAX); // index is (2*activeRowIndex + toUpperBound), value is probability mass

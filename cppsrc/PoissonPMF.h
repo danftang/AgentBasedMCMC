@@ -10,7 +10,7 @@
 #include "glpkpp.h"
 #include "Random.h"
 
-// Represents a PMF where each variable is drawn from a Poisson distribution
+// Represents a LogPMF where each variable is drawn from a Poisson distribution
 class PoissonPMF {
 public:
     std::vector<double> lambdas;

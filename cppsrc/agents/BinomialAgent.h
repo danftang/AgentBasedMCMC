@@ -10,10 +10,11 @@
 #include "glpkpp.h"
 #include "../ModelState.h"
 
+// Agent that has no interactions and can either stay put or move right (on a circular, 1D domain)
 class BinomialAgent {
 public:
     static int GRIDSIZE;
-    static double pMove;
+    static double pMove; // probability of moving right
 
     typedef int Act;
 

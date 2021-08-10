@@ -81,7 +81,7 @@ THE SOFTWARE.
 #    include <boost/filesystem.hpp>
 #endif // BOOST_VERSION
 
-// Note: this is here for reverse compatibility.  The new way to enable blitz support is to
+// Note: this is here for reverse compatibility.  The new way to enable blitz convexSupport is to
 // just include the gnuplot-iostream.h header after you include the blitz header (likewise for
 // armadillo).
 #ifdef GNUPLOT_ENABLE_BLITZ
@@ -509,7 +509,7 @@ template<> struct TextSender<long double> : FloatTextSender<long double> { };
 
 // }}}2
 
-// {{{2 std::pair support
+// {{{2 std::pair convexSupport
 
 template <typename T, typename U>
 struct TextSender<std::pair<T, U>> {
@@ -538,7 +538,7 @@ struct BinarySender<std::pair<T, U>> {
 
 // }}}2
 
-// {{{2 std::complex support
+// {{{2 std::complex convexSupport
 
 template <typename T>
 struct TextSender<std::complex<T>> {
@@ -567,7 +567,7 @@ struct BinarySender<std::complex<T>> {
 
 // }}}2
 
-// {{{2 boost::tuple support
+// {{{2 boost::tuple convexSupport
 
 template <typename T>
 struct TextSender<T,
@@ -609,7 +609,7 @@ struct BinarySender<T,
 
 // }}}2
 
-// {{{2 std::tuple support
+// {{{2 std::tuple convexSupport
 
 // http://stackoverflow.com/questions/6245735/pretty-print-stdtuple
 
@@ -788,7 +788,7 @@ class ArrayTraits<T&&> : public ArrayTraits<T> { };
 
 // }}}2
 
-// {{{2 STL container support
+// {{{2 STL container convexSupport
 
 template <typename TI, typename TV>
 class IteratorRange {
@@ -845,7 +845,7 @@ public:
 
 // }}}2
 
-// {{{2 C style array support
+// {{{2 C style array convexSupport
 
 template <typename T, size_t N>
 class ArrayTraits<T[N]> : public ArrayTraitsDefaults<T> {
@@ -859,7 +859,7 @@ public:
 
 // }}}2
 
-// {{{2 std::pair support
+// {{{2 std::pair convexSupport
 
 template <typename RT, typename RU>
 class PairOfRange {
@@ -926,7 +926,7 @@ public:
 
 // }}}2
 
-// {{{2 boost::tuple support
+// {{{2 boost::tuple convexSupport
 
 template <typename T>
 class ArrayTraits<T,
@@ -973,7 +973,7 @@ public:
 
 // }}}2
 
-// {{{2 std::tuple support
+// {{{2 std::tuple convexSupport
 
 template <typename Tuple, size_t idx>
 struct StdTupUnwinder {
@@ -1297,7 +1297,7 @@ void deref_and_print(std::ostream &stream, const VecOfRange<T> &arg, PrintMode) 
 //
 // The Depth argument tells how deep to recurse.  It will be either `2` for 2D data, formatted
 // into blocks and lines, with empty lines between blocks, or `1` for 1D data formatted into
-// lines but not blocks.  Gnuplot only supports 1D and 2D data, but if it were to support 3D in
+// lines but not blocks.  Gnuplot only supports 1D and 2D data, but if it were to convexSupport 3D in
 // the future (e.g. volume rendering), all that would be needed would be some trivial changes
 // in this section.  After Depth number of nested containers have been recursed into, control
 // is passed to deref_and_print(), which treats any further nested containers as columns.
@@ -1398,7 +1398,7 @@ void handle_colunwrap_tag(std::ostream &stream, const T &arg, ColUnwrapYes, Prin
 // Parse the OrganizationMode tag then forward to handle_colunwrap_tag() for further
 // processing.  If passed the Mode1D or Mode2D tags, then set Depth=1 or Depth=2.  If passed
 // Mode{1,2}DUnwrap then use the ColUnwrapYes tag.  If passed ModeAuto (which is for legacy
-// support) then use ModeAutoDecoder to guess which of Mode1D, Mode2D, etc. should be used.
+// convexSupport) then use ModeAutoDecoder to guess which of Mode1D, Mode2D, etc. should be used.
 
 template <typename T, typename PrintMode>
 void handle_organization_tag(std::ostream &stream, const T &arg, Mode1D, PrintMode) {
@@ -2024,7 +2024,7 @@ using gnuplotio::Gnuplot;
 
 // {{{1 Support for 3rd party array libraries
 
-// {{{2 Blitz support
+// {{{2 Blitz convexSupport
 
 // This is outside of the main header guard so that it will be compiled when people do
 // something like this:
@@ -2161,7 +2161,7 @@ public:
 
 // }}}2
 
-// {{{2 Armadillo support
+// {{{2 Armadillo convexSupport
 
 // This is outside of the main header guard so that it will be compiled when people do
 // something like this:
@@ -2401,7 +2401,7 @@ public:
 
 // }}}2
 
-// {{{2 Eigen support
+// {{{2 Eigen convexSupport
 
 // This is outside of the main header guard so that it will be compiled when people do
 // something like this:

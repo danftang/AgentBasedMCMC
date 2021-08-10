@@ -5,7 +5,7 @@
 #include "CatMouseAgent.h"
 #include "../State.h"
 
-// returns PMF over acts
+// returns LogPMF over acts
 std::vector<double> CatMouseAgent::timestep(const ModelState<CatMouseAgent> &others, bool allowInfeasibleActs) const {
     static constexpr double pCatMove = 0.25;
     std::vector<double> actPmf(actDomainSize());

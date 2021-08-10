@@ -7,6 +7,7 @@
 
 template<typename AGENT>
 class AgentStateObservation {
+public:
     State<AGENT> state;
     std::function<double(double)> logLikelihood; // probability of making the observation given the occupation number of 'state'
     double upperBound;
@@ -24,12 +25,13 @@ class AgentStateObservation {
     {
     }
 
-    double logP(double occupation) {
+    double logP(double occupation) const {
+        if(occupation < lowerBound || occupation > upperBound) return -INFINITY;
         return logLikelihood(occupation);
     }
 
 
-    ConvexPolyhedron support() {
+    ConvexPolyhedron support() const {
         if(lowerBound > 0 || upperBound < state.occupationUpperBound()) {
             return ConvexPolyhedron({std::max(lowerBound,0.0) <= 1.0*state <= std::min(upperBound,state.occupationUpperBound())});
         }

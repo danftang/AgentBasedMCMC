@@ -17,7 +17,7 @@ class ConvexPMF;
 class SimplexMCMC: public glp::Simplex {
 public:
 
-    static constexpr double fractionalK = 0.1;
+//    static constexpr double fractionalK = 0.1;
 //    static constexpr double tol = 1e-8;
 
     class SampleStatistics {
@@ -47,7 +47,7 @@ public:
 
     double lnDegeneracyProb();
     double lnProb() { return logProbFunc(X()); }
-    double lnFractionalPenalty();
+    // double lnFractionalPenalty();
 
     const std::vector<double> & nextSample();
 //    double reverseTransitionProb(ProposalPivot proposal);

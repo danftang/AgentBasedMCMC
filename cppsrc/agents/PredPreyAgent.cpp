@@ -33,7 +33,7 @@ std::vector<PredPreyAgent> PredPreyAgent::consequences(PredPreyAgent::Act act) c
 // is the expectation averaged over the prior distribution of 'others' (note that this has the
 // consequence that the sum of the acts no longer adds to 1 since different acts are relative to different
 // distributions of 'others'). This is to enable different uses: for a forward run we set allowInfeasibleActs to
-// false and get a PMF over acts, whereas when calculating the probability of a trajectory by setting allowInfeasibleActs
+// false and get a LogPMF over acts, whereas when calculating the probability of a trajectory by setting allowInfeasibleActs
 // we extend probability calculation to infeasible trajectories in a reasonably smooth manner.
 std::vector<double> PredPreyAgent::timestep(const ModelState<PredPreyAgent> &others, double infeasibilityProb) const {
 

@@ -96,16 +96,16 @@ double SimplexMCMC::lnDegeneracyProb() {
     return lnP;
 }
 
-double SimplexMCMC::lnFractionalPenalty() {
-    // fractions must be in the basis, so check b
-    double penalty = 0.0;
-    for(int i=1; i<=m; ++i) {
-        if(fabs(round(beta[i]) - beta[i]) > tol) {
-            penalty += fractionalK;
-        }
-    }
-    return penalty;
-}
+//double SimplexMCMC::lnFractionalPenalty() {
+//    // fractions must be in the basis, so check b
+//    double penalty = 0.0;
+//    for(int i=1; i<=m; ++i) {
+//        if(fabs(round(beta[i]) - beta[i]) > tol) {
+//            penalty += fractionalK;
+//        }
+//    }
+//    return penalty;
+//}
 
 
 // Choose a pivot

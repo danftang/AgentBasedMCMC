@@ -9,7 +9,7 @@
 class Distribution {
 public:
     typedef std::function<std::vector<double>()>              Sampler;
-//    typedef std::function<double(const std::vector<double> &)>  PMF;
+//    typedef std::function<double(const std::vector<double> &)>  LogPMF;
 
     virtual ConvexPMF   PMF() const =0;
     virtual Sampler     sampler() const =0;
