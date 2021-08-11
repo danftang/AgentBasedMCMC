@@ -17,11 +17,15 @@ public:
 //    static constexpr double tol = SimplexMCMC::tol;
 
     explicit Trajectory(int nTimesteps): std::vector<double>(nTimesteps*AGENT::domainSize()*AGENT::actDomainSize()+1) { }
-    Trajectory(std::vector<double> &&rvalue): std::vector<double>(rvalue) { }
-    explicit Trajectory(const std::vector<double> &lvalue): std::vector<double>(lvalue) { }
+    Trajectory(std::vector<double> &&rvalue): std::vector<double>(rvalue) {
+        assert((size()-1)%(AGENT::domainSize()*AGENT::actDomainSize()) == 0);
+    }
+    explicit Trajectory(const std::vector<double> &lvalue): std::vector<double>(lvalue) {
+        assert((size()-1)%(AGENT::domainSize()*AGENT::actDomainSize()) == 0);
+    }
 
-    // execute forward from start state, choosing a trajectory with probability
-    // equal to the joint conditioned on the start state
+    // execute forward from a given start state distribution, choosing a solution with probability
+    // proportional to the joint times the probability of the start state
     Trajectory(int nTimesteps, const ModelState<AGENT> &startState) : Trajectory(nTimesteps) {
         bool isValid;
         int nAttempts=0;
@@ -55,6 +59,47 @@ public:
             }
             if(++nAttempts > 1000) throw(std::runtime_error("Can't create act-Fermionic prior sample of Trajectory. Probably too many agents for Fermionicity."));
         } while(!isValid);
+    }
+
+
+    Trajectory(int nTimesteps, const std::function<std::vector<double>()> &startStateSampler) : Trajectory(nTimesteps) {
+        bool isValid;
+        int nAttempts = 0;
+        do {
+            ModelState<AGENT> t0State = startStateSampler();
+            ModelState<AGENT> t1State;
+            isValid = true;
+            for (int t = 0; t < nTimesteps; ++t) {
+                for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+                    AGENT agent(agentId);
+                    int nAgents = t0State[agentId];
+                    for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+                        (*this)[Event(t, agent, actId)] = 0.0;
+                    }
+                    // now choose acts for each of nAgents
+                    std::vector<double> actPMF = agent.timestep(t0State, 0.0);
+                    std::discrete_distribution<int> actDistribution(actPMF.begin(), actPMF.end());
+                    for(int m=0; m <nAgents; ++m) {
+                        int chosenAct = actDistribution(Random::gen);
+                        int event = Event(t, agent, chosenAct);
+                        if((*this)[event] == 0.0) {
+                            (*this)[event] = 1.0;
+                            t1State += agent.consequences(chosenAct);
+                        } else { // reject
+                            isValid = false;
+                            m = nAgents;
+                            agentId = AGENT::domainSize();
+                            t = nTimesteps;
+                        }
+                    }
+                }
+                t0State.setToZero();
+                t0State.swap(t1State);
+            }
+            if (++nAttempts > 1000)
+                throw (std::runtime_error(
+                        "Can't create act-Fermionic prior sample of Trajectory. Too many agents for Fermionicity to be a good assumption."));
+        } while (!isValid);
     }
 
     // event count (use Event(time,agent,act) instead)
@@ -140,13 +185,14 @@ public:
                 }
             }
         }
+//        std::cout << "Trajectory prior = " << logP << std::endl;
         return logP;
     }
 
 
 
-//    friend std::ostream &operator <<(std::ostream &out, const Trajectory<AGENT> &trajectory) {
-//        Trajectory sortedTrajectory(trajectory);
+//    friend std::ostream &operator <<(std::ostream &out, const Trajectory<AGENT> &solution) {
+//        Trajectory sortedTrajectory(solution);
 //        sortedTrajectory.sort();
 //
 //        int timestep = -1;

@@ -23,10 +23,11 @@ public:
     { }
 
     AssimilationProblem(ConvexPMF priorPMF, std::function<std::vector<double>()> priorSampler)
-    : priorPMF(priorPMF),
-    priorSampler(priorSampler),
+    : priorPMF(std::move(priorPMF)),
+    priorSampler(std::move(priorSampler)),
     likelihoodPMF(priorPMF.nDimensions)
-    { }
+    {
+    }
 
 
     void addObservation(ConvexPMF observationLikelihood) {

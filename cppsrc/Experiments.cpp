@@ -128,7 +128,7 @@ void Experiments::PredPreyExpt() {
     Trajectory<PredPreyAgent> realTrajectory(nTimesteps, startState);
     std::vector<Observation<PredPreyAgent>> observations =
             Observation<PredPreyAgent>::generateObservations(realTrajectory, pMakeObservation);
-    std::cout << "Real trajectory: " << glp::SparseVec(realTrajectory) << std::endl;
+    std::cout << "Real solution: " << glp::SparseVec(realTrajectory) << std::endl;
     std::cout << "Observations: " << observations << std::endl;
 
     AssimilationWindow<PredPreyAgent> window(realTrajectory, prior, observations, nSamples, nBurnInSamples);
@@ -153,17 +153,17 @@ void Experiments::CatMouseExpt() {
 
     std::cout << abm << std::endl;
 
-    // calculate initial trajectory
+    // calculate initial solution
     abm.cpxBasis();
     abm.simplex();
-    std::cout << "LP relaxation initial trajectory: " << abm.primalSolution() << std::endl;
+    std::cout << "LP relaxation initial solution: " << abm.primalSolution() << std::endl;
     abm.intOpt();
-    std::cout << "MIP initial trajectory: " << abm.mipSolution() << std::endl;
+    std::cout << "MIP initial solution: " << abm.mipSolution() << std::endl;
     abm.warmUp();
 
 //    Trajectory<CatMouseAgent> initialTrajectory;
 //    initialTrajectory.add(Event(0,leftCat, CatMouseAgent::STAYPUT),1.0);
-//    std::cout << "Initial trajectory is" << std::endl;
+//    std::cout << "Initial solution is" << std::endl;
 //    std::cout << initialTrajectory << std::endl;
 //    abm.stdBasis();
 //    abm.warmUp();

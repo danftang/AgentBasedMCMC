@@ -219,7 +219,7 @@ ProposalPivot SimplexMCMC::proposePivot() {
 // To be based on rate of change of L1-norm infeasibility objective?
 // uniform prob for now
 int SimplexMCMC::proposeColumn() {
-    // chooseFromPMF a pivot column
+    // nextIntFromDiscrete a pivot column
     return Random::nextInt(1,n - m + 1);
 }
 

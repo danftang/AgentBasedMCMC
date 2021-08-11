@@ -25,9 +25,9 @@ public:
 
 
     // Takes a PMF over the start state of an ABM and returns the PMF over trajectories of this window length
-    // such that the probability of a trajectory is the prior probability of the trajectory times the probability
+    // such that the probability of a solution is the prior probability of the solution times the probability
     // of the start state.
-    ConvexPMF prior(ConvexPMF startStatePMF) {
+    ConvexPMF prior(ConvexPMF startStatePMF) const {
         return ConvexPMF([startState = std::move(startStatePMF.logProb)](const std::vector<double> &X) {
             const Trajectory<AGENT> &T = reinterpret_cast<const Trajectory<AGENT> &>(X);
             return T.logProb() + startState(T(0));
@@ -38,14 +38,14 @@ public:
     }
 
 
-    std::function<std::vector<double>()> priorSampler(std::function<std::vector<double>()> startStateSampler) {
+    std::function<std::vector<double>()> priorSampler(std::function<std::vector<double>()> startStateSampler) const {
         return [startSampler = std::move(startStateSampler),nTimesteps = this->nTimesteps]() {
-            return Trajectory<AGENT>(nTimesteps, ModelState<AGENT>(startSampler()));
+            return Trajectory<AGENT>(nTimesteps, startSampler);
         };
     }
 
 
-    ConvexPMF likelihood(const AgentStateObservation<AGENT> &observation) {
+    ConvexPMF likelihood(const AgentStateObservation<AGENT> &observation) const {
         ConvexPMF::PMF logP;
         if(observation.state.time == nTimesteps) {
             logP = [observation](const std::vector<double> &X) {
@@ -60,7 +60,7 @@ public:
     }
 
 
-    int dimension() {
+    int dimension() const {
         return nTimesteps*AGENT::domainSize()*AGENT::actDomainSize()+1;
     }
 

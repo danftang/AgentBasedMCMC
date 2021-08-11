@@ -28,7 +28,7 @@ public:
             numberObserved(numberObserved),
             pObserveIfPresent(pObserveIfPresent) {}
 
-    // make observation of the trajectory
+    // make observation of the solution
     BinomialObservation(int time, const AGENT &agent, double pObserveIfPresent, const Trajectory<AGENT> &trajectory):
             agentState(time,agent),
             pObserveIfPresent(pObserveIfPresent)
@@ -82,7 +82,7 @@ public:
                 }
             }
         }
-//        checkTrajectorySatisfiesObervations(trajectory, observations)
+//        checkTrajectorySatisfiesObervations(solution, observations)
         debug(std::cout << "Generated observations: " << observations << std::endl);
         return observations;
     }

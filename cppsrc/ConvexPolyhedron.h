@@ -35,6 +35,14 @@ public:
         return lp;
     }
 
+    // the id of the highest variable in this polyhedron
+    int dimension() {
+        int dim = 0;
+        for(const glp::Constraint &constraint: *this) {
+            dim = std::max(dim,constraint.coefficients.maxNonZeroIndex());
+        }
+        return dim;
+    }
 
     ConvexPolyhedron &operator +=(const std::vector<glp::Constraint> &other) {
         reserve(size()+other.size());

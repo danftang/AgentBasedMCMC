@@ -65,11 +65,15 @@ public:
 
     // Addition for aggregation of states
     ModelState &operator +=(const ModelState<AGENT> &other) {
-//        for(auto [agent, occupation]: other) {
-//            (*this)[agent] += occupation;
-//        }
         for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
             (*this)[agentId] += other[agentId];
+        }
+        return *this;
+    }
+
+    ModelState &operator *=(double multiplier) {
+        for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+            (*this)[agentId] *= multiplier;
         }
         return *this;
     }

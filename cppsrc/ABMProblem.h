@@ -36,10 +36,10 @@ public:
     }
 
 //    double logProb(const glp::SparseVec & X) {
-//            const auto &trajectory = (const Trajectory<AGENT> &)X;
-//            double logP = trajectory.logProb();
+//            const auto &solution = (const Trajectory<AGENT> &)X;
+//            double logP = solution.logProb();
 //            for(auto observation: observations) {
-//                logP += observation.logLikelihood(trajectory);
+//                logP += observation.logLikelihood(solution);
 //            }
 //            return logP;
 //    }

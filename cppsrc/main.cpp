@@ -55,10 +55,14 @@ int main(int argc, char *argv[]) {
 //    PoissonState<PredPreyAgent> startState;
 //    TrajectoryDistribution<PredPreyAgent> myPrior(startState, 8);
 
-    UnitTests::testValidTrajectorySet();
+    UnitTests tests;
 //    UnitTests::testRejectionSampler();
+//    tests.testABMPrior();
+    tests.testSimplexSampler();
+    tests.testValidTrajectorySet();
+    // TODO: Work out why adding BinomialPMF constraints breaks simplex sampling
 
-//    std::cout << Experiments::informationIncrease(
+    //    std::cout << Experiments::informationIncrease(
 //            8,
 //            2,
 //            1,

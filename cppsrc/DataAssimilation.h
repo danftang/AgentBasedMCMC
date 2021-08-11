@@ -79,8 +79,8 @@ public:
 ////            const Trajectory<AGENT> &initialTrajectory,
 //            int nSamples) {
 //
-//        ABMProblem<AGENT> abm(nTimeseps, observations, [&](const Trajectory<AGENT> &trajectory) {
-//            return startStatePrior.logProb(trajectory(0));
+//        ABMProblem<AGENT> abm(nTimeseps, observations, [&](const Trajectory<AGENT> &solution) {
+//            return startStatePrior.logProb(solution(0));
 //        });
 //        SimplexMCMC mcmc(abm, abm.logProbFunc());
 //        Trajectory<AGENT> initialTrajectory = generateInitialState(mcmc, startStatePrior);
@@ -98,8 +98,8 @@ public:
 //                assert(abm.isValidSolution(mcmc.X()));
 ////            std::cout << "Sample " << n << " : " << glp::SparseVec(mcmc.X()) << std::endl;
 //            }
-//            const Trajectory<AGENT> &trajectory = reinterpret_cast<const Trajectory<AGENT> &>(mcmc.X());
-//            ModelState<AGENT> endStateSample = trajectory(abm.nTimesteps);
+//            const Trajectory<AGENT> &solution = reinterpret_cast<const Trajectory<AGENT> &>(mcmc.X());
+//            ModelState<AGENT> endStateSample = solution(abm.nTimesteps);
 //            occupationHistogram[endStateSample[AGENT(152)]] += 1;
 //            finalState += endStateSample;
 //        }
@@ -169,7 +169,7 @@ public:
 //            auto obs = Observation<AGENT>::generateObservations(*windowStartState, nTimestepsPerWindow,
 //                                                                                 pMakeObservation, pObserveIfPresent);
 //            observations.push_back(obs);
-//            endOfWindowStates.push_back(trajectory(nTimestepsPerWindow));
+//            endOfWindowStates.push_back(solution(nTimestepsPerWindow));
 //            windowStartState = &endOfWindowStates.back();
 //        }
 //        return std::pair(observations, endOfWindowStates);

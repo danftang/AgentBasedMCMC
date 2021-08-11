@@ -41,10 +41,10 @@ void ProbabilisticColumnPivot::chooseCol() {
     int infeasibilityCount = initInfeasibilityGradient();
 
     if(infeasibilityCount == 0) {
-        // null objective so just chooseFromPMF with uniform prob
+        // null objective so just nextIntFromDiscrete with uniform prob
         setCol(Random::nextInt(1,simplex.nNonBasic() + 1));
     } else {
-        // chooseFromPMF with prob proportional to alpha if reduced objective is non-zero or 1 if zero
+        // nextIntFromDiscrete with prob proportional to alpha if reduced objective is non-zero or 1 if zero
         simplex.btran(infeasibilityGradient);
         std::vector<double> cdf(simplex.nNonBasic() + 1, 0.0);
         std::vector<double> reducedCost = simplex.piTimesMinusN(infeasibilityGradient);
@@ -92,8 +92,8 @@ void ProbabilisticColumnPivot::chooseRow() {
         }
     }
 
-    // chooseFromPMF row
-    setToPivotIndex(Random::chooseFromPMF(pivotPMF.begin(), pivotPMF.end()));
+    // nextIntFromDiscrete row
+    setToPivotIndex(Random::nextIntFromDiscrete(pivotPMF.begin(), pivotPMF.end()));
 //    std::cout << "Chose pivot with prob " << pivotPMF[pivotChoice] << " Delta = " << deltaj << std::endl;
 
     // test

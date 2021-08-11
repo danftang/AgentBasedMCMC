@@ -25,6 +25,7 @@ public:
             double p = weights[i];
             logP +=  successes*log(p) + (trials-successes)*log(1.0-p) + lgamma(trials+1) - lgamma(trials-successes+1) - lgamma(successes+1); // log of Binomial
         }
+//        std::cout << "Binomial logP of " << X << " = " << logP << " -> " << exp(logP) << std::endl;
         return logP;
     }
 
@@ -40,7 +41,15 @@ public:
     ConvexPMF PMF() const {
         return ConvexPMF([*this](const std::vector<double> &X) {
             return logP(X);
-        },dimension());
+        },dimension(), convexSupport());
+    }
+
+    ConvexPolyhedron convexSupport() const {
+        ConvexPolyhedron support;
+        for(int d=0; d<dimension(); ++d) {
+            support.push_back(0 <= 1.0*glp::X(d) <= trials);
+        }
+        return support;
     }
 
     std::function<std::vector<double>()> sampler() const {

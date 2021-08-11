@@ -107,22 +107,35 @@ public:
 
 
 
-    static glp::Constraint startStateConstraintToTrajectoryConstraint(const glp::Constraint &startStateConstraint) {
-        glp::LinearSum trajectoryCoeffs;
-        for(int i=0; i<startStateConstraint.coefficients.sparseSize(); ++i) {
-            trajectoryCoeffs += startStateConstraint.coefficients.values[i]*State<AGENT>(0, startStateConstraint.coefficients.indices[i]);
-        }
-        return startStateConstraint.lowerBound <= trajectoryCoeffs <= startStateConstraint.upperBound;
-    }
 
 
     static ConvexPolyhedron startStateConstraintsToTrajectoryConstraints(const ConvexPolyhedron &startStateConstraints) {
         ConvexPolyhedron trajectoryConstraints;
         for(const glp::Constraint &constraint: startStateConstraints) {
-            trajectoryConstraints.push_back(startStateConstraintToTrajectoryConstraint(constraint));
+            glp::Constraint trajectoryConstraint = startStateConstraintToTrajectoryConstraint(constraint);
+            if(trajectoryConstraint.coefficients.sparseSize() != 0) {
+                trajectoryConstraints.push_back(std::move(trajectoryConstraint));
+            }
         }
         return trajectoryConstraints;
     }
+
+protected:
+
+    static glp::Constraint startStateConstraintToTrajectoryConstraint(const glp::Constraint &startStateConstraint) {
+        glp::LinearSum trajectoryCoeffs;
+        double fermionicUpperBound = 0;
+        for(int i=0; i<startStateConstraint.coefficients.sparseSize(); ++i) {
+            State<AGENT> state(0, startStateConstraint.coefficients.indices[i]);
+            trajectoryCoeffs += startStateConstraint.coefficients.values[i]*state;
+            fermionicUpperBound += state.occupationUpperBound();
+        }
+        if(startStateConstraint.lowerBound > 0.0 || startStateConstraint.upperBound < fermionicUpperBound) {
+            return std::max(startStateConstraint.lowerBound,0.0) <= trajectoryCoeffs <= std::min(startStateConstraint.upperBound,fermionicUpperBound);
+        }
+        return glp::Constraint();
+    }
+
 };
 
 

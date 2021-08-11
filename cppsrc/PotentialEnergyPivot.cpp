@@ -30,10 +30,10 @@ void PotentialEnergyPivot::chooseCol() {
 
 
     if(infeasibilityCount == 0) {
-        // null objective so just chooseFromPMF with uniform prob
+        // null objective so just nextIntFromDiscrete with uniform prob
         setCol(Random::nextInt(1,simplex.nNonBasic() + 1));
     } else {
-        // chooseFromPMF with prob proportional to exponential of potential energy
+        // nextIntFromDiscrete with prob proportional to exponential of potential energy
         simplex.btran(infeasibilityGradient);
         reducedCost = simplex.piTimesMinusN(infeasibilityGradient); // TODO: Store this in simplex so no need to recalculate on rejection
         std::vector<double> cdf(simplex.nNonBasic() + 1, 0.0);
@@ -93,9 +93,9 @@ void PotentialEnergyPivot::chooseRow() {
     }
     pivotPMF[2*nonZeroRows.size() + simplex.isAtUpperBound(j)] *= 0.01; // preference against null pivot if other possibilities exist
 
-    // chooseFromPMF row
+    // nextIntFromDiscrete row
 
-    setToPivotIndex(Random::chooseFromPMF(pivotPMF.begin(), pivotPMF.end()));
+    setToPivotIndex(Random::nextIntFromDiscrete(pivotPMF.begin(), pivotPMF.end()));
 
     //    std::cout << "Chose pivot with prob " << pivotPMF[pivotChoice] << " Delta = " << deltaj << std::endl;
 //  std::cout << "Proposing pivot from " << !sourceObjectiveIsZero << " to " << destinationObjective << std::endl;
