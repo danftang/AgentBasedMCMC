@@ -24,24 +24,27 @@ class UnitTests {
 public:
     int nTimesteps;
     BinomialPMF startDist;
+    AgentStateObservation<BinomialAgent> observation;
     TrajectoryDistribution<BinomialAgent> window;
     AssimilationProblem problem;
 
     UnitTests()
     : nTimesteps(2),
-    startDist({0.9, 0.0, 0.0}, 1),
+    startDist({0.9, 0.1, 0.0}, 1),
+    observation(State<BinomialAgent>(1, 0),1,0.9),
     window(nTimesteps),
-    problem(initProblem(nTimesteps, window, startDist)) {
+    problem(initProblem(window, startDist, observation)) {
     }
 
-    static AssimilationProblem initProblem(int nTimesteps, const TrajectoryDistribution<BinomialAgent> &window, const BinomialPMF &startDist) {
-        BinomialAgent::GRIDSIZE = nTimesteps+1;
-        return AssimilationProblem(window.prior(startDist.PMF()),
-                window.priorSampler(startDist.sampler()));
-    }
-
-    static void testAll() {
-        testActFermionicDistribution();
+    static AssimilationProblem
+    initProblem(const TrajectoryDistribution<BinomialAgent> &window, const BinomialPMF &startDist, const AgentStateObservation<BinomialAgent> &observation) {
+        BinomialAgent::GRIDSIZE = window.nTimesteps + 1;
+        AssimilationProblem problem(
+                window.prior(startDist.PMF()),
+                window.priorSampler(startDist.sampler())
+        );
+        problem.addObservation(window.likelihood(observation));
+        return problem;
     }
 
 
@@ -104,10 +107,10 @@ public:
 
 
     void testValidTrajectorySet() {
-        ConvexPMF pmf = window.prior(startDist.PMF());
+        ConvexPMF pmf = problem.PMF();// window.prior(startDist.PMF());
         ModelState<BinomialAgent> marginalisedFinalState;
         double marginalP = 0.0;
-        for(const std::vector<double> &traj: BinarySolutionSet(pmf.convexSupport, window.dimension())) {
+        for(const std::vector<double> &traj: BinarySolutionSet(pmf.convexSupport, pmf.nDimensions)) {
             double jointP = exp(pmf.logP(traj));
             marginalP += jointP;
 //            std::cout << traj << " " << jointP << std::endl;
@@ -119,6 +122,7 @@ public:
         marginalisedFinalState *= 1.0/marginalP;
         std::cout << marginalisedFinalState << std::endl;
     }
+
 
     void testABMPrior() {
         ModelState<BinomialAgent> finalState;
@@ -133,15 +137,15 @@ public:
 
 
     void testSimplexSampler() {
-        ConvexPMF priorPMF = window.prior(startDist.PMF());
-        std::cout << "Start state dist is:\n" << startDist.weights << std::endl;
-        std::cout << "Start state convexSupport is:\n" << startDist.PMF().convexSupport << std::endl;
-//        std::cout << "Prior convexSupport:\n" << priorPMF.convexSupport << std::endl;
+        ConvexPMF pmf = problem.PMF(); // window.prior(startDist.PMF());
+//        std::cout << "Start state dist is:\n" << startDist.weights << std::endl;
+//        std::cout << "Start state convexSupport is:\n" << startDist.PMF().convexSupport << std::endl;
+        std::cout << "Simplex Sampler convexSupport:\n" << pmf.convexSupport << std::endl;
 
-        SimplexMCMC sampler = SimplexMCMC(priorPMF, window.priorSampler(startDist.sampler())());
-        std::cout << "kProbTokSim = " << sampler.kProbTokSim << std::endl;
-        std::cout << "kSimTokProb = " << sampler.kSimTokProb << std::endl;
-        for(int burnIn=0; burnIn<0; ++burnIn) {
+        SimplexMCMC sampler = SimplexMCMC(pmf, window.priorSampler(startDist.sampler())());
+//        std::cout << "kProbTokSim = " << sampler.kProbTokSim << std::endl;
+//        std::cout << "kSimTokProb = " << sampler.kSimTokProb << std::endl;
+        for(int burnIn=0; burnIn<1000; ++burnIn) {
             sampler.nextSample();
         }
         std::cout << "Sampler:\n" << sampler << std::endl;
@@ -152,7 +156,7 @@ public:
             Trajectory<BinomialAgent> sample(sampler.nextSample());
 //            std::cout << "Sampler:\n" << sampler << std::endl;
 //            std::cout << "Sample: " << sample << std::endl;
-            assert(priorPMF.convexSupport.isValidSolution(sample));
+            assert(pmf.convexSupport.isValidSolution(sample));
             mcmcFinalState += sample.endState();
         }
         std::cout << "Feasible stats:\n" << sampler.feasibleStatistics << std::endl;
@@ -163,53 +167,22 @@ public:
     }
 
 
-    static void testRejectionSampler() {
-        const int nTimesteps = 2;
-        BinomialAgent::GRIDSIZE = nTimesteps + 1;
-
-        BinomialPMF startDist({0.4, 0.01, 0.01}, 2);
-
-        std::cout << "Start state convexSupport is:\n" << startDist.PMF().convexSupport << std::endl;
-
-        TrajectoryDistribution<BinomialAgent> window(nTimesteps);
-
-        AgentStateObservation<BinomialAgent> observation(State<BinomialAgent>(1,0), 1, 1.0);
-
-        AssimilationProblem problem(
-                window.prior(startDist.PMF()),
-                window.priorSampler(startDist.sampler()));
-
-//        problem.addObservation(window.likelihood(observation));
-
+    void testRejectionSampler() {
         std::cout << "Prior Support:\n" << problem.priorPMF.convexSupport << std::endl;
         std::cout << "Likelihood Support:\n" << problem.likelihoodPMF.convexSupport << std::endl;
         std::cout << "Convex support: \n" << problem.PMF().convexSupport << std::endl;
 
-
         RejectionSampler rejectionSampler(problem);
         ModelState<BinomialAgent> finalState;
-        for (int s = 0; s < 100000; ++s) {
+        const int NSAMPLES = 100000;
+        for (int s = 0; s < NSAMPLES; ++s) {
             Trajectory<BinomialAgent> sample = rejectionSampler();
             finalState += sample.endState();
         }
-        std::cout << "Rejection samples: " << finalState << std::endl;
-
-        ModelState<BinomialAgent> mcmcFinalState;
-        SimplexMCMC mcmcSampler = problem.simplexSampler();
-        for (int burnIn = 0; burnIn < 1000; ++burnIn) {
-            mcmcSampler.nextSample();
-        }
-        std::cout << "Sampler:\n" << mcmcSampler << std::endl;
-        for (int s = 0; s < 100000; ++s) {
-            Trajectory<BinomialAgent> sample(mcmcSampler.nextSample());
-            //            std::cout << sample << std::endl;
-            mcmcFinalState += sample.endState();
-        }
-        std::cout << "Feasible stats:\n" << mcmcSampler.feasibleStatistics << std::endl;
-        std::cout << "Infeasible stats:\n" << mcmcSampler.infeasibleStatistics << std::endl;
-        std::cout << mcmcFinalState << std::endl;
-
+        finalState *= 1.0/NSAMPLES;
+        std::cout << "Mean state: " << finalState << std::endl;
     }
+
 
     static void testABMPosterior() {
         const int nTimesteps = 2;

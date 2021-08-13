@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 //    TrajectoryDistribution<PredPreyAgent> myPrior(startState, 8);
 
     UnitTests tests;
-//    UnitTests::testRejectionSampler();
+//    tests.testRejectionSampler();
 //    tests.testABMPrior();
     tests.testSimplexSampler();
     tests.testValidTrajectorySet();
