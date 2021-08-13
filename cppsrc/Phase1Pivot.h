@@ -14,7 +14,7 @@ public:
     explicit Phase1Pivot(glp::Simplex &simplex);
     Phase1Pivot(glp::Simplex &simplex, int i, int j): ProposalPivot(simplex, i, j), infeasibilityGradient(simplex.nBasic()+1) { }
 
-    std::vector<double> infeasibilityGradient;  // gradient by row [1...nBasic()]
+    std::vector<double> infeasibilityGradient;  // infeasibility objective by row [1...nBasic()]
 
     void chooseCol();
     void chooseRow();

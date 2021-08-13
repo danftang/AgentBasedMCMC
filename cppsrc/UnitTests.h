@@ -29,7 +29,7 @@ public:
 
     UnitTests()
     : nTimesteps(2),
-    startDist({0.4, 0.01, 0.01}, 1),
+    startDist({0.9, 0.0, 0.0}, 1),
     window(nTimesteps),
     problem(initProblem(nTimesteps, window, startDist)) {
     }
@@ -139,18 +139,26 @@ public:
 //        std::cout << "Prior convexSupport:\n" << priorPMF.convexSupport << std::endl;
 
         SimplexMCMC sampler = SimplexMCMC(priorPMF, window.priorSampler(startDist.sampler())());
-        for(int burnIn=0; burnIn<1000; ++burnIn) {
+        std::cout << "kProbTokSim = " << sampler.kProbTokSim << std::endl;
+        std::cout << "kSimTokProb = " << sampler.kSimTokProb << std::endl;
+        for(int burnIn=0; burnIn<0; ++burnIn) {
             sampler.nextSample();
         }
         std::cout << "Sampler:\n" << sampler << std::endl;
+        std::cout << "Initial solution: " << sampler.X() << std::endl;
         ModelState<BinomialAgent> mcmcFinalState;
-        for(int s=0; s<100000; ++s) {
+        const int NSAMPLES = 1000000;
+        for(int s=0; s<NSAMPLES; ++s) {
             Trajectory<BinomialAgent> sample(sampler.nextSample());
-            //            std::cout << sample << std::endl;
+//            std::cout << "Sampler:\n" << sampler << std::endl;
+//            std::cout << "Sample: " << sample << std::endl;
+            assert(priorPMF.convexSupport.isValidSolution(sample));
             mcmcFinalState += sample.endState();
         }
         std::cout << "Feasible stats:\n" << sampler.feasibleStatistics << std::endl;
         std::cout << "Infeasible stats:\n" << sampler.infeasibleStatistics << std::endl;
+        std::cout << "Infeasible proportion = " << sampler.infeasibleStatistics.nSamples*1.0/(sampler.feasibleStatistics.nSamples + sampler.infeasibleStatistics.nSamples) << std::endl;
+        mcmcFinalState *= 1.0/NSAMPLES;
         std::cout << mcmcFinalState << std::endl;
     }
 

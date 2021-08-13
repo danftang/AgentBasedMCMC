@@ -27,8 +27,12 @@ public:
 //            std::cout << "Made iterator with support:\n" << support << std::endl;
         }
 
+        // construct as begin()
         Iterator(int nDimensions, const ConvexPolyhedron &support)
-        : Iterator(nDimensions, support, 0) { }
+        : Iterator(nDimensions, support, -1) {
+            // move forward to first valid solution (or end)
+            ++(*this);
+        }
 
         const std::vector<double> &operator *() { return solution; }
 

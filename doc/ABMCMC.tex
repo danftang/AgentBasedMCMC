@@ -49,7 +49,7 @@
 \maketitle
 
 \begin{abstract}
-The discipline of data assimilation (DA) addresses the problem of how to make use of partial, noisy experimental observations to provide information about the time evolution of a dynamical system. DA has developed rapidly in applications such as weather forecasting \cite{kalnay_atmospheric_2003} but relatively little progress has been made in developing techniques that are applicable to agent based models. ABMs often consist of `agents' which make discrete choices from a number of possible actions, meaning the space of model trajectories is not continuous and we cannot use assimilation techniques that require the gradient of the posterior in this space. In addition, a set of observations will typically refute a large proportion of model trajectories, making it difficult to even identify trajectories that have non-zero probability, given the observations, making it challenging to make use of algorithms that rely on sampling.
+The discipline of data assimilation (DA) addresses the problem of how to make use of partial, noisy experimental observations to provide information about the time evolution of a dynamical system. DA has developed rapidly in applications such as weather forecasting \cite{kalnay_atmospheric_2003} but relatively little progress has been made in developing techniques that are applicable to agent based models. ABMs consist of `agents' which often make discrete choices from a number of possible actions, meaning the space of model trajectories is not continuous and we cannot use assimilation techniques that require the gradient of the posterior in this space. In addition, a set of observations will typically refute a large proportion of model trajectories, making it difficult to even identify trajectories that have non-zero probability, given the observations and making it challenging to use algorithms that rely on sampling.
 
 Here we present an algorithm that generates samples of the time evolution of an agent based model, given a set of noisy, incomplete experimental observations of the system. The algorithm approximates the set of possible trajectories as a linear program and uses an extension of the simplex algorithm to provide a proposal function for Markov-Chain-Monte-Carlo sampling.
 
@@ -76,12 +76,12 @@ Suppose we have a timestepping ABM where agents have a finite number of possible
 	
 	\item A domain of agent states $\mathcal{S} = \{\psi_0 ... \psi_m\}$
 	
-	\item An \textit{agent timestep}, which is a computer program, $\pi(\psi,\Psi)$, where $\psi \in \mathcal{S}$ is the agent's state and $\Psi \in \mathbb{Z}^m$ is a (sparse) vector whose $i^{th}$ element is the number of agents in state $\psi_i$ at the start of the timestep. The program returns an action $a \in \mathcal{A}$ which defines the behaviour of the agent in a timestep. The program may make calls to a random number generator that returns a value $0 \le r < 1$ with uniform probability, so its returned value may be non-deterministic and we write $P(\pi(\psi,\Psi)=a)$ to be the probability that the program will return action $a$, given inputs $\psi$ and $\Psi$. 
+	\item An \textit{agent timestep}, which is a computer program, $\pi(\psi,\Psi)$, where $\psi \in \mathcal{S}$ is the agent's state and $\Psi \in \mathbb{Z}^m$ is a (usually sparse) vector whose $i^{th}$ element is the number of agents in state $\psi_i$ at the start of the timestep. The program returns an action $a \in \mathcal{A}$ which defines the behaviour of the agent in a timestep. The program may make calls to a random number generator that returns a value $0 \le r < 1$ with uniform probability, so its returned value may be non-deterministic and we write $P(\pi(\psi,\Psi)=a)$ to be the probability that the program will return action $a$, given inputs $\psi$ and $\Psi$. 
 	
-	\item An \textit{action function}, $F: \mathcal{S} \times \mathcal{A} \to \mathbb{Z}^m$, which defines the effect of an action on the world, where $F(\psi, a)$ gives a (sparse) vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $i$ that result from an agent in state $\psi$ performing act $a$ (this includes the final state of the acting agent).
+	\item An \textit{action function}, $F: \mathcal{S} \times \mathcal{A} \to \mathbb{Z}^m$, which defines the effect of an action on the world, where $F(\psi, a)$ gives a (sparse) vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $i$ that result from an agent in state $\psi$ performing act $a$ (including the final state of the acting agent).
 \end{itemize}
 
-As a simple demonstration model, we'll take a spatial predator-prey model where agents are either predator or prey moving about a 2-dimensional grid. In this case, the domain of actions are $\mathcal{A} = \{ a_0=\textrm{move-left}, a_1=\textrm{move-right}, a_2=\textrm{move-up}, a_3=\textrm{move-down}, a_4=\textrm{give-birth}, a_5=\textrm{die}\}$, and the domain of agent states, $\mathcal{S}$, can be thought of as the class 
+As a simple demonstration, consider a spatial predator-prey model where agents are either predator or prey moving about a 2-dimensional grid. In this case, the domain of actions are $\mathcal{A} = \{ a_0=\textrm{move-left}, a_1=\textrm{move-right}, a_2=\textrm{move-up}, a_3=\textrm{move-down}, a_4=\textrm{give-birth}, a_5=\textrm{die}\}$, and the domain of agent states, $\mathcal{S}$, can be thought of as the class 
 \begin{lstlisting}
 class Agent {
 	Boolean	isaPredator
@@ -167,7 +167,7 @@ A trajectory must satisfy a number of constraints in order to be a possible traj
 \label{nonNegativeInt}
 \end{equation}
 
-A trajectory, $T^t_{\psi a}$, must also be \textit{continuous} which means that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. This can be expressed in terms of the \textit{continuity constraints}:
+A trajectory, $T^t_{\psi a}$, must also be \textit{continuous} which means that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. This can be expressed as the \textit{continuity constraints}:
 \begin{equation}
 \forall t \in 1 ... n:\forall \phi: \sum_{\psi, a} F(\psi, a)_\phi T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0
 \label{continuous}
@@ -184,12 +184,8 @@ P\left(\Psi^0_{*} = \sum_a T^0_{* a}\right) \prod_{\psi, t} P\left(T^t_{\psi *} 
 \]
 where $P(\Psi^0_*)$ is our prior beliefs about the state at time $t=0$, and we use $*$ as an index when we want to emphasise that the index remains unbound.
 
-For example, in the predator/prey model, we may know the probability of finding a predator or prey at each gridpoint at $t=0$, may not know the exact positions of each agent so the prior would be a product of Poisson distributions
-\[
-P(\Psi^0_*) = \prod_\psi \frac{\lambda_\psi^{\Psi^0_\psi} e^{\lambda_\psi}}{\Psi^0_\psi!}.
-\]
 
-However, we know the probability that a single agent in a given state will perform an action given the state of the other agents, this is defined by the agent timestep function, so the joint probability that $\Psi^t_\psi$ agents will perform actions $T^t_{\psi *}$ is the multinomial distribution
+The probability that a single agent in a given state will perform an action, given the state of the other agents, this is given by the agent timestep function, $P(\pi(\psi,\Psi^t_*)=a)$, so the joint probability that $\Psi^t_\psi$ agents will perform actions $T^t_{\psi *}$ is given by the multinomial distribution
 \[
 P\left(T^t_{\psi *} \mid \Psi^t_*\right) = \Psi^t_\psi!\prod_a \frac{P(\pi(\psi,\Psi^t_*)=a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!}.
 \]
@@ -202,7 +198,12 @@ P(\Psi^0_* = \sum_aT^0_{* a}) \prod_{t, \psi}\left(\sum_a T^t_{\psi a}\right)!\p
 \end{cases}
 \]
 
-Suppose we also have a set of noisy, aggregate observations, $\Omega$, that have a likelihood function $P(\Omega|T^t_{\psi a})$. In our running example, let's suppose we periodically note down when and where we see footprints of predator and prey. Our aim is to generate a number of samples from the posterior distribution
+Suppose, for example, that in the predator/prey model we begin by choosing the number of agents in each grid-square at time $t=0$ from a Poisson distribution, so that the joint probability over the start sate is:
+\[
+P(\Psi^0_*) = \prod_\psi \frac{\lambda_\psi^{\Psi^0_\psi} e^{\lambda_\psi}}{\Psi^0_\psi!}.
+\]
+
+Suppose we also have a set of noisy, aggregate observations, $\Omega$, that have a likelihood function $P(\Omega|T^t_{\psi a})$. In our running predator-prey example, let's suppose we periodically note down when and where we see footprints of predator and prey. Our aim is to generate a number of samples from the posterior distribution
 \[
 P(T^t_{\psi a}|\Omega) \propto P\left(\Omega \middle| T^{t}_{\psi a}\right)P(T^t_{\psi a})
 \]
@@ -398,46 +399,129 @@ Given a system of $m$ linear constraints on $n$ variables expressed in the form 
 BX_B + NX_N = b
 \label{tableau1}
 \end{equation}
-where $X_B$ and $X_N$ are the basic and non-basic variables respectively, $B$ is the matrix formed from the columns in $A$ that correspond to the basic variables and $N$ is the matrix formed from the columns of $A$ that correspond to the non-basic variables. If we now constrain all non-basic variables to be on one of their bounds (in the case of action variables, this is either 0 or 1) then we're left with $BX_B = b - NX_N$ but since $B$ is an $m \times m$ square matrix then $X_B = B^{-1}b - B^{-1}NX_N$ gives a unique solution, as long as $B$ is invertable. If $B$ is invertable and $X_B$ has no negative entries then we say that the pivot state is valid. It can be shown that all valid pivot states of equations \ref{Axy} correspond to extreme points\cite{dantzig1955generalized}.
+where $X_B$ and $X_N$ are the basic and non-basic variables respectively, $B$ is the matrix formed from the columns in $A$ that correspond to the basic variables and $N$ is the matrix formed from the columns of $A$ that correspond to the non-basic variables. If we now constrain all non-basic variables to be on one of their bounds (in the case of action variables, this is either 0 or 1) then we're left with
+\[
+BX_B = b - NX_N
+\]
+but since $B$ is an $m \times m$ square matrix then 
+\[
+X_B = B^{-1}b - B^{-1}NX_N
+\]
+gives a unique solution, as long as $B$ is invertable. If $B$ is invertable and $X_B$ has no negative entries then we say that the pivot state is valid. It can be shown that all valid pivot states of equations \ref{Axy} correspond to extreme points\cite{dantzig1955generalized}.
 
- We begin by representing the constraints and the current trajectory in the form of equation \ref{tableau1}. If we multiply any row of $A_b$ by some constant, $c$, then the truth of equation \ref{tableau1} can be maintained by multiplying the same row of $A_n$ and of $B$ by $c$ as well. Similarly if we add one row of $A_b$ to another row, the equations can be maintained by performing the same row operation on $A_n$ and $B$. If the pivot state is valid, then $A_b$ is invertable so we can use Gaussian elimination, by performing a sequence of row additions and multiplications, to transform $A_b$ into a form such that each row and column is zero on all elements except one, which is 1. We'll call this the standard form. Once in this form, if we assume $X_n = 0$ the solution for $X_b$ can be read off directly from $B$.
+We begin by representing the constraints and the current trajectory in the form of equation \ref{tableau1}. If we multiply any row of $A_b$ by some constant, $c$, then the truth of equation \ref{tableau1} can be maintained by multiplying the same row of $A_n$ and of $B$ by $c$ as well. Similarly if we add one row of $A_b$ to another row, the equations can be maintained by performing the same row operation on $A_n$ and $B$. If the pivot state is valid, then $A_b$ is invertable so we can use Gaussian elimination, by performing a sequence of row additions and multiplications, to transform $A_b$ into a form such that each row and column is zero on all elements except one, which is 1. We'll call this the standard form. Once in this form, if we assume $X_n = 0$ the solution for $X_b$ can be read off directly from $B$.
 
 Given a valid pivot state in standard form, a perturbed valid solution can be generated by choosing a column, $C$, of $A_n$, with at least one positive-valued row, and choosing from among those rows the one, $C_i$, that minimises $B_i/C_i$. We then make the variable corresponding to column $C$ a basic variable and make the basic variable corresponding to row $i$ of $A_b$ non-basic by swapping column $C$ with the column on row $i$ of $A_b$ that has value 1. $A_b$ is now not in standard form as column $C$ will, in general, have more than one non-zero value so we perform Gaussian elimination (row additions and multiplications) to return it to standard form. This perturbation is known as a \textit{pivot} operation and is the same method as employed in the Simplex algorithm\cite{dantzig1955generalized}\cite{vanderbei2015linear}. This is exactly what we need for our proposal function since it efficiently generates a new valid trajectory from a current one.
 
-\subsubsection{Fractional solutions and feasibility pumps}
+TODO: re-do to include upper bounds on variables...
+
+...So, each Markov state consists of a pivot-state (a partition of variables into m basic varaibles and N-m non-basic variables) and an active-bound state (which assigns either upper or lower bound to each non-basic variable).
+
+%\subsubsection{Fractional solutions and feasibility pumps}
 %#########################################################
 
-Although pivoting ensures solutions are positive, there may exist extreme points that don't fall on the grid of integer solutions and so do not satisfy the integer constraint. However, if we posit the existence of a \textit{null trajectory} and associate all fractional solutions with the null trajectory, then simply ignore null samples, then we end up with samples from the posterior, as required (i.e. the Markov chain can pass through fractional states, but no sample is generated when doing so). However, we don't want to spend too much computational effort moving between fractional states without generating samples, so we encourage the Markov process away from these fractional states using a \textit{feasibility pump} which works in the following way: [Score pivots from a fractional state by sum of difference between integer rounding of this state and pivoted state (no update of target integer solution), and by difference between integer rounding of pivoted state and pivoted state and the difference between the integer roundings of this and pivoted state (target integer solution updated). ]
+%Although pivoting ensures solutions are positive, there may exist extreme points that don't fall on the grid of integer solutions and so do not satisfy the integer constraint. However, if we posit the existence of a \textit{null trajectory} and associate all fractional solutions with the null trajectory, then simply ignore null samples, then we end up with samples from the posterior, as required (i.e. the Markov chain can pass through fractional states, but no sample is generated when doing so). However, we don't want to spend too much computational effort moving between fractional states without generating samples, so we encourage the Markov process away from these fractional states using a \textit{feasibility pump} which works in the following way: [Score pivots from a fractional state by sum of difference between integer rounding of this state and pivoted state (no update of target integer solution), and by difference between integer rounding of pivoted state and pivoted state and the difference between the integer roundings of this and pivoted state (target integer solution updated). ]
 
 %by multiplying their probability by a ``fractional penalty'' $e^{-kn}$ where $n$ is the number of non-integer values in the solution and $k$ is a constant parameter [better to use a stochastic extension of Fischetti(2005) feasibility pump here. Fractional solutions are ``augmented'' with an integer, infeasible(negative) solution which also changes stochastically].
 
 \subsubsection{Dealing with degeneracy}
 %######################################
 
-The use of pivoting is complicated somewhat when the solutions are degenerate. A degenerate solution is one that can be generated by more than one pivot state. This can occur when a pivot state has basic variables with value zero (in which case we say the pivot state is degenerate and call the zero variables \textit{degenerate varaibles} of the pivot state). Pivoting on a degenerate variable does not change the solution since during a pivot the outgoing basic variable becomes constrained to zero; but if the basic-variable's value was zero to start with, constraining it to zero has no effect on the solution (for a thorough theoretical development of degeneracy see \cite{zornig93degeneracy}). This is problematic because we need to assign a probability to each Markov state but under degeneracy a pivot state can't be given the probability of its trajectory because this would result in degenerate trajectories being ``counted'' multiple times, once for each degenerate pivot state of the trajectory. To maintain the correct distribution, the probabilities of all the degenerate pivot states of a given trajectory should sum to the probability of that trajectory.
+The use of pivoting is complicated somewhat when the solutions are degenerate. A degenerate solution is one that can be generated by more than one pivot state. This can occur when a pivot state has any basic variables that are on their bounds (in which case we say the pivot state is degenerate and call the variables on their bounds \textit{degenerate varaibles} of the pivot state). A degenerate variable can be pivoted-out without changing the solution since during a pivot the outgoing basic variable becomes constrained to one of its bounds; but if the basic-variable's value is already on its bound to start with, constraining it has no effect on the solution (for a thorough theoretical development of degeneracy see \cite{zornig93degeneracy}). This is problematic because we need to assign a probability to each Markov state but under degeneracy the same solution can be associated with a number of Markov states, so if we associate a Markov state with the probability of its trajectory then degenerate trajectories are at risk of being ``counted'' multiple times, once for each Markov state that has that solution. To maintain the correct distribution, the probabilities of all the Markov states with a given trajectory should sum to the probability of that trajectory.
 
-To solve this problem in a computationally efficient way we introduce the concept of an \textit{ordered pivot state} which consists of a partition of the variables into basic and non-basic variables as before, but in addition there is now an ordering of the basic variables. Since we represent $A_b$ as a matrix in our standard form representation, it is easy to represent this ordering in the ordering of the rows of $A_b$. As before, the validity of equation \ref{tableau1} can be maintained under permutations of the ordering of the rows of $A_b$ by performing the same row permutations on $A_n$ and $B$. We now associate a Markov state with each ordered pivot state, assigning it a probability according to algorithm \ref{probAlgorithm}:
+However, note that in a valid Fermionic trajectory, all the structural variables are binary (i.e. either 0 or 1) so are always on one of their bounds. So, if we split the variables into binary and non-binary variables, and restrict ourselves to the subset of Markov states where all non-basic variables are binary (or fixed, and no fixed variable is basic), then every pivot state can be made to represent any valid solution by activating the appropriate bounds of the non-basic variables. This means that for any given valid trajectory, there exists one Markov state for each pivot state. So, if we divide up the probability equally between these Markov states, then each Markov state, $(\pi, X)$, has a probability $P(X)/N$ where $N$ is the number of pivot states. However, since $N$ is constant, we need not actually do the division for the purposes of MCMC.
 
-\begin{algorithm}
-	\caption{Algorithm to calculate probability of an ordered pivot state}
-	\label{probAlgorithm}
-	\begin{algorithmic}
-		\Function{Probability}{$A_b$,$A_n$,$B$} \Comment{Standard representation of an ordered pivot state}
-		\State $P_T \leftarrow$ the probability of the trajectory of the current solution
-		\State $P_d \leftarrow 1.0$
-		\State $C \leftarrow \emptyset$
-		\State $r \leftarrow 0$
-		\For{$i = |B|-1 \text{ down to } 0$}
-		\If{B[i] == 0}
-		\State $C \leftarrow C \ \cup $ the indices of the non-zero entries in row $i$ of $A_n$
-		\State $P_d \leftarrow P_d/(|C|+r+1)$
-		\State $r \leftarrow r + 1$
-		\EndIf
-		\EndFor
-		\State \Return $\frac{P_d P_T\sigma!}{|B|!}$
-		\EndFunction
-	\end{algorithmic}
-\end{algorithm}
+\subsubsection{Infeasible states}
+
+In order to improve mixing during MCMC we allow simplex states that are infeasible. In order to introduce these into the MCMC scheme, we must assign a probability to each infeasible state and define a way of choosing pivots.
+
+A state can become infeasible when one or more of the basic variables goes outside their bounds.
+
+Let 
+\[
+\iota^u_l(x) =
+\begin{cases}
+l-x & \text{if }x<l\\
+x-u & \text{if }x>u\\
+0 & \text{otherwise}
+\end{cases}
+\]
+and let the infeasibility of a basic vector $X_B$
+\[
+\iota(X_B) = \sum_i \iota^{u_i}_{l_i}(X_{Bi})
+\]
+Now let 
+\[
+\rho^u_l(x) =
+\begin{cases}
+-1 & \text{if }x<l\\
+1 & \text{if }x>u\\
+0 & \text{otherwise}
+\end{cases}
+\]
+be the derivative of the infeasibility $\iota$ so that
+\[
+R_i(X_B) = \frac{d\iota(X_B)}{dX_{Bi}} = \rho^{u_i}_{l_i}(X_{Bi})
+\]
+and $R(X_B)$ can be thought of as an infeasibility objective for a given basic vector $X_B$, for which the reduced objective, $D$, is defined as
+\[
+D = -R(X_B)B^{-1}N
+\]
+so that
+\[
+D_j = \sum_i -R_i(X_B)B^{-1}N_j = \sum_i \frac{d\iota(X_B)}{dX_{Bi}} \frac{dX_{Bi}}{dX_{Nj}} = \frac{d\iota(X_B)}{dX_{Nj}}
+\]
+is the rate of change of $X_B$-infeasibility with the $j^th$ non-basic variable.
+
+\subsubsection{Proposing a pivot column: Potential energy}
+
+When proposing a pivot, we first decide which column to pivot on.
+ 
+Let the potential energy of the $j^{th}$ non-basic variable be
+\[
+E_j = e^{k(2X_{Nj}-1)\,sgn(D_j)}
+\]
+where $sgn(.)$ is the sign operation.
+
+A column is chosen with probability proportional to its potential energy
+\[
+P(j) = \frac{E_j}{\sum_k E_k}
+\]
+Let
+\[
+E_P = \sum_j (2X_{Nj}-1)\,sgn(D_j)
+\]
+Now let the \textit{energy penalty} be
+\[
+P_E = \frac{\sum_j E_j}{n\prod_j E_j} = \frac{\sum_j E_j}{n} e^{-kE_P}
+\]
+where $n$ is the number of non-basic variables.
+
+So,
+\[
+P_EP(j) = \frac{e^{-k(E_P - (2X_{Nj}-1)\,sgn(D_j))}}{n}
+\]
+and the contribution to the acceptance probability of the column decision is
+\[
+\lambda_j = \frac{P_E'P'(j)}{P_EP(j)} = e^{k(E_P-E_P' - (2X_{Nj}-1)\,sgn(D_j) + (2X'_{Nj}-1)\,sgn(D'_j))}
+\]
+so
+\[
+\lambda_j = e^{k\sum_{q!=j} (2X_{Nq} - 1)(sgn(D_q) - sgn(D'_q))}
+\]
+
+\subsubsection{Proposing a pivot row}
+
+Once a column is chosen, a row on that column is chosen as the final pivot point, or a bound-swap is chosen.
+
+Pivot points that make a non-binary variable non-basic are immediately excluded. In order to maintain integer solutions, we also restrict ourselves to pivot points whose tableau coefficient has an absolute value of 1 (TODO: prove that this maintains integer solutions and maintains connectedness of the graph).
+
+Of the remaining pivots, one is chosen with a probability proportional to the exponential of the infeasibility of the post-pivot solution.
+
+An efficient way of calculating the infeasibility of all pivots on a column is as follows:
+
+-------------
+
 
 The proposal function for ordered pivot states is shown in algorithm \ref{proposal}
 

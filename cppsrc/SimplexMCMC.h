@@ -72,6 +72,7 @@ public:
     int infeasibilityCount();
     bool abmSanityChecks();
 
+    bool solutionIsPrimaryFeasible();
 protected:
     bool processProposal(const ProposalPivot &proposal);
     ProposalPivot proposePivot();
@@ -84,7 +85,6 @@ protected:
     void updateLPSolution(const ProposalPivot &pivot);
     void revertLPSolution(const ProposalPivot &pivot);
 
-    bool solutionIsPrimaryFeasible();
 
     double infeasibility();
 

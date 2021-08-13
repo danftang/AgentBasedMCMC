@@ -141,8 +141,7 @@ bool SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
 //    }
 //    std::cout << std::endl;
 
-//    if(proposalPivot.i > 0  && kSimTokProb[head[proposalPivot.i]] <= originalProblem.nConstraints()) std::cout << "Warning: Proposing auxiliary var to leave basis" << std::endl;
-
+    if(proposalPivot.i > 0  && kSimTokProb[head[proposalPivot.i]] <= nBasic()) std::cout << "Warning: Proposing auxiliary var to leave basis" << std::endl;
 
     double sourceProb = logProbFunc(X());
 //    std::cout << "Source LP state is: " << glp::SparseVec(lpSolution) << std::endl;
@@ -151,9 +150,9 @@ bool SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
 //    std::cout << "Destination LP state is: " << glp::SparseVec(lpSolution) << std::endl;
     revertLPSolution(proposalPivot); // TODO: change logic so we don't revert if we end up accepting
     double logAcceptance = destinationProb - sourceProb + proposalPivot.logAcceptanceContribution;
-    debug(
-            if(std::isnan(logAcceptance)) std::cout << "Log acceptance is " << logAcceptance << std::endl
-            );
+//    debug(
+//            if(std::isnan(logAcceptance)) std::cout << "Log acceptance is " << logAcceptance << std::endl
+//            );
 //    if(isnan( logAcceptance )) println("NaN Acceptance $acceptanceNumerator / $acceptanceDenominator logPiv = ${state.logProbOfPivotState} transition prob = ${transitionProb(revertState.reversePivot)} columnWeight = ${columnWeights.P(revertState.reversePivot.col)} nPivots = ${nPivots(revertState.reversePivot.col)}");
 //    debug(std::cout << "Log acceptance is " << destinationProb << " - " << sourceProb << " + " << proposalPivot.logAcceptanceContribution << " = " << logAcceptance << std::endl);
     if (std::isnan(logAcceptance) || Random::nextDouble() <= exp(std::min(0.0,logAcceptance))) { // explicity accept if both numerator and denominator are -infinity
@@ -318,9 +317,9 @@ void SimplexMCMC::revertLPSolution(const ProposalPivot &pivot) {
 
 
 bool SimplexMCMC::solutionIsPrimaryFeasible() {
-    for(int i=1; i<nBasic(); ++i) {
+    for(int i=1; i<=nBasic(); ++i) {
         int k = head[i];
-        if(beta[i] < l[k] - tol || beta[i] > u[k] + tol) return false;
+        if(beta[i] < (l[k] - tol) || beta[i] > (u[k] + tol)) return false;
     }
     return true;
 }
