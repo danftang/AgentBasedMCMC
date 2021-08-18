@@ -10,18 +10,19 @@
 #include "StateTrajectory.h"
 #include "agents/PredPreyAgent.h"
 #include "PoissonState.h"
+#include "BinomialDistribution.h"
 
 class Experiments {
 public:
 
-    static void PredPreyExpt();
+//    static void PredPreyExpt();
     static void CatMouseExpt();
     static void RandomWalk();
-    static void GnuplotTest();
+//    static void GnuplotTest();
 
     static double nullPMF(const std::vector<double> &X) { return 0.0; }
 
-    static Gnuplot &plotHeatMap(Gnuplot &gp, const PoissonState<PredPreyAgent> &aggregateState, const ModelState<PredPreyAgent> &realState);
+//    static Gnuplot &plotHeatMap(Gnuplot &gp, const PoissonState<PredPreyAgent> &aggregateState, const ModelState<PredPreyAgent> &realState);
     static Gnuplot &plotAgents(Gnuplot &gp, const ModelState<PredPreyAgent> &state);
 
     static void PredPreyAssimilation();
@@ -30,7 +31,10 @@ public:
 
     static std::vector<double>
     informationIncrease(int gridsize, int windowSize, int nWindows, double pPredator, double pPrey,
-                        double pMakeObservation, int nSamplesPerWindow, int nBurnInSamples);
+                        double pMakeObservation, double pObserveIfPreset, int nSamplesPerWindow, int nBurnInSamples);
+
+//    Gnuplot &
+//    plotHeatMap(Gnuplot &gp, const BinomialDistribution &aggregateState, const ModelState<PredPreyAgent> &realState);
 };
 
 

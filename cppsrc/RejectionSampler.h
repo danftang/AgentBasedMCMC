@@ -5,20 +5,24 @@
 #ifndef GLPKTEST_REJECTIONSAMPLER_H
 #define GLPKTEST_REJECTIONSAMPLER_H
 
-#include "AssimilationProblem.h"
 
 class RejectionSampler {
 public:
-    const AssimilationProblem &problem;
-    RejectionSampler(const AssimilationProblem &prob): problem(prob) {}
+    std::function<std::vector<double>()>    priorSampler;
+    ConvexPMF                               likelihoodPMF;
+
+    RejectionSampler(std::function<std::vector<double>()> priorSampler, ConvexPMF likelihood)
+    : priorSampler(std::move(priorSampler)),
+      likelihoodPMF(std::move(likelihood))
+      {}
 
     // N.B. Only use this when likelihood is reasonably high
     std::vector<double> operator()() {
         double logLikelihood;
         std::vector<double> sample(0);
         do {
-            sample = problem.priorSampler();
-            logLikelihood = problem.likelihoodPMF.logP(sample);
+            sample = priorSampler();
+            logLikelihood = likelihoodPMF.logP(sample);
         } while(Random::nextDouble() > exp(logLikelihood));
         return sample;
     }

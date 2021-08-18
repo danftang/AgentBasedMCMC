@@ -7,8 +7,8 @@
 
 #include <boost/math/distributions/binomial.hpp>
 #include <boost/random/mersenne_twister.hpp>
-#include <boost/random/binomial_distribution.hpp>
-#include <boost/random/discrete_distribution.hpp>
+//#include <boost/random/binomial_distribution.hpp>
+//#include <boost/random/discrete_distribution.hpp>
 #include "SimplexMCMC.h"
 #include "Event.h"
 #include "Trajectory.h"

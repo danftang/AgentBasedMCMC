@@ -7,12 +7,12 @@
 
 #ifdef NDEBUG
 #define debug(expr) static_cast<void>(0)
-#define fail() static_cast<void>(0)
+// #define fail() static_cast<void>(0)
 #else
-#include "assert.h"
+// #include "assert.h"
 
 #define debug(expr) expr
-#define fail() assert(false)
+// #define fail() assert(false)
 #endif
 
 #endif //GLPKTEST_DEBUG_H

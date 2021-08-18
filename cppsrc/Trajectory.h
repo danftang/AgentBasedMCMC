@@ -57,7 +57,7 @@ public:
                 t0State.setToZero();
                 t0State.swap(t1State);
             }
-            if(++nAttempts > 1000) throw(std::runtime_error("Can't create act-Fermionic prior sample of Trajectory. Probably too many agents for Fermionicity."));
+            if(++nAttempts > 1000) throw(std::runtime_error("Can't create act-Fermionic trajectoryPrior sample of Trajectory. Probably too many agents for Fermionicity."));
         } while(!isValid);
     }
 
@@ -98,7 +98,7 @@ public:
             }
             if (++nAttempts > 1000)
                 throw (std::runtime_error(
-                        "Can't create act-Fermionic prior sample of Trajectory. Too many agents for Fermionicity to be a good assumption."));
+                        "Can't create act-Fermionic trajectoryPrior sample of Trajectory. Too many agents for Fermionicity to be a good assumption."));
         } while (!isValid);
     }
 
@@ -156,6 +156,9 @@ public:
 
     int nTimesteps() const { return (size()-1)/(AGENT::domainSize()*AGENT::actDomainSize()); }
 
+    static int dimension(int nTimesteps) { return AGENT::domainSize()*AGENT::actDomainSize()*nTimesteps + 1; }
+
+    // Log probability given fixed start state, as defined by this trajectory
     double logProb() const {
         const double infeasibilityPenalty = 0.01;
 
@@ -185,11 +188,16 @@ public:
                 }
             }
         }
-//        std::cout << "Trajectory prior = " << logP << std::endl;
+//        std::cout << "Trajectory trajectoryPrior = " << logP << std::endl;
         return logP;
     }
 
 
+    static double logProb(const std::vector<double> &X) {
+        assert(X.size() % (AGENT::domainSize()*AGENT::actDomainSize()) == 0);
+        const Trajectory<AGENT> &T = reinterpret_cast<const Trajectory<AGENT> &>(X);
+        return T.logProb();
+    }
 
 //    friend std::ostream &operator <<(std::ostream &out, const Trajectory<AGENT> &solution) {
 //        Trajectory sortedTrajectory(solution);

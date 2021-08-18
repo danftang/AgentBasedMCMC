@@ -8,44 +8,67 @@
 
 #include <vector>
 #include <boost/math/distributions/binomial.hpp>
-#include "ActFermionicDistribution.h"
-#include "StlStream.h"
-#include "ConvexPMF.h"
+//#include "ActFermionicDistribution.h"
+//#include "StlStream.h"
+//#include "ConvexPMF.h"
+//#include "agents/BinomialAgent.h"
+//#include "TrajectoryPriorPMF.h"
+//#include "TrajectoryLikelihoodPMF.h"
+//#include "TrajectoryPriorSampler.h"
+//#include "DeltaPMF.h"
+//#include "PoissonPMF.h"
+//#include "BinomialDistribution.h"
+//#include "AssimilationProblem.h"
+//#include "RejectionSampler.h"
+//#include "BinarySolutionSet.h"
+#include "AssimilationWindow.h"
 #include "agents/BinomialAgent.h"
-#include "TrajectoryDistribution.h"
-#include "DeltaPMF.h"
-#include "PoissonPMF.h"
-#include "BinomialPMF.h"
-#include "AssimilationProblem.h"
-#include "RejectionSampler.h"
+#include "BinomialDistribution.h"
 #include "BinarySolutionSet.h"
+#include "RejectionSampler.h"
 
-class UnitTests {
+class UnitTests: public AssimilationWindow<BinomialAgent> {
 public:
-    int nTimesteps;
-    BinomialPMF startDist;
-    AgentStateObservation<BinomialAgent> observation;
-    TrajectoryDistribution<BinomialAgent> window;
-    AssimilationProblem problem;
+//    int nTimesteps;
+//    BinomialDistribution startDist;
+//    AgentStateObservation<BinomialAgent>    observation;
+//    TrajectoryPriorPMF<BinomialAgent>       priorPMF;
+//    TrajectoryPriorSampler<BinomialAgent>   priorSampler;
+//    TrajectoryLikelihoodPMF<BinomialAgent>  likelihoodPMF;
+//    ConvexPMF                               posterior;
+
+//    TrajectoryPriorDistribution<BinomialAgent> window;
+//    AssimilationProblem problem;
+
 
     UnitTests()
-    : nTimesteps(2),
-    startDist({0.9, 0.1, 0.0}, 1),
-    observation(State<BinomialAgent>(1, 0),1,0.9),
-    window(nTimesteps),
-    problem(initProblem(window, startDist, observation)) {
+    :
+            AssimilationWindow<BinomialAgent>(
+                    2,
+                    BinomialDistribution({
+                                                 boost::math::binomial_distribution(1.0, 0.9),
+                                                 boost::math::binomial_distribution(1.0, 0.1),
+                                                 boost::math::binomial_distribution(1.0, 0.0)
+                                         }),
+                    AgentStateObservation<BinomialAgent>(
+                            State<BinomialAgent>(1, 0),
+                            1,
+                            0.9
+                    )
+            )
+    {
     }
 
-    static AssimilationProblem
-    initProblem(const TrajectoryDistribution<BinomialAgent> &window, const BinomialPMF &startDist, const AgentStateObservation<BinomialAgent> &observation) {
-        BinomialAgent::GRIDSIZE = window.nTimesteps + 1;
-        AssimilationProblem problem(
-                window.prior(startDist.PMF()),
-                window.priorSampler(startDist.sampler())
-        );
-        problem.addObservation(window.likelihood(observation));
-        return problem;
-    }
+//    static AssimilationProblem
+//    initProblem(const TrajectoryPriorDistribution<BinomialAgent> &window, const BinomialDistribution &startDist, const AgentStateObservation<BinomialAgent> &observation) {
+//        BinomialAgent::GRIDSIZE = window.nTimesteps + 1;
+//        AssimilationProblem problem(
+//                window.trajectoryPrior(startDist.PMF()),
+//                window.priorSampler(startDist.sampler())
+//        );
+//        problem.addObservation(window.likelihood(observation));
+//        return problem;
+//    }
 
 
     static void testActFermionicDistribution() {
@@ -107,7 +130,7 @@ public:
 
 
     void testValidTrajectorySet() {
-        ConvexPMF pmf = problem.PMF();// window.prior(startDist.PMF());
+        ConvexPMF pmf = priorPMF;
         ModelState<BinomialAgent> marginalisedFinalState;
         double marginalP = 0.0;
         for(const std::vector<double> &traj: BinarySolutionSet(pmf.convexSupport, pmf.nDimensions)) {
@@ -126,7 +149,7 @@ public:
 
     void testABMPrior() {
         ModelState<BinomialAgent> finalState;
-        auto sampler = window.priorSampler(startDist.sampler());
+        auto sampler = priorSampler;
         for(int s=0; s<100000; ++s) {
             Trajectory<BinomialAgent> sample = sampler();
 //            std::cout << "Got sample: " << s << " " << sample << std::endl;
@@ -137,12 +160,12 @@ public:
 
 
     void testSimplexSampler() {
-        ConvexPMF pmf = problem.PMF(); // window.prior(startDist.PMF());
+        ConvexPMF pmf = posterior; // window.trajectoryPrior(startDist.PMF());
 //        std::cout << "Start state dist is:\n" << startDist.weights << std::endl;
 //        std::cout << "Start state convexSupport is:\n" << startDist.PMF().convexSupport << std::endl;
         std::cout << "Simplex Sampler convexSupport:\n" << pmf.convexSupport << std::endl;
 
-        SimplexMCMC sampler = SimplexMCMC(pmf, window.priorSampler(startDist.sampler())());
+        SimplexMCMC sampler = SimplexMCMC(pmf, priorSampler());
 //        std::cout << "kProbTokSim = " << sampler.kProbTokSim << std::endl;
 //        std::cout << "kSimTokProb = " << sampler.kSimTokProb << std::endl;
         for(int burnIn=0; burnIn<1000; ++burnIn) {
@@ -168,11 +191,11 @@ public:
 
 
     void testRejectionSampler() {
-        std::cout << "Prior Support:\n" << problem.priorPMF.convexSupport << std::endl;
-        std::cout << "Likelihood Support:\n" << problem.likelihoodPMF.convexSupport << std::endl;
-        std::cout << "Convex support: \n" << problem.PMF().convexSupport << std::endl;
+        std::cout << "Prior Support:\n" << priorPMF.convexSupport << std::endl;
+        std::cout << "Likelihood Support:\n" << likelihoodPMF.convexSupport << std::endl;
+        std::cout << "Convex support: \n" << posterior.convexSupport << std::endl;
 
-        RejectionSampler rejectionSampler(problem);
+        RejectionSampler rejectionSampler(priorSampler, likelihoodPMF);
         ModelState<BinomialAgent> finalState;
         const int NSAMPLES = 100000;
         for (int s = 0; s < NSAMPLES; ++s) {
@@ -184,53 +207,6 @@ public:
     }
 
 
-    static void testABMPosterior() {
-        const int nTimesteps = 2;
-        BinomialAgent::GRIDSIZE = nTimesteps + 1;
-
-        BinomialPMF startDist({0.4, 0.01, 0.01}, 2);
-
-        std::cout << "Start state convexSupport is:\n" << startDist.PMF().convexSupport << std::endl;
-
-        TrajectoryDistribution<BinomialAgent> window(nTimesteps);
-
-        AgentStateObservation<BinomialAgent> observation(State<BinomialAgent>(1,0), 1, 1.0);
-
-        AssimilationProblem problem(
-                window.prior(startDist.PMF()),
-                window.priorSampler(startDist.sampler()));
-
-        problem.addObservation(window.likelihood(observation));
-
-        std::cout << "Prior convexSupport:\n" << problem.priorPMF.convexSupport << std::endl;
-
-        ModelState<BinomialAgent> finalState;
-        for (int s = 0; s < 10000; ++s) {
-            Trajectory<BinomialAgent> sample = problem.priorSampler();
-            finalState += sample.endState();
-        }
-        std::cout << "Prior samples: " << finalState << std::endl;
-
-        ModelState<BinomialAgent> mcmcFinalState;
-        SimplexMCMC sampler = problem.simplexSampler();
-        for (int burnIn = 0; burnIn < 100; ++burnIn) {
-            sampler.nextSample();
-        }
-        std::cout << "Sampler:\n" << sampler << std::endl;
-        for (int s = 0; s < 10000; ++s) {
-            Trajectory<BinomialAgent> sample(sampler.nextSample());
-            //            std::cout << sample << std::endl;
-            mcmcFinalState += sample.endState();
-        }
-        std::cout << "Feasible stats:\n" << sampler.feasibleStatistics << std::endl;
-        std::cout << "Infeasible stats:\n" << sampler.infeasibleStatistics << std::endl;
-        std::cout << mcmcFinalState << std::endl;
-
-        //        boost::math::binomial binom = boost::math::binomial(nTimesteps, BinomialAgent::pMove);
-        //        for(int i=0; i<=nTimesteps; ++i) {
-        //            std::cout << i << " -> " << boost::math::pdf(binom, i) << std::endl;
-        //        }
-    }
 };
 
 

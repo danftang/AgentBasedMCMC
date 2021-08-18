@@ -7,7 +7,7 @@
 #include "StlStream.h"
 #include "Random.h"
 #include "UnitTests.h"
-#include "TrajectoryDistribution.h"
+#include "TrajectoryPriorDistribution.h"
 #include "ConvexPolyhedron.h"
 #include "ABMConstraints.h"
 #include "AssimilationProblem.h"
@@ -50,28 +50,29 @@ using glp::X;
 //
 //};
 
+
 int main(int argc, char *argv[]) {
 
 //    PoissonState<PredPreyAgent> startState;
-//    TrajectoryDistribution<PredPreyAgent> myPrior(startState, 8);
+//    TrajectoryPriorDistribution<PredPreyAgent> myPrior(startState, 8);
 
     UnitTests tests;
 //    tests.testRejectionSampler();
 //    tests.testABMPrior();
-    tests.testSimplexSampler();
-    tests.testValidTrajectorySet();
-    // TODO: Work out why adding BinomialPMF constraints breaks simplex sampling
+//    tests.testSimplexSampler();
+//    tests.testValidTrajectorySet();
 
-    //    std::cout << Experiments::informationIncrease(
+//        std::cout << Experiments::informationIncrease(
 //            8,
 //            2,
 //            1,
 //            0.16,
 //            0.32,
 //            0.05,
+//            0.9,
 //            100000,
 //            1000) << std::endl;
-//    Experiments::PredPreyAssimilation();
+    Experiments::PredPreyAssimilation();
     //    Experiments::GnuplotTest();
 //    Experiments::PredPreyExpt();
 //    Experiments::CatMouseExpt();

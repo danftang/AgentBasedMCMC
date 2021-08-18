@@ -30,7 +30,7 @@ std::vector<PredPreyAgent> PredPreyAgent::consequences(PredPreyAgent::Act act) c
 
 
 // If allowInfeasibleActs is true, then if an act is infeasible then its probability is not set to zero but
-// is the expectation averaged over the prior distribution of 'others' (note that this has the
+// is the expectation averaged over the trajectoryPrior distribution of 'others' (note that this has the
 // consequence that the sum of the acts no longer adds to 1 since different acts are relative to different
 // distributions of 'others'). This is to enable different uses: for a forward run we set allowInfeasibleActs to
 // false and get a LogPMF over acts, whereas when calculating the probability of a solution by setting allowInfeasibleActs

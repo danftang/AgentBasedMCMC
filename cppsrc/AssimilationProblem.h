@@ -7,10 +7,10 @@
 
 #include "ConvexPMF.h"
 #include "ConvexPMFProduct.h"
-#include "TrajectoryDistribution.h"
+#include "TrajectoryPriorDistribution.h"
 #include "Distribution.h"
 
-class AssimilationProblem: Distribution {
+class AssimilationProblem: public Distribution {
 public:
     ConvexPMF                               priorPMF;
     std::function<std::vector<double>()>    priorSampler;

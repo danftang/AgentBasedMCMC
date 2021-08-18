@@ -17,7 +17,7 @@ public:
 
     static const ConvexPMF INVALID_PMF;
 
-    PMF                 logProb;   // function from vertex co-ord to log probability
+    PMF                 logProb;        // function from vertex co-ord to log probability
     int                 nDimensions;    // the number of dimensions of the convex polyhedron of points
     ConvexPolyhedron    convexSupport;  // all non-zero probability points lie on the vertices of this polyhedron
 
@@ -44,11 +44,17 @@ public:
     }
 
 
+    // Multiplicatin of distributions. Equivalent to summation of logP
+    // and union of constraints. If the PMFs have different dimension,
+    // we implicitly increase the dimension of the lower dimensional distribution
+    // to that of the higher by assuming the lower dimensional variables refer to the
+    // prefix of the higher.
     ConvexPMF &operator *=(const ConvexPMF &other) {
         logProb = [logP = std::move(logProb), otherLogP = other.logProb](const std::vector<double> &X) {
             return logP(X) + otherLogP(X);
         };
         convexSupport += other.convexSupport;
+        nDimensions = std::max(nDimensions, other.nDimensions);
         return *this;
     }
 
@@ -58,12 +64,14 @@ public:
             return logP(X) + otherLogP(X);
         };
         convexSupport += std::move(other.convexSupport);
+        nDimensions = std::max(nDimensions, other.nDimensions);
         return *this;
     }
 
     ConvexPMF operator *(const ConvexPMF &other) const & {
         ConvexPMF result(*this);
         result *= other;
+        result.nDimensions = std::max(nDimensions, other.nDimensions);
         return result;
     }
 
