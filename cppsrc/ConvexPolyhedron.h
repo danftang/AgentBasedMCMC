@@ -27,11 +27,11 @@ public:
     }
 
     glp::Problem toLPProblem() const {
-        std::cout << "Constraints are:\n" << *this << std::endl;
+//        std::cout << "Constraints are:\n" << *this << std::endl;
         glp::Problem lp(*this);
         lp.advBasis();
         lp.warmUp();
-        std::cout << "Problem is:\n" << lp << std::endl;
+//        std::cout << "Problem is:\n" << lp << std::endl;
         return lp;
     }
 

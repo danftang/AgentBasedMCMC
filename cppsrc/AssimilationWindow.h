@@ -60,7 +60,7 @@ public:
             sampler.nextSample();
         }
 
-        std::cout << "Sampler:\n" << sampler << std::endl;
+//        std::cout << "Sampler:\n" << sampler << std::endl;
         std::cout << "Initial solution: " << sampler.X() << std::endl;
         for(int s=0; s<nSamples; ++s) {
             Trajectory<AGENT> sample(sampler.nextSample());
@@ -73,7 +73,31 @@ public:
         std::cout << "Infeasible stats:\n" << sampler.infeasibleStatistics << std::endl;
         std::cout << "Infeasible proportion = " << sampler.infeasibleStatistics.nSamples*1.0/(sampler.feasibleStatistics.nSamples + sampler.infeasibleStatistics.nSamples) << std::endl;
 
-        std::cout << analysis << std::endl;
+//        std::cout << analysis << std::endl;
+    }
+
+
+    BinomialDistribution priorEndState(int nSamples) {
+        SampleStatistics endStats(AGENT::domainSize());
+        for(int s=0; s<nSamples; ++s) {
+            Trajectory<AGENT> sample(priorSampler());
+            endStats += sample.endState();
+        }
+        return BinomialDistribution(endStats);
+    }
+
+
+    double informationGain() {
+        ModelState<AGENT> realEndState = realTrajectory.endState();
+        BinomialDistribution prior = priorEndState(10000);
+        BinomialDistribution posterior(analysis);
+//        debug(
+//                std::cout << "prior logProb = " << prior.logP(realEndState) << "Posterior logProb = " << posterior.logP(realEndState) << std::endl;
+//                std::cout << "real end state = " << realEndState << std::endl;
+//                std::cout << "prior = " << prior << std::endl;
+//                std::cout << "posterior = " << posterior << std::endl;
+//                );
+        return (posterior.logP(realEndState) - prior.logP(realEndState))/log(2.0);
     }
 
 //    AssimilationWindow(const Trajectory<AGENT> &realTrajectory,

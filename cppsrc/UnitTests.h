@@ -26,6 +26,7 @@
 #include "BinomialDistribution.h"
 #include "BinarySolutionSet.h"
 #include "RejectionSampler.h"
+#include "ExactSolver.h"
 
 class UnitTests: public AssimilationWindow<BinomialAgent> {
 public:
@@ -42,33 +43,32 @@ public:
 
 
     UnitTests()
-    :
+            :
             AssimilationWindow<BinomialAgent>(
-                    2,
-                    BinomialDistribution({
-                                                 boost::math::binomial_distribution(1.0, 0.9),
-                                                 boost::math::binomial_distribution(1.0, 0.1),
-                                                 boost::math::binomial_distribution(1.0, 0.0)
-                                         }),
-                    AgentStateObservation<BinomialAgent>(
-                            State<BinomialAgent>(1, 0),
-                            1,
-                            0.9
+                    initProblem(
+                            2,
+                            BinomialDistribution({
+                                                         boost::math::binomial_distribution(1.0, 0.9),
+                                                         boost::math::binomial_distribution(1.0, 0.1),
+                                                         boost::math::binomial_distribution(1.0, 0.0)
+                                                 }),
+                            AgentStateObservation<BinomialAgent>(
+                                    State<BinomialAgent>(1, 0),
+                                    1,
+                                    0.9
+                            )
                     )
-            )
-    {
+            ) {
     }
 
-//    static AssimilationProblem
-//    initProblem(const TrajectoryPriorDistribution<BinomialAgent> &window, const BinomialDistribution &startDist, const AgentStateObservation<BinomialAgent> &observation) {
-//        BinomialAgent::GRIDSIZE = window.nTimesteps + 1;
-//        AssimilationProblem problem(
-//                window.trajectoryPrior(startDist.PMF()),
-//                window.priorSampler(startDist.sampler())
-//        );
-//        problem.addObservation(window.likelihood(observation));
-//        return problem;
-//    }
+    static AssimilationWindow<BinomialAgent>
+    initProblem(int nTimesteps, const BinomialDistribution &startDist, const AgentStateObservation<BinomialAgent> &observation) {
+        BinomialAgent::GRIDSIZE = nTimesteps + 1;
+        return AssimilationWindow<BinomialAgent>(
+                2,
+                startDist,
+                observation);
+    }
 
 
     static void testActFermionicDistribution() {
@@ -129,21 +129,9 @@ public:
     }
 
 
-    void testValidTrajectorySet() {
-        ConvexPMF pmf = priorPMF;
-        ModelState<BinomialAgent> marginalisedFinalState;
-        double marginalP = 0.0;
-        for(const std::vector<double> &traj: BinarySolutionSet(pmf.convexSupport, pmf.nDimensions)) {
-            double jointP = exp(pmf.logP(traj));
-            marginalP += jointP;
-//            std::cout << traj << " " << jointP << std::endl;
-            ModelState<BinomialAgent> endState = Trajectory<BinomialAgent>(traj).endState();
-            endState *= jointP;
-            marginalisedFinalState += endState;
-        }
-        std::cout << "Marginal P = " << marginalP << std::endl;
-        marginalisedFinalState *= 1.0/marginalP;
-        std::cout << marginalisedFinalState << std::endl;
+    void testExactSolver() {
+        ExactSolver<BinomialAgent> solver(posterior);
+        std::cout << "Exact solution = " << solver.solution << std::endl;
     }
 
 

@@ -122,7 +122,7 @@ const std::vector<double> & SimplexMCMC::nextSample() {
             feasibleStatistics.update(accepted, proposalPivot);
         } else {
             infeasibleStatistics.update(accepted, proposalPivot);
-            debug(if(infeasibleCount%1000 == 0) std::cout << infeasibleCount << " Infeasibility = " << infeasibility() << std::endl);
+            debug(if(infeasibleCount%1000 == 100) std::cout << infeasibleCount << " Infeasibility = " << infeasibility() << std::endl);
             ++infeasibleCount;
         }
     } while(!sampleIsFeasible);

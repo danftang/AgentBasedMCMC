@@ -13,6 +13,8 @@
 
 class CatMouseAgent {
 public:
+    static constexpr double pCatMove = 0.25;
+
     typedef int Act;
 
     enum ActNames {
@@ -42,7 +44,8 @@ public:
     Position position() const { return Position(stateId%2); }
     Type type() const { return Type(stateId/2); }
 
-    std::vector<double> timestep(const ModelState<CatMouseAgent> &others, bool allowInfeasibleActs) const;
+    std::vector<double> timestep(const ModelState<CatMouseAgent> &others) const;
+    std::vector<double> marginalTimestep() const;
     std::vector<CatMouseAgent> consequences(Act act) const; // the consequences of an act
     // returns the constraints implied by the given act
     std::vector<glp::Constraint> constraints(int time, Act act) const; // to be generated automatically by static analysis...eventually.

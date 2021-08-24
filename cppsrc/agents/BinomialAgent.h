@@ -28,7 +28,11 @@ public:
 
     operator int() const { return stateId; }
 
-    std::vector<double> timestep(const ModelState<BinomialAgent> &others, double infeasibilityPenalty) const {
+    std::vector<double> timestep(const ModelState<BinomialAgent> &others) const {
+        return {1.0-pMove, pMove};
+    }
+
+    std::vector<double> marginalTimestep() const {
         return {1.0-pMove, pMove};
     }
 

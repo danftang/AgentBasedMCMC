@@ -35,7 +35,7 @@ std::vector<PredPreyAgent> PredPreyAgent::consequences(PredPreyAgent::Act act) c
 // distributions of 'others'). This is to enable different uses: for a forward run we set allowInfeasibleActs to
 // false and get a LogPMF over acts, whereas when calculating the probability of a solution by setting allowInfeasibleActs
 // we extend probability calculation to infeasible trajectories in a reasonably smooth manner.
-std::vector<double> PredPreyAgent::timestep(const ModelState<PredPreyAgent> &others, double infeasibilityProb) const {
+std::vector<double> PredPreyAgent::timestep(const ModelState<PredPreyAgent> &others) const {
 
     std::vector<double> actDistribution(actDomainSize(),0.0);
     if (type() == PREDATOR) {
@@ -56,7 +56,28 @@ std::vector<double> PredPreyAgent::timestep(const ModelState<PredPreyAgent> &oth
     actDistribution[MOVELEFT] = moveProb;
     actDistribution[MOVERIGHT] = moveProb;
 
-    if(actDistribution[GIVEBIRTH] == 0.0) actDistribution[GIVEBIRTH] = infeasibilityProb;
+    return actDistribution;
+}
+
+
+std::vector<double> PredPreyAgent::marginalTimestep() const {
+    constexpr double pPreyNeighbourGivenPred = 0.2;
+    constexpr double pPredNeighbourGivenPrey = 0.1;
+
+    std::vector<double> actDistribution(actDomainSize(),0.0);
+    if (type() == PREDATOR) {
+        actDistribution[DIE] = pPredDie;
+        actDistribution[GIVEBIRTH] = pPredBirthGivenPrey*pPreyNeighbourGivenPred;
+    } else {
+        actDistribution[GIVEBIRTH] = pPreyBirth;
+        actDistribution[DIE] = pPreyDie + pPreyEatenGivenPred*pPredNeighbourGivenPrey;
+    }
+    double moveProb = 0.25 * (1.0 - actDistribution[DIE] - actDistribution[GIVEBIRTH]);
+    actDistribution[MOVEUP] = moveProb;
+    actDistribution[MOVEDOWN] = moveProb;
+    actDistribution[MOVELEFT] = moveProb;
+    actDistribution[MOVERIGHT] = moveProb;
+
     return actDistribution;
 }
 

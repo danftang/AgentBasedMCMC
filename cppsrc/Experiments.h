@@ -35,6 +35,9 @@ public:
 
 //    Gnuplot &
 //    plotHeatMap(Gnuplot &gp, const BinomialDistribution &aggregateState, const ModelState<PredPreyAgent> &realState);
+    static void CatMouseAssimilation();
+
+    static void BinomialAgentAssimilation();
 };
 
 

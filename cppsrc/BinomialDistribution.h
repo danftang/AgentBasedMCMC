@@ -28,12 +28,12 @@ public:
     // this gives Delta_v approx= Delta_n d(m-m^2/n)/dn = Delta_n -m^2 ln(n)
     BinomialDistribution(const SampleStatistics &stats): binomials(stats.nDimensions()) {
         std::valarray<double> means = stats.means();
-        std::valarray<double> variances = stats.variances();
+//        std::valarray<double> variances = stats.variances();
         for(int i=0; i<stats.nDimensions(); ++i) {
-            double nExact = means[i]*means[i]/(means[i] - variances[i]);
-            int n = nExact<1.0?1.0:std::round(nExact);
-            double p = means[i]/n;
-            debug(std::cout << "Creating binomial (" << n << "," << p << ")" << std::endl);
+//            double nExact = means[i]*means[i]/(means[i] - variances[i]);
+            int n = std::max(1.0,std::round(stats.max[i]));//std::max(1.0,std::ceil(nExact)); // std::max(1.0, std::round(nExact));
+            double p = std::min(means[i]/n,1.0);
+//            debug(std::cout << "Creating binomial (" << n << "," << p << ")" << std::endl);
             binomials[i] = boost::math::binomial_distribution<double>(n, p);
         }
     }
@@ -94,7 +94,7 @@ public:
 
     friend std::ostream &operator <<(std::ostream &out, const BinomialDistribution &binomial) {
         for(auto &binom : binomial.binomials) {
-            out << binom.trials()*binom.success_fraction() << " ";
+            out << "(" << binom.trials() << ", " << binom.success_fraction() << ") ";
         }
         out << std::endl;
         return out;

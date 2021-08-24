@@ -77,7 +77,7 @@ public:
                         (*this)[Event(t, agent, actId)] = 0.0;
                     }
                     // now choose acts for each of nAgents
-                    std::vector<double> actPMF = agent.timestep(t0State, 0.0);
+                    std::vector<double> actPMF = agent.timestep(t0State);
                     std::discrete_distribution<int> actDistribution(actPMF.begin(), actPMF.end());
                     for(int m=0; m <nAgents; ++m) {
                         int chosenAct = actDistribution(Random::gen);
@@ -160,21 +160,27 @@ public:
 
     // Log probability given fixed start state, as defined by this trajectory
     double logProb() const {
-        const double infeasibilityPenalty = 0.01;
+//        const double infeasibilityPenalty = 0.5;
 
         StateTrajectory<AGENT> stateTrajectory(*this);
         double logP = 0.0;
         int tEnd = nTimesteps();
         for (int t = 0; t < tEnd; ++t) {
             for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
-                std::vector<double> actPMF = AGENT(agentId).timestep(stateTrajectory[t], infeasibilityPenalty);
-                for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
-                    double occupation = fabs((*this)[Event<AGENT>(t, agentId, actId)]);
-                    if (occupation > tol) {
-                        logP += occupation * log(actPMF[actId]);
-//                   - CombinatoricsUtils.factorialLog(occupation) // add this for non-act-fermionic trajectories
+                std::vector<double> actPMF = AGENT(agentId).timestep(stateTrajectory[t]);
+                double agentStateLogP;
+                do {
+                    agentStateLogP = 0.0;
+                    for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+                        double occupation = fabs((*this)[Event<AGENT>(t, agentId, actId)]);
+                        if (occupation > tol) {
+                            agentStateLogP += occupation * log(actPMF[actId]);
+                            // - CombinatoricsUtils.factorialLog(occupation) // add this for non-act-fermionic trajectories
+                        }
                     }
-                }
+                    if(agentStateLogP <= -DBL_MAX) actPMF = AGENT(agentId).marginalTimestep();
+                } while(agentStateLogP <= -DBL_MAX);
+                logP += agentStateLogP;
             }
         }
 

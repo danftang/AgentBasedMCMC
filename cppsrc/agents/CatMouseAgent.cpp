@@ -6,8 +6,7 @@
 #include "../State.h"
 
 // returns LogPMF over acts
-std::vector<double> CatMouseAgent::timestep(const ModelState<CatMouseAgent> &others, bool allowInfeasibleActs) const {
-    static constexpr double pCatMove = 0.25;
+std::vector<double> CatMouseAgent::timestep(const ModelState<CatMouseAgent> &others) const {
     std::vector<double> actPmf(actDomainSize());
 
     if (type() == CAT) {
@@ -16,14 +15,29 @@ std::vector<double> CatMouseAgent::timestep(const ModelState<CatMouseAgent> &oth
     } else {
         if (others[CatMouseAgent(CAT, position())] >= 1.0) {
             actPmf[MOVE] = 1.0;
-            actPmf[STAYPUT] = allowInfeasibleActs?0.5:0.0;
+            actPmf[STAYPUT] = 0.0;
         } else {
-            actPmf[MOVE] = allowInfeasibleActs?0.5:0.0;
+            actPmf[MOVE] = 0.0;
             actPmf[STAYPUT] = 1.0;
         }
     }
     return actPmf;
 }
+
+
+std::vector<double> CatMouseAgent::marginalTimestep() const {
+    std::vector<double> actPmf(actDomainSize());
+
+    if (type() == CAT) {
+        actPmf[MOVE] = pCatMove;
+        actPmf[STAYPUT] = 1.0 - pCatMove;
+    } else {
+        actPmf[MOVE] = 0.5;
+        actPmf[STAYPUT] = 0.5;
+    }
+    return actPmf;
+}
+
 
 std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) const {
     if(act == MOVE) {

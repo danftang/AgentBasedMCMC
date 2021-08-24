@@ -479,46 +479,75 @@ When proposing a pivot, we first decide which column to pivot on.
  
 Let the potential energy of the $j^{th}$ non-basic variable be
 \[
-E_j = e^{k(2X_{Nj}-1)\,sgn(D_j)}
+E_j = (2X_{Nj}-1)\,sgn(D_j)
 \]
 where $sgn(.)$ is the sign operation.
 
-A column is chosen with probability proportional to its potential energy
+A column is chosen with probability proportional to the exponential of its potential energy
 \[
-P(j) = \frac{E_j}{\sum_k E_k}
+P(j) = \frac{e^{k_cE_j}}{\sum_{j'} e^{k_cE_{j'}}}
 \]
 Let
 \[
-E_P = \sum_j (2X_{Nj}-1)\,sgn(D_j)
+E_P = \sum_j E_j
 \]
-Now let the \textit{energy penalty} be
+be the total potential energy of the Markov state, and let the \textit{energy penalty} be
 \[
-P_E = \frac{\sum_j E_j}{n\prod_j E_j} = \frac{\sum_j E_j}{n} e^{-kE_P}
+P_E = \frac{\sum_j e^{k_cE_j}}{n\prod_j e^{k_cE_j}} = \frac{\sum_j e^{k_cE_j}}{n} e^{-k_cE_P} 
 \]
-where $n$ is the number of non-basic variables.
+where $n$ is the number of non-basic variables. Notice that the energy penalty of a feasible state is 1, so it only affects infeasible states.
 
-So,
+So, if we multiply the probability of the Markov state by its energy penalty then
 \[
-P_EP(j) = \frac{e^{-k(E_P - (2X_{Nj}-1)\,sgn(D_j))}}{n}
+P_EP(j) = \frac{e^{-k_c(E_P - E_j)}}{n}
 \]
-and the contribution to the acceptance probability of the column decision is
+If we multiply the probability of the Markov state by its energy penalty then the contribution of the column decision to the Metropolis-Hastings acceptance probability becomes
 \[
-\lambda_j = \frac{P_E'P'(j)}{P_EP(j)} = e^{k(E_P-E_P' - (2X_{Nj}-1)\,sgn(D_j) + (2X'_{Nj}-1)\,sgn(D'_j))}
+\lambda_j = \frac{P_E'P'(j)}{P_EP(j)} = e^{k_c((E_P-E_j) - (E_P' - E'_j))} = e^{-k_c(\Delta E_P - \Delta E_j)}
 \]
-so
+
+\subsubsection{Proposing a pivot row and column offset}
+
+Once a pivot-column is chosen, a pivot row on that column is chosen, along with an offset, $\Delta_j$ for the column, to give the proposed pivot. In order to be a valid pivot, $\Delta_j$ should bring the leaving variable to one of its bounds. If $\Delta_j$ brings column $j$ to its opposite bound, we also have the option to swap the active bound of column $j$ without performing any pivot. Let this be signified by a pivot-row of $-1$. If $\Delta_j=0$ we also have the option to perform the `null-pivot' which leaves everything unchanged.
+
+Pivots that make a non-binary variable non-basic are immediately excluded. In order to maintain integer solutions, we also restrict ourselves to pivot points whose tableau coefficient have an absolute value of 1 (TODO: prove that this maintains integer solutions and maintains connectedness of the Markov states). Let $\alpha_j$ be the set of remaining pivots on column $j$.
+
+An active pivot point is chosen with a probability proportional to the exponential of the infeasibility of the post-pivot solution (note that this includes any infeasibility of the entering variable). i.e.
 \[
-\lambda_j = e^{k\sum_{q!=j} (2X_{Nq} - 1)(sgn(D_q) - sgn(D'_q))}
+P(\iota \to \iota'|j) = \frac{e^{-k_r\iota'}}{\sum_{\iota''(X_B +\Delta''T_j) : \Delta'',i''\in \alpha_j}  e^{-k_r\iota''}}
+\]
+where $T_j = -B^{-1}N_j$ is the tableau values of column $j$.
+
+TODO: Need to include column j itself in this, and its contribution to infeasibility.
+
+After any pivot, the set of available vertices of the reverse pivot is the same as for the forward pivot so the probability of the reverse pivot $P(\iota' \to \iota|j)$ have the same denominator sums. So,
+\[
+\frac{P(\iota \to \iota'|j)}{P(\iota' \to \iota|j)} = \frac{e^{-k_r\iota'}}{e^{-k_r\iota}} = e^{-k_r(\iota'-\iota)}
+\]
+If we let the \textit{infeasibility penalty} of a Markov state be
+\[
+P_\iota = e^{-k_r\iota}
+\]
+and multiply the probability of a Markov state by its infeasibility penalty, the contribution of the choice of pivot row and column offset to the Metropolis-Hastings acceptance is
+\[
+\frac{P_\iota' P(\iota'\to\iota|j)}{P_\iota P(\iota\to\iota'|j)} = \frac{e^{-k_r\iota'}e^{-k_r\iota}}{e^{-k_r\iota}e^{-k_r\iota'}} = 1
+\]
+Notice again that the infeasibility penalty of feasible states is 1, so again it has not effect on feasible states.
+
+So, the compound penalty of a Markov state is the energy penalty times the infeasibility penalty
+\[
+P_{E\iota} = \frac{\sum_j e^{k_cE_j}}{n} e^{-k_cE_P-k_r\iota}
+\]
+but the final contribution to the MH acceptance probbility is 
+\[
+\lambda_j = e^{-k_c(\Delta E_P - \Delta E_j)}
 \]
 
-\subsubsection{Proposing a pivot row}
-
-Once a column is chosen, a row on that column is chosen as the final pivot point, or a bound-swap is chosen.
-
-Pivot points that make a non-binary variable non-basic are immediately excluded. In order to maintain integer solutions, we also restrict ourselves to pivot points whose tableau coefficient has an absolute value of 1 (TODO: prove that this maintains integer solutions and maintains connectedness of the graph).
-
-Of the remaining pivots, one is chosen with a probability proportional to the exponential of the infeasibility of the post-pivot solution.
+TODO: should $k_c$ and $k_r$ (or alternatively $E_P$ and $\iota$) be per column and row so that the rate of decay doesn't depend on the size of the problem? Can we approximate the number of infeasible vertices (for given infeasible variable set. For n infeasible vars, the infeasible vertices are described by $2^n$ nnc polyhedra. Alternatively, if we ensure that $k_r\iota$ dominates over $k_cE_P$ then we should expect the dynamics of a phase 1 potential energy pivot...i.e. ensure that probabilities increase monotonically in the forward phase 1 direction).
 
 An efficient way of calculating the infeasibility of all pivots on a column is as follows:
+
+
 
 -------------
 

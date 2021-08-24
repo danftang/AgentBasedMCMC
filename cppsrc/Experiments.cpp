@@ -17,6 +17,9 @@
 #include "TrajectoryPriorSampler.h"
 #include "TrajectoryPriorPMF.h"
 #include "TrajectoryLikelihoodPMF.h"
+#include "ExactSolver.h"
+#include "agents/BinomialAgent.h"
+#include "MCMCSolver.h"
 
 std::vector<double> Experiments::informationIncrease(int argc, char *argv[]) {
     if(argc != 9) {
@@ -70,14 +73,14 @@ std::vector<double> Experiments::informationIncrease(
 
 void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
-    PredPreyAgent::GRIDSIZE = 8;
+    PredPreyAgent::GRIDSIZE = 3;
     constexpr int windowSize = 2;
-    constexpr int nWindows = 1;
-    constexpr double pPredator = 0.16;//0.08;          // Poisson prob of predator in each gridsquare at t=0
-    constexpr double pPrey = 0.32;//2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
-    constexpr double pMakeObservation = 0.05;//0.04;    // prob of making an observation of each gridsquare at each timestep
-    constexpr double pObserveIfPresent = 1.0;//0.9;
-    constexpr int nSamplesPerWindow = 25000; //250000;
+//    constexpr int nWindows = 1;
+    constexpr double pPredator = 0.08;//0.08;          // Poisson prob of predator in each gridsquare at t=0
+    constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
+    constexpr double pMakeObservation = 0.66;//0.04;    // prob of making an observation of each gridsquare at each timestep
+    constexpr double pObserveIfPresent = 0.9;
+    constexpr int nSamplesPerWindow = 100000; //250000;
     constexpr int nBurninSamples = 1000;
 //    constexpr int plotTimestep = nTimesteps-1;
 
@@ -93,7 +96,9 @@ void Experiments::PredPreyAssimilation() {
 
     AssimilationWindow<PredPreyAgent> window(windowSize, startStateDist, pMakeObservation, pObserveIfPresent);
 
-    window.doAnalysis(10000, 1000);
+    window.doAnalysis(nSamplesPerWindow, nBurninSamples);
+
+    std::cout << "Information gain = " << window.informationGain() << std::endl;
 
     Gnuplot gp;
     gp << window;
@@ -105,46 +110,107 @@ void Experiments::PredPreyAssimilation() {
 
 
 
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Experiments::CatMouseExpt() {
-    CatMouseAgent leftCat(CatMouseAgent::Type::CAT, CatMouseAgent::Position::LEFT);
-    auto observations = std::vector({ Observation(1,leftCat, 1) });
+    AssimilationWindow<CatMouseAgent> window(
+            2,
+            BinomialDistribution({
+                                         boost::math::binomial_distribution<double>(1.0, 0.9),
+                                         boost::math::binomial_distribution<double>(1.0, 0.1),
+                                         boost::math::binomial_distribution<double>(1.0, 0.1),
+                                         boost::math::binomial_distribution<double>(1.0, 0.9)
+                                 }),
+            AgentStateObservation<CatMouseAgent>(
+                    State<CatMouseAgent>(
+                            1,
+                            CatMouseAgent(CatMouseAgent::CAT, CatMouseAgent::LEFT)
+                    ),
+                    1,
+                    1.0)
+    );
 
-    ABMProblem<CatMouseAgent> abm(2, observations, [](const Trajectory<CatMouseAgent> &trajectory) {
-        return 0.0;
-    });
+    std::cout << "Prior support is \n" << window.priorPMF.convexSupport << std::endl;
+    std::cout << "Likelihood support is \n" << window.likelihoodPMF.convexSupport << std::endl;
+    std::cout << "Posterior support is \n" << window.posterior.convexSupport << std::endl;
 
-    std::cout << abm << std::endl;
 
-    // calculate initial solution
-    abm.cpxBasis();
-    abm.simplex();
-    std::cout << "LP relaxation initial solution: " << abm.primalSolution() << std::endl;
-    abm.intOpt();
-    std::cout << "MIP initial solution: " << abm.mipSolution() << std::endl;
-    abm.warmUp();
+    MCMCSolver<CatMouseAgent> solver(window);
+    solver.solve(1000,250000);
+    std::cout << "Analysis = " << solver.solution << std::endl;
+//    window.doAnalysis(250000, 1000);
+//    std::cout << window.analysis << std::endl;
 
-//    Trajectory<CatMouseAgent> initialTrajectory;
-//    initialTrajectory.add(Event(0,leftCat, CatMouseAgent::STAYPUT),1.0);
-//    std::cout << "Initial solution is" << std::endl;
-//    std::cout << initialTrajectory << std::endl;
-//    abm.stdBasis();
-//    abm.warmUp();
-    abm.advBasis();
-    abm.warmUp();
-    SimplexMCMC mcmc(abm, abm.logProbFunc());
-    std::cout << mcmc.X() << std::endl;
-    for(int n=0; n<100; ++n) {
-        mcmc.nextSample();
-//        mcmc.randomWalk();
-        std::cout << n << "  " << mcmc.X() << std::endl;
-        std::cout << "Valid = " << abm.isValidSolution(mcmc.X()) << std::endl;
-        assert(abm.isValidSolution(mcmc.X()));
-    }
+    ExactSolver<CatMouseAgent> exact(window.posterior);
+    std::cout << "Exact solution = " << exact.solution << std::endl;
 
 }
 
+
+void Experiments::CatMouseAssimilation() {
+    ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
+    constexpr int windowSize = 2;
+    constexpr double pMakeObservation = 0.25;//0.04;    // prob of making an observation of each gridsquare at each timestep
+    constexpr double pObserveIfPresent = 1.0;
+    constexpr int nSamplesPerWindow = 250000; //250000;
+    constexpr int nBurninSamples = 1000;
+
+    ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
+
+    BinomialDistribution startStateDist({
+        boost::math::binomial_distribution<double>(1.0, 0.9),
+        boost::math::binomial_distribution<double>(1.0, 0.1),
+        boost::math::binomial_distribution<double>(1.0, 0.1),
+        boost::math::binomial_distribution<double>(1.0, 0.9)
+    });
+
+    AssimilationWindow<CatMouseAgent> window(windowSize, startStateDist, pMakeObservation, pObserveIfPresent);
+
+    std::cout << "Prior support is \n" << window.priorPMF.convexSupport << std::endl;
+    std::cout << "Likelihood support is \n" << window.likelihoodPMF.convexSupport << std::endl;
+    std::cout << "Posterior support is \n" << window.posterior.convexSupport << std::endl;
+
+    MCMCSolver<CatMouseAgent> solver(window);
+    solver.solve(nBurninSamples, nSamplesPerWindow);
+    std::cout << "Analysis = " << solver.solution << std::endl;
+
+    ExactSolver<CatMouseAgent> exact(window.posterior);
+    std::cout << "Exact solution = " << exact.solution << std::endl;
+
+    std::cout << "Information gain = " << window.informationGain() << std::endl;
+
+}
+
+
+void Experiments::BinomialAgentAssimilation() {
+    BinomialAgent::GRIDSIZE = 3;
+    BinomialDistribution startState({
+        boost::math::binomial_distribution(1.0, 1.0),
+        boost::math::binomial_distribution(1.0, 0.1),
+        boost::math::binomial_distribution(1.0, 0.0)
+    });
+
+    // gets stuck at kappaRow = -1
+//    BinomialDistribution startState({
+//        boost::math::binomial_distribution(1.0, 1.0),
+//        boost::math::binomial_distribution(1.0, 0.0),
+//        boost::math::binomial_distribution(1.0, 0.0)
+//    });
+
+
+    AgentStateObservation<BinomialAgent> observation(State<BinomialAgent>(1, 0),1,0.9);
+
+    AssimilationWindow<BinomialAgent> window(2, startState, observation);
+
+    MCMCSolver<BinomialAgent> solver(window);
+    solver.solve(1000, 250000);
+    std::cout << solver.solution << std::endl;
+
+    ExactSolver<BinomialAgent> exactSolver(window.posterior);
+    std::cout << exactSolver.solution << std::endl;
+
+}
 
 void Experiments::RandomWalk() {
     using glp::X;

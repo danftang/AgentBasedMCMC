@@ -58,7 +58,8 @@ public:
     int yDown() const { return((stateId/GRIDSIZE + GRIDSIZE-1)%GRIDSIZE); }
 
 
-    std::vector<double> timestep(const ModelState<PredPreyAgent> &others, double infeasibilityProb) const;
+    std::vector<double> timestep(const ModelState<PredPreyAgent> &others) const;
+    std::vector<double> marginalTimestep() const;
     std::vector<PredPreyAgent> consequences(Act act) const; // the consequences of an act
     // returns the constraints implied by the given act
     std::vector<glp::Constraint> constraints(int time, Act act) const; // to be generated automatically by static analysis...eventually.

@@ -12,12 +12,14 @@ class SampleStatistics {
 public:
     std::valarray<double> sum;
     std::valarray<double> sumOfSquares;
+    std::valarray<double> max;
     int nSamples;
 
     SampleStatistics(int nDimensions)
     : nSamples(0),
-    sum(nDimensions, 0.0),
-    sumOfSquares(nDimensions, 0.0)
+    sum(0.5, nDimensions),
+    sumOfSquares(0.25, nDimensions),
+    max(-INFINITY, nDimensions)
     { }
 
     SampleStatistics(const std::function<std::vector<double>()> &sampler, int nSamples): nSamples(nSamples) {
@@ -32,11 +34,13 @@ public:
     }
 
     SampleStatistics & operator +=(const std::vector<double> &sample) {
-        assert(sample.size() == sum.size());
+        assert(sample.size() == nDimensions());
         ++nSamples;
         for(int i=0; i<nDimensions(); ++i) {
-            sum[i] += sample[i];
-            sumOfSquares[i] += sample[i]*sample[i];
+            double s = sample[i];
+            sum[i] += s;
+            sumOfSquares[i] += s*s;
+            if(s > max[i]) max[i] = s;
         }
         return *this;
     }

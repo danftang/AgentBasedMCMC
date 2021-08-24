@@ -53,14 +53,20 @@ using glp::X;
 
 int main(int argc, char *argv[]) {
 
+//    Experiments::BinomialAgentAssimilation();
+//    Experiments::CatMouseExpt();
+//        Experiments::CatMouseAssimilation();
+    Experiments::PredPreyAssimilation();
+
+
 //    PoissonState<PredPreyAgent> startState;
 //    TrajectoryPriorDistribution<PredPreyAgent> myPrior(startState, 8);
 
-    UnitTests tests;
+//    UnitTests tests;
 //    tests.testRejectionSampler();
 //    tests.testABMPrior();
 //    tests.testSimplexSampler();
-//    tests.testValidTrajectorySet();
+//    tests.testExactSolver();
 
 //        std::cout << Experiments::informationIncrease(
 //            8,
@@ -72,11 +78,10 @@ int main(int argc, char *argv[]) {
 //            0.9,
 //            100000,
 //            1000) << std::endl;
-    Experiments::PredPreyAssimilation();
-    //    Experiments::GnuplotTest();
-//    Experiments::PredPreyExpt();
-//    Experiments::CatMouseExpt();
+
+
 //    Experiments::RandomWalk();
+//    Experiments::GnuplotTest();
 
     return 0;
 }

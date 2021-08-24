@@ -15,7 +15,7 @@ public:
     : nTimesteps(nTimesteps),
     startStateSampler(startStateSampler) {}
 
-    std::vector<double> operator()() {
+    std::vector<double> operator()() const {
         return Trajectory<AGENT>(nTimesteps, startStateSampler);
     }
 

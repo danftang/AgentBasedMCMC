@@ -88,12 +88,12 @@ public:
         return state;
     }
 
-    friend std::ostream &operator <<(std::ostream &out, const ModelState<AGENT> &modelState) {
-        for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
-            if(modelState[agentId] != 0.0) out << AGENT(agentId) << " -> " << modelState[agentId] << " ";
-        }
-        return  out;
-    }
+//    friend std::ostream &operator <<(std::ostream &out, const ModelState<AGENT> &modelState) {
+//        for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+//            if(modelState[agentId] != 0.0) out << AGENT(agentId) << " -> " << modelState[agentId] << " ";
+//        }
+//        return  out;
+//    }
 
 };
 
