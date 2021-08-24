@@ -58,6 +58,13 @@ public:
 
     int nDimensions() const { return sum.size(); }
 
+    void reset() {
+        nSamples = 0;
+        sum = 0.5;
+        sumOfSquares = 0.25;
+        max = -INFINITY;
+    }
+
     friend std::ostream &operator <<(std::ostream &out, const SampleStatistics &stats) {
         for(int i=0; i<stats.nDimensions(); ++i) {
             out << "(" << stats.mean(i) << ", " << stats.variance(i) << ") ";

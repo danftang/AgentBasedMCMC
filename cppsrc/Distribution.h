@@ -5,6 +5,8 @@
 #ifndef GLPKTEST_DISTRIBUTION_H
 #define GLPKTEST_DISTRIBUTION_H
 
+#include <vector>
+
 // Before we know whether we want to sample from or take the log prob of this
 // distribution, then we can use the more abstract Distribution object.
 class Distribution {

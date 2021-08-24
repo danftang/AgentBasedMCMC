@@ -11,6 +11,7 @@
 template<typename AGENT>
 class MCMCSolver {
 public:
+
     SimplexMCMC      sampler;
     SampleStatistics solution;
 
@@ -45,6 +46,8 @@ public:
     const std::vector<double> &nextSample() {
         return sampler.nextSample();
     }
+
+
 
 };
 

@@ -20,6 +20,7 @@
 #include "ExactSolver.h"
 #include "agents/BinomialAgent.h"
 #include "MCMCSolver.h"
+#include "ABMPlotter.h"
 
 std::vector<double> Experiments::informationIncrease(int argc, char *argv[]) {
     if(argc != 9) {
@@ -63,9 +64,12 @@ std::vector<double> Experiments::informationIncrease(
     }
     BinomialDistribution startStateDist(startWeights);
 
+
     AssimilationWindow<PredPreyAgent> window(windowSize, startStateDist, pMakeObservation, pObserveIfPresent);
 
-    window.doAnalysis(10000, 1000);
+    MCMCSolver<PredPreyAgent> solver(window);
+    solver.solve(nBurnInSamples, nSamplesPerWindow);
+
 
     return std::vector<double>(); //assimilation.calculateInformationGain();
 }
@@ -73,14 +77,14 @@ std::vector<double> Experiments::informationIncrease(
 
 void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
-    PredPreyAgent::GRIDSIZE = 3;
-    constexpr int windowSize = 2;
-//    constexpr int nWindows = 1;
+    PredPreyAgent::GRIDSIZE = 8;
+    constexpr int windowSize = 3;
+    constexpr int nWindows = 2;
     constexpr double pPredator = 0.08;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
-    constexpr double pMakeObservation = 0.66;//0.04;    // prob of making an observation of each gridsquare at each timestep
-    constexpr double pObserveIfPresent = 0.9;
-    constexpr int nSamplesPerWindow = 100000; //250000;
+    constexpr double pMakeObservation = 0.05;//0.04;    // prob of making an observation of each gridsquare at each timestep
+    constexpr double pObserveIfPresent = 0.95;
+    constexpr int nSamplesPerWindow = 250000; //250000;
     constexpr int nBurninSamples = 1000;
 //    constexpr int plotTimestep = nTimesteps-1;
 
@@ -94,21 +98,26 @@ void Experiments::PredPreyAssimilation() {
     }
     BinomialDistribution startStateDist(startWeights);
 
-    AssimilationWindow<PredPreyAgent> window(windowSize, startStateDist, pMakeObservation, pObserveIfPresent);
+    TrajectoryPriorSampler<PredPreyAgent> priorSampler(nWindows*windowSize, startStateDist.sampler());
+    DataAssimilation<PredPreyAgent> assimilation(startStateDist, pMakeObservation, pObserveIfPresent);
 
-    window.doAnalysis(nSamplesPerWindow, nBurninSamples);
+    for(int w=0; w<nWindows; ++w) {
+        const AssimilationWindow<PredPreyAgent> &window = assimilation.addWindow(windowSize, nBurninSamples, nSamplesPerWindow);
+        ABMPlotter<PredPreyAgent> gp;
+        gp.plot(window.realTrajectory.endState(), assimilation.analysis.means());
+//        BinomialDistribution prior = window.priorEndState(100000);
+//        std::cout << "Window information gain = "
+//        << informationGain(window.realTrajectory.endState(), prior, assimilation.analysis) << std::endl;
+    }
 
-    std::cout << "Information gain = " << window.informationGain() << std::endl;
+    std::cout << "Total information gain = "
+    << informationGain(
+            assimilation.windows.back().realTrajectory.endState(),
+            BinomialDistribution(priorSampler.endState(50000)),
+            assimilation.analysis) << std::endl;
 
-    Gnuplot gp;
-    gp << window;
 
 }
-
-
-
-
-
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -178,25 +187,23 @@ void Experiments::CatMouseAssimilation() {
     ExactSolver<CatMouseAgent> exact(window.posterior);
     std::cout << "Exact solution = " << exact.solution << std::endl;
 
-    std::cout << "Information gain = " << window.informationGain() << std::endl;
-
 }
 
 
 void Experiments::BinomialAgentAssimilation() {
     BinomialAgent::GRIDSIZE = 3;
-    BinomialDistribution startState({
-        boost::math::binomial_distribution(1.0, 1.0),
-        boost::math::binomial_distribution(1.0, 0.1),
-        boost::math::binomial_distribution(1.0, 0.0)
-    });
-
-    // gets stuck at kappaRow = -1
 //    BinomialDistribution startState({
 //        boost::math::binomial_distribution(1.0, 1.0),
-//        boost::math::binomial_distribution(1.0, 0.0),
+//        boost::math::binomial_distribution(1.0, 0.1),
 //        boost::math::binomial_distribution(1.0, 0.0)
 //    });
+
+    // gets stuck at kappaRow = -1
+    BinomialDistribution startState({
+        boost::math::binomial_distribution(1.0, 1.0),
+        boost::math::binomial_distribution(1.0, 0.0),
+        boost::math::binomial_distribution(1.0, 0.0)
+    });
 
 
     AgentStateObservation<BinomialAgent> observation(State<BinomialAgent>(1, 0),1,0.9);
@@ -244,6 +251,29 @@ void Experiments::RandomWalk() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+double Experiments::informationGain(const std::vector<double> &realEndState, const BinomialDistribution &prior, const BinomialDistribution &analysis) {
+    assert(realEndState.size() == prior.dimension());
+    assert(prior.dimension() == analysis.dimension());
+    for(int i=0; i<realEndState.size(); ++i) {
+        std::cout << "Real occupancy = " << realEndState[i]
+        << " prior p = " << boost::math::pdf(prior.binomials[i], realEndState[i])
+        << " posterior p = " << boost::math::pdf(analysis.binomials[i], realEndState[i])
+        << " post / prior p = " << boost::math::pdf(analysis.binomials[i], realEndState[i])/ boost::math::pdf(prior.binomials[i], realEndState[i])
+        << std::endl;
+        //            << " prior = (" << prior.binomials[i].trials() << ", " << boost::math::mean(prior.binomials[i]) << ") "
+        //            << " posterior = (" << posterior.binomials[i].trials() << ", " << boost::math::mean(posterior.binomials[i]) << ") " << std::endl;
+    }
+    //        debug(
+    //                std::cout << "prior logProb = " << prior.logP(realEndState) << "Posterior logProb = " << posterior.logP(realEndState) << std::endl;
+    //                std::cout << "real end state = " << realEndState << std::endl;
+    //                std::cout << "prior = " << prior << std::endl;
+    //                std::cout << "posterior = " << posterior << std::endl;
+    //                );
+    return (analysis.logP(realEndState) - prior.logP(realEndState))/log(2.0);
+}
+
+
 //void Experiments::GnuplotTest() {
 //    Gnuplot gp; //(stdout);
 //    auto state = ModelState<PredPreyAgent>::randomPoissonState([](const PredPreyAgent &agent) {

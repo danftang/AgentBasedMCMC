@@ -18,6 +18,9 @@ public:
     TrajectoryLikelihoodPMF(int nTimesteps, const AgentStateObservation<AGENT> &observation)
     : ConvexPMF(likelihood(nTimesteps, observation)) { }
 
+    TrajectoryLikelihoodPMF(int nTimesteps)
+    : ConvexPMF([](const std::vector<double> &X) { return 1.0; }, Trajectory<AGENT>::dimension(nTimesteps)) { }
+
 
     static ConvexPMF generateObservationLikelihood(const Trajectory<AGENT> &realTrajectory, double pMakeObservation, double pObserveIfPresent) {
         int nTimesteps = realTrajectory.nTimesteps();

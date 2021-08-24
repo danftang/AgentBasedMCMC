@@ -24,6 +24,14 @@ public:
             return Trajectory<AGENT>(nTimesteps, startStateSampler)(nTimesteps);
         };
     }
+
+    SampleStatistics endState(int nSamples) {
+        SampleStatistics stats(AGENT::domainSize());
+        for(int s=0; s<nSamples; ++s) {
+            stats += Trajectory<AGENT>(nTimesteps, startStateSampler)(nTimesteps);
+        }
+        return stats;
+    }
 };
 
 

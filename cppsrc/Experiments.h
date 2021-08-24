@@ -38,6 +38,9 @@ public:
     static void CatMouseAssimilation();
 
     static void BinomialAgentAssimilation();
+
+    static double informationGain(const std::vector<double> &realEndState, const BinomialDistribution &prior,
+                           const BinomialDistribution &analysis);
 };
 
 

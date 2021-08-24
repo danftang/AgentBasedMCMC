@@ -26,40 +26,40 @@ public:
 
     // execute forward from a given start state distribution, choosing a solution with probability
     // proportional to the joint times the probability of the start state
-    Trajectory(int nTimesteps, const ModelState<AGENT> &startState) : Trajectory(nTimesteps) {
-        bool isValid;
-        int nAttempts=0;
-        do {
-            ModelState<AGENT> t0State = startState;
-            ModelState<AGENT> t1State;
-            isValid = true;
-            for (int t = 0; t < nTimesteps; ++t) {
-                for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
-                    AGENT agent(agentId);
-                    int nAgents = t0State[agentId];
-                    ActFermionicDistribution actPMF = ActFermionicDistribution(agent.timestep(t0State, 0.0));
-                    std::vector<bool> acts = actPMF.sampleUnordered(nAgents);
-                    if(acts.size() == AGENT::actDomainSize()) {
-                        for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
-                            if (acts[actId]) {
-                                operator[](Event(t, agent, actId)) = 1.0;
-                                t1State += agent.consequences(actId);
-                            } else {
-                                operator[](Event(t, agent, actId)) = 0.0;
-                            }
-                        }
-                    } else {
-                        isValid = false;
-                        t = nTimesteps;
-                        agentId = AGENT::domainSize();
-                    }
-                }
-                t0State.setToZero();
-                t0State.swap(t1State);
-            }
-            if(++nAttempts > 1000) throw(std::runtime_error("Can't create act-Fermionic trajectoryPrior sample of Trajectory. Probably too many agents for Fermionicity."));
-        } while(!isValid);
-    }
+//    Trajectory(int nTimesteps, const ModelState<AGENT> &startState) : Trajectory(nTimesteps) {
+//        bool isValid;
+//        int nAttempts=0;
+//        do {
+//            ModelState<AGENT> t0State = startState;
+//            ModelState<AGENT> t1State;
+//            isValid = true;
+//            for (int t = 0; t < nTimesteps; ++t) {
+//                for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+//                    AGENT agent(agentId);
+//                    int nAgents = t0State[agentId];
+//                    ActFermionicDistribution actPMF = ActFermionicDistribution(agent.timestep(t0State, 0.0));
+//                    std::vector<bool> acts = actPMF.sampleUnordered(nAgents);
+//                    if(acts.size() == AGENT::actDomainSize()) {
+//                        for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+//                            if (acts[actId]) {
+//                                operator[](Event(t, agent, actId)) = 1.0;
+//                                t1State += agent.consequences(actId);
+//                            } else {
+//                                operator[](Event(t, agent, actId)) = 0.0;
+//                            }
+//                        }
+//                    } else {
+//                        isValid = false;
+//                        t = nTimesteps;
+//                        agentId = AGENT::domainSize();
+//                    }
+//                }
+//                t0State.setToZero();
+//                t0State.swap(t1State);
+//            }
+//            if(++nAttempts > 1000) throw(std::runtime_error("Can't create act-Fermionic trajectoryPrior sample of Trajectory. Probably too many agents for Fermionicity."));
+//        } while(!isValid);
+//    }
 
 
     Trajectory(int nTimesteps, const std::function<std::vector<double>()> &startStateSampler) : Trajectory(nTimesteps) {

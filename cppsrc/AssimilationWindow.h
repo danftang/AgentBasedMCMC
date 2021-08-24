@@ -25,7 +25,6 @@ public:
     Trajectory<AGENT>               realTrajectory;
     TrajectoryLikelihoodPMF<AGENT>  likelihoodPMF;
     ConvexPMF                       posterior;
-    SampleStatistics                analysis;
 
 
     AssimilationWindow(int nTimesteps, BinomialDistribution priorStartState, double pMakeObservation, double pObserveIfPresent)
@@ -35,8 +34,8 @@ public:
     priorSampler(nTimesteps, startState.sampler()),
     realTrajectory(priorSampler()),
     likelihoodPMF(realTrajectory, pMakeObservation, pObserveIfPresent),
-    posterior(likelihoodPMF * priorPMF),
-    analysis(AGENT::domainSize())
+    posterior(likelihoodPMF * priorPMF)
+//    analysis(AGENT::domainSize())
     {
     }
 
@@ -47,37 +46,49 @@ public:
     priorSampler(nTimesteps, startState.sampler()),
     realTrajectory(nTimesteps),
     likelihoodPMF(nTimesteps, observation),
-    posterior(likelihoodPMF * priorPMF),
-    analysis(AGENT::domainSize())
+    posterior(likelihoodPMF * priorPMF)
+//    analysis(AGENT::domainSize())
     {
     }
 
-    void doAnalysis(int nSamples, int nBurnInSamples) {
-        SimplexMCMC sampler = SimplexMCMC(posterior, priorSampler());
-
-        std::cout << "Starting burn-in" << std::endl;
-        for(int burnIn=0; burnIn<nBurnInSamples; ++burnIn) {
-            sampler.nextSample();
-        }
-
-//        std::cout << "Sampler:\n" << sampler << std::endl;
-        std::cout << "Initial solution: " << sampler.X() << std::endl;
-        for(int s=0; s<nSamples; ++s) {
-            Trajectory<AGENT> sample(sampler.nextSample());
-            //            std::cout << "Sampler:\n" << sampler << std::endl;
-            //            std::cout << "Sample: " << sample << std::endl;
-            assert(posterior.convexSupport.isValidSolution(sample));
-            analysis += sample.endState();
-        }
-        std::cout << "Feasible stats:\n" << sampler.feasibleStatistics << std::endl;
-        std::cout << "Infeasible stats:\n" << sampler.infeasibleStatistics << std::endl;
-        std::cout << "Infeasible proportion = " << sampler.infeasibleStatistics.nSamples*1.0/(sampler.feasibleStatistics.nSamples + sampler.infeasibleStatistics.nSamples) << std::endl;
-
-//        std::cout << analysis << std::endl;
+    AssimilationWindow(int nTimesteps, BinomialDistribution priorStartState)
+    :
+    startState(std::move(priorStartState)),
+    priorPMF(nTimesteps, startState.PMF()),
+    priorSampler(nTimesteps, startState.sampler()),
+    realTrajectory(Trajectory<AGENT>(nTimesteps,startState.nextSample())),
+    likelihoodPMF(nTimesteps),
+    posterior(priorPMF)
+    //    analysis(AGENT::domainSize())
+    {
     }
 
+//    void doAnalysis(int nSamples, int nBurnInSamples) {
+//        SimplexMCMC sampler = SimplexMCMC(posterior, priorSampler());
+//
+//        std::cout << "Starting burn-in" << std::endl;
+//        for(int burnIn=0; burnIn<nBurnInSamples; ++burnIn) {
+//            sampler.nextSample();
+//        }
+//
+////        std::cout << "Sampler:\n" << sampler << std::endl;
+//        std::cout << "Initial solution: " << sampler.X() << std::endl;
+//        for(int s=0; s<nSamples; ++s) {
+//            Trajectory<AGENT> sample(sampler.nextSample());
+//            //            std::cout << "Sampler:\n" << sampler << std::endl;
+//            //            std::cout << "Sample: " << sample << std::endl;
+//            assert(posterior.convexSupport.isValidSolution(sample));
+//            analysis += sample.endState();
+//        }
+//        std::cout << "Feasible stats:\n" << sampler.feasibleStatistics << std::endl;
+//        std::cout << "Infeasible stats:\n" << sampler.infeasibleStatistics << std::endl;
+//        std::cout << "Infeasible proportion = " << sampler.infeasibleStatistics.nSamples*1.0/(sampler.feasibleStatistics.nSamples + sampler.infeasibleStatistics.nSamples) << std::endl;
+//
+////        std::cout << analysis << std::endl;
+//    }
 
-    BinomialDistribution priorEndState(int nSamples) {
+
+    BinomialDistribution priorEndState(int nSamples) const {
         SampleStatistics endStats(AGENT::domainSize());
         for(int s=0; s<nSamples; ++s) {
             Trajectory<AGENT> sample(priorSampler());
@@ -87,18 +98,26 @@ public:
     }
 
 
-    double informationGain() {
-        ModelState<AGENT> realEndState = realTrajectory.endState();
-        BinomialDistribution prior = priorEndState(10000);
-        BinomialDistribution posterior(analysis);
-//        debug(
-//                std::cout << "prior logProb = " << prior.logP(realEndState) << "Posterior logProb = " << posterior.logP(realEndState) << std::endl;
-//                std::cout << "real end state = " << realEndState << std::endl;
-//                std::cout << "prior = " << prior << std::endl;
-//                std::cout << "posterior = " << posterior << std::endl;
-//                );
-        return (posterior.logP(realEndState) - prior.logP(realEndState))/log(2.0);
-    }
+//    double informationGain(const BinomialDistribution &analysis) {
+//        ModelState<AGENT> realEndState = realTrajectory.endState();
+//        BinomialDistribution prior = priorEndState(10000);
+//        for(int i=0; i<realEndState.size(); ++i) {
+//            std::cout << "Real occupancy = " << realEndState[i]
+//            << " prior p = " << boost::math::pdf(prior.binomials[i], realEndState[i])
+//            << " posterior p = " << boost::math::pdf(analysis.binomials[i], realEndState[i])
+//            << " post / prior p = " << boost::math::pdf(analysis.binomials[i], realEndState[i])/ boost::math::pdf(prior.binomials[i], realEndState[i])
+//            << std::endl;
+////            << " prior = (" << prior.binomials[i].trials() << ", " << boost::math::mean(prior.binomials[i]) << ") "
+////            << " posterior = (" << posterior.binomials[i].trials() << ", " << boost::math::mean(posterior.binomials[i]) << ") " << std::endl;
+//        }
+////        debug(
+////                std::cout << "prior logProb = " << prior.logP(realEndState) << "Posterior logProb = " << posterior.logP(realEndState) << std::endl;
+////                std::cout << "real end state = " << realEndState << std::endl;
+////                std::cout << "prior = " << prior << std::endl;
+////                std::cout << "posterior = " << posterior << std::endl;
+////                );
+//        return (analysis.logP(realEndState) - prior.logP(realEndState))/log(2.0);
+//    }
 
 //    AssimilationWindow(const Trajectory<AGENT> &realTrajectory,
 //                       const PoissonState<AGENT> &priorStartState,
@@ -143,7 +162,7 @@ public:
 
 };
 
-Gnuplot &operator<<(Gnuplot &gp, const AssimilationWindow<PredPreyAgent> &window);
+// Gnuplot &operator<<(Gnuplot &gp, const AssimilationWindow<PredPreyAgent> &window);
 
 
 

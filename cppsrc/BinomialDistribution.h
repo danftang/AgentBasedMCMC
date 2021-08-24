@@ -31,7 +31,7 @@ public:
 //        std::valarray<double> variances = stats.variances();
         for(int i=0; i<stats.nDimensions(); ++i) {
 //            double nExact = means[i]*means[i]/(means[i] - variances[i]);
-            int n = std::max(1.0,std::round(stats.max[i]));//std::max(1.0,std::ceil(nExact)); // std::max(1.0, std::round(nExact));
+            int n = std::max(1.0,std::round(stats.max[i] + 1.0));//std::max(1.0,std::ceil(nExact)); // std::max(1.0, std::round(nExact));
             double p = std::min(means[i]/n,1.0);
 //            debug(std::cout << "Creating binomial (" << n << "," << p << ")" << std::endl);
             binomials[i] = boost::math::binomial_distribution<double>(n, p);
@@ -91,6 +91,14 @@ public:
     }
 
     int dimension() const { return binomials.size(); }
+
+    std::vector<double> means() const {
+        std::vector<double> mu(dimension());
+        for(int i=0; i<dimension(); ++i) {
+            mu[i] = boost::math::mean(binomials[i]);
+        }
+        return mu;
+    }
 
     friend std::ostream &operator <<(std::ostream &out, const BinomialDistribution &binomial) {
         for(auto &binom : binomial.binomials) {
