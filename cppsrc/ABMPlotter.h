@@ -25,12 +25,13 @@ public:
             }
         }
 
+        double maxP = 0.5;
         for (int x = 0; x < PredPreyAgent::GRIDSIZE; ++x) {
             std::vector <HeatRecord> &record = heatData.emplace_back();
             for (int y = 0; y < PredPreyAgent::GRIDSIZE; ++y) {
                 double lPrey = analysis[PredPreyAgent(x, y, PredPreyAgent::PREY)];
                 double lPred = analysis[PredPreyAgent(x, y, PredPreyAgent::PREDATOR)];
-                record.emplace_back(x, y, std::min(lPrey, 1.0) * 200.0, 0.0, std::min(lPred, 1.0) * 200.0);
+                record.emplace_back(x, y, std::min(lPrey, maxP) * 240.0/maxP, 0.0, std::min(lPred, maxP) * 240.0/maxP);
             }
         }
 

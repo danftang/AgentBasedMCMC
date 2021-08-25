@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 //    Experiments::BinomialAgentAssimilation();
 //    Experiments::CatMouseExpt();
 //        Experiments::CatMouseAssimilation();
-    Experiments::PredPreyAssimilation();
+   Experiments::PredPreyAssimilation();
 
 
 //    PoissonState<PredPreyAgent> startState;

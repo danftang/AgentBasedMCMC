@@ -78,14 +78,14 @@ std::vector<double> Experiments::informationIncrease(
 void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
     PredPreyAgent::GRIDSIZE = 8;
-    constexpr int windowSize = 3;
-    constexpr int nWindows = 2;
+    constexpr int windowSize = 2;
+    constexpr int nWindows = 1;
     constexpr double pPredator = 0.08;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
-    constexpr double pMakeObservation = 0.05;//0.04;    // prob of making an observation of each gridsquare at each timestep
+    constexpr double pMakeObservation = 0.1;//0.04;    // prob of making an observation of each gridsquare at each timestep
     constexpr double pObserveIfPresent = 0.95;
-    constexpr int nSamplesPerWindow = 250000; //250000;
-    constexpr int nBurninSamples = 1000;
+    constexpr int nSamplesPerWindow = 6000000; //250000;
+    constexpr int nBurninSamples = 10000;
 //    constexpr int plotTimestep = nTimesteps-1;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
@@ -100,9 +100,11 @@ void Experiments::PredPreyAssimilation() {
 
     TrajectoryPriorSampler<PredPreyAgent> priorSampler(nWindows*windowSize, startStateDist.sampler());
     DataAssimilation<PredPreyAgent> assimilation(startStateDist, pMakeObservation, pObserveIfPresent);
+    SampleStatistics priorEnd = priorSampler.endState(100000);
 
     for(int w=0; w<nWindows; ++w) {
         const AssimilationWindow<PredPreyAgent> &window = assimilation.addWindow(windowSize, nBurninSamples, nSamplesPerWindow);
+        std::cout << "Means = " << assimilation.analysis.means() << std::endl;
         ABMPlotter<PredPreyAgent> gp;
         gp.plot(window.realTrajectory.endState(), assimilation.analysis.means());
 //        BinomialDistribution prior = window.priorEndState(100000);
@@ -113,7 +115,7 @@ void Experiments::PredPreyAssimilation() {
     std::cout << "Total information gain = "
     << informationGain(
             assimilation.windows.back().realTrajectory.endState(),
-            BinomialDistribution(priorSampler.endState(50000)),
+            BinomialDistribution(priorEnd),
             assimilation.analysis) << std::endl;
 
 
@@ -174,7 +176,8 @@ void Experiments::CatMouseAssimilation() {
         boost::math::binomial_distribution<double>(1.0, 0.9)
     });
 
-    AssimilationWindow<CatMouseAgent> window(windowSize, startStateDist, pMakeObservation, pObserveIfPresent);
+    DataAssimilation<CatMouseAgent> assimilation(startStateDist, pMakeObservation, pObserveIfPresent);
+    const AssimilationWindow<CatMouseAgent> &window = assimilation.addWindow(windowSize, nBurninSamples, nSamplesPerWindow);
 
     std::cout << "Prior support is \n" << window.priorPMF.convexSupport << std::endl;
     std::cout << "Likelihood support is \n" << window.likelihoodPMF.convexSupport << std::endl;

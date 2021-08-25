@@ -26,7 +26,8 @@ public:
     // n = m/p = m/(1-v/m) = m^2/(m-v)
     // p = m/n
     // this gives Delta_v approx= Delta_n d(m-m^2/n)/dn = Delta_n -m^2 ln(n)
-    BinomialDistribution(const SampleStatistics &stats): binomials(stats.nDimensions()) {
+    // TODO: Use maximisation of likelihood/posterior?
+    explicit BinomialDistribution(const SampleStatistics &stats): binomials(stats.nDimensions()) {
         std::valarray<double> means = stats.means();
 //        std::valarray<double> variances = stats.variances();
         for(int i=0; i<stats.nDimensions(); ++i) {
@@ -96,6 +97,7 @@ public:
         std::vector<double> mu(dimension());
         for(int i=0; i<dimension(); ++i) {
             mu[i] = boost::math::mean(binomials[i]);
+            assert(mu[i] == binomials[i].success_fraction() * binomials[i].trials());
         }
         return mu;
     }

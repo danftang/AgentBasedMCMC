@@ -22,11 +22,12 @@ public:
     max(-INFINITY, nDimensions)
     { }
 
-    SampleStatistics(const std::function<std::vector<double>()> &sampler, int nSamples): nSamples(nSamples) {
+    SampleStatistics(const std::function<std::vector<double>()> &sampler, int nSamples): nSamples(0) {
         assert(nSamples > 0);
         std::vector<double> firstSample = sampler();
-        sum.resize(firstSample.size(), 0.0);
-        sumOfSquares.resize(firstSample.size(), 0.0);
+        sum.resize(firstSample.size(), 0.5);
+        sumOfSquares.resize(firstSample.size(), 0.25);
+        max.resize(firstSample.size(), -INFINITY);
         (*this) += firstSample;
         for(int n=1; n<nSamples; ++n) {
             (*this) += sampler();
