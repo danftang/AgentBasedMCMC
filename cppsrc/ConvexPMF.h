@@ -45,8 +45,8 @@ public:
 
 
     // Multiplicatin of distributions. Equivalent to summation of logP
-    // and union of constraints. If the PMFs have different dimension,
-    // we implicitly increase the dimension of the lower dimensional distribution
+    // and union of constraints. If the PMFs have different nDimensions,
+    // we implicitly increase the nDimensions of the lower dimensional distribution
     // to that of the higher by assuming the lower dimensional variables refer to the
     // prefix of the higher.
     ConvexPMF &operator *=(const ConvexPMF &other) {

@@ -16,7 +16,7 @@ class Trajectory: public std::vector<double> {
 public:
 //    static constexpr double tol = SimplexMCMC::tol;
 
-    explicit Trajectory(int nTimesteps): std::vector<double>(nTimesteps*AGENT::domainSize()*AGENT::actDomainSize()+1) { }
+    explicit Trajectory(int nTimesteps): std::vector<double>(dimension(nTimesteps)) { }
     Trajectory(std::vector<double> &&rvalue): std::vector<double>(rvalue) {
         assert((size()-1)%(AGENT::domainSize()*AGENT::actDomainSize()) == 0);
     }
@@ -84,6 +84,7 @@ public:
                         int event = Event(t, agent, chosenAct);
                         if((*this)[event] == 0.0) {
                             (*this)[event] = 1.0;
+                            assert(event < size());
                             t1State += agent.consequences(chosenAct);
                         } else { // reject
                             isValid = false;

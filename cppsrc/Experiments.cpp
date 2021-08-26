@@ -14,13 +14,14 @@
 #include "BinomialDistribution.h"
 #include "TrajectoryPriorDistribution.h"
 #include "SampleStatistics.h"
-#include "TrajectoryPriorSampler.h"
-#include "TrajectoryPriorPMF.h"
+#include "TrajectorySampler.h"
+#include "TrajectoryPMF.h"
 #include "TrajectoryLikelihoodPMF.h"
 #include "ExactSolver.h"
 #include "agents/BinomialAgent.h"
 #include "MCMCSolver.h"
 #include "ABMPlotter.h"
+#include "StlStream.h"
 
 std::vector<double> Experiments::informationIncrease(int argc, char *argv[]) {
     if(argc != 9) {
@@ -84,27 +85,54 @@ void Experiments::PredPreyAssimilation() {
     constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
     constexpr double pMakeObservation = 0.1;//0.04;    // prob of making an observation of each gridsquare at each timestep
     constexpr double pObserveIfPresent = 0.95;
-    constexpr int nSamplesPerWindow = 6000000; //250000;
-    constexpr int nBurninSamples = 10000;
+    constexpr int nSamplesPerWindow = 1000000; //250000;
+    constexpr int nBurninSamples = 1000;
 //    constexpr int plotTimestep = nTimesteps-1;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
 
-    std::vector<boost::math::binomial_distribution<double>> startWeights(PredPreyAgent::domainSize());
-    for(int agentId=0; agentId < PredPreyAgent::domainSize(); ++agentId) {
-        startWeights[agentId] = boost::math::binomial_distribution<double>(
-                1,(PredPreyAgent(agentId).type() == PredPreyAgent::PREDATOR?pPredator:pPrey)
-                );
-    }
-    BinomialDistribution startStateDist(startWeights);
+//    std::vector<boost::math::binomial_distribution<double>> startWeights(PredPreyAgent::domainSize());
+//    for(int agentId=0; agentId < PredPreyAgent::domainSize(); ++agentId) {
+//        startWeights[agentId] = boost::math::binomial_distribution<double>(
+//                1,(PredPreyAgent(agentId).type() == PredPreyAgent::PREDATOR?pPredator:pPrey)
+//                );
+//    }
+//    BinomialDistribution startStateDist(startWeights);
 
-    TrajectoryPriorSampler<PredPreyAgent> priorSampler(nWindows*windowSize, startStateDist.sampler());
+    IntSampleStatistics startStateDist(
+            PredPreyAgent::domainSize(),
+            [](int agentId, int count) {
+                double p = (PredPreyAgent(agentId).type() == PredPreyAgent::PREDATOR ? pPredator : pPrey);
+                switch (count) {
+                    case 0: return 1.0 - p;
+                    case 1: return p;
+                }
+                return 0.0;
+            });
+
+    std::cout << "Initial state distribution = " << startStateDist << std::endl;
+
+
+    TrajectorySampler<PredPreyAgent> priorSampler(nWindows * windowSize, startStateDist.sampler());
+//    priorSampler.endState(100000);
+    for(int s=0; s<100000; ++s) { // TODO: Work out why this causes much higher occupancy
+//        startStateDist.nextSample();
+        priorSampler.nextSample();
+    }
+
+//    std::cout << "start state sample: " << startStateDist.nextSample() << std::endl;
+
     DataAssimilation<PredPreyAgent> assimilation(startStateDist, pMakeObservation, pObserveIfPresent);
-    SampleStatistics priorEnd = priorSampler.endState(100000);
+
+//    std::cout << "assimilation start state sample: " << assimilation.analysisSampler() << std::endl;
+
 
     for(int w=0; w<nWindows; ++w) {
         const AssimilationWindow<PredPreyAgent> &window = assimilation.addWindow(windowSize, nBurninSamples, nSamplesPerWindow);
+
+        std::cout << "Analysis = " << assimilation.analysis << std::endl;
         std::cout << "Means = " << assimilation.analysis.means() << std::endl;
+
         ABMPlotter<PredPreyAgent> gp;
         gp.plot(window.realTrajectory.endState(), assimilation.analysis.means());
 //        BinomialDistribution prior = window.priorEndState(100000);
@@ -112,10 +140,13 @@ void Experiments::PredPreyAssimilation() {
 //        << informationGain(window.realTrajectory.endState(), prior, assimilation.analysis) << std::endl;
     }
 
+    IntSampleStatistics priorEnd = priorSampler.endState(100000);
+        std::cout << "Prior end distribution = " << priorEnd << std::endl;
+
     std::cout << "Total information gain = "
     << informationGain(
             assimilation.windows.back().realTrajectory.endState(),
-            BinomialDistribution(priorEnd),
+            priorEnd,
             assimilation.analysis) << std::endl;
 
 
@@ -148,8 +179,8 @@ void Experiments::CatMouseExpt() {
 
 
     MCMCSolver<CatMouseAgent> solver(window);
-    solver.solve(1000,250000);
-    std::cout << "Analysis = " << solver.solution << std::endl;
+    solver.solve(5000,1000000);
+    std::cout << "Analysis = " << solver.solution.means() << std::endl;
 //    window.doAnalysis(250000, 1000);
 //    std::cout << window.analysis << std::endl;
 
@@ -164,8 +195,8 @@ void Experiments::CatMouseAssimilation() {
     constexpr int windowSize = 2;
     constexpr double pMakeObservation = 0.25;//0.04;    // prob of making an observation of each gridsquare at each timestep
     constexpr double pObserveIfPresent = 1.0;
-    constexpr int nSamplesPerWindow = 250000; //250000;
-    constexpr int nBurninSamples = 1000;
+    constexpr int nSamplesPerWindow = 1000000; //250000;
+    constexpr int nBurninSamples = 5000;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
 
@@ -185,7 +216,7 @@ void Experiments::CatMouseAssimilation() {
 
     MCMCSolver<CatMouseAgent> solver(window);
     solver.solve(nBurninSamples, nSamplesPerWindow);
-    std::cout << "Analysis = " << solver.solution << std::endl;
+    std::cout << "Analysis = " << solver.solution.means() << std::endl;
 
     ExactSolver<CatMouseAgent> exact(window.posterior);
     std::cout << "Exact solution = " << exact.solution << std::endl;
@@ -204,8 +235,8 @@ void Experiments::BinomialAgentAssimilation() {
     // gets stuck at kappaRow = -1
     BinomialDistribution startState({
         boost::math::binomial_distribution(1.0, 1.0),
-        boost::math::binomial_distribution(1.0, 0.0),
-        boost::math::binomial_distribution(1.0, 0.0)
+        boost::math::binomial_distribution(1.0, 0.1),
+        boost::math::binomial_distribution(1.0, 0.1)
     });
 
 
@@ -214,8 +245,8 @@ void Experiments::BinomialAgentAssimilation() {
     AssimilationWindow<BinomialAgent> window(2, startState, observation);
 
     MCMCSolver<BinomialAgent> solver(window);
-    solver.solve(1000, 250000);
-    std::cout << solver.solution << std::endl;
+    solver.solve(5000, 1000000);
+    std::cout << solver.solution.means() << std::endl;
 
     ExactSolver<BinomialAgent> exactSolver(window.posterior);
     std::cout << exactSolver.solution << std::endl;
@@ -255,24 +286,18 @@ void Experiments::RandomWalk() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-double Experiments::informationGain(const std::vector<double> &realEndState, const BinomialDistribution &prior, const BinomialDistribution &analysis) {
-    assert(realEndState.size() == prior.dimension());
-    assert(prior.dimension() == analysis.dimension());
+double Experiments::informationGain(const std::vector<double> &realEndState, const IntSampleStatistics &prior, const IntSampleStatistics &analysis) {
+    assert(realEndState.size() == prior.nDimensions());
+    assert(prior.nDimensions() == analysis.nDimensions());
+    std::vector<double> priorMeans = prior.means();
+    std::vector<double> analysisMeans = analysis.means();
     for(int i=0; i<realEndState.size(); ++i) {
         std::cout << "Real occupancy = " << realEndState[i]
-        << " prior p = " << boost::math::pdf(prior.binomials[i], realEndState[i])
-        << " posterior p = " << boost::math::pdf(analysis.binomials[i], realEndState[i])
-        << " post / prior p = " << boost::math::pdf(analysis.binomials[i], realEndState[i])/ boost::math::pdf(prior.binomials[i], realEndState[i])
+        << " prior p = " << prior.P(i, realEndState[i])
+        << " posterior p = " << analysis.P(i, realEndState[i])
+        << " post / prior p = " << analysis.P(i, realEndState[i])/prior.P(i, realEndState[i])
         << std::endl;
-        //            << " prior = (" << prior.binomials[i].trials() << ", " << boost::math::mean(prior.binomials[i]) << ") "
-        //            << " posterior = (" << posterior.binomials[i].trials() << ", " << boost::math::mean(posterior.binomials[i]) << ") " << std::endl;
     }
-    //        debug(
-    //                std::cout << "prior logProb = " << prior.logP(realEndState) << "Posterior logProb = " << posterior.logP(realEndState) << std::endl;
-    //                std::cout << "real end state = " << realEndState << std::endl;
-    //                std::cout << "prior = " << prior << std::endl;
-    //                std::cout << "posterior = " << posterior << std::endl;
-    //                );
     return (analysis.logP(realEndState) - prior.logP(realEndState))/log(2.0);
 }
 

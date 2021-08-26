@@ -2,17 +2,17 @@
 // Created by daniel on 18/08/2021.
 //
 
-#ifndef GLPKTEST_TRAJECTORYPRIORPMF_H
-#define GLPKTEST_TRAJECTORYPRIORPMF_H
+#ifndef GLPKTEST_TRAJECTORYPMF_H
+#define GLPKTEST_TRAJECTORYPMF_H
 
 #include "ConvexPMF.h"
 #include "Trajectory.h"
 #include "ABMConstraints.h"
 
 template<typename AGENT>
-class TrajectoryPriorPMF: public ConvexPMF {
+class TrajectoryPMF: public ConvexPMF {
 public:
-    TrajectoryPriorPMF(int nTimesteps, ConvexPMF priorStartState)
+    TrajectoryPMF(int nTimesteps, ConvexPMF priorStartState)
     : ConvexPMF([startState = std::move(priorStartState.logProb)](const std::vector<double> &X) {
             const Trajectory<AGENT> &T = reinterpret_cast<const Trajectory<AGENT> &>(X);
             return T.logProb() + startState(T(0));
@@ -25,4 +25,4 @@ public:
 };
 
 
-#endif //GLPKTEST_TRAJECTORYPRIORPMF_H
+#endif //GLPKTEST_TRAJECTORYPMF_H

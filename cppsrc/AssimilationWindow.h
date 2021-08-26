@@ -9,8 +9,8 @@
 #include "debug.h"
 #include "ConvexPMF.h"
 #include "TrajectoryLikelihoodPMF.h"
-#include "TrajectoryPriorSampler.h"
-#include "TrajectoryPriorPMF.h"
+#include "TrajectorySampler.h"
+#include "TrajectoryPMF.h"
 #include "BinomialDistribution.h"
 #include "gnuplot-iostream/gnuplot-iostream.h"
 #include "agents/PredPreyAgent.h"
@@ -19,31 +19,36 @@
 template<typename AGENT>
 class AssimilationWindow {
 public:
-    BinomialDistribution            startState;
-    TrajectoryPriorPMF<AGENT>       priorPMF;
-    TrajectoryPriorSampler<AGENT>   priorSampler;
+    TrajectoryPMF<AGENT>       priorPMF;
+    TrajectorySampler<AGENT>   priorSampler;
     Trajectory<AGENT>               realTrajectory;
     TrajectoryLikelihoodPMF<AGENT>  likelihoodPMF;
     ConvexPMF                       posterior;
 
 
-    AssimilationWindow(int nTimesteps, BinomialDistribution priorStartState, double pMakeObservation, double pObserveIfPresent)
+    AssimilationWindow(int nTimesteps, ConvexPMF priorStartStatePMF, std::function<std::vector<double>()> priorStartStateSampler, double pMakeObservation, double pObserveIfPresent)
     :
-    startState(std::move(priorStartState)),
-    priorPMF(nTimesteps, startState.PMF()),
-    priorSampler(nTimesteps, startState.sampler()),
+    priorPMF(nTimesteps, std::move(priorStartStatePMF)),
+    priorSampler(nTimesteps, std::move(priorStartStateSampler)),
     realTrajectory(priorSampler()),
     likelihoodPMF(realTrajectory, pMakeObservation, pObserveIfPresent),
     posterior(likelihoodPMF * priorPMF)
 //    analysis(AGENT::domainSize())
     {
+        debug(std::cout << "Created window with real trajectory " << realTrajectory << std::endl);
     }
 
-    AssimilationWindow(int nTimesteps, BinomialDistribution priorStartState, const AgentStateObservation<AGENT> &observation)
+    AssimilationWindow(int nTimesteps, const Distribution &priorStartState, double pMakeObservation, double pObserveIfPresent)
+    : AssimilationWindow(nTimesteps, priorStartState.PMF(), priorStartState.sampler(), pMakeObservation, pObserveIfPresent)
+    {
+    }
+
+
+    AssimilationWindow(int nTimesteps, const Distribution &priorStartState, const AgentStateObservation<AGENT> &observation)
     :
-    startState(std::move(priorStartState)),
-    priorPMF(nTimesteps, startState.PMF()),
-    priorSampler(nTimesteps, startState.sampler()),
+//    startState(std::move(priorStartState)),
+    priorPMF(nTimesteps, priorStartState.PMF()),
+    priorSampler(nTimesteps, priorStartState.sampler()),
     realTrajectory(nTimesteps),
     likelihoodPMF(nTimesteps, observation),
     posterior(likelihoodPMF * priorPMF)
@@ -51,12 +56,12 @@ public:
     {
     }
 
-    AssimilationWindow(int nTimesteps, BinomialDistribution priorStartState)
+    AssimilationWindow(int nTimesteps, const Distribution &priorStartState)
     :
-    startState(std::move(priorStartState)),
-    priorPMF(nTimesteps, startState.PMF()),
-    priorSampler(nTimesteps, startState.sampler()),
-    realTrajectory(Trajectory<AGENT>(nTimesteps,startState.nextSample())),
+//    startState(std::move(priorStartState)),
+    priorPMF(nTimesteps, priorStartState.PMF()),
+    priorSampler(nTimesteps, priorStartState.sampler()),
+    realTrajectory(Trajectory<AGENT>(nTimesteps,priorSampler())),
     likelihoodPMF(nTimesteps),
     posterior(priorPMF)
     //    analysis(AGENT::domainSize())
@@ -88,14 +93,15 @@ public:
 //    }
 
 
-    BinomialDistribution priorEndState(int nSamples) const {
-        SampleStatistics endStats(AGENT::domainSize());
-        for(int s=0; s<nSamples; ++s) {
-            Trajectory<AGENT> sample(priorSampler());
-            endStats += sample.endState();
-        }
-        return BinomialDistribution(endStats);
-    }
+//////////// Use TrajectorySampler instead!
+//    BinomialDistribution priorEndState(int nSamples) const {
+//        SampleStatistics endStats(AGENT::domainSize());
+//        for(int s=0; s<nSamples; ++s) {
+//            Trajectory<AGENT> sample(priorSampler());
+//            endStats += sample.endState();
+//        }
+//        return BinomialDistribution(endStats);
+//    }
 
 
 //    double informationGain(const BinomialDistribution &analysis) {

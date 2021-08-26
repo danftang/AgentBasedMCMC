@@ -16,7 +16,7 @@ public:
 
     virtual ConvexPMF   PMF() const =0;
     virtual Sampler     sampler() const =0;
-    virtual int         dimension() const =0;
+    virtual int         nDimensions() const =0;
 };
 
 

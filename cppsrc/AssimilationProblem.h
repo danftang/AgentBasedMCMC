@@ -50,7 +50,7 @@ public:
         return likelihoodPMF * priorPMF;
     }
 
-    int dimension() const { return priorPMF.nDimensions; }
+    int nDimensions() const { return priorPMF.nDimensions; }
 
 };
 

@@ -12,9 +12,9 @@
 //#include "StlStream.h"
 //#include "ConvexPMF.h"
 //#include "agents/BinomialAgent.h"
-//#include "TrajectoryPriorPMF.h"
+//#include "TrajectoryPMF.h"
 //#include "TrajectoryLikelihoodPMF.h"
-//#include "TrajectoryPriorSampler.h"
+//#include "TrajectorySampler.h"
 //#include "DeltaPMF.h"
 //#include "PoissonPMF.h"
 //#include "BinomialDistribution.h"
@@ -33,8 +33,8 @@ public:
 //    int nTimesteps;
 //    BinomialDistribution startDist;
 //    AgentStateObservation<BinomialAgent>    observation;
-//    TrajectoryPriorPMF<BinomialAgent>       priorPMF;
-//    TrajectoryPriorSampler<BinomialAgent>   priorSampler;
+//    TrajectoryPMF<BinomialAgent>       priorPMF;
+//    TrajectorySampler<BinomialAgent>   priorSampler;
 //    TrajectoryLikelihoodPMF<BinomialAgent>  likelihoodPMF;
 //    ConvexPMF                               posterior;
 

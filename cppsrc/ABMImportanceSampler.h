@@ -5,27 +5,23 @@
 #ifndef GLPKTEST_ABMIMPORTANCESAMPLER_H
 #define GLPKTEST_ABMIMPORTANCESAMPLER_H
 
+#include <vector>
+#include <functional>
+
 // PROBLEM should be an Assimilation Problem with traits and members as in AssimilationProblem
-template<typename PROBLEM>
 class ABMImportanceSampler {
 public:
-    const PROBLEM &problem;
+    std::function<std::vector<double>()>        sampler;
+    std::function<double(const std::vector<double> &)>  logP;
 
-    ABMImportanceSampler(const PROBLEM &prob): problem(prob) {}
+    ABMImportanceSampler(std::function<std::vector<double>()> sampler, std::function<double(const std::vector<double> &)> logP)
+    : sampler(sampler),
+    logP(logP) {}
 
     // N.B. Weight is log and unnormalised
-    std::pair<Trajectory<PROBLEM::Agent>,double> nextSample() {
-        double logWeight;
-        Trajectory<PROBLEM::Agent> sample(0);
-        do {
-            sample = Trajectory<PROBLEM::Agent>(
-                    problem.nTimesteps,
-                    ModelState<PROBLEM::Agent>(problem.startState.nextSample())
-                            );
-            logWeight = problem.logLikelihood(sample);
-        } while(logWeight == -INFINITY);
-        return std::pair(sample, logWeight);
-    }
+    std::pair<std::vector<double>,double> nextSample();
+
+    std::vector<double> expectation(int nSamples);
 };
 
 

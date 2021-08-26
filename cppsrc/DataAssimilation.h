@@ -14,12 +14,16 @@ template <typename AGENT>
 class DataAssimilation {
 public:
     std::vector<AssimilationWindow<AGENT>>  windows;
-    BinomialDistribution analysis;
+    IntSampleStatistics analysis;
+    ConvexPMF analysisPMF;
+    std::function<std::vector<double>()> analysisSampler;
     double pMakeObservation;
     double pObserveIfPresent;
 
-    DataAssimilation(BinomialDistribution startStatePrior, double pMakeObservation, double pObserveIfPresent)
-    : analysis(startStatePrior),
+    DataAssimilation(const Distribution &startStatePrior, double pMakeObservation, double pObserveIfPresent)
+    : analysis(AGENT::domainSize()),
+    analysisPMF(startStatePrior.PMF()),
+    analysisSampler(startStatePrior.sampler()),
     pMakeObservation(pMakeObservation),
     pObserveIfPresent(pObserveIfPresent)
     {}
@@ -53,10 +57,12 @@ const AssimilationWindow<AGENT> &addWindow(int nTimesteps, int nBurnInSamples, i
 //        const PoissonState<AGENT> &prior = windows.size()==0?startStatePrior:windows.back().analysis;
 //        const ModelState<AGENT> &startState = windows.size()==0 ? startStatePrior.nextSample() : windows.back().realTrajectory.endState();
 //        Trajectory<AGENT> realTrajectory(nTimesteps, startState);
-        windows.emplace_back(nTimesteps, std::move(analysis), pMakeObservation, pObserveIfPresent);
+        windows.emplace_back(nTimesteps, std::move(analysisPMF), std::move(analysisSampler), pMakeObservation, pObserveIfPresent);
         MCMCSolver<AGENT> solver(windows.back());
         solver.solve(nBurnInSamples, nSamples);
-        analysis = BinomialDistribution(solver.solution);
+        analysis = std::move(solver.solution);
+        analysisPMF = analysis.PMF();
+        analysisSampler = analysis.sampler();
         return windows.back();
     }
 //

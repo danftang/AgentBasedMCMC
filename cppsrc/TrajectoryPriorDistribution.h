@@ -39,7 +39,7 @@
 //            const Trajectory<AGENT> &T = reinterpret_cast<const Trajectory<AGENT> &>(X);
 //            return T.logProb() + startState(T(0));
 //            },
-//                         dimension(),
+//                         nDimensions(),
 //                         ABMConstraints<AGENT>::actFermionicABMConstraints(nTimesteps) +
 //                         ABMConstraints<AGENT>::startStateConstraintsToTrajectoryConstraints(startStatePMF.convexSupport));
 //    }
@@ -55,7 +55,7 @@
 ////    ConvexPMF actFermmionicDistribution() {
 ////        return ConvexPMF(
 ////                Trajectory<AGENT>::logProb,
-////                dimension(),
+////                nDimensions(),
 ////                ABMConstraints<AGENT>::actFermionicABMConstraints(nTimesteps));
 ////    }
 //
@@ -78,11 +78,11 @@
 ////                return observation.logP(observation.state.forwardOccupationNumber(X));
 ////            };
 ////        }
-////        return ConvexPMF(std::move(logP), dimension(), observation.support());
+////        return ConvexPMF(std::move(logP), nDimensions(), observation.support());
 ////    }
 //
 //
-//    int dimension() const {
+//    int nDimensions() const {
 //        return nTimesteps*AGENT::domainSize()*AGENT::actDomainSize()+1;
 //    }
 //

@@ -44,14 +44,14 @@ public:
 
     double logP(const std::vector<double> &X) const {
         double logP = 0.0;
-        for(int i=0; i < dimension(); ++i) {
+        for(int i=0; i < nDimensions(); ++i) {
             double successes = fabs(X[i]);
             if(successes <= binomials[i].trials()) {
                 //            logP +=  successes*log(p) + (trials-successes)*log(1.0-p) + lgamma(trials+1) - lgamma(trials-successes+1) - lgamma(successes+1); // fails when p=0.0 or p=1.0
                 logP += log(boost::math::pdf(binomials[i], successes));
             } else {
                 logP -= INFINITY;
-                i = dimension();
+                i = nDimensions();
             }
         }
 //        std::cout << "Binomial logP of " << X << " = " << logP << "  P = " << exp(logP) << std::endl;
@@ -70,12 +70,12 @@ public:
     ConvexPMF PMF() const {
         return ConvexPMF([*this](const std::vector<double> &X) {
             return logP(X);
-        },dimension(), convexSupport());
+        }, nDimensions(), convexSupport());
     }
 
     ConvexPolyhedron convexSupport() const {
         ConvexPolyhedron support;
-        for(int d=0; d<dimension(); ++d) {
+        for(int d=0; d < nDimensions(); ++d) {
             glp::Constraint constraint = (0.0 <= 1.0*glp::X(d) <= binomials[d].trials());
             if(binomials[d].success_fraction() == 0.0) {
                 constraint.upperBound = 0.0;
@@ -91,11 +91,11 @@ public:
         return [*this]() { return this->nextSample(); };
     }
 
-    int dimension() const { return binomials.size(); }
+    int nDimensions() const { return binomials.size(); }
 
     std::vector<double> means() const {
-        std::vector<double> mu(dimension());
-        for(int i=0; i<dimension(); ++i) {
+        std::vector<double> mu(nDimensions());
+        for(int i=0; i < nDimensions(); ++i) {
             mu[i] = boost::math::mean(binomials[i]);
             assert(mu[i] == binomials[i].success_fraction() * binomials[i].trials());
         }

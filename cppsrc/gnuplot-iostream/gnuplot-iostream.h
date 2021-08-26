@@ -754,7 +754,7 @@ public:
     // `send1d()` or `send2d()`.  This is deprecated, but is still supported for reverse
     // compatibility.
     static constexpr bool allow_auto_unwrap = false;
-    // The number of levels of nesting, or the dimension of multidimensional arrays.
+    // The number of levels of nesting, or the nDimensions of multidimensional arrays.
     static constexpr size_t depth = 0;
 
     // Returns the range (iterator) for an array.

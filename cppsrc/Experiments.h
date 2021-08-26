@@ -11,6 +11,7 @@
 #include "agents/PredPreyAgent.h"
 #include "PoissonState.h"
 #include "BinomialDistribution.h"
+#include "IntSampleStatistics.h"
 
 class Experiments {
 public:
@@ -39,8 +40,8 @@ public:
 
     static void BinomialAgentAssimilation();
 
-    static double informationGain(const std::vector<double> &realEndState, const BinomialDistribution &prior,
-                           const BinomialDistribution &analysis);
+    static double informationGain(const std::vector<double> &realEndState, const IntSampleStatistics &prior,
+                           const IntSampleStatistics &analysis);
 };
 
 

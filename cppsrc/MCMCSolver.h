@@ -7,13 +7,14 @@
 
 #include "SimplexMCMC.h"
 #include "AssimilationWindow.h"
+#include "IntSampleStatistics.h"
 
 template<typename AGENT>
 class MCMCSolver {
 public:
 
     SimplexMCMC      sampler;
-    SampleStatistics solution;
+    IntSampleStatistics solution;
 
     MCMCSolver(const ConvexPMF &pmf, const std::vector<double> &initialState)
     :
@@ -32,10 +33,11 @@ public:
         std::cout << "Done" << std::endl;
         //        std::cout << "Sampler:\n" << sampler << std::endl;
         std::cout << "Initial solution: " << sampler.X() << std::endl;
+//        std::cout << "Initial end state: " << Trajectory<AGENT>(sampler.X()).endState() << std::endl;
         for(int s=0; s<nSamples; ++s) {
             Trajectory<AGENT> sample(sampler.nextSample());
             //            std::cout << "Sampler:\n" << sampler << std::endl;
-            //            std::cout << "Sample: " << sample << std::endl;
+//                        std::cout << "Sample end state: " << sample.endState() << std::endl;
             solution += sample.endState();
         }
         std::cout << "Feasible stats:\n" << sampler.feasibleStatistics << std::endl;
