@@ -38,14 +38,21 @@ using glp::X;
 //    void myTFunc(T &&other) { std::cout << "myTFunc rValue ref" << std::endl;}
 //};
 
+//template<typename T>
 //class MyClass {
 //public:
-//    int i = 1234;
+//    T i;// = 1234;
 //
-//    double logP(const std::vector<double> &X) { return i; }
+//    MyClass(T p) { i = p; }
 //
-//    int operator()() { return i; }
-//    double operator()(double x) { return i+x; }
+//    T x() { return i; }
+//
+//    int myFunc();
+//
+////    double logP(const std::vector<double> &X) { return i; }
+////
+////    int operator()() { return i; }
+////    double operator()(double x) { return i+x; }
 //
 //
 //};

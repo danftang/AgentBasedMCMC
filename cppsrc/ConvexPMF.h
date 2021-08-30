@@ -14,9 +14,7 @@ class ConvexPMF {
 public:
     typedef SimplexMCMC DefaultSampler; // put this in the Distribution class?
     typedef std::function<double(const std::vector<double> &)> PMF;
-
-    static const ConvexPMF INVALID_PMF;
-
+    
     PMF                 logProb;        // function from vertex co-ord to log probability
     int                 nDimensions;    // the number of dimensions of the convex polyhedron of points
     ConvexPolyhedron    convexSupport;  // all non-zero probability points lie on the vertices of this polyhedron
@@ -39,9 +37,9 @@ public:
     }
     double P(const std::vector<double> &X) const { return exp(logP(X)); }
 
-    std::function<std::vector<double>()> sampler() {
-        return [mcmc = SimplexMCMC(*this)]() mutable { return std::vector<double>(mcmc.nextSample()); };
-    }
+//    std::function<std::vector<double>()> sampler() {
+//        return [mcmc = SimplexMCMC(*this)]() mutable { return std::vector<double>(mcmc.nextSample()); };
+//    }
 
 
     // Multiplicatin of distributions. Equivalent to summation of logP

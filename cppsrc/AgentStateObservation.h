@@ -34,7 +34,9 @@ public:
     }
 
     double logP(double realOccupation) const {
-        if(realOccupation < lowerBound || realOccupation > upperBound()) return -INFINITY;
+        if(realOccupation < lowerBound || realOccupation > upperBound()) {
+            return log(1.0/(upperBound() - lowerBound + 1)); // average likelihood for infeasible states
+        }
         return log(boost::math::pdf(boost::math::binomial(realOccupation, pObserveIfPresent), lowerBound));// logLikelihood(occupation);
     }
 

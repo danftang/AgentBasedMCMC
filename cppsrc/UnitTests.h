@@ -12,7 +12,6 @@
 //#include "StlStream.h"
 //#include "ConvexPMF.h"
 //#include "agents/BinomialAgent.h"
-//#include "TrajectoryPMF.h"
 //#include "TrajectoryLikelihoodPMF.h"
 //#include "TrajectorySampler.h"
 //#include "DeltaPMF.h"

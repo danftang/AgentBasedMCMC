@@ -39,6 +39,9 @@ public:
         return 0.0;
     }
 
+    template<typename AGENT>
+    static IntSampleStatistics endStateExpectation(const std::function<std::vector<double>()> &trajectorySampler, int nSamples);
+
     friend std::ostream &operator <<(std::ostream &out, const IntSampleStatistics &sampleStats);
 };
 

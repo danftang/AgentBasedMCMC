@@ -15,7 +15,6 @@
 #include "TrajectoryPriorDistribution.h"
 #include "SampleStatistics.h"
 #include "TrajectorySampler.h"
-#include "TrajectoryPMF.h"
 #include "TrajectoryLikelihoodPMF.h"
 #include "ExactSolver.h"
 #include "agents/BinomialAgent.h"
@@ -124,7 +123,7 @@ void Experiments::PredPreyAssimilation() {
 
     DataAssimilation<PredPreyAgent> assimilation(startStateDist, pMakeObservation, pObserveIfPresent);
 
-//    std::cout << "assimilation start state sample: " << assimilation.analysisSampler() << std::endl;
+//    std::cout << "assimilation start state sample: " << assimilation.analysisSampler() << std::endl; // TODO: and why this fixes it!
 
 
     for(int w=0; w<nWindows; ++w) {
@@ -149,6 +148,68 @@ void Experiments::PredPreyAssimilation() {
             priorEnd,
             assimilation.analysis) << std::endl;
 
+
+}
+
+
+void Experiments::PredPreyExpt() {
+    ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
+    PredPreyAgent::GRIDSIZE = 3;
+    constexpr int windowSize = 2;
+    constexpr int nWindows = 1;
+    constexpr double pPredator = 0.08;//0.08;          // Poisson prob of predator in each gridsquare at t=0
+    constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
+    constexpr double pMakeObservation = 0.1;//0.04;    // prob of making an observation of each gridsquare at each timestep
+    constexpr double pObserveIfPresent = 0.95;
+    constexpr int nSamplesPerWindow = 500000; //250000;
+    constexpr int nBurninSamples = 10000;
+    //    constexpr int plotTimestep = nTimesteps-1;
+
+    ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
+
+    //    std::vector<boost::math::binomial_distribution<double>> startWeights(PredPreyAgent::domainSize());
+    //    for(int agentId=0; agentId < PredPreyAgent::domainSize(); ++agentId) {
+    //        startWeights[agentId] = boost::math::binomial_distribution<double>(
+    //                1,(PredPreyAgent(agentId).type() == PredPreyAgent::PREDATOR?pPredator:pPrey)
+    //                );
+    //    }
+    //    BinomialDistribution startStateDist(startWeights);
+
+    IntSampleStatistics startStateDist(
+            PredPreyAgent::domainSize(),
+            [](int agentId, int count) {
+                double p = (PredPreyAgent(agentId).type() == PredPreyAgent::PREDATOR ? pPredator : pPrey);
+                switch (count) {
+                    case 0: return 1.0 - p;
+                    case 1: return p;
+                }
+                return 0.0;
+            });
+
+    std::cout << "Initial state distribution = " << startStateDist << std::endl;
+
+
+    AssimilationWindow <PredPreyAgent> window(
+            windowSize,
+            startStateDist,
+            AgentStateObservation<PredPreyAgent>(
+                    State<PredPreyAgent>(1,PredPreyAgent(0, 0, PredPreyAgent::PREY)),
+                    1,
+                    1.0
+            )
+    );
+
+    std::cout << "Prior support is \n" << window.priorPMF.convexSupport << std::endl;
+    std::cout << "Likelihood support is \n" << window.likelihoodPMF.convexSupport << std::endl;
+    std::cout << "Posterior support is \n" << window.posterior.convexSupport << std::endl;
+
+    MCMCSolver<PredPreyAgent> solver(window);
+    solver.solve(5000,1000000);
+    std::cout << "Analysis histograms:\n" << solver.solution << std::endl;
+    std::cout << "Analysis = " << solver.solution.means() << std::endl;
+
+    ExactSolver<CatMouseAgent> exact(window.posterior);
+    std::cout << "Exact solution = " << exact.solution << std::endl;
 
 }
 
@@ -214,9 +275,13 @@ void Experiments::CatMouseAssimilation() {
     std::cout << "Likelihood support is \n" << window.likelihoodPMF.convexSupport << std::endl;
     std::cout << "Posterior support is \n" << window.posterior.convexSupport << std::endl;
 
-    MCMCSolver<CatMouseAgent> solver(window);
-    solver.solve(nBurninSamples, nSamplesPerWindow);
-    std::cout << "Analysis = " << solver.solution.means() << std::endl;
+//    MCMCSolver<CatMouseAgent> solver(window);
+//    solver.solve(nBurninSamples, nSamplesPerWindow);
+//    std::cout << "Analysis = " << solver.solution.means() << std::endl;
+
+    std::cout << "Analysis histograms:\n" << assimilation.analysis << std::endl;
+
+    std::cout << "Analysis means = " << assimilation.analysis.means() << std::endl;
 
     ExactSolver<CatMouseAgent> exact(window.posterior);
     std::cout << "Exact solution = " << exact.solution << std::endl;

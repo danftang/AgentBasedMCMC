@@ -8,22 +8,28 @@
 
 class RejectionSampler {
 public:
-    std::function<std::vector<double>()>    priorSampler;
-    ConvexPMF                               likelihoodPMF;
+    const std::function<std::vector<double>()> &   priorSampler;
+    const ConvexPMF &                              likelihood;
 
-    RejectionSampler(std::function<std::vector<double>()> priorSampler, ConvexPMF likelihood)
-    : priorSampler(std::move(priorSampler)),
-      likelihoodPMF(std::move(likelihood))
-      {}
+    RejectionSampler(const std::function<std::vector<double>()> &priorSampler,const ConvexPMF &likelihood)
+    :
+    priorSampler(priorSampler),
+    likelihood(likelihood) { }
+
+    template<typename AGENT>
+    RejectionSampler(const AssimilationWindow<AGENT> &window)
+    :
+    priorSampler(window.priorSampler),
+    likelihood(window.likelihoodPMF)
+    { }
+
 
     // N.B. Only use this when likelihood is reasonably high
     std::vector<double> operator()() {
-        double logLikelihood;
         std::vector<double> sample(0);
         do {
             sample = priorSampler();
-            logLikelihood = likelihoodPMF.logP(sample);
-        } while(Random::nextDouble() > exp(logLikelihood));
+        } while(likelihood.convexSupport.isValidSolution(sample) &&  Random::nextDouble() > exp(likelihood.logP(sample)));
         return sample;
     }
 

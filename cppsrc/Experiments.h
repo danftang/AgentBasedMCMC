@@ -42,6 +42,8 @@ public:
 
     static double informationGain(const std::vector<double> &realEndState, const IntSampleStatistics &prior,
                            const IntSampleStatistics &analysis);
+
+    static void PredPreyExpt();
 };
 
 
