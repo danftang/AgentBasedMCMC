@@ -19,17 +19,22 @@
 template<typename AGENT>
 class AssimilationWindow {
 public:
-    TrajectoryPMF<AGENT>       priorPMF;
-    TrajectorySampler<AGENT>   priorSampler;
-    Trajectory<AGENT>               realTrajectory;
-    TrajectoryLikelihoodPMF<AGENT>  likelihoodPMF;
-    ConvexPMF                       posterior;
+    ConvexPMF<Trajectory<AGENT>>        priorPMF;
+    std::function<Trajectory<AGENT>()>  priorSampler;
+    Trajectory<AGENT>                   realTrajectory;
+    ConvexPMF<Trajectory<AGENT>>        likelihoodPMF;
+    ConvexPMF<Trajectory<AGENT>>        posterior;
 
 
-    AssimilationWindow(int nTimesteps, ConvexPMF priorStartStatePMF, std::function<std::vector<double>()> priorStartStateSampler, double pMakeObservation, double pObserveIfPresent)
+    AssimilationWindow(
+            int nTimesteps,
+            ConvexPMF<ModelState<AGENT>> priorStartStatePMF,
+            std::function<ModelState<AGENT>()> priorStartStateSampler,
+            double pMakeObservation,
+            double pObserveIfPresent)
     :
     priorPMF(nTimesteps, std::move(priorStartStatePMF)),
-    priorSampler(nTimesteps, std::move(priorStartStateSampler)),
+    priorSampler(Trajectory<AGENT>::priorSampler(nTimesteps, std::move(priorStartStateSampler))),
     realTrajectory(priorSampler()),
     likelihoodPMF(realTrajectory, pMakeObservation, pObserveIfPresent),
     posterior(likelihoodPMF * priorPMF)
@@ -38,33 +43,29 @@ public:
         debug(std::cout << "Created window with real trajectory " << realTrajectory << std::endl);
     }
 
-    AssimilationWindow(int nTimesteps, const Distribution &priorStartState, double pMakeObservation, double pObserveIfPresent)
+    AssimilationWindow(int nTimesteps, const Distribution<ModelState<AGENT>> &priorStartState, double pMakeObservation, double pObserveIfPresent)
     : AssimilationWindow(nTimesteps, priorStartState.PMF(), priorStartState.sampler(), pMakeObservation, pObserveIfPresent)
     {
     }
 
 
-    AssimilationWindow(int nTimesteps, const Distribution &priorStartState, const AgentStateObservation<AGENT> &observation)
+    AssimilationWindow(int nTimesteps, const Distribution<ModelState<AGENT>> &priorStartState, const AgentStateObservation<AGENT> &observation)
     :
-//    startState(std::move(priorStartState)),
     priorPMF(nTimesteps, priorStartState.PMF()),
-    priorSampler(nTimesteps, priorStartState.sampler()),
+    priorSampler(Trajectory<AGENT>::priorSampler(nTimesteps, priorStartState.sampler())),
     realTrajectory(nTimesteps),
     likelihoodPMF(nTimesteps, observation),
     posterior(likelihoodPMF * priorPMF)
-//    analysis(AGENT::domainSize())
     {
     }
 
-    AssimilationWindow(int nTimesteps, const Distribution &priorStartState)
+    AssimilationWindow(int nTimesteps, const Distribution<ModelState<AGENT>> &priorStartState)
     :
-//    startState(std::move(priorStartState)),
     priorPMF(nTimesteps, priorStartState.PMF()),
-    priorSampler(nTimesteps, priorStartState.sampler()),
+    priorSampler(Trajectory<AGENT>::priorSampler(nTimesteps, priorStartState.sampler())),
     realTrajectory(Trajectory<AGENT>(nTimesteps,priorSampler())),
-    likelihoodPMF(nTimesteps),
+    likelihoodPMF(ConvexPMF<Trajectory<AGENT>>::uniformTrajectoryDistribution(nTimesteps)),
     posterior(priorPMF)
-    //    analysis(AGENT::domainSize())
     {
     }
 
@@ -77,7 +78,7 @@ public:
 //        }
 //
 ////        std::cout << "Sampler:\n" << sampler << std::endl;
-//        std::cout << "Initial solution: " << sampler.X() << std::endl;
+//        std::cout << "Initial exactEndState: " << sampler.X() << std::endl;
 //        for(int s=0; s<nSamples; ++s) {
 //            Trajectory<AGENT> sample(sampler.nextSample());
 //            //            std::cout << "Sampler:\n" << sampler << std::endl;

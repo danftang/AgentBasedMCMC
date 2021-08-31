@@ -6,17 +6,16 @@
 #define GLPKTEST_DISTRIBUTION_H
 
 #include <vector>
+#include "ConvexPMF.h"
 
 // Before we know whether we want to sample from or take the log prob of this
 // distribution, then we can use the more abstract Distribution object.
+template<typename DOMAIN>
 class Distribution {
 public:
-    typedef std::function<std::vector<double>()>              Sampler;
-//    typedef std::function<double(const std::vector<double> &)>  LogPMF;
-
-    virtual ConvexPMF   PMF() const =0;
-    virtual Sampler     sampler() const =0;
-    virtual int         nDimensions() const =0;
+    virtual ConvexPMF<DOMAIN>       PMF() const =0;
+    virtual std::function<DOMAIN()> sampler() const =0;
+    virtual int                     nDimensions() const =0;
 };
 
 

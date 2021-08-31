@@ -16,9 +16,10 @@
 //
 // The cast operator allows this class to be cast to an ordinaary
 // ConvexPMF when required.
+template<typename DOMAIN>
 class ConvexPMFProduct {
 protected:
-    PMFProduct atomicPMFs;
+    PMFProduct<DOMAIN> atomicPMFs;
 public:
     ConvexPolyhedron convexSupport;
     int nDimensions;
@@ -37,11 +38,11 @@ public:
 
     int size() const { return atomicPMFs.size(); }
 
-    double logP(const std::vector<double> &X) const {
+    double logP(const DOMAIN &X) const {
         return atomicPMFs.logP(X);
     }
 
-    ConvexPMFProduct &operator *=(ConvexPMF atom) {
+    ConvexPMFProduct &operator *=(ConvexPMF<DOMAIN> atom) {
         assert(nDimensions == atom.nDimensions);
         atomicPMFs *= std::move(atom.logProb);
         convexSupport += std::move(atom.convexSupport);
@@ -49,14 +50,14 @@ public:
     }
 
 
-    ConvexPMFProduct &operator *=(ConvexPMFProduct others) {
+    ConvexPMFProduct &operator *=(ConvexPMFProduct<DOMAIN> others) {
         assert(nDimensions == others.nDimensions);
         atomicPMFs *= others.atomicPMFs;
         convexSupport += std::move(others.convexSupport);
         return *this;
     }
 
-    ConvexPMFProduct operator *(ConvexPMF other) const & {
+    ConvexPMFProduct operator *(ConvexPMF<DOMAIN> other) const & {
         assert(nDimensions == other.nDimensions);
         ConvexPMFProduct prod(nDimensions);
         prod.atomicPMFs = atomicPMFs * std::move(other.logProb);
@@ -66,16 +67,16 @@ public:
         return prod;
     }
 
-    ConvexPMFProduct operator *(ConvexPMF other) && {
+    ConvexPMFProduct operator *(ConvexPMF<DOMAIN> other) && {
         (*this) *= other;
         return std::move(*this);
     }
 
 
-    operator ConvexPMF() const & { return ConvexPMF(atomicPMFs.PMF(), nDimensions, convexSupport); }
+    operator ConvexPMF<DOMAIN>() const & { return ConvexPMF<DOMAIN>(atomicPMFs, nDimensions, convexSupport); }
 
-    operator ConvexPMF() && {
-        return ConvexPMF(std::move(atomicPMFs).PMF(), nDimensions, std::move(convexSupport));
+    operator ConvexPMF<DOMAIN>() && {
+        return ConvexPMF<DOMAIN>(std::move(atomicPMFs), nDimensions, std::move(convexSupport));
     }
 
 

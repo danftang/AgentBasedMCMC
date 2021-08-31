@@ -10,24 +10,25 @@
 template<typename AGENT>
 class ExactSolver {
 public:
-    ModelState<AGENT> solution;
+    ModelState<AGENT> exactEndState;
 
-    ExactSolver(const ConvexPMF &pmf) {
+    ExactSolver(const ConvexPMF<Trajectory<AGENT>> &pmf) {
         double marginalP = 0.0;
-        for(const std::vector<double> &traj: BinarySolutionSet(pmf.convexSupport, pmf.nDimensions)) {
+        for(const std::vector<double> &sol: BinarySolutionSet(pmf.convexSupport, pmf.nDimensions)) {
+            const Trajectory<AGENT> &traj = reinterpret_cast<const Trajectory<AGENT> &>(sol);
             double jointP = exp(pmf.logP(traj));
             marginalP += jointP;
             //            std::cout << traj << " " << jointP << std::endl;
-            ModelState<AGENT> endState = Trajectory<AGENT>(traj).endState();
+            ModelState<AGENT> endState = traj.endState();
             endState *= jointP;
-            solution += endState;
+            exactEndState += endState;
         }
-        solution *= 1.0/marginalP;
+        exactEndState *= 1.0 / marginalP;
     }
 
-    ExactSolver(const AssimilationWindow<AGENT> &window): ExactSolver(window.posterior) {
-
-    }
+//    ExactSolver(const AssimilationWindow<AGENT> &window): ExactSolver(window.posterior) {
+//
+//    }
 };
 
 

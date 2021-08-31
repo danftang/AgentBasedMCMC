@@ -28,12 +28,7 @@ SimplexMCMC::SimplexMCMC(
 }
 
 
-SimplexMCMC::SimplexMCMC(
-        const ConvexPMF &pmf,
-        const std::vector<double> &initialState)
-        : SimplexMCMC(pmf.convexSupport.toLPProblem(), pmf.logProb, initialState) { }
-
-// Starting with zero solution, find a solution that satisfies the observations and
+// Starting with zero exactEndState, find a exactEndState that satisfies the observations and
 // the interaction rules.
 void SimplexMCMC::findFeasibleStartPoint() {
     int iterations = 0;
@@ -47,7 +42,7 @@ void SimplexMCMC::findFeasibleStartPoint() {
         iterations++;
 
     } ;
-    debug(std::cout << "Found initial solution in " << iterations << " iterations" << std::endl);
+    debug(std::cout << "Found initial exactEndState in " << iterations << " iterations" << std::endl);
 }
 
 
@@ -55,8 +50,8 @@ void SimplexMCMC::findFeasibleStartPoint() {
 // from a cold start (i.e. nothing already calculated)
 //
 // If we split the variables into the ones that are on a bound, d, and those that aren't, x,
-// then any basis that includes all x variables will have the same solution.
-// However, on an integer solution, all variables are on their bound, so any
+// then any basis that includes all x variables will have the same exactEndState.
+// However, on an integer exactEndState, all variables are on their bound, so any
 // pivot state can represent any state!!!
 double SimplexMCMC::lnDegeneracyProb() {
     int nextVarBegin;

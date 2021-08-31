@@ -3,6 +3,7 @@
 //
 
 #include <vector>
+#include "compose.h"
 #include "Experiments.h"
 #include "agents/CatMouseAgent.h"
 #include "ABMProblem.h"
@@ -21,6 +22,10 @@
 #include "MCMCSolver.h"
 #include "ABMPlotter.h"
 #include "StlStream.h"
+#include "BernoulliModelState.h"
+#include "MCMCSampler.h"
+#include "ModelStateSampleStatistics.h"
+#include "RejectionSampler.h"
 
 std::vector<double> Experiments::informationIncrease(int argc, char *argv[]) {
     if(argc != 9) {
@@ -56,19 +61,21 @@ std::vector<double> Experiments::informationIncrease(
     glp_term_out(GLP_OFF); // turn off GLPK terminal output
     PredPreyAgent::GRIDSIZE = gridsize;
 
-    std::vector<boost::math::binomial_distribution<double>> startWeights(PredPreyAgent::domainSize());
-    for(int agentId=0; agentId < PredPreyAgent::domainSize(); ++agentId) {
-        startWeights[agentId] = boost::math::binomial_distribution<double>(
-                1,(PredPreyAgent(agentId).type() == PredPreyAgent::PREDATOR?pPredator:pPrey)
-                );
-    }
-    BinomialDistribution startStateDist(startWeights);
+//    std::vector<boost::math::binomial_distribution<double>> startWeights(PredPreyAgent::domainSize());
+//    for(int agentId=0; agentId < PredPreyAgent::domainSize(); ++agentId) {
+//        startWeights[agentId] = boost::math::binomial_distribution<double>(
+//                1,(PredPreyAgent(agentId).type() == PredPreyAgent::PREDATOR?pPredator:pPrey)
+//                );
+//    }
 
+    BernoulliModelState<PredPreyAgent> startStateDist([pPredator,pPrey](PredPreyAgent agent) {
+        return agent.type() == PredPreyAgent::PREDATOR?log(pPredator):log(pPrey);
+    });
 
     AssimilationWindow<PredPreyAgent> window(windowSize, startStateDist, pMakeObservation, pObserveIfPresent);
 
-    MCMCSolver<PredPreyAgent> solver(window);
-    solver.solve(nBurnInSamples, nSamplesPerWindow);
+    MCMCSampler sampler(window.posterior);
+//    solver.solve(nBurnInSamples, nSamplesPerWindow);
 
 
     return std::vector<double>(); //assimilation.calculateInformationGain();
@@ -98,55 +105,55 @@ void Experiments::PredPreyAssimilation() {
 //    }
 //    BinomialDistribution startStateDist(startWeights);
 
-    IntSampleStatistics startStateDist(
-            PredPreyAgent::domainSize(),
-            [](int agentId, int count) {
-                double p = (PredPreyAgent(agentId).type() == PredPreyAgent::PREDATOR ? pPredator : pPrey);
-                switch (count) {
-                    case 0: return 1.0 - p;
-                    case 1: return p;
-                }
-                return 0.0;
-            });
+    BernoulliModelState<PredPreyAgent> startStateDist([pPredator,pPrey](PredPreyAgent agent) {
+        return agent.type() == PredPreyAgent::PREDATOR?log(pPredator):log(pPrey);
+    });
 
     std::cout << "Initial state distribution = " << startStateDist << std::endl;
 
 
-    TrajectorySampler<PredPreyAgent> priorSampler(nWindows * windowSize, startStateDist.sampler());
+//    TrajectorySampler<PredPreyAgent> priorSampler(nWindows * windowSize, startStateDist.sampler());
+    std::function<Trajectory<PredPreyAgent>()> priorSampler =
+            Trajectory<PredPreyAgent>::priorSampler(nWindows * windowSize, startStateDist.sampler());
 //    priorSampler.endState(100000);
     for(int s=0; s<100000; ++s) { // TODO: Work out why this causes much higher occupancy
 //        startStateDist.nextSample();
-        priorSampler.nextSample();
+        priorSampler();
     }
 
 //    std::cout << "start state sample: " << startStateDist.nextSample() << std::endl;
 
-    DataAssimilation<PredPreyAgent> assimilation(startStateDist, pMakeObservation, pObserveIfPresent);
+//    DataAssimilation<PredPreyAgent> assimilation(startStateDist, pMakeObservation, pObserveIfPresent);
 
 //    std::cout << "assimilation start state sample: " << assimilation.analysisSampler() << std::endl; // TODO: and why this fixes it!
 
-
+    Distribution<ModelState<PredPreyAgent>> &analysis = startStateDist;
+    ModelStateSampleStatistics<PredPreyAgent> sampleStats;
+    ModelState<PredPreyAgent> realEndState;
     for(int w=0; w<nWindows; ++w) {
-        const AssimilationWindow<PredPreyAgent> &window = assimilation.addWindow(windowSize, nBurninSamples, nSamplesPerWindow);
+        AssimilationWindow<PredPreyAgent> window(windowSize, analysis, pMakeObservation, pObserveIfPresent);
+        MCMCSampler sampler(window.posterior, window.priorSampler());
+        for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
+        sampleStats.sampleFromEndState(sampler, nSamplesPerWindow);
+        analysis = sampleStats;
 
-        std::cout << "Analysis = " << assimilation.analysis << std::endl;
-        std::cout << "Means = " << assimilation.analysis.means() << std::endl;
+        std::cout << "Analysis = " << sampleStats << std::endl;
+        std::cout << "Means = " << sampleStats.means() << std::endl;
 
         ABMPlotter<PredPreyAgent> gp;
-        gp.plot(window.realTrajectory.endState(), assimilation.analysis.means());
+        realEndState = window.realTrajectory.endState();
+        gp.plot(realEndState, sampleStats.means());
 //        BinomialDistribution prior = window.priorEndState(100000);
 //        std::cout << "Window information gain = "
 //        << informationGain(window.realTrajectory.endState(), prior, assimilation.analysis) << std::endl;
     }
 
-    IntSampleStatistics priorEnd = priorSampler.endState(100000);
-        std::cout << "Prior end distribution = " << priorEnd << std::endl;
+    ModelStateSampleStatistics<PredPreyAgent> priorEnd;
+    priorEnd.sampleFromEndState(priorSampler, 100000);
+    std::cout << "Prior end distribution = " << priorEnd << std::endl;
 
     std::cout << "Total information gain = "
-    << informationGain(
-            assimilation.windows.back().realTrajectory.endState(),
-            priorEnd,
-            assimilation.analysis) << std::endl;
+    << informationGain(realEndState, priorEnd, sampleStats) << std::endl;
 
 
 }
@@ -167,24 +174,19 @@ void Experiments::PredPreyExpt() {
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
 
-    //    std::vector<boost::math::binomial_distribution<double>> startWeights(PredPreyAgent::domainSize());
-    //    for(int agentId=0; agentId < PredPreyAgent::domainSize(); ++agentId) {
-    //        startWeights[agentId] = boost::math::binomial_distribution<double>(
-    //                1,(PredPreyAgent(agentId).type() == PredPreyAgent::PREDATOR?pPredator:pPrey)
-    //                );
-    //    }
-    //    BinomialDistribution startStateDist(startWeights);
-
-    IntSampleStatistics startStateDist(
-            PredPreyAgent::domainSize(),
-            [](int agentId, int count) {
-                double p = (PredPreyAgent(agentId).type() == PredPreyAgent::PREDATOR ? pPredator : pPrey);
-                switch (count) {
-                    case 0: return 1.0 - p;
-                    case 1: return p;
-                }
-                return 0.0;
-            });
+    BernoulliModelState<PredPreyAgent> startStateDist([pPredator,pPrey](PredPreyAgent agent) {
+        return agent.type() == PredPreyAgent::PREDATOR?log(pPredator):log(pPrey);
+    });
+//    IntSampleStatistics startStateDist(
+//            PredPreyAgent::domainSize(),
+//            [](int agentId, int count) {
+//                double p = (PredPreyAgent(agentId).type() == PredPreyAgent::PREDATOR ? pPredator : pPrey);
+//                switch (count) {
+//                    case 0: return 1.0 - p;
+//                    case 1: return p;
+//                }
+//                return 0.0;
+//            });
 
     std::cout << "Initial state distribution = " << startStateDist << std::endl;
 
@@ -203,13 +205,16 @@ void Experiments::PredPreyExpt() {
     std::cout << "Likelihood support is \n" << window.likelihoodPMF.convexSupport << std::endl;
     std::cout << "Posterior support is \n" << window.posterior.convexSupport << std::endl;
 
-    MCMCSolver<PredPreyAgent> solver(window);
-    solver.solve(5000,1000000);
-    std::cout << "Analysis histograms:\n" << solver.solution << std::endl;
-    std::cout << "Analysis = " << solver.solution.means() << std::endl;
+    MCMCSampler sampler(window.posterior, window.priorSampler());
+    for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
+    ModelStateSampleStatistics<PredPreyAgent> sampleStats(sampler, nSamplesPerWindow);
 
-    ExactSolver<CatMouseAgent> exact(window.posterior);
-    std::cout << "Exact solution = " << exact.solution << std::endl;
+    std::cout << "Analysis histograms:\n" << sampleStats << std::endl;
+    std::cout << "Analysis means = " << sampleStats.means() << std::endl;
+
+    RejectionSampler rejectionSampler(window.priorSampler, window.likelihoodPMF);
+    ModelStateSampleStatistics<PredPreyAgent> rejectionSampleStats(rejectionSampler, nSamplesPerWindow);
+    std::cout << "Rejection means = " << rejectionSampleStats.means() << std::endl;
 
 }
 
@@ -217,14 +222,12 @@ void Experiments::PredPreyExpt() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Experiments::CatMouseExpt() {
+    constexpr int nBurninSamples = 10000;
+    constexpr int nSamples = 500000;
+
     AssimilationWindow<CatMouseAgent> window(
             2,
-            BinomialDistribution({
-                                         boost::math::binomial_distribution<double>(1.0, 0.9),
-                                         boost::math::binomial_distribution<double>(1.0, 0.1),
-                                         boost::math::binomial_distribution<double>(1.0, 0.1),
-                                         boost::math::binomial_distribution<double>(1.0, 0.9)
-                                 }),
+            BernoulliModelState<CatMouseAgent>({0.9, 0.1, 0.1, 0.9}),
             AgentStateObservation<CatMouseAgent>(
                     State<CatMouseAgent>(
                             1,
@@ -238,21 +241,20 @@ void Experiments::CatMouseExpt() {
     std::cout << "Likelihood support is \n" << window.likelihoodPMF.convexSupport << std::endl;
     std::cout << "Posterior support is \n" << window.posterior.convexSupport << std::endl;
 
-
-    MCMCSolver<CatMouseAgent> solver(window);
-    solver.solve(5000,1000000);
-    std::cout << "Analysis = " << solver.solution.means() << std::endl;
-//    window.doAnalysis(250000, 1000);
-//    std::cout << window.analysis << std::endl;
+    MCMCSampler sampler(window.posterior, window.priorSampler());
+    for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
+    ModelStateSampleStatistics<CatMouseAgent> sampleStats(sampler, nSamples);
+    std::cout << "Analysis = " << sampleStats.means() << std::endl;
 
     ExactSolver<CatMouseAgent> exact(window.posterior);
-    std::cout << "Exact solution = " << exact.solution << std::endl;
+    std::cout << "Exact exactEndState = " << exact.exactEndState << std::endl;
 
 }
 
 
 void Experiments::CatMouseAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
+    constexpr int nWindows = 2;
     constexpr int windowSize = 2;
     constexpr double pMakeObservation = 0.25;//0.04;    // prob of making an observation of each gridsquare at each timestep
     constexpr double pObserveIfPresent = 1.0;
@@ -261,62 +263,61 @@ void Experiments::CatMouseAssimilation() {
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
 
-    BinomialDistribution startStateDist({
-        boost::math::binomial_distribution<double>(1.0, 0.9),
-        boost::math::binomial_distribution<double>(1.0, 0.1),
-        boost::math::binomial_distribution<double>(1.0, 0.1),
-        boost::math::binomial_distribution<double>(1.0, 0.9)
-    });
+    BernoulliModelState<CatMouseAgent> startStateDist({0.9, 0.1, 0.1, 0.9});
 
-    DataAssimilation<CatMouseAgent> assimilation(startStateDist, pMakeObservation, pObserveIfPresent);
-    const AssimilationWindow<CatMouseAgent> &window = assimilation.addWindow(windowSize, nBurninSamples, nSamplesPerWindow);
+    Distribution<ModelState<CatMouseAgent>> &analysis = startStateDist;
+    ModelStateSampleStatistics<CatMouseAgent> sampleStats;
+    ModelState<PredPreyAgent> realEndState;
+    for(int w=0; w<nWindows; ++w) {
+        AssimilationWindow<CatMouseAgent> window(windowSize, analysis, pMakeObservation, pObserveIfPresent);
+        std::cout << "Prior support is \n" << window.priorPMF.convexSupport << std::endl;
+        std::cout << "Likelihood support is \n" << window.likelihoodPMF.convexSupport << std::endl;
+        std::cout << "Posterior support is \n" << window.posterior.convexSupport << std::endl;
 
-    std::cout << "Prior support is \n" << window.priorPMF.convexSupport << std::endl;
-    std::cout << "Likelihood support is \n" << window.likelihoodPMF.convexSupport << std::endl;
-    std::cout << "Posterior support is \n" << window.posterior.convexSupport << std::endl;
+        MCMCSampler sampler(window.posterior, window.priorSampler());
+        for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
+        ModelStateSampleStatistics<CatMouseAgent> sampleStats(sampler, nSamplesPerWindow);
+        analysis = sampleStats;
 
-//    MCMCSolver<CatMouseAgent> solver(window);
-//    solver.solve(nBurninSamples, nSamplesPerWindow);
-//    std::cout << "Analysis = " << solver.solution.means() << std::endl;
+        std::cout << "Analysis = " << sampleStats << std::endl;
+        std::cout << "Means = " << sampleStats.means() << std::endl;
 
-    std::cout << "Analysis histograms:\n" << assimilation.analysis << std::endl;
+        ExactSolver<CatMouseAgent> exact(window.posterior);
+        std::cout << "Exact exactEndState = " << exact.exactEndState << std::endl;
 
-    std::cout << "Analysis means = " << assimilation.analysis.means() << std::endl;
-
-    ExactSolver<CatMouseAgent> exact(window.posterior);
-    std::cout << "Exact solution = " << exact.solution << std::endl;
-
+    }
 }
 
 
 void Experiments::BinomialAgentAssimilation() {
     BinomialAgent::GRIDSIZE = 3;
-//    BinomialDistribution startState({
-//        boost::math::binomial_distribution(1.0, 1.0),
-//        boost::math::binomial_distribution(1.0, 0.1),
-//        boost::math::binomial_distribution(1.0, 0.0)
-//    });
+    constexpr int nTimesteps = 2;
+    constexpr int nSamplesPerWindow = 500000;
+    constexpr int nBurninSamples = 5000;
 
-    // gets stuck at kappaRow = -1
-    BinomialDistribution startState({
-        boost::math::binomial_distribution(1.0, 1.0),
-        boost::math::binomial_distribution(1.0, 0.1),
-        boost::math::binomial_distribution(1.0, 0.1)
-    });
-
+    BernoulliModelState<BinomialAgent> startState({1.0,0.1,0.1});
 
     AgentStateObservation<BinomialAgent> observation(State<BinomialAgent>(1, 0),1,0.9);
 
-    AssimilationWindow<BinomialAgent> window(2, startState, observation);
+    AssimilationWindow<BinomialAgent> window(nTimesteps, startState, observation);
+    std::cout << "Prior support is \n" << window.priorPMF.convexSupport << std::endl;
+    std::cout << "Likelihood support is \n" << window.likelihoodPMF.convexSupport << std::endl;
+    std::cout << "Posterior support is \n" << window.posterior.convexSupport << std::endl;
 
-    MCMCSolver<BinomialAgent> solver(window);
-    solver.solve(5000, 1000000);
-    std::cout << solver.solution.means() << std::endl;
+    MCMCSampler<Trajectory<BinomialAgent>> sampler(window.posterior, window.priorSampler());
+    std::cout << "simplex = \n" << sampler.simplex << std::endl;
+    std::cout << "Starting burn-in" << std::endl;
+//    for(int s=0; s<nBurninSamples; ++s) sampler();
+    std::cout << "Done burn-in" << std::endl;
+    ModelStateSampleStatistics<BinomialAgent> sampleStats(sampler, nSamplesPerWindow);
+    std::cout << sampleStats.means() << std::endl;
 
+    std::cout << "Starting exact solve" << std::endl;
     ExactSolver<BinomialAgent> exactSolver(window.posterior);
-    std::cout << exactSolver.solution << std::endl;
+    std::cout << exactSolver.exactEndState << std::endl;
 
 }
+
 
 void Experiments::RandomWalk() {
     using glp::X;
@@ -342,142 +343,10 @@ void Experiments::RandomWalk() {
         std::cout << myMCMC << std::endl;
         std::cout << "Sample is: " << myMCMC.X() << std::endl;
     }
-
-//    mySimplex.pivot(3,3);
-//    std::cout << mySimplex << std::endl;
-
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-double Experiments::informationGain(const std::vector<double> &realEndState, const IntSampleStatistics &prior, const IntSampleStatistics &analysis) {
-    assert(realEndState.size() == prior.nDimensions());
-    assert(prior.nDimensions() == analysis.nDimensions());
-    std::vector<double> priorMeans = prior.means();
-    std::vector<double> analysisMeans = analysis.means();
-    for(int i=0; i<realEndState.size(); ++i) {
-        std::cout << "Real occupancy = " << realEndState[i]
-        << " prior p = " << prior.P(i, realEndState[i])
-        << " posterior p = " << analysis.P(i, realEndState[i])
-        << " post / prior p = " << analysis.P(i, realEndState[i])/prior.P(i, realEndState[i])
-        << std::endl;
-    }
-    return (analysis.logP(realEndState) - prior.logP(realEndState))/log(2.0);
-}
-
-
-//void Experiments::GnuplotTest() {
-//    Gnuplot gp; //(stdout);
-//    auto state = ModelState<PredPreyAgent>::randomPoissonState([](const PredPreyAgent &agent) {
-//        if(agent.type() == PredPreyAgent::PREDATOR) return 0.08;
-//        return 0.16;
-//    });
-//
-//    plotHeatMap(gp, state, state);
-//}
-
-//Gnuplot &Experiments::plotHeatMap(Gnuplot &gp, const PoissonState<PredPreyAgent> &aggregateState,
-//                                  const ModelState<PredPreyAgent> &realState) {
-//    typedef std::tuple<double,double,double,double,double> HeatRecord;
-//    std::vector<std::vector<HeatRecord>> heatData;
-//    std::vector<std::tuple<double,double,double>> pointData;
-//
-////    for(auto [agent, occupancy] : realState) {
-////        pointData.emplace_back(agent.xPosition(), agent.yPosition(), agent.type()==PredPreyAgent::PREY?1:2);
-////    }
-//
-//    for(int x=0; x<PredPreyAgent::GRIDSIZE; ++x) {
-//        for(int y=0; y<PredPreyAgent::GRIDSIZE; ++y) {
-//            int colour = 2*(realState[PredPreyAgent(x,y,PredPreyAgent::PREDATOR)]>0.0)
-//                    + (realState[PredPreyAgent(x,y,PredPreyAgent::PREY)]>0.0);
-//            if(colour != 0)
-//                pointData.emplace_back(x, y, colour);
-//        }
-//    }
-//
-//
-////    double predMaxOccupancy = 0.0;
-////    double preyMaxOccupancy = 0.0;
-////    for(auto [agent, occupancy] : aggregateState) {
-////        if(agent.type() == PredPreyAgent::PREDATOR) {
-////            if(occupancy > predMaxOccupancy) predMaxOccupancy = occupancy;
-////        } else {
-////            if(occupancy > preyMaxOccupancy) preyMaxOccupancy = occupancy;
-////        }
-////    }
-//    double maxOccupancy = 0.0;
-//    for(double occupancy : aggregateState.stateCounts) {
-//        if(occupancy > maxOccupancy) maxOccupancy = occupancy;
-//    }
-////    std::cout << "Max occupancy = " << maxOccupancy << " at " << maxState << std::endl;
-//
-////    double predScale = 200.0/log(predMaxOccupancy + 1.0);
-////    double preyScale = 200.0/log(preyMaxOccupancy + 1.0);
-//    double predScale = 200.0/maxOccupancy; // predMaxOccupancy;
-//    double preyScale = 200.0/maxOccupancy; // preyMaxOccupancy;
-//    for(int x=0; x<PredPreyAgent::GRIDSIZE; ++x) {
-//        std::vector<HeatRecord> &record = heatData.emplace_back();
-//        for(int y=0; y<PredPreyAgent::GRIDSIZE; ++y) {
-//            double nPrey = aggregateState.stateCounts[PredPreyAgent(x, y, PredPreyAgent::PREY)];
-//            double nPred = aggregateState.stateCounts[PredPreyAgent(x, y, PredPreyAgent::PREDATOR)];
-////            record.emplace_back(x, y, log(nPrey + 1.0) * preyScale, 0.0, log(nPred + 1.0) * predScale);
-//            record.emplace_back(x,y,nPrey*preyScale,0.0,nPred*predScale);
-//        }
-//    }
-//
-//    gp << "set linetype 1 lc 'red'\n";
-//    gp << "set linetype 2 lc 'blue'\n";
-//    gp << "set linetype 3 lc 'magenta'\n";
-//    gp << "plot [-0.5:" << PredPreyAgent::GRIDSIZE-0.5 << "][-0.5:" << PredPreyAgent::GRIDSIZE-0.5 << "] ";
-//    gp << "'-' with rgbimage notitle, ";
-//    gp << "'-' with points pointtype 5 pointsize 0.5 lc variable notitle\n";
-//    gp.send2d(heatData);
-//    gp.send1d(pointData);
-//    return gp;
-//}
-
-//Gnuplot &Experiments::plotHeatMap(Gnuplot &gp, const BinomialDistribution &aggregateState,
-//                                  const ModelState<PredPreyAgent> &realState) {
-//    typedef std::tuple<double,double,double,double,double> HeatRecord;
-//    std::vector<std::vector<HeatRecord>> heatData;
-//    std::vector<std::tuple<double,double,double>> pointData;
-//
-//    for(int x=0; x<PredPreyAgent::GRIDSIZE; ++x) {
-//        for(int y=0; y<PredPreyAgent::GRIDSIZE; ++y) {
-//            int colour = 2*(realState[PredPreyAgent(x,y,PredPreyAgent::PREDATOR)]>0.0)
-//                    + (realState[PredPreyAgent(x,y,PredPreyAgent::PREY)]>0.0);
-//            if(colour != 0)
-//                pointData.emplace_back(x, y, colour);
-//        }
-//    }
-//
-//    double maxOccupancy = 0.0;
-//    for(double occupancy : aggregateState) {
-//        if(occupancy > maxOccupancy) maxOccupancy = occupancy;
-//    }
-//    double predScale = 200.0/maxOccupancy; // predMaxOccupancy;
-//    double preyScale = 200.0/maxOccupancy; // preyMaxOccupancy;
-//    for(int x=0; x<PredPreyAgent::GRIDSIZE; ++x) {
-//        std::vector<HeatRecord> &record = heatData.emplace_back();
-//        for(int y=0; y<PredPreyAgent::GRIDSIZE; ++y) {
-//            double nPrey = aggregateState.stateCounts[PredPreyAgent(x, y, PredPreyAgent::PREY)];
-//            double nPred = aggregateState.stateCounts[PredPreyAgent(x, y, PredPreyAgent::PREDATOR)];
-//            //            record.emplace_back(x, y, log(nPrey + 1.0) * preyScale, 0.0, log(nPred + 1.0) * predScale);
-//            record.emplace_back(x,y,nPrey*preyScale,0.0,nPred*predScale);
-//        }
-//    }
-//
-//    gp << "set linetype 1 lc 'red'\n";
-//    gp << "set linetype 2 lc 'blue'\n";
-//    gp << "set linetype 3 lc 'magenta'\n";
-//    gp << "plot [-0.5:" << PredPreyAgent::GRIDSIZE-0.5 << "][-0.5:" << PredPreyAgent::GRIDSIZE-0.5 << "] ";
-//    gp << "'-' with rgbimage notitle, ";
-//    gp << "'-' with points pointtype 5 pointsize 0.5 lc variable notitle\n";
-//    gp.send2d(heatData);
-//    gp.send1d(pointData);
-//    return gp;
-//}
 
 
 Gnuplot &Experiments::plotAgents(Gnuplot &gp, const ModelState<PredPreyAgent> &state) {

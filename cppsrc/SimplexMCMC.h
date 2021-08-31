@@ -12,7 +12,8 @@
 #include <cassert>
 #include "glpkpp.h"
 #include "ProposalPivot.h"
-class ConvexPMF;
+#include "ConvexPMF.h"
+//class ConvexPMF;
 
 class SimplexMCMC: public glp::Simplex {
 public:
@@ -43,7 +44,15 @@ public:
     SimplexMCMC(const glp::Problem &prob,
                 std::function<double(const std::vector<double> &)> logProb,
                 const std::vector<double> &initialState = std::vector<double>());
-    SimplexMCMC(const ConvexPMF &, const std::vector<double> &initialState = std::vector<double>());
+
+//    template<typename DOMAIN>
+//    SimplexMCMC(const ConvexPMF<DOMAIN> &pmf, const DOMAIN &initialState)
+//    : SimplexMCMC(
+//            pmf.convexSupport.toLPProblem(),
+//            [logP = pmf.logProb](const std::vector<double> &X) { return logP(reinterpret_cast<const DOMAIN &>(X)); },
+//            initialState
+//    ) { }
+
 
     double lnDegeneracyProb();
     double lnProb() { return logProbFunc(X()); }

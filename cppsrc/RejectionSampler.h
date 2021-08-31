@@ -6,12 +6,13 @@
 #define GLPKTEST_REJECTIONSAMPLER_H
 
 
+template<typename DOMAIN>
 class RejectionSampler {
 public:
-    const std::function<std::vector<double>()> &   priorSampler;
-    const ConvexPMF &                              likelihood;
+    const std::function<DOMAIN()> &   priorSampler;
+    const ConvexPMF<DOMAIN> &         likelihood;
 
-    RejectionSampler(const std::function<std::vector<double>()> &priorSampler,const ConvexPMF &likelihood)
+    RejectionSampler(const std::function<DOMAIN()> &priorSampler,const ConvexPMF<DOMAIN> &likelihood)
     :
     priorSampler(priorSampler),
     likelihood(likelihood) { }
@@ -25,11 +26,11 @@ public:
 
 
     // N.B. Only use this when likelihood is reasonably high
-    std::vector<double> operator()() {
-        std::vector<double> sample(0);
-        do {
+    DOMAIN operator()() {
+        DOMAIN sample = priorSampler();
+        while(!likelihood.isInSupport(sample) ||  Random::nextDouble() > exp(likelihood.logP(sample))) {
             sample = priorSampler();
-        } while(likelihood.convexSupport.isValidSolution(sample) &&  Random::nextDouble() > exp(likelihood.logP(sample)));
+        }
         return sample;
     }
 

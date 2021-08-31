@@ -40,8 +40,21 @@ public:
 
     static void BinomialAgentAssimilation();
 
-    static double informationGain(const std::vector<double> &realEndState, const IntSampleStatistics &prior,
-                           const IntSampleStatistics &analysis);
+    template<typename DOMAIN>
+    static double informationGain(
+            const DOMAIN &realState,
+            const IntSampleStatistics<DOMAIN> &prior,
+            const IntSampleStatistics<DOMAIN> &analysis) {
+        for(int i=0; i < realState.size(); ++i) {
+            std::cout << "Real occupancy = " << realState[i]
+                      << " prior p = " << prior.P(i, realState[i])
+                      << " posterior p = " << analysis.P(i, realState[i])
+                      << " post / prior p = " << analysis.P(i, realState[i]) / prior.P(i, realState[i])
+                      << std::endl;
+        }
+        return (analysis.logP(realState) - prior.logP(realState)) / log(2.0);
+
+    }
 
     static void PredPreyExpt();
 };

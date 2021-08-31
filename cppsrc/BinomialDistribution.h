@@ -13,7 +13,7 @@
 #include "SampleStatistics.h"
 #include "debug.h"
 
-class BinomialDistribution: public Distribution {
+class BinomialDistribution: public Distribution<std::vector<double>> {
 public:
     std::vector<boost::math::binomial_distribution<double>> binomials;
 
@@ -67,8 +67,8 @@ public:
         return state;
     }
 
-    ConvexPMF PMF() const {
-        return ConvexPMF([*this](const std::vector<double> &X) {
+    ConvexPMF<std::vector<double>> PMF() const {
+        return ConvexPMF<std::vector<double>>([*this](const std::vector<double> &X) {
             return logP(X);
         }, nDimensions(), convexSupport());
     }

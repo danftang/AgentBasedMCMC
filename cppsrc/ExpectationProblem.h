@@ -6,7 +6,7 @@
 #define GLPKTEST_EXPECTATIONPROBLEM_H
 
 // Represents the problem of finding a (vector) expectation value of a function, f,
-// over a ConvexPMF. f should take a solution to the ConvexPMF and return a vector
+// over a ConvexPMF. f should take a exactEndState to the ConvexPMF and return a vector
 // which is an instance of the value we wish to calculate the expectation of.
 //
 // In order to calculate the expectation value, send an instancce of this class to a solver.

@@ -5,11 +5,13 @@
 #ifndef GLPKTEST_TRAJECTORY_H
 #define GLPKTEST_TRAJECTORY_H
 
+#include <cfloat>
 #include "glpkpp.h"
 #include "ModelState.h"
 #include "StateTrajectory.h"
 #include "Random.h"
 #include "ActFermionicDistribution.h"
+#include "Sampler.h"
 
 template<typename AGENT>
 class Trajectory: public std::vector<double> {
@@ -24,7 +26,7 @@ public:
         assert((size()-1)%(AGENT::domainSize()*AGENT::actDomainSize()) == 0);
     }
 
-    // execute forward from a given start state distribution, choosing a solution with probability
+    // execute forward from a given start state distribution, choosing a exactEndState with probability
     // proportional to the joint times the probability of the start state
 //    Trajectory(int nTimesteps, const ModelState<AGENT> &startState) : Trajectory(nTimesteps) {
 //        bool isValid;
@@ -206,8 +208,8 @@ public:
         return T.logProb();
     }
 
-//    friend std::ostream &operator <<(std::ostream &out, const Trajectory<AGENT> &solution) {
-//        Trajectory sortedTrajectory(solution);
+//    friend std::ostream &operator <<(std::ostream &out, const Trajectory<AGENT> &exactEndState) {
+//        Trajectory sortedTrajectory(exactEndState);
 //        sortedTrajectory.sort();
 //
 //        int timestep = -1;
@@ -222,7 +224,17 @@ public:
 //        return out;
 //    }
 
+    static std::function<Trajectory<AGENT>()> priorSampler(int nTimesteps, std::function<ModelState<AGENT>()> startStateSampler) {
+        return [startStateSampler = std::move(startStateSampler),nTimesteps]() {
+            return Trajectory<AGENT>(nTimesteps, startStateSampler);
+        };
+    }
 
 };
+
+//template<typename AGENT>
+//std::function<ModelState<AGENT>()> endStateAdaptor(const std::function<const Trajectory<AGENT> &()> &trajectorySampler) {
+//    return [&trajectorySampler]() { return trajectorySampler().endState(); };
+//}
 
 #endif //GLPKTEST_TRAJECTORY_H

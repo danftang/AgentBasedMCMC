@@ -26,6 +26,8 @@
 #include "BinarySolutionSet.h"
 #include "RejectionSampler.h"
 #include "ExactSolver.h"
+#include "BernoulliModelState.h"
+#include "MCMCSampler.h"
 
 class UnitTests: public AssimilationWindow<BinomialAgent> {
 public:
@@ -46,11 +48,7 @@ public:
             AssimilationWindow<BinomialAgent>(
                     initProblem(
                             2,
-                            BinomialDistribution({
-                                                         boost::math::binomial_distribution(1.0, 0.9),
-                                                         boost::math::binomial_distribution(1.0, 0.1),
-                                                         boost::math::binomial_distribution(1.0, 0.0)
-                                                 }),
+                            BernoulliModelState<BinomialAgent>({0.9, 0.1, 0.0}),
                             AgentStateObservation<BinomialAgent>(
                                     State<BinomialAgent>(1, 0),
                                     1,
@@ -61,7 +59,7 @@ public:
     }
 
     static AssimilationWindow<BinomialAgent>
-    initProblem(int nTimesteps, const BinomialDistribution &startDist, const AgentStateObservation<BinomialAgent> &observation) {
+    initProblem(int nTimesteps, const BernoulliModelState<BinomialAgent> &startDist, const AgentStateObservation<BinomialAgent> &observation) {
         BinomialAgent::GRIDSIZE = nTimesteps + 1;
         return AssimilationWindow<BinomialAgent>(
                 2,
@@ -103,7 +101,7 @@ public:
 
     static void testConvexPMF() {
         using glp::X;
-        ConvexPMF myPMF([](const std::vector<double> &X) {
+        ConvexPMF<std::vector<double>> myPMF([](const std::vector<double> &X) {
             return log(X[1] + X[2] + X[3]);
         },4);
 
@@ -114,7 +112,7 @@ public:
         std::cout << myPMF.convexSupport << std::endl;
 
         std::vector<int> sampleCounts(8,0);
-        SimplexMCMC sampler(myPMF);
+        MCMCSampler sampler(myPMF);
         for(int s=0; s<100000; ++s) {
             const std::vector<double> sample = sampler.nextSample();
             int vertexId = sample[1] + sample[2]*2 + sample[3]*4;
@@ -130,7 +128,7 @@ public:
 
     void testExactSolver() {
         ExactSolver<BinomialAgent> solver(posterior);
-        std::cout << "Exact solution = " << solver.solution << std::endl;
+        std::cout << "Exact exactEndState = " << solver.exactEndState << std::endl;
     }
 
 
@@ -152,14 +150,14 @@ public:
 //        std::cout << "Start state convexSupport is:\n" << startDist.PMF().convexSupport << std::endl;
         std::cout << "Simplex Sampler convexSupport:\n" << pmf.convexSupport << std::endl;
 
-        SimplexMCMC sampler = SimplexMCMC(pmf, priorSampler());
+        MCMCSampler sampler(pmf, priorSampler());
 //        std::cout << "kProbTokSim = " << sampler.kProbTokSim << std::endl;
 //        std::cout << "kSimTokProb = " << sampler.kSimTokProb << std::endl;
         for(int burnIn=0; burnIn<1000; ++burnIn) {
             sampler.nextSample();
         }
-        std::cout << "Sampler:\n" << sampler << std::endl;
-        std::cout << "Initial solution: " << sampler.X() << std::endl;
+        std::cout << "Sampler:\n" << sampler.simplex << std::endl;
+        std::cout << "Initial exactEndState: " << sampler.simplex.X() << std::endl;
         ModelState<BinomialAgent> mcmcFinalState;
         const int NSAMPLES = 1000000;
         for(int s=0; s<NSAMPLES; ++s) {
@@ -169,9 +167,9 @@ public:
             assert(pmf.convexSupport.isValidSolution(sample));
             mcmcFinalState += sample.endState();
         }
-        std::cout << "Feasible stats:\n" << sampler.feasibleStatistics << std::endl;
-        std::cout << "Infeasible stats:\n" << sampler.infeasibleStatistics << std::endl;
-        std::cout << "Infeasible proportion = " << sampler.infeasibleStatistics.nSamples*1.0/(sampler.feasibleStatistics.nSamples + sampler.infeasibleStatistics.nSamples) << std::endl;
+        std::cout << "Feasible stats:\n" << sampler.simplex.feasibleStatistics << std::endl;
+        std::cout << "Infeasible stats:\n" << sampler.simplex.infeasibleStatistics << std::endl;
+        std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*1.0/(sampler.simplex.feasibleStatistics.nSamples + sampler.simplex.infeasibleStatistics.nSamples) << std::endl;
         mcmcFinalState *= 1.0/NSAMPLES;
         std::cout << mcmcFinalState << std::endl;
     }

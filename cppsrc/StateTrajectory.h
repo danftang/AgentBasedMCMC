@@ -11,7 +11,7 @@
 #include "glpkpp.h"
 #include "State.h"
 #include "ModelState.h"
-#include "SimplexMCMC.h"
+#include "constants.h"
 
 // A vector of timesteps, whith each timestep a map from agent state to occupation number
 template<typename AGENT>

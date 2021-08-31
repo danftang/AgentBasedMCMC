@@ -281,7 +281,7 @@ bool Phase1Pivot::isActive(int pmfIndex) {
 }
 
 
-// returns the infeasibility of the current solution perturbed by this column changing by deltaj
+// returns the infeasibility of the current exactEndState perturbed by this column changing by deltaj
 double Phase1Pivot::infeasibility(double deltaj) {
     double dist = 0.0;
     for(int i=1; i <= simplex.nBasic(); ++i) {

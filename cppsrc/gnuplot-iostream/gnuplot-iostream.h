@@ -123,7 +123,7 @@ THE SOFTWARE.
 
 // MSVC gives a warning saying that fopen and getenv are not secure.  But they are secure.
 // Unfortunately their replacement functions are not simple drop-in replacements.  The best
-// solution is to just temporarily disable this warning whenever fopen or getenv is used.
+// exactEndState is to just temporarily disable this warning whenever fopen or getenv is used.
 // http://stackoverflow.com/a/4805353/1048959
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #    define GNUPLOT_MSVC_WARNING_4996_PUSH \

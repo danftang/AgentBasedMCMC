@@ -26,10 +26,10 @@ public:
     agentState(time,agent),
     numberObserved(numberObserved) { }
 
-    // make observation of the solution
-//    Observation(int time, const AGENT &agent, const Trajectory<AGENT> &solution):
+    // make observation of the exactEndState
+//    Observation(int time, const AGENT &agent, const Trajectory<AGENT> &exactEndState):
 //    agentState(time,agent),
-//    numberObserved(solution(time,agent)) { }
+//    numberObserved(exactEndState(time,agent)) { }
 
     double logLikelihood(const StateTrajectory<AGENT> &trajectory, double infeasibilityLogProb) const {
         return trajectory[agentState]==numberObserved?0.0:infeasibilityLogProb;
@@ -60,7 +60,7 @@ public:
                 }
             }
         }
-//        checkTrajectorySatisfiesObervations(solution, observations)
+//        checkTrajectorySatisfiesObervations(exactEndState, observations)
         debug(std::cout << "Generated observations: " << observations << std::endl);
         return observations;
     }

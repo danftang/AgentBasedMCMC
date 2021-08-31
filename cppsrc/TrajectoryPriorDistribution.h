@@ -32,7 +32,7 @@
 //
 //
 //    // Takes a PMF over the start state of an ABM and returns the PMF over trajectories of this window length
-//    // such that the probability of a solution is the trajectoryPrior probability of the solution times the probability
+//    // such that the probability of a exactEndState is the trajectoryPrior probability of the exactEndState times the probability
 //    // of the start state.
 //    ConvexPMF PMF() const {
 //        return ConvexPMF([startState = startStatePMF.logProb](const std::vector<double> &X) {
@@ -100,7 +100,7 @@
 ////                }
 ////            }
 ////        }
-////        //        checkTrajectorySatisfiesObervations(solution, observations)
+////        //        checkTrajectorySatisfiesObervations(exactEndState, observations)
 ////        return observations;
 ////    }
 //

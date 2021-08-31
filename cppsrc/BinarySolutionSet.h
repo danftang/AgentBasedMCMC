@@ -30,7 +30,7 @@ public:
         // construct as begin()
         Iterator(int nDimensions, const ConvexPolyhedron &support)
         : Iterator(nDimensions, support, -1) {
-            // move forward to first valid solution (or end)
+            // move forward to first valid exactEndState (or end)
             ++(*this);
         }
 
@@ -40,7 +40,7 @@ public:
             do {
                 ++solutionId;
                 recalculateTrajectory();
-//                std::cout << "Trying solution " << solution << std::endl;
+//                std::cout << "Trying exactEndState " << exactEndState << std::endl;
             } while(solutionId < (1 << (solution.size() - 1)) && !support.isValidSolution(solution));
             return *this;
         }
