@@ -35,9 +35,9 @@ public:
         addObservations(this->observations);
     }
 
-//    double logProb(const glp::SparseVec & X) {
+//    double extendedLogProb(const glp::SparseVec & X) {
 //            const auto &exactEndState = (const Trajectory<AGENT> &)X;
-//            double logP = exactEndState.logProb();
+//            double logP = exactEndState.extendedLogProb();
 //            for(auto observation: observations) {
 //                logP += observation.logLikelihood(exactEndState);
 //            }
@@ -74,7 +74,7 @@ public:
         }
 
 //        std::cout << " final logprob = " << logP << std::endl;
-//        logP += logProb(X);
+//        logP += extendedLogProb(X);
         logP += logPrior(reinterpret_cast<const Trajectory<AGENT> &>(X));
         return logP;
     }

@@ -28,9 +28,11 @@ public:
     // N.B. Only use this when likelihood is reasonably high
     DOMAIN operator()() {
         DOMAIN sample = priorSampler();
-        while(!likelihood.isInSupport(sample) ||  Random::nextDouble() > exp(likelihood.logP(sample))) {
+        while(Random::nextDouble() > likelihood.P(sample)) {
+//            std::cout << likelihood.P(sample) << " " << sample << std::endl;
             sample = priorSampler();
         }
+//        std::cout << "Got sample " << sample << std::endl;
         return sample;
     }
 

@@ -19,11 +19,13 @@ public:
     }
 
     void sampleFromEndState(const std::function<Trajectory<AGENT>()> &trajectorySampler, int nSamples) {
+        this->clear();
         for(int s = 0; s<nSamples; ++s) {
             ModelState<AGENT> endState = trajectorySampler().endState();
 //            std::cout << "Taking sample " << s << " " << endState << std::endl;
             (*this) += endState;
         }
+        debug();
 //        std::cout << "Done sampling with " << this->means() << std::endl;
     }
 

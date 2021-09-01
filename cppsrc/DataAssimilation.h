@@ -93,7 +93,7 @@
 //////            int nSamples) {
 //////
 //////        ABMProblem<AGENT> abm(nTimeseps, observations, [&](const Trajectory<AGENT> &exactEndState) {
-//////            return startStatePrior.logProb(exactEndState(0));
+//////            return startStatePrior.extendedLogProb(exactEndState(0));
 //////        });
 //////        SimplexMCMC mcmc(abm, abm.logProbFunc());
 //////        Trajectory<AGENT> initialTrajectory = generateInitialState(mcmc, startStatePrior);
@@ -190,7 +190,7 @@
 ////
 ////
 ////    static double  informationGain(const ModelState<AGENT> &realState, const PoissonState<AGENT> &prior, const PoissonState<AGENT> &posterior) {
-////        return (posterior.logProb(realState) - prior.logProb(realState))/log(2);
+////        return (posterior.extendedLogProb(realState) - prior.extendedLogProb(realState))/log(2);
 ////    }
 ////
 ////

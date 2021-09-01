@@ -69,7 +69,7 @@ std::vector<double> Experiments::informationIncrease(
 //    }
 
     BernoulliModelState<PredPreyAgent> startStateDist([pPredator,pPrey](PredPreyAgent agent) {
-        return agent.type() == PredPreyAgent::PREDATOR?log(pPredator):log(pPrey);
+        return agent.type() == PredPreyAgent::PREDATOR?pPredator:pPrey;
     });
 
     AssimilationWindow<PredPreyAgent> window(windowSize, startStateDist, pMakeObservation, pObserveIfPresent);
@@ -86,46 +86,22 @@ void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
     PredPreyAgent::GRIDSIZE = 8;
     constexpr int windowSize = 2;
-    constexpr int nWindows = 1;
+    constexpr int nWindows = 4;
     constexpr double pPredator = 0.08;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
-    constexpr double pMakeObservation = 0.1;//0.04;    // prob of making an observation of each gridsquare at each timestep
+    constexpr double pMakeObservation = 0.2;//0.04;    // prob of making an observation of each gridsquare at each timestep
     constexpr double pObserveIfPresent = 0.95;
     constexpr int nSamplesPerWindow = 1000000; //250000;
     constexpr int nBurninSamples = 1000;
+    constexpr int nPriorSamples = 100000;
 //    constexpr int plotTimestep = nTimesteps-1;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
 
-//    std::vector<boost::math::binomial_distribution<double>> startWeights(PredPreyAgent::domainSize());
-//    for(int agentId=0; agentId < PredPreyAgent::domainSize(); ++agentId) {
-//        startWeights[agentId] = boost::math::binomial_distribution<double>(
-//                1,(PredPreyAgent(agentId).type() == PredPreyAgent::PREDATOR?pPredator:pPrey)
-//                );
-//    }
-//    BinomialDistribution startStateDist(startWeights);
-
     BernoulliModelState<PredPreyAgent> startStateDist([pPredator,pPrey](PredPreyAgent agent) {
-        return agent.type() == PredPreyAgent::PREDATOR?log(pPredator):log(pPrey);
+        return agent.type() == PredPreyAgent::PREDATOR?pPredator:pPrey;
     });
-
     std::cout << "Initial state distribution = " << startStateDist << std::endl;
-
-
-//    TrajectorySampler<PredPreyAgent> priorSampler(nWindows * windowSize, startStateDist.sampler());
-    std::function<Trajectory<PredPreyAgent>()> priorSampler =
-            Trajectory<PredPreyAgent>::priorSampler(nWindows * windowSize, startStateDist.sampler());
-//    priorSampler.endState(100000);
-    for(int s=0; s<100000; ++s) { // TODO: Work out why this causes much higher occupancy
-//        startStateDist.nextSample();
-        priorSampler();
-    }
-
-//    std::cout << "start state sample: " << startStateDist.nextSample() << std::endl;
-
-//    DataAssimilation<PredPreyAgent> assimilation(startStateDist, pMakeObservation, pObserveIfPresent);
-
-//    std::cout << "assimilation start state sample: " << assimilation.analysisSampler() << std::endl; // TODO: and why this fixes it!
 
     Distribution<ModelState<PredPreyAgent>> &analysis = startStateDist;
     ModelStateSampleStatistics<PredPreyAgent> sampleStats;
@@ -137,65 +113,57 @@ void Experiments::PredPreyAssimilation() {
         sampleStats.sampleFromEndState(sampler, nSamplesPerWindow);
         analysis = sampleStats;
 
-        std::cout << "Analysis = " << sampleStats << std::endl;
-        std::cout << "Means = " << sampleStats.means() << std::endl;
+//        std::cout << "Analysis = " << sampleStats << std::endl;
+        std::cout << "Analysis means = " << sampleStats.means() << std::endl;
+        std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
+        std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
+        std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*1.0/sampler.simplex.feasibleStatistics.nSamples << std::endl;
 
         ABMPlotter<PredPreyAgent> gp;
         realEndState = window.realTrajectory.endState();
         gp.plot(realEndState, sampleStats.means());
-//        BinomialDistribution prior = window.priorEndState(100000);
+//        ModelStateSampleStatistics priorEnd(window.priorSampler, 10000);
 //        std::cout << "Window information gain = "
-//        << informationGain(window.realTrajectory.endState(), prior, assimilation.analysis) << std::endl;
+//        << informationGain(window.realTrajectory.endState(), priorEnd, sampleStats) << std::endl;
     }
 
     ModelStateSampleStatistics<PredPreyAgent> priorEnd;
-    priorEnd.sampleFromEndState(priorSampler, 100000);
-    std::cout << "Prior end distribution = " << priorEnd << std::endl;
+    priorEnd.sampleFromEndState(
+            Trajectory<PredPreyAgent>::priorSampler(nWindows * windowSize, startStateDist.sampler()),
+            nPriorSamples
+    );
+    std::cout << "Prior end means = " << priorEnd.means() << std::endl;
 
-    std::cout << "Total information gain = "
-    << informationGain(realEndState, priorEnd, sampleStats) << std::endl;
-
-
+    std::cout << "Total information gain = " << informationGain(realEndState, priorEnd, sampleStats) << std::endl;
 }
 
 
 void Experiments::PredPreyExpt() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
-    PredPreyAgent::GRIDSIZE = 3;
+    PredPreyAgent::GRIDSIZE = 4;
     constexpr int windowSize = 2;
-    constexpr int nWindows = 1;
     constexpr double pPredator = 0.08;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
     constexpr double pMakeObservation = 0.1;//0.04;    // prob of making an observation of each gridsquare at each timestep
     constexpr double pObserveIfPresent = 0.95;
-    constexpr int nSamplesPerWindow = 500000; //250000;
+    constexpr int nSamplesPerWindow = 1000000; //250000;
     constexpr int nBurninSamples = 10000;
+    constexpr int nRejectionSamples = 400000;
     //    constexpr int plotTimestep = nTimesteps-1;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
 
     BernoulliModelState<PredPreyAgent> startStateDist([pPredator,pPrey](PredPreyAgent agent) {
-        return agent.type() == PredPreyAgent::PREDATOR?log(pPredator):log(pPrey);
+        return agent.type() == PredPreyAgent::PREDATOR?pPredator:pPrey;
     });
-//    IntSampleStatistics startStateDist(
-//            PredPreyAgent::domainSize(),
-//            [](int agentId, int count) {
-//                double p = (PredPreyAgent(agentId).type() == PredPreyAgent::PREDATOR ? pPredator : pPrey);
-//                switch (count) {
-//                    case 0: return 1.0 - p;
-//                    case 1: return p;
-//                }
-//                return 0.0;
-//            });
 
     std::cout << "Initial state distribution = " << startStateDist << std::endl;
-
 
     AssimilationWindow <PredPreyAgent> window(
             windowSize,
             startStateDist,
             AgentStateObservation<PredPreyAgent>(
-                    State<PredPreyAgent>(1,PredPreyAgent(0, 0, PredPreyAgent::PREY)),
+                    State<PredPreyAgent>(1,PredPreyAgent(1, 1, PredPreyAgent::PREY)),
                     1,
                     1.0
             )
@@ -213,8 +181,12 @@ void Experiments::PredPreyExpt() {
     std::cout << "Analysis means = " << sampleStats.means() << std::endl;
 
     RejectionSampler rejectionSampler(window.priorSampler, window.likelihoodPMF);
-    ModelStateSampleStatistics<PredPreyAgent> rejectionSampleStats(rejectionSampler, nSamplesPerWindow);
+    ModelStateSampleStatistics<PredPreyAgent> rejectionSampleStats(rejectionSampler, nRejectionSamples);
     std::cout << "Rejection means = " << rejectionSampleStats.means() << std::endl;
+
+    std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
+    std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
+    std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*1.0/sampler.simplex.feasibleStatistics.nSamples << std::endl;
 
 }
 

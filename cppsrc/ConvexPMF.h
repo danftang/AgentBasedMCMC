@@ -19,11 +19,11 @@ template<typename DOMAIN>
 class ConvexPMF: public ConvexPMFBase<DOMAIN> {
 public:
     ConvexPMF(
-            std::function<double(const DOMAIN &)> logP,
+            std::function<double(const DOMAIN &)> extendedLogP,
             int nDimensions,
             ConvexPolyhedron constraints = ConvexPolyhedron()
     )
-    : ConvexPMFBase<DOMAIN>(logP, nDimensions, constraints) {};
+    : ConvexPMFBase<DOMAIN>(extendedLogP, nDimensions, constraints) {};
 
     ConvexPMF(const ConvexPMFBase<DOMAIN> &base): ConvexPMFBase<DOMAIN>(base) { }
     ConvexPMF(ConvexPMFBase<DOMAIN> &&base): ConvexPMFBase<DOMAIN>(std::move(base)) { }
@@ -35,11 +35,13 @@ template<typename AGENT>
 class ConvexPMF<Trajectory<AGENT>>: public ConvexPMFBase<Trajectory<AGENT>> {
 public:
     ConvexPMF(
-        std::function<double(const Trajectory<AGENT> &)> logP,
+        std::function<double(const Trajectory<AGENT> &)> extendedLogP,
         int nDimensions,
         ConvexPolyhedron constraints = ConvexPolyhedron()
     )
-    : ConvexPMFBase<Trajectory<AGENT>>(logP, nDimensions, constraints) {};
+    : ConvexPMFBase<Trajectory<AGENT>>(extendedLogP, nDimensions, constraints) {
+        assert((nDimensions-1)%(AGENT::domainSize()*AGENT::actDomainSize()) == 0);
+    };
 
     ConvexPMF(const ConvexPMFBase<Trajectory<AGENT>> &base): ConvexPMFBase<Trajectory<AGENT>>(base) { }
     ConvexPMF(ConvexPMFBase<Trajectory<AGENT>> &&base): ConvexPMFBase<Trajectory<AGENT>>(std::move(base)) { }
@@ -53,13 +55,12 @@ public:
 
 
     ConvexPMF(int nTimesteps, ConvexPMF<ModelState<AGENT>> priorStartState)
-    : ConvexPMF([startState = std::move(priorStartState.logProb)](const Trajectory<AGENT> &T) {
+    : ConvexPMF([startState = std::move(priorStartState.extendedLogProb)](const Trajectory<AGENT> &T) {
         return T.logProb() + startState(T(0));
         },
                 Trajectory<AGENT>::dimension(nTimesteps),
                 ABMConstraints<AGENT>::actFermionicABMConstraints(nTimesteps) +
                 ABMConstraints<AGENT>::startStateConstraintsToTrajectoryConstraints(priorStartState.convexSupport)) {}
-
 
 
     static ConvexPMF<Trajectory<AGENT>> uniformTrajectoryDistribution(int nTimesteps) {
@@ -81,23 +82,24 @@ public:
                 }
             }
         }
+        assert(observations.convexSupport.isValidSolution(realTrajectory));
         //        checkTrajectorySatisfiesObervations(exactEndState, observations)
         return observations;
     }
 
 
     static ConvexPMF<Trajectory<AGENT>> likelihood(int nTimesteps, const AgentStateObservation<AGENT> &observation) {
-        std::function<double(const Trajectory<AGENT> &)> logP;
+        std::function<double(const Trajectory<AGENT> &)> extendedLogP;
         if(observation.state.time == nTimesteps) {
-            logP = [observation](const Trajectory<AGENT> &X) {
-                return observation.logP(observation.state.backwardOccupationNumber(X));
+            extendedLogP = [observation](const Trajectory<AGENT> &X) {
+                return observation.extendedLogP(observation.state.backwardOccupationNumber(X));
             };
         } else {
-            logP = [observation](const Trajectory<AGENT> &X) {
-                return observation.logP(observation.state.forwardOccupationNumber(X));
+            extendedLogP = [observation](const Trajectory<AGENT> &X) {
+                return observation.extendedLogP(observation.state.forwardOccupationNumber(X));
             };
         }
-        return ConvexPMF(std::move(logP), Trajectory<AGENT>::dimension(nTimesteps), observation.support());
+        return ConvexPMF(std::move(extendedLogP), Trajectory<AGENT>::dimension(nTimesteps), observation.support());
     }
 
 
@@ -107,46 +109,45 @@ public:
 template<typename AGENT>
 class ConvexPMF<ModelState<AGENT>>: public ConvexPMFBase<ModelState<AGENT>> {
 public:
-    ConvexPMF(std::function<double(const ModelState<AGENT> &)> logP, ConvexPolyhedron constraints = ConvexPolyhedron())
-    : ConvexPMFBase<ModelState<AGENT>>(logP, AGENT::domainSize(), constraints) {};
+    ConvexPMF(std::function<double(const ModelState<AGENT> &)> extendedLogP, ConvexPolyhedron constraints = ConvexPolyhedron())
+    : ConvexPMFBase<ModelState<AGENT>>(extendedLogP, AGENT::domainSize(), constraints) {};
 
 
-    ConvexPMF(std::function<double(const ModelState<AGENT> &)> logP, int nDimensions, ConvexPolyhedron constraints = ConvexPolyhedron())
-    : ConvexPMF(logP, constraints) {
+    ConvexPMF(std::function<double(const ModelState<AGENT> &)> extendedLogP, int nDimensions, ConvexPolyhedron constraints = ConvexPolyhedron())
+    : ConvexPMF(extendedLogP, constraints) {
         assert(nDimensions == AGENT::domainSize());
     };
-
 
     ConvexPMF(const ConvexPMFBase<ModelState<AGENT>> &base): ConvexPMFBase<ModelState<AGENT>>(base) { }
     ConvexPMF(ConvexPMFBase<ModelState<AGENT>> &&base): ConvexPMFBase<ModelState<AGENT>>(std::move(base)) { }
 
-    ConvexPMF(const std::function<double(AGENT, int)> &marginalLogProb)
-    : ConvexPMF(
-        [marginalLogProb](const ModelState<AGENT> &M) {
-            double logP = 0.0;
-            for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
-                logP += marginalLogProb(AGENT(agentId),std::round(M[agentId]));
-            }
-            return logP;
-        },
-        constraints(marginalLogProb)
-    ) {}
-
-
-    static ConvexPolyhedron constraints(const std::function<double(AGENT, int)> &marginalLogProb) {
-        ConvexPolyhedron constraints;
-        for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
-            int lowerBound = 0;
-            while(marginalLogProb(AGENT(agentId), lowerBound) <= -DBL_MAX) ++lowerBound;
-            int upperBound = lowerBound;
-            double cumulativeP = exp(marginalLogProb(AGENT(agentId), lowerBound));
-            while(cumulativeP < 1.0-1e-6) {
-                cumulativeP += exp(marginalLogProb(AGENT(agentId), ++upperBound));
-            }
-            constraints.push_back(lowerBound <= 1.0*glp::X(agentId) <= upperBound);
-        }
-        return constraints;
-    }
+//    ConvexPMF(const std::function<double(AGENT, int)> &marginalLogProb)
+//    : ConvexPMF(
+//        [marginalLogProb](const ModelState<AGENT> &M) {
+//            double extendedLogP = 0.0;
+//            for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+//                extendedLogP += extendedMarginalLogProb(AGENT(agentId),std::round(M[agentId]));
+//            }
+//            return extendedLogP;
+//        },
+//        constraints(marginalLogProb)
+//    ) {}
+//
+//
+//    static ConvexPolyhedron constraints(const std::function<double(AGENT, int)> &marginalLogProb) {
+//        ConvexPolyhedron constraints;
+//        for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
+//            int lowerBound = 0;
+//            while(marginalLogProb(AGENT(agentId), lowerBound) <= -DBL_MAX) ++lowerBound;
+//            int upperBound = lowerBound;
+//            double cumulativeP = exp(marginalLogProb(AGENT(agentId), lowerBound));
+//            while(cumulativeP < 1.0-1e-6) {
+//                cumulativeP += exp(marginalLogProb(AGENT(agentId), ++upperBound));
+//            }
+//            constraints.push_back(lowerBound <= 1.0*glp::X(agentId) <= upperBound);
+//        }
+//        return constraints;
+//    }
 
 };
 

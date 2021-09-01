@@ -5,24 +5,26 @@
 #ifndef GLPKTEST_CONVEXPMFBASE_H
 #define GLPKTEST_CONVEXPMFBASE_H
 
+#include <cmath>
+
 template<typename T> class ConvexPMF;
 
 template<typename DOMAIN>
 class ConvexPMFBase {
 protected:
     ConvexPMFBase(
-        std::function<double(const DOMAIN &)> logP,
+        std::function<double(const DOMAIN &)> extendedLogP,
         int nDimensions,
         ConvexPolyhedron constraints
     ):
-    logProb(std::move(logP)),
-    nDimensions(nDimensions),
-    convexSupport(std::move(constraints)) { }
+            extendedLogProb(std::move(extendedLogP)),
+            nDimensions(nDimensions),
+            convexSupport(std::move(constraints)) { }
 
 public:
     typedef std::function<double(const DOMAIN &)> PMF;
 
-    PMF                 logProb;        // function from vertex co-ord to log probability
+    PMF                 extendedLogProb;// function from vertex co-ord to log probability, extended to give some "approximate" value in infeasible coords.
     int                 nDimensions;    // the number of dimensions of the convex polyhedron of points
     ConvexPolyhedron    convexSupport;  // all non-zero probability points lie on the vertices of this polyhedron
 
@@ -32,9 +34,12 @@ public:
 
     double logP(const DOMAIN &X) const {
         assert(X.size() == nDimensions);
-        return isInSupport(X) ? logProb(X) : 0.0;
+        return isInSupport(X) ? extendedLogProb(X) : -INFINITY;
     }
-    double P(const DOMAIN &X) const { return exp(logP(X)); }
+    double P(const DOMAIN &X) const {
+        assert(X.size() == nDimensions);
+        return isInSupport(X) ? exp(extendedLogProb(X)) : 0.0;
+    }
 
     // Multiplicatin of distributions. Equivalent to summation of logP
     // and union of constraints. If the PMFs have different nDimensions,
@@ -42,8 +47,8 @@ public:
     // to that of the higher by assuming the lower dimensional variables refer to the
     // prefix of the higher.
     ConvexPMF<DOMAIN> &operator *=(const ConvexPMF<DOMAIN> &other) {
-        logProb = [logP = std::move(logProb), otherLogP = other.logProb](const DOMAIN &X) {
-            return logP(X) + otherLogP(X);
+        extendedLogProb = [extLogP = std::move(extendedLogProb), otherExtLogP = other.extendedLogProb](const DOMAIN &X) {
+            return extLogP(X) + otherExtLogP(X);
         };
         convexSupport += other.convexSupport;
         nDimensions = std::max(nDimensions, other.nDimensions);
@@ -52,12 +57,12 @@ public:
 
 
     ConvexPMF<DOMAIN> &operator *=(ConvexPMF<DOMAIN> &&other) {
-        logProb = [logP = std::move(logProb), otherLogP = std::move(other.logProb)](const DOMAIN &X) {
-            return logP(X) + otherLogP(X);
+        extendedLogProb = [extLogP = std::move(extendedLogProb), otherExtLogP = std::move(other.extendedLogProb)](const DOMAIN &X) {
+            return extLogP(X) + otherExtLogP(X);
         };
         convexSupport += std::move(other.convexSupport);
         nDimensions = std::max(nDimensions, other.nDimensions);
-        return *this;
+        return reinterpret_cast<ConvexPMF<DOMAIN> &>(*this);
     }
 
     ConvexPMF<DOMAIN> operator *(const ConvexPMF<DOMAIN> &other) const & {

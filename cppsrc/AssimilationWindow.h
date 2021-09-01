@@ -118,7 +118,7 @@ public:
 ////            << " posterior = (" << posterior.binomials[i].trials() << ", " << boost::math::mean(posterior.binomials[i]) << ") " << std::endl;
 //        }
 ////        debug(
-////                std::cout << "prior logProb = " << prior.logP(realEndState) << "Posterior logProb = " << posterior.logP(realEndState) << std::endl;
+////                std::cout << "prior extendedLogProb = " << prior.logP(realEndState) << "Posterior extendedLogProb = " << posterior.logP(realEndState) << std::endl;
 ////                std::cout << "real end state = " << realEndState << std::endl;
 ////                std::cout << "prior = " << prior << std::endl;
 ////                std::cout << "posterior = " << posterior << std::endl;
@@ -139,7 +139,7 @@ public:
 
 //    void doAnalysis(const PoissonState<AGENT> &priorStartState, int nSamples, int burnInSamples) {
 //        ABMProblem<AGENT> abm(realTrajectory.nTimesteps(), observations, [&](const Trajectory<AGENT> &trajectory) {
-//            return priorStartState.logProb(trajectory(0));
+//            return priorStartState.extendedLogProb(trajectory(0));
 //        });
 //        abm.advBasis();
 //        abm.warmUp();

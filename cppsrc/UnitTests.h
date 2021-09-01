@@ -182,13 +182,35 @@ public:
 
         RejectionSampler rejectionSampler(priorSampler, likelihoodPMF);
         ModelState<BinomialAgent> finalState;
-        const int NSAMPLES = 100000;
+        const int NSAMPLES = 200000;
         for (int s = 0; s < NSAMPLES; ++s) {
             Trajectory<BinomialAgent> sample = rejectionSampler();
             finalState += sample.endState();
         }
         finalState *= 1.0/NSAMPLES;
         std::cout << "Mean state: " << finalState << std::endl;
+
+        ExactSolver<BinomialAgent> exactSolver(posterior);
+        std::cout << "Exact solution: " << exactSolver.exactEndState << std::endl;
+
+    }
+
+    void testPriorSampler() {
+        ModelState<BinomialAgent> finalState;
+        const int NSAMPLES = 100000;
+        for (int s = 0; s < NSAMPLES; ++s) {
+            Trajectory<BinomialAgent> sample = priorSampler();
+//            std::cout << "Sample = " << sample << std::endl;
+//            std::cout << "Sample start state = " << sample(0) << std::endl;
+//            std::cout << "Sample end state = " << sample.endState() << std::endl;
+            finalState += sample.endState();
+        }
+        finalState *= 1.0/NSAMPLES;
+        std::cout << "Sampler mean: " << finalState << std::endl;
+
+        ExactSolver<BinomialAgent> exactSolver(priorPMF);
+        std::cout << "Exact solution: " << exactSolver.exactEndState << std::endl;
+
     }
 
 

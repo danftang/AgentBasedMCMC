@@ -60,12 +60,18 @@ public:
 //    }
 
 
-    ConvexPMF<DOMAIN> PMF() const { return ConvexPMF<DOMAIN>(*this, nDimensions(), constraints()); }
+    ConvexPMF<DOMAIN> PMF() const {
+        return ConvexPMF<DOMAIN>(
+            [*this](const DOMAIN &X) { return logP(X,true); },
+            nDimensions(),
+            constraints()
+        );
+    }
 
     std::function<DOMAIN()> sampler() const { return *this; }
 
-    double operator()(const DOMAIN &X) const { return logP(X); }
-    double logP(const DOMAIN &X) const {
+//    double operator()(const DOMAIN &X) const { return logP(X); }
+    double logP(const DOMAIN &X, bool isExtended) const {
         double lp = 0.0;
         for(int i=0; i<X.size(); ++i) {
             int Xi = std::round(X[i]);
@@ -73,8 +79,12 @@ public:
             if(histogram.size() > Xi) {
                 lp += log(histogram[Xi]*1.0/nSamples);
             } else {
-                lp -= INFINITY;
-                i = X.size();
+                if(isExtended) {
+                    lp += log(1.0/histogram.size());
+                } else {
+                    lp -= INFINITY;
+                    i = X.size();
+                }
             }
         }
         return lp;
@@ -86,10 +96,10 @@ public:
         assert(nSamples > 0);
         for(int i=0; i<nDimensions(); ++i) {
             int lowerBound = 0;
-            while(histograms[i][lowerBound] == 0) {
-                ++lowerBound;
-                assert(lowerBound < histograms[i].size());
-            }
+//            while(histograms[i][lowerBound] == 0) {
+//                ++lowerBound;
+//                assert(lowerBound < histograms[i].size());
+//            }
             constraints.push_back(lowerBound <= 1.0*glp::X(i) <= histograms.size()-1);
         }
         return constraints;
@@ -112,6 +122,11 @@ public:
         return sample;
     }
 
+
+    void clear() {
+        for(int i=0; i<histograms.size(); ++i) histograms[i].clear();
+        nSamples = 0;
+    }
 
 
     DOMAIN means() const {

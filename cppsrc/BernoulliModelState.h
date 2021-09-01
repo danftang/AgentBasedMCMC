@@ -24,16 +24,16 @@ public:
     ConvexPMF<ModelState<AGENT>> PMF() const {
         return ConvexPMF<ModelState<AGENT>>(
                 [*this](const ModelState<AGENT> &M) {
-                    double logP = 0.0;
+                    double extendedLogP = 0.0;
                     for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
                         int occupation = std::round(M[agentId]);
                         switch(occupation) {
-                            case 0: logP += log(1.0-prob(AGENT(agentId))); break;
-                            case 1: logP += log(prob(AGENT(agentId))); break;
-                            default: logP += log(infeasibleP);
+                            case 0: extendedLogP += log(1.0 - prob(AGENT(agentId))); break;
+                            case 1: extendedLogP += log(prob(AGENT(agentId))); break;
+                            default: extendedLogP += log(infeasibleP);
                         }
                     }
-                    return logP;
+                    return extendedLogP;
                 },
                 contraints()
                 );
@@ -46,7 +46,7 @@ public:
     ModelState<AGENT> nextSample() const {
         ModelState<AGENT> sample;
         for(int agentId = 0; agentId < nDimensions(); ++agentId) {
-            sample[agentId] = Random::nextDouble() < prob(agentId)?0.0:1.0;
+            sample[agentId] = Random::nextDouble() < prob(agentId)?1.0:0.0;
         }
         return sample;
     }

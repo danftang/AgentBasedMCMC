@@ -55,7 +55,7 @@ public:
     }
 
 //    std::vector<double> nextSample() { return ((const PoissonState<AGENT> *)this)->nextSample(); }
-//    double logProb(const std::vector<double> &X) { return ((const PoissonState<AGENT> *)this)->logProb(X); }
+//    double extendedLogProb(const std::vector<double> &X) { return ((const PoissonState<AGENT> *)this)->extendedLogProb(X); }
 
     ModelState<AGENT> nextSample() const {
         ModelState<AGENT> state;

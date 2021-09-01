@@ -45,14 +45,14 @@ public:
             const DOMAIN &realState,
             const IntSampleStatistics<DOMAIN> &prior,
             const IntSampleStatistics<DOMAIN> &analysis) {
-        for(int i=0; i < realState.size(); ++i) {
-            std::cout << "Real occupancy = " << realState[i]
-                      << " prior p = " << prior.P(i, realState[i])
-                      << " posterior p = " << analysis.P(i, realState[i])
-                      << " post / prior p = " << analysis.P(i, realState[i]) / prior.P(i, realState[i])
-                      << std::endl;
-        }
-        return (analysis.logP(realState) - prior.logP(realState)) / log(2.0);
+//        for(int i=0; i < realState.size(); ++i) {
+//            std::cout << "Real occupancy = " << realState[i]
+//                      << " prior p = " << prior.P(i, realState[i])
+//                      << " posterior p = " << analysis.P(i, realState[i])
+//                      << " post / prior p = " << analysis.P(i, realState[i]) / prior.P(i, realState[i])
+//                      << std::endl;
+//        }
+        return (analysis.logP(realState,false) - prior.logP(realState,false)) / log(2.0);
 
     }
 

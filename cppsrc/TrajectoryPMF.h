@@ -13,9 +13,9 @@
 //class TrajectoryPMF: public ConvexPMF {
 //public:
 //    TrajectoryPMF(int nTimesteps, ConvexPMF priorStartState)
-//    : ConvexPMF([startState = std::move(priorStartState.logProb)](const std::vector<double> &X) {
+//    : ConvexPMF([startState = std::move(priorStartState.extendedLogProb)](const std::vector<double> &X) {
 //            const Trajectory<AGENT> &T = reinterpret_cast<const Trajectory<AGENT> &>(X);
-//            return T.logProb() + startState(T(0));
+//            return T.extendedLogProb() + startState(T(0));
 //        },
 //                Trajectory<AGENT>::dimension(nTimesteps),
 //                ABMConstraints<AGENT>::actFermionicABMConstraints(nTimesteps) +

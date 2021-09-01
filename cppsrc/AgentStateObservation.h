@@ -18,6 +18,8 @@ public:
 //    double upperBound;
     double lowerBound;
     double pObserveIfPresent;
+    double logPExpectation;
+    double normalisation;
 
 //    AgentStateObservation(State<AGENT> state, ConvexPMF likelihood):
 //    state(std::move(state)),
@@ -28,17 +30,37 @@ public:
 //    logLikelihood([p=pObserveIfPresent, m=nObserved](double n) { return log(boost::math::pdf(boost::math::binomial(n, p), m)); }),
     lowerBound(nObserved),
 //    upperBound(pObserveIfPresent==1.0?nObserved:INFINITY),
-    pObserveIfPresent(pObserveIfPresent)
+    pObserveIfPresent(pObserveIfPresent),
+    normalisation(1.0)
     {
-        debug(std::cout << "Generating observation " << state << " " << nObserved << " " << pObserveIfPresent << std::endl);
+        double p;
+//        double sumPsq = 0.0;
+        double sumP = 0.0;
+        int n=nObserved;
+        do {
+//            std::cout << "P(" << n << ") = ";
+            p = P(n++);
+//            std::cout << p << std::endl;
+//            sumPsq += p*p;
+            sumP += p;
+        } while(p > 1e-6);
+        normalisation = 1.0/sumP;
+        logPExpectation = log(P(nObserved+1.0));
+        debug(std::cout << "Generating observation " << state << " " << nObserved << " " << pObserveIfPresent << " " << exp(logPExpectation) << std::endl);
     }
 
-    double logP(double realOccupation) const {
-        if(realOccupation < lowerBound || realOccupation > upperBound()) {
-            return log(1.0/(upperBound() - lowerBound + 1)); // average likelihood for infeasible states
+    double extendedLogP(double realOccupation) const {
+        double rRealOccupation = std::round(realOccupation);
+        if(rRealOccupation < lowerBound || rRealOccupation > upperBound()) {
+            return logPExpectation; // case when realOccupation == lowerBound TODO: make a better approximation to this?
         }
-        return log(boost::math::pdf(boost::math::binomial(realOccupation, pObserveIfPresent), lowerBound));// logLikelihood(occupation);
+        return log(P(rRealOccupation));
     }
+
+    double P(double realOccupation) const {
+        return normalisation*boost::math::pdf(boost::math::binomial(realOccupation, pObserveIfPresent), lowerBound);
+    }
+
 
     double upperBound() const { return pObserveIfPresent==1.0?lowerBound:INFINITY; }
 

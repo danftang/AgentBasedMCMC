@@ -23,7 +23,7 @@ public:
     MCMCSampler(const ConvexPMF<DOMAIN> &pmf, const DOMAIN &initialState = std::vector<double>())
     : simplex(
         pmf.convexSupport.toLPProblem(),
-        [logP = pmf.logProb](const std::vector<double> &X) { return logP(reinterpret_cast<const DOMAIN &>(X)); },
+        [logP = pmf.extendedLogProb](const std::vector<double> &X) { return logP(reinterpret_cast<const DOMAIN &>(X)); },
         initialState
     ) { }
 

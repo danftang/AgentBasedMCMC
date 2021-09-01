@@ -60,16 +60,19 @@ using glp::X;
 
 int main(int argc, char *argv[]) {
 
+
 //   Experiments::BinomialAgentAssimilation();
-    Experiments::CatMouseExpt();
+//    Experiments::CatMouseExpt();
 //        Experiments::CatMouseAssimilation();
-//    Experiments::PredPreyAssimilation();
+//    Experiments::PredPreyExpt();
+    Experiments::PredPreyAssimilation();
 
 
 //    PoissonState<PredPreyAgent> startState;
 //    TrajectoryPriorDistribution<PredPreyAgent> myPrior(startState, 8);
 
 //    UnitTests tests;
+//    tests.testPriorSampler();
 //    tests.testRejectionSampler();
 //    tests.testABMPrior();
 //    tests.testSimplexSampler();

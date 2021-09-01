@@ -49,7 +49,7 @@ public:
 //    SimplexMCMC(const ConvexPMF<DOMAIN> &pmf, const DOMAIN &initialState)
 //    : SimplexMCMC(
 //            pmf.convexSupport.toLPProblem(),
-//            [logP = pmf.logProb](const std::vector<double> &X) { return logP(reinterpret_cast<const DOMAIN &>(X)); },
+//            [logP = pmf.extendedLogProb](const std::vector<double> &X) { return logP(reinterpret_cast<const DOMAIN &>(X)); },
 //            initialState
 //    ) { }
 

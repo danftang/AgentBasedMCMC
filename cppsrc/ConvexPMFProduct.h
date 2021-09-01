@@ -44,7 +44,7 @@ public:
 
     ConvexPMFProduct &operator *=(ConvexPMF<DOMAIN> atom) {
         assert(nDimensions == atom.nDimensions);
-        atomicPMFs *= std::move(atom.logProb);
+        atomicPMFs *= std::move(atom.extendedLogProb);
         convexSupport += std::move(atom.convexSupport);
         return *this;
     }
@@ -60,7 +60,7 @@ public:
     ConvexPMFProduct operator *(ConvexPMF<DOMAIN> other) const & {
         assert(nDimensions == other.nDimensions);
         ConvexPMFProduct prod(nDimensions);
-        prod.atomicPMFs = atomicPMFs * std::move(other.logProb);
+        prod.atomicPMFs = atomicPMFs * std::move(other.extendedLogProb);
         prod.convexSupport.reserve(convexSupport.size() + other.convexSupport.size());
         prod.convexSupport += convexSupport;
         prod.convexSupport += std::move(other.convexSupport);

@@ -35,9 +35,9 @@
 //    // such that the probability of a exactEndState is the trajectoryPrior probability of the exactEndState times the probability
 //    // of the start state.
 //    ConvexPMF PMF() const {
-//        return ConvexPMF([startState = startStatePMF.logProb](const std::vector<double> &X) {
+//        return ConvexPMF([startState = startStatePMF.extendedLogProb](const std::vector<double> &X) {
 //            const Trajectory<AGENT> &T = reinterpret_cast<const Trajectory<AGENT> &>(X);
-//            return T.logProb() + startState(T(0));
+//            return T.extendedLogProb() + startState(T(0));
 //            },
 //                         nDimensions(),
 //                         ABMConstraints<AGENT>::actFermionicABMConstraints(nTimesteps) +
@@ -54,7 +54,7 @@
 //
 ////    ConvexPMF actFermmionicDistribution() {
 ////        return ConvexPMF(
-////                Trajectory<AGENT>::logProb,
+////                Trajectory<AGENT>::extendedLogProb,
 ////                nDimensions(),
 ////                ABMConstraints<AGENT>::actFermionicABMConstraints(nTimesteps));
 ////    }
@@ -138,7 +138,7 @@
 //
 //    // Information gain, in bits, about a real vector given a trajectoryPrior PMF and a posterior PMF
 //    static double informationGain(const std::vector<double> &realState, const ConvexPMF &prior, const ConvexPMF &posterior) {
-//        return (posterior.logProb(realState) - prior.logProb(realState))/log(2);
+//        return (posterior.extendedLogProb(realState) - prior.extendedLogProb(realState))/log(2);
 //    }
 //
 //
