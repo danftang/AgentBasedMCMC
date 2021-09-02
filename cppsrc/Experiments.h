@@ -16,8 +16,8 @@
 class Experiments {
 public:
 
-//    static void PredPreyExpt();
-    static void CatMouseExpt();
+//    static void PredPreySingleObservation();
+    static void CatMouseSingleObservation();
     static void RandomWalk();
 //    static void GnuplotTest();
 
@@ -52,11 +52,11 @@ public:
 //                      << " post / prior p = " << analysis.P(i, realState[i]) / prior.P(i, realState[i])
 //                      << std::endl;
 //        }
-        return (analysis.logP(realState,false) - prior.logP(realState,false)) / log(2.0);
+        return (analysis.logP(realState) - prior.logP(realState)) / log(2.0);
 
     }
 
-    static void PredPreyExpt();
+    static void PredPreySingleObservation();
 };
 
 

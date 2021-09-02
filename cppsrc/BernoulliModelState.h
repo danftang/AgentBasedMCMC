@@ -10,7 +10,7 @@
 template<typename AGENT>
 class BernoulliModelState: public Distribution<ModelState<AGENT>> {
 public:
-    static constexpr double infeasibleP = 0.5;
+//    static constexpr double infeasibleP = 0.5;
     std::function<double(AGENT)> prob;
 
     BernoulliModelState(std::function<double(AGENT)> probabilities): prob(probabilities) {
@@ -27,10 +27,11 @@ public:
                     double extendedLogP = 0.0;
                     for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
                         int occupation = std::round(M[agentId]);
+                        double p = prob(AGENT(agentId));
                         switch(occupation) {
-                            case 0: extendedLogP += log(1.0 - prob(AGENT(agentId))); break;
-                            case 1: extendedLogP += log(prob(AGENT(agentId))); break;
-                            default: extendedLogP += log(infeasibleP);
+                            case 0: extendedLogP += log(1.0 - p); break;
+                            case 1: extendedLogP += log(p); break;
+                            default: extendedLogP += log(infeasibleExpectationFraction *(p*p + (1.0-p)*(1.0-p)));
                         }
                     }
                     return extendedLogP;

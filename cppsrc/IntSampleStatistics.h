@@ -15,7 +15,7 @@
 template<typename DOMAIN>
 class IntSampleStatistics: public Distribution<DOMAIN> {
 public:
-    std::vector<std::vector<int>> histograms;
+    std::vector<std::vector<int>>   histograms;
     int nSamples;
 
     IntSampleStatistics(int dimensions)
@@ -62,7 +62,10 @@ public:
 
     ConvexPMF<DOMAIN> PMF() const {
         return ConvexPMF<DOMAIN>(
-            [*this](const DOMAIN &X) { return logP(X,true); },
+            [*this, lBounds = lowerBounds(), logMargs = logMarginals()](const DOMAIN &X) {
+                double logP = extendedLogP(X,lBounds,logMargs);
+                return logP;
+            },
             nDimensions(),
             constraints()
         );
@@ -70,21 +73,31 @@ public:
 
     std::function<DOMAIN()> sampler() const { return *this; }
 
-//    double operator()(const DOMAIN &X) const { return logP(X); }
-    double logP(const DOMAIN &X, bool isExtended) const {
+
+    double logP(const DOMAIN &X) const {
         double lp = 0.0;
         for(int i=0; i<X.size(); ++i) {
             int Xi = std::round(X[i]);
             const std::vector<int> &histogram = histograms[i];
-            if(histogram.size() > Xi) {
+            if(Xi < histogram.size()) {
                 lp += log(histogram[Xi]*1.0/nSamples);
             } else {
-                if(isExtended) {
-                    lp += log(1.0/histogram.size());
-                } else {
-                    lp -= INFINITY;
-                    i = X.size();
-                }
+                lp -= INFINITY;
+                i = X.size();
+            }
+        }
+        return lp;
+    }
+
+    double extendedLogP(const DOMAIN &X, const std::vector<int> &lowerBounds, const std::vector<double> &logMarginals) const {
+        double lp = 0.0;
+        for(int i=0; i<X.size(); ++i) {
+            int Xi = std::round(X[i]);
+            const std::vector<int> &histogram = histograms[i];
+            if(lowerBounds[i] <= Xi && Xi < histogram.size()) {
+                lp += log(histogram[Xi]*1.0/nSamples);
+            } else {
+                lp += logMarginals[i];
             }
         }
         return lp;
@@ -94,15 +107,41 @@ public:
     ConvexPolyhedron constraints() const {
         ConvexPolyhedron constraints;
         assert(nSamples > 0);
+        constraints.reserve(nDimensions());
+        std::vector<int> lBounds = lowerBounds();
         for(int i=0; i<nDimensions(); ++i) {
-            int lowerBound = 0;
-//            while(histograms[i][lowerBound] == 0) {
-//                ++lowerBound;
-//                assert(lowerBound < histograms[i].size());
-//            }
-            constraints.push_back(lowerBound <= 1.0*glp::X(i) <= histograms.size()-1);
+            constraints.push_back(lBounds[i] <= 1.0*glp::X(i) <= histograms.size()-1);
         }
         return constraints;
+    }
+
+
+    std::vector<int> lowerBounds() const {
+        std::vector<int> lBounds(nDimensions());
+        assert(nSamples > 0);
+        for(int i=0; i<nDimensions(); ++i) {
+            int lowerBound = 0;
+            while(histograms[i][lowerBound] == 0) {
+                ++lowerBound;
+                assert(lowerBound < histograms[i].size());
+            }
+            lBounds[i] = lowerBound;
+        }
+        return lBounds;
+    }
+
+
+    std::vector<double> logMarginals() const {
+        std::vector<double> logMargs(histograms.size());
+        double expectationP = 0.0;
+        for(int i=0; i<histograms.size(); ++i) {
+            const std::vector<int> &histogram = histograms[i];
+            for (int j = 0; j < histogram.size(); ++j) {
+                expectationP += histogram[j] * histogram[j] * 1.0 / (nSamples * nSamples);
+            }
+            logMargs[i] = log(infeasibleExpectationFraction * expectationP);
+        }
+        return logMargs;
     }
 
 

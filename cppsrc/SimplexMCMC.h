@@ -40,6 +40,9 @@ public:
 
 //    BasisProbability probability;
 
+protected:
+
+public:
 
     SimplexMCMC(const glp::Problem &prob,
                 std::function<double(const std::vector<double> &)> logProb,

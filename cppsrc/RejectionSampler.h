@@ -17,12 +17,12 @@ public:
     priorSampler(priorSampler),
     likelihood(likelihood) { }
 
-    template<typename AGENT>
-    RejectionSampler(const AssimilationWindow<AGENT> &window)
-    :
-    priorSampler(window.priorSampler),
-    likelihood(window.likelihoodPMF)
-    { }
+//    template<typename AGENT>
+//    RejectionSampler(const AssimilationWindow<AGENT> &window)
+//    :
+//    priorSampler(window.priorSampler),
+//    likelihood(window.likelihoodPMF)
+//    { }
 
 
     // N.B. Only use this when likelihood is reasonably high

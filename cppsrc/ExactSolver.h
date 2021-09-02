@@ -16,9 +16,11 @@ public:
         double marginalP = 0.0;
         for(const std::vector<double> &sol: BinarySolutionSet(pmf.convexSupport, pmf.nDimensions)) {
             const Trajectory<AGENT> &traj = reinterpret_cast<const Trajectory<AGENT> &>(sol);
-            double jointP = exp(pmf.logP(traj));
+            double logP = pmf.logP(traj);
+            double jointP = exp(logP);
             marginalP += jointP;
-            //            std::cout << traj << " " << jointP << std::endl;
+            assert(!isnan(logP));
+//            std::cout << traj << " " << jointP << " " << logP << std::endl;
             ModelState<AGENT> endState = traj.endState();
             endState *= jointP;
             exactEndState += endState;

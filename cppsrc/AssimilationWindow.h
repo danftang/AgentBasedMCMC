@@ -14,6 +14,7 @@
 #include "BinomialDistribution.h"
 #include "gnuplot-iostream/gnuplot-iostream.h"
 #include "agents/PredPreyAgent.h"
+#include "RejectionSampler.h"
 
 // For testing puroposes only
 template<typename AGENT>
@@ -24,6 +25,20 @@ public:
     Trajectory<AGENT>                   realTrajectory;
     ConvexPMF<Trajectory<AGENT>>        likelihoodPMF;
     ConvexPMF<Trajectory<AGENT>>        posterior;
+
+
+    AssimilationWindow(
+            const Distribution<ModelState<AGENT>> &priorStartState,
+            Trajectory<AGENT> realTraj,
+            double pMakeObservation,
+            double pObserveIfPresent)
+            :
+            priorPMF(realTraj.nTimesteps(), priorStartState.PMF()),
+            priorSampler(Trajectory<AGENT>::priorSampler(realTraj.nTimesteps(), priorStartState.sampler())),
+            realTrajectory(std::move(realTraj)),
+            likelihoodPMF(realTrajectory, pMakeObservation, pObserveIfPresent),
+            posterior(likelihoodPMF * priorPMF)
+    { }
 
 
     AssimilationWindow(
@@ -38,9 +53,8 @@ public:
     realTrajectory(priorSampler()),
     likelihoodPMF(realTrajectory, pMakeObservation, pObserveIfPresent),
     posterior(likelihoodPMF * priorPMF)
-//    analysis(AGENT::domainSize())
     {
-        debug(std::cout << "Created window with real trajectory " << realTrajectory << std::endl);
+//        debug(std::cout << "Created window with real trajectory " << realTrajectory << std::endl);
     }
 
     AssimilationWindow(int nTimesteps, const Distribution<ModelState<AGENT>> &priorStartState, double pMakeObservation, double pObserveIfPresent)
@@ -53,10 +67,12 @@ public:
     :
     priorPMF(nTimesteps, priorStartState.PMF()),
     priorSampler(Trajectory<AGENT>::priorSampler(nTimesteps, priorStartState.sampler())),
-    realTrajectory(nTimesteps),
     likelihoodPMF(nTimesteps, observation),
+    realTrajectory(0),
     posterior(likelihoodPMF * priorPMF)
     {
+        RejectionSampler<Trajectory<AGENT>> rejectionSampler(priorSampler, likelihoodPMF);
+        realTrajectory = rejectionSampler();
     }
 
     AssimilationWindow(int nTimesteps, const Distribution<ModelState<AGENT>> &priorStartState)

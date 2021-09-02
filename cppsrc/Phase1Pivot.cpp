@@ -50,20 +50,20 @@ void Phase1Pivot::chooseCol() {
 
     // choose random column with positive potential
     std::vector<int> improvingCols;
-    int nnz = 0;
-    double potential = 0.0;
+//    int nnz = 0;
+//    double potential = 0.0;
     double sumOfReducedCost = 0.0;
     std::vector<double> reducedCost = simplex.piTimesMinusN(infeasibilityGradient);
     for(int j=1; j <= simplex.nNonBasic(); ++j) {
         double dj = reducedCost[j];
-        potential += dj * (simplex.isAtUpperBound(j)?0.5:-0.5); // TODO: for Debug only
+//        potential += dj * (simplex.isAtUpperBound(j)?0.5:-0.5); // TODO: for Debug only
 //        potential += dj * (simplex.isAtUpperBound(j)?1.0:0.0); // TODO: for Debug only
         sumOfReducedCost += dj;
         if(dj > tol) {
-            ++nnz;
+//            ++nnz;
             if(simplex.isAtUpperBound(j)) improvingCols.push_back(j);
         } else if(dj < -tol) {
-            ++nnz;
+//            ++nnz;
             if(!simplex.isAtUpperBound(j)) improvingCols.push_back(j);
         }
     }
@@ -227,6 +227,7 @@ int Phase1Pivot::initInfeasibilityGradient() {
     // set objective to out-of-bounds rows
 
     int infeasibilityCount = 0;
+    infeasibilityGradient[0] = 0.0;
     for(int i=1; i<=simplex.nBasic(); ++i) {
         int k = simplex.head[i];
         if(simplex.beta[i] < simplex.l[k] - tol) {

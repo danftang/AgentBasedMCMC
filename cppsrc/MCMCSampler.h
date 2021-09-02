@@ -10,7 +10,7 @@
 template<typename DOMAIN>
 class MCMCSampler {
     MCMCSampler(const MCMCSampler &other): simplex(other.simplex) {
-        std::cout << "Copying MCMCSampler" << std::endl;
+        std::cout << "Copying MCMCSampler: WARNING: don't copy SimplexMCMC!" << std::endl;
     }
 
 public:
@@ -30,7 +30,7 @@ public:
     DOMAIN nextSample() const { return DOMAIN(const_cast<SimplexMCMC &>(simplex).nextSample()); }
 
     operator std::function<DOMAIN()>() const {
-        std::cout << "Converting MCMCSampler to function" << std::endl;
+//        std::cout << "Converting MCMCSampler to function" << std::endl;
         return [this]() { return this->nextSample(); };
     }
 };

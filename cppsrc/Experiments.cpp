@@ -86,12 +86,12 @@ void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
     PredPreyAgent::GRIDSIZE = 8;
     constexpr int windowSize = 2;
-    constexpr int nWindows = 4;
+    constexpr int nWindows = 1;
     constexpr double pPredator = 0.08;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
     constexpr double pMakeObservation = 0.2;//0.04;    // prob of making an observation of each gridsquare at each timestep
-    constexpr double pObserveIfPresent = 0.95;
-    constexpr int nSamplesPerWindow = 1000000; //250000;
+    constexpr double pObserveIfPresent = 0.9;
+    constexpr int nSamplesPerWindow = 1500000; //250000;
     constexpr int nBurninSamples = 1000;
     constexpr int nPriorSamples = 100000;
 //    constexpr int plotTimestep = nTimesteps-1;
@@ -102,53 +102,56 @@ void Experiments::PredPreyAssimilation() {
         return agent.type() == PredPreyAgent::PREDATOR?pPredator:pPrey;
     });
     std::cout << "Initial state distribution = " << startStateDist << std::endl;
+    Trajectory<PredPreyAgent> realTrajectory(nWindows*windowSize, startStateDist.sampler());
 
-    Distribution<ModelState<PredPreyAgent>> &analysis = startStateDist;
+    const Distribution<ModelState<PredPreyAgent>> *analysis = &startStateDist;
     ModelStateSampleStatistics<PredPreyAgent> sampleStats;
-    ModelState<PredPreyAgent> realEndState;
     for(int w=0; w<nWindows; ++w) {
-        AssimilationWindow<PredPreyAgent> window(windowSize, analysis, pMakeObservation, pObserveIfPresent);
+        AssimilationWindow<PredPreyAgent> window(
+                *analysis,
+                realTrajectory.slice(w*windowSize, windowSize),
+                pMakeObservation,
+                pObserveIfPresent
+        );
         MCMCSampler sampler(window.posterior, window.priorSampler());
         for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
+        sampleStats.clear();
         sampleStats.sampleFromEndState(sampler, nSamplesPerWindow);
-        analysis = sampleStats;
+        analysis = &sampleStats;
 
-//        std::cout << "Analysis = " << sampleStats << std::endl;
-        std::cout << "Analysis means = " << sampleStats.means() << std::endl;
         std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
         std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
-        std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*1.0/sampler.simplex.feasibleStatistics.nSamples << std::endl;
+        std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl;
+        std::cout << "Analysis means = " << sampleStats.means() << std::endl;
 
         ABMPlotter<PredPreyAgent> gp;
-        realEndState = window.realTrajectory.endState();
-        gp.plot(realEndState, sampleStats.means());
+        gp.plot(window.realTrajectory.endState(), sampleStats.means());
 //        ModelStateSampleStatistics priorEnd(window.priorSampler, 10000);
 //        std::cout << "Window information gain = "
 //        << informationGain(window.realTrajectory.endState(), priorEnd, sampleStats) << std::endl;
     }
 
+    std::cout << "Calculating prior end state" << std::endl;
     ModelStateSampleStatistics<PredPreyAgent> priorEnd;
     priorEnd.sampleFromEndState(
             Trajectory<PredPreyAgent>::priorSampler(nWindows * windowSize, startStateDist.sampler()),
             nPriorSamples
     );
-    std::cout << "Prior end means = " << priorEnd.means() << std::endl;
 
-    std::cout << "Total information gain = " << informationGain(realEndState, priorEnd, sampleStats) << std::endl;
+    std::cout << "Prior end means = " << priorEnd.means() << std::endl;
+    std::cout << "Total information gain = " << informationGain(realTrajectory.endState(), priorEnd, sampleStats) << std::endl;
 }
 
 
-void Experiments::PredPreyExpt() {
+void Experiments::PredPreySingleObservation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
     PredPreyAgent::GRIDSIZE = 4;
     constexpr int windowSize = 2;
-    constexpr double pPredator = 0.08;//0.08;          // Poisson prob of predator in each gridsquare at t=0
+    constexpr double pPredator = 0.1;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
-    constexpr double pMakeObservation = 0.1;//0.04;    // prob of making an observation of each gridsquare at each timestep
-    constexpr double pObserveIfPresent = 0.95;
-    constexpr int nSamplesPerWindow = 1000000; //250000;
+    constexpr int nSamplesPerWindow = 1500000; //250000;
     constexpr int nBurninSamples = 10000;
-    constexpr int nRejectionSamples = 400000;
+    constexpr int nRejectionSamples = 250000;
     //    constexpr int plotTimestep = nTimesteps-1;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
@@ -172,30 +175,94 @@ void Experiments::PredPreyExpt() {
     std::cout << "Prior support is \n" << window.priorPMF.convexSupport << std::endl;
     std::cout << "Likelihood support is \n" << window.likelihoodPMF.convexSupport << std::endl;
     std::cout << "Posterior support is \n" << window.posterior.convexSupport << std::endl;
+    std::cout << "Real trajectory is " << window.realTrajectory << std::endl;
 
     MCMCSampler sampler(window.posterior, window.priorSampler());
     for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
     ModelStateSampleStatistics<PredPreyAgent> sampleStats(sampler, nSamplesPerWindow);
 
     std::cout << "Analysis histograms:\n" << sampleStats << std::endl;
+    std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
+    std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
+    std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl;
     std::cout << "Analysis means = " << sampleStats.means() << std::endl;
 
     RejectionSampler rejectionSampler(window.priorSampler, window.likelihoodPMF);
     ModelStateSampleStatistics<PredPreyAgent> rejectionSampleStats(rejectionSampler, nRejectionSamples);
     std::cout << "Rejection means = " << rejectionSampleStats.means() << std::endl;
 
-    std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
-    std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
-    std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*1.0/sampler.simplex.feasibleStatistics.nSamples << std::endl;
+    ABMPlotter<PredPreyAgent> gp;
+    gp.plot(window.realTrajectory.endState(), sampleStats.means());
+
+    ABMPlotter<PredPreyAgent> gp2;
+    gp2.plot(window.realTrajectory.endState(), rejectionSampleStats.means());
+
+}
+
+
+void Experiments::CatMouseAssimilation() {
+    ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
+    constexpr int nWindows = 2;
+    constexpr int windowSize = 2;
+    constexpr double pMakeObservation = 0.3;//0.04;    // prob of making an observation of each gridsquare at each timestep
+    constexpr double pObserveIfPresent = 1.0;
+    constexpr int nSamplesPerWindow = 1500000; //250000;
+    constexpr int nBurninSamples = 5000;
+    constexpr int nPriorSamples = 100000;
+
+    ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
+
+    BernoulliModelState<CatMouseAgent> startStateDist({0.9, 0.1, 0.1, 0.9});
+
+    Trajectory<CatMouseAgent> realTrajectory(nWindows*windowSize, startStateDist.sampler());
+    const Distribution<ModelState<CatMouseAgent>> *analysis = &startStateDist;
+    ModelStateSampleStatistics<CatMouseAgent> sampleStats;
+    for(int w=0; w<nWindows; ++w) {
+//        AssimilationWindow<CatMouseAgent> window(windowSize, analysis, pMakeObservation, pObserveIfPresent);
+        AssimilationWindow<CatMouseAgent> window(
+                *analysis,
+                realTrajectory.slice(w*windowSize, windowSize),
+                pMakeObservation,
+                pObserveIfPresent
+        );
+        std::cout << "Prior support is \n" << window.priorPMF.convexSupport << std::endl;
+        std::cout << "Likelihood support is \n" << window.likelihoodPMF.convexSupport << std::endl;
+        std::cout << "Posterior support is \n" << window.posterior.convexSupport << std::endl;
+
+        MCMCSampler sampler(window.posterior, window.priorSampler());
+        for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
+        sampleStats.clear();
+        sampleStats.sampleFromEndState(sampler, nSamplesPerWindow);
+        analysis = &sampleStats;
+
+        std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
+        std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
+        std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl;
+
+        std::cout << "Analysis histograms =\n" << sampleStats << std::endl;
+        std::cout << "Analysis Means = " << sampleStats.means() << std::endl;
+
+        ExactSolver<CatMouseAgent> exact(window.posterior);
+        std::cout << "Exact exactEndState = " << exact.exactEndState << std::endl;
+    }
+
+    ModelStateSampleStatistics<CatMouseAgent> priorEnd;
+    priorEnd.sampleFromEndState(
+            Trajectory<CatMouseAgent>::priorSampler(nWindows * windowSize, startStateDist.sampler()),
+            nPriorSamples
+    );
+    std::cout << "Prior end means = " << priorEnd.means() << std::endl;
+    std::cout << "Real end state = " << realTrajectory.endState() << std::endl;
+    std::cout << "Total information gain = " << informationGain(realTrajectory.endState(), priorEnd, sampleStats) << std::endl;
 
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-void Experiments::CatMouseExpt() {
+void Experiments::CatMouseSingleObservation() {
     constexpr int nBurninSamples = 10000;
-    constexpr int nSamples = 500000;
+    constexpr int nSamples = 1000000;
 
     AssimilationWindow<CatMouseAgent> window(
             2,
@@ -216,55 +283,22 @@ void Experiments::CatMouseExpt() {
     MCMCSampler sampler(window.posterior, window.priorSampler());
     for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
     ModelStateSampleStatistics<CatMouseAgent> sampleStats(sampler, nSamples);
-    std::cout << "Analysis = " << sampleStats.means() << std::endl;
+
+    std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
+    std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
+    std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl;
+    std::cout << "Analysis means = " << sampleStats.means() << std::endl;
 
     ExactSolver<CatMouseAgent> exact(window.posterior);
-    std::cout << "Exact exactEndState = " << exact.exactEndState << std::endl;
+    std::cout << "Exact means = " << exact.exactEndState << std::endl;
 
-}
-
-
-void Experiments::CatMouseAssimilation() {
-    ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
-    constexpr int nWindows = 2;
-    constexpr int windowSize = 2;
-    constexpr double pMakeObservation = 0.25;//0.04;    // prob of making an observation of each gridsquare at each timestep
-    constexpr double pObserveIfPresent = 1.0;
-    constexpr int nSamplesPerWindow = 1000000; //250000;
-    constexpr int nBurninSamples = 5000;
-
-    ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
-
-    BernoulliModelState<CatMouseAgent> startStateDist({0.9, 0.1, 0.1, 0.9});
-
-    Distribution<ModelState<CatMouseAgent>> &analysis = startStateDist;
-    ModelStateSampleStatistics<CatMouseAgent> sampleStats;
-    ModelState<PredPreyAgent> realEndState;
-    for(int w=0; w<nWindows; ++w) {
-        AssimilationWindow<CatMouseAgent> window(windowSize, analysis, pMakeObservation, pObserveIfPresent);
-        std::cout << "Prior support is \n" << window.priorPMF.convexSupport << std::endl;
-        std::cout << "Likelihood support is \n" << window.likelihoodPMF.convexSupport << std::endl;
-        std::cout << "Posterior support is \n" << window.posterior.convexSupport << std::endl;
-
-        MCMCSampler sampler(window.posterior, window.priorSampler());
-        for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
-        ModelStateSampleStatistics<CatMouseAgent> sampleStats(sampler, nSamplesPerWindow);
-        analysis = sampleStats;
-
-        std::cout << "Analysis = " << sampleStats << std::endl;
-        std::cout << "Means = " << sampleStats.means() << std::endl;
-
-        ExactSolver<CatMouseAgent> exact(window.posterior);
-        std::cout << "Exact exactEndState = " << exact.exactEndState << std::endl;
-
-    }
 }
 
 
 void Experiments::BinomialAgentAssimilation() {
     BinomialAgent::GRIDSIZE = 3;
     constexpr int nTimesteps = 2;
-    constexpr int nSamplesPerWindow = 500000;
+    constexpr int nSamplesPerWindow = 1000000;
     constexpr int nBurninSamples = 5000;
 
     BernoulliModelState<BinomialAgent> startState({1.0,0.1,0.1});
@@ -282,11 +316,15 @@ void Experiments::BinomialAgentAssimilation() {
 //    for(int s=0; s<nBurninSamples; ++s) sampler();
     std::cout << "Done burn-in" << std::endl;
     ModelStateSampleStatistics<BinomialAgent> sampleStats(sampler, nSamplesPerWindow);
-    std::cout << sampleStats.means() << std::endl;
 
-    std::cout << "Starting exact solve" << std::endl;
+    std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
+    std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
+    std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl;
+    std::cout << "Analysis means = " << sampleStats.means() << std::endl;
+
+//    std::cout << "Starting exact solve" << std::endl;
     ExactSolver<BinomialAgent> exactSolver(window.posterior);
-    std::cout << exactSolver.exactEndState << std::endl;
+    std::cout << "Exact means = " << exactSolver.exactEndState << std::endl;
 
 }
 

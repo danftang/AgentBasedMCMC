@@ -201,6 +201,15 @@ public:
         return logP;
     }
 
+    Trajectory<AGENT> slice(int fromTimestep, int nTimesteps) const {
+        Trajectory<AGENT> slice(nTimesteps);
+        int beginIndex = Event(fromTimestep,AGENT(0),0);
+        int endIndex = Event(fromTimestep+nTimesteps,AGENT(0),0);
+        int sliceBeginIndex = Event(0,AGENT(0),0);
+        std::copy(begin()+beginIndex, begin()+endIndex, slice.begin()+sliceBeginIndex);
+        return slice;
+    }
+
 
     static double logProb(const std::vector<double> &X) {
         assert(X.size() % (AGENT::domainSize()*AGENT::actDomainSize()) == 0);
