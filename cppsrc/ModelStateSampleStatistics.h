@@ -22,7 +22,7 @@ public:
 //        this->clear();
         for(int s = 0; s<nSamples; ++s) {
             ModelState<AGENT> endState = trajectorySampler().endState();
-//            if(s%0x10000 == 0) std::cout << "Taking sample " << s << " " << std::endl;//endState << std::endl;
+            if(s%0x10000 == 0) std::cout << "Taking sample " << s << " " << std::endl;//endState << std::endl;
             (*this) += endState;
         }
         debug();

@@ -17,6 +17,7 @@ public:
     }
 
     BernoulliModelState(std::vector<double> probabilities): prob([p = std::move(probabilities)](AGENT agent) {
+        assert(agent < p.size());
         return p[agent];
     }) { }
 

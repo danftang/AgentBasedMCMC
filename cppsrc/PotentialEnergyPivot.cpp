@@ -44,6 +44,7 @@ void PotentialEnergyPivot::chooseCol() {
             cumulativeP += exp(kappaCol* colPotential);
             cdf[q] = cumulativeP;
         }
+        assert(Ep > tol); // there should be at least one high energy column
         double *it = std::lower_bound(
                 cdf.data(),
                 cdf.data() + simplex.nNonBasic() + 1,

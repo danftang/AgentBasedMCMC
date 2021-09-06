@@ -49,7 +49,7 @@
 \maketitle
 
 \begin{abstract}
-The discipline of data assimilation (DA) addresses the problem of how to make use of partial, noisy experimental observations to provide information about the time evolution of a dynamical system. DA has developed rapidly in applications such as weather forecasting \cite{kalnay_atmospheric_2003} but relatively little progress has been made in developing techniques that are applicable to agent based models. ABMs consist of `agents' which often make discrete choices from a number of possible actions, meaning the space of model trajectories is not continuous and we cannot use assimilation techniques that require the gradient of the posterior in this space. In addition, a set of observations will typically refute a large proportion of model trajectories, making it difficult to even identify trajectories that have non-zero probability, given the observations and making it challenging to use algorithms that rely on sampling.
+The discipline of data assimilation (DA) addresses the problem of how to make use of partial, noisy experimental observations to provide information about the time evolution of unobserved properties of a dynamical system. DA has developed rapidly in applications such as weather forecasting \cite{kalnay_atmospheric_2003} but relatively little progress has been made in developing techniques that are applicable when the dynamical system is an agent based model. ABMs consist of `agents' which often make discrete choices from a number of possible actions, meaning the space of model trajectories is not continuous and we cannot use assimilation techniques that require the gradient of the posterior in this space. In addition, a set of observations will typically refute a large proportion of model trajectories, making it difficult to even identify trajectories that have non-zero probability given the observations, and making it challenging to use algorithms that rely on sampling.
 
 Here we present an algorithm that generates samples of the time evolution of an agent based model, given a set of noisy, incomplete experimental observations of the system. The algorithm approximates the set of possible trajectories as a linear program and uses an extension of the simplex algorithm to provide a proposal function for Markov-Chain-Monte-Carlo sampling.
 
@@ -76,9 +76,9 @@ Suppose we have a timestepping ABM where agents have a finite number of possible
 	
 	\item A domain of agent states $\mathcal{S} = \{\psi_0 ... \psi_m\}$
 	
-	\item An \textit{agent timestep}, which is a computer program, $\pi(\psi,\Psi)$, where $\psi \in \mathcal{S}$ is the agent's state and $\Psi \in \mathbb{Z}^m$ is a (usually sparse) vector whose $i^{th}$ element is the number of agents in state $\psi_i$ at the start of the timestep. The program returns an action $a \in \mathcal{A}$ which defines the behaviour of the agent in a timestep. The program may make calls to a random number generator that returns a value $0 \le r < 1$ with uniform probability, so its returned value may be non-deterministic and we write $P(\pi(\psi,\Psi)=a)$ to be the probability that the program will return action $a$, given inputs $\psi$ and $\Psi$. 
+	\item An \textit{agent timestep}, which is a computer program, $\pi(\psi,\Psi)$, where $\psi \in \mathcal{S}$ the state of an agent and $\Psi \in \mathbb{Z}^m$ is a (usually sparse) vector whose $i^{th}$ element is the number of agents in state $\psi_i$ at the start of the timestep. The program returns an action $a \in \mathcal{A}$ which defines the behaviour of an agent in state $\psi$ and environment $\Psi$ in a timestep. The program may make calls to a random number generator that returns a value $0 \le r < 1$ with uniform probability, so its returned value may be non-deterministic and we write $P(\pi(\psi,\Psi)=a)$ to be the probability that the program will return action $a$, given inputs $\psi$ and $\Psi$. 
 	
-	\item An \textit{action function}, $F: \mathcal{S} \times \mathcal{A} \to \mathbb{Z}^m$, which defines the effect of an action on the world, where $F(\psi, a)$ gives a (sparse) vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $i$ that result from an agent in state $\psi$ performing act $a$ (including the final state of the acting agent).
+	\item An \textit{action function}, $F: \mathcal{S} \times \mathcal{A} \to \mathbb{Z}^m$, which defines the effect of an action on the world, where $F(\psi, a)$ returns a (sparse) vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $i$ that result from an agent in state $\psi$ performing act $a$ (including the final state of the acting agent).
 \end{itemize}
 
 As a simple demonstration, consider a spatial predator-prey model where agents are either predator or prey moving about a 2-dimensional grid. In this case, the domain of actions are $\mathcal{A} = \{ a_0=\textrm{move-left}, a_1=\textrm{move-right}, a_2=\textrm{move-up}, a_3=\textrm{move-down}, a_4=\textrm{give-birth}, a_5=\textrm{die}\}$, and the domain of agent states, $\mathcal{S}$, can be thought of as the class 
@@ -111,7 +111,7 @@ where $[p,y,x]$ denotes an \texttt{Agent} in state (\texttt{isaPredator=p, yPosi
 	\caption{A simple predator-prey example.\label{fig:AB-MCMC-1}}
 \end{figure}
 
-Let a model timestep consist of a matrix $E$ whose elements $e_{\psi a}$ are the number of agents in state $\psi$ that perform act $a$ in this timestep. Note that this matrix will generally be sparse. For example, the timestep shown in Figure~\ref{fig:AB-MCMC-1} would be
+Let a model timestep consist of a matrix $E$ whose elements $e_{\psi a}$ are the number of agents in state $\psi$ that perform act $a$ in this timestep. For example, the timestep shown in Figure~\ref{fig:AB-MCMC-1} would be
 \[
 E = \kbordermatrix{
 	& a_0 & a_1 & a_2 & a_3 & a_4 & a_5 \\
@@ -125,9 +125,9 @@ E = \kbordermatrix{
 	\psi_7 & 1 & 0 & 0 & 0 & 0 & 0 \\ 
 }
 \]
-where all elements are zero except those representing agent $\psi_1$ performing action $a_2$ and agent $\psi_7$ performing action $a_0$.
+where all elements are zero except those representing agent $\psi_1$ performing action $a_2$ and agent $\psi_7$ performing action $a_0$. Note that this matrix will generally be very sparse. 
 
-Finally, let a model trajectory be a tensor, $T$, consisting of a number of model timesteps. ie. a slice of $T$, $T^t$, is the timestep matrix for time $t$, and an element of $T$, $T^t_{\psi a}$, is the number of agents in state $\psi$ that perform act $a$ in timestep $t$.
+Finally, let a model trajectory be a tensor, $T$, consisting of a number of model timesteps. We use the notation $T^t$ to denote the $t^{th}$ timestep matrix, $T^t_\psi$ to denote the $\psi^{th}$ row of the $t^{th}$ timestep matrix and $T^t_{\psi a}$ to denote the $a^{th}$ element of the $\psi^{th}$ row of the $t^{th}$ timestep. By convention, we'll let indices begin at 0.
 
 The timestep function for a predator/prey agent is shown in algorithm \ref{agentTimestep} (where we assume the grid has periodic boundary conditions).
 
@@ -161,7 +161,7 @@ The timestep function for a predator/prey agent is shown in algorithm \ref{agent
 \end{algorithm}
 
 \subsection{The posterior}
-A trajectory must satisfy a number of constraints in order to be a possible trajectory of an ABM. Since the elements of a trajectory are counts, they must all be non-negative integers, we'll call this the \textit{non-negative integer constraint}
+A trajectory must satisfy a number of constraints in order to be a valid trajectory of an ABM. Since the elements of a trajectory are counts, they must all be non-negative integers, we'll call this the \textit{non-negative integer constraint}
 \begin{equation}
 \forall t,\psi, a: T^t_{\psi a} \ge 0, T^t_{\psi a} \in \mathbb{Z}
 \label{nonNegativeInt}
@@ -178,37 +178,34 @@ If we let $\Psi^t_\psi$ be the number of agents in state $\psi$ at the beginning
 \[
 P(T) =
 \begin{cases}
-P\left(\Psi^0_{*} = \sum_a T^0_{* a}\right) \prod_{\psi, t} P\left(T^t_{\psi *} \mid \Psi^t_* = \sum_a T^t_{* a}\right) & \text{if } T \text{ is valid} \\
+P\left(\Psi^0 = T^0 \mathbf{1} \right) \prod_{\psi, t} P\left(T^t_{\psi} \mid \Psi^t = T^t \mathbf{1}\right) & \text{if } T \text{ is valid} \\
 0 & \text{otherwise}
 \end{cases}
 \]
-where $P(\Psi^0_*)$ is our prior beliefs about the state at time $t=0$, and we use $*$ as an index when we want to emphasise that the index remains unbound.
+where $P(\Psi^0)$ is our prior beliefs about the state at time $t=0$, and we use $\mathbf{1}$ to denote a vector whose elements are all 1.
 
 
-The probability that a single agent in a given state will perform an action, given the state of the other agents, this is given by the agent timestep function, $P(\pi(\psi,\Psi^t_*)=a)$, so the joint probability that $\Psi^t_\psi$ agents will perform actions $T^t_{\psi *}$ is given by the multinomial distribution
+The probability that a single agent in a given state will perform an action, given the state of the other agents, $\Psi^t$, is given by the agent timestep function, $P(\pi(\psi,\Psi^t)=a)$, so the joint probability that $\Psi^t_\psi$ agents will perform actions $T^t_{\psi}$ in an environment of other agents $\Psi^t$, is given by the multinomial distribution
 \[
-P\left(T^t_{\psi *} \mid \Psi^t_*\right) = \Psi^t_\psi!\prod_a \frac{P(\pi(\psi,\Psi^t_*)=a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!}.
+P\left(T^t_{\psi} \mid \Psi^t \right) = \Psi^t_\psi!\prod_a \frac{P\left(\pi(\psi,\Psi^t)=a\right)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!}.
 \]
 So the prior probability of a trajectory is
 \[
 P(T) =
 \begin{cases}
-P(\Psi^0_* = \sum_aT^0_{* a}) \prod_{t, \psi}\left(\sum_a T^t_{\psi a}\right)!\prod_a \frac{P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T^t_{\psi a} \text{ is valid} \\
+P(\Psi^0 = T^0\mathbf{1})
+\prod_{t, \psi}\left(T^t_{\psi} \cdot \mathbf{1} \right)!
+\prod_a \frac{P(\pi(\psi, T^{t}\mathbf{1})=a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T^t_{\psi a} \text{ is valid} \\
 0 & \text{otherwise}\\
 \end{cases}
 \]
 
-Suppose, for example, that in the predator/prey model we begin by choosing the number of agents in each grid-square at time $t=0$ from a Poisson distribution, so that the joint probability over the start sate is:
+Suppose now we have a set of noisy, aggregate observations, $\Omega$, that have a likelihood function $P(\Omega|T)$. By Bayes' rule, we have
 \[
-P(\Psi^0_*) = \prod_\psi \frac{\lambda_\psi^{\Psi^0_\psi} e^{\lambda_\psi}}{\Psi^0_\psi!}.
+P(T|\Omega) \propto P\left(\Omega \middle| T\right)P(T)
 \]
 
-Suppose we also have a set of noisy, aggregate observations, $\Omega$, that have a likelihood function $P(\Omega|T^t_{\psi a})$. In our running predator-prey example, let's suppose we periodically note down when and where we see footprints of predator and prey. Our aim is to generate a number of samples from the posterior distribution
-\[
-P(T^t_{\psi a}|\Omega) \propto P\left(\Omega \middle| T^{t}_{\psi a}\right)P(T^t_{\psi a})
-\]
-
-We assume that observations are independent given the trajectory and that each individual observation in $\Omega$ can be simulated by a computer program $\omega(T^t_{\psi a})$ which may make calls to a random number generator. The probability, $P(\omega(T^t_{\psi a}) = v)$, that the program returns a value $v$ defines the likelihood of observing value $v$ upon making observation $\omega$ on trajectory $T^t_{\psi a}$. i.e. $\omega(T^t_{\psi a})$ is just a simulation of the observation, which is usually quite easy to express as a computer program and to compute. 
+Without loss of generality, we take $\Omega$ to consist of some number of observations that are independent of each other given the trajectory, so that the members $(\omega,v)\in \Omega$ consist of a stochastic observation operator $\omega$ and an observed value $v$ (which may be a vector). We write $P(\omega(T)=v)$ to denote the probability of observation operator $\omega$ making observation $v$ on trajectory $T$.
 
 In the case of the predator prey model, let's suppose that at the end of every day we go out to a fixed set of inspection sites and check for footprints. Suppose that if predators were present in the grid-square containing an inspection site on that day, there's a 50\% chance we'll see a footprint, and if prey were present, there's a 25\% chance. The observation function for a site is shown in algorithm \ref{observationFunc}
 
@@ -240,27 +237,28 @@ In the case of the predator prey model, let's suppose that at the end of every d
 
 Given this
 \[
-P(\Omega|T^t_{\psi a}) = \prod_{(\omega,v) \in \Omega} P(\omega(T^t_{\psi a})=v)
+P(\Omega|T) = \prod_{(\omega,v) \in \Omega} P(\omega(T)=v)
 \]
 
-Also, for notational convenience, and without loss of generality, we express our prior beliefs in terms of a set of observations, $\Omega_0$, at $t=0$, so that $P_0(\sum_a T^0_{\psi a}) \propto \prod_{(\omega,v) \in \Omega_0} P(\omega(T^t_{\psi a})=v)$ (this also allows any priors that aren't at $t=0$). The posterior can now be written as
+The posterior can now be written as
 \begin{equation}
-P(T^t_{\psi a}|\Omega) \propto 
+P(T|\Omega) \propto 
 \begin{cases}
-\prod_{(\omega,v) \in \Omega} P\left(\omega(T^{t}_{\psi a})=v\right) \prod_{t, \psi}\left(\sum_a T^t_{\psi a}\right)!\prod_{a}\frac{P(\pi(\psi,\sum_bT^{t}_{\phi b})=a)^{T^{t}_{\psi a}}}{T^t_{\psi a}!} & \text{if } T^t_{\psi a} \text{ is valid} \\
+P(\Psi^0 = T^0\mathbf{1})
+\prod_{(\omega,v) \in \Omega} P\left(\omega(T)=v\right)
+\prod_{t, \psi}\left(T^t_{\psi}\cdot\mathbf{1}\right)!
+\prod_{a}\frac{P(\pi(\psi,T^t\mathbf{1})=a)^{T^{t}_{\psi a}}}{T^t_{\psi a}!} & \text{if } T^t_{\psi a} \text{ is valid} \\
 0 & \text{otherwise}\\
 \end{cases}
 \label{posterior}
 \end{equation}
-where $\Omega$ now includes any priors.
 
-In many practical applications, sampling from this posterior is difficult because it has zero probability for the vast majority of trajectories (i.e. most trajectories are invalid, contain an impossible action or are refuted by the observations). This is true of our predator/prey model, for example. Even though we can generate valid trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the trajectory has no predator or prey at a time and place that we observed footprints, then the observations refute the trajectory and the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling are not practical.
+In many practical applications, sampling from this posterior is difficult because it has zero probability for the vast majority of trajectories (i.e. most trajectories are invalid, contain an impossible action or are refuted by the observations). This is true of our predator/prey model, for example. Even though we can generate valid trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the trajectory has no predator or prey at a time and place that we observed footprints, then the observations refute the trajectory and the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling, for example, are not practical. Techniques based on particle filtering can sometimes have more success but often suffer from particle degeneracy.
 
 In this paper we'll use the Metropolis-Hastings algorithm to generate samples. However, this method requires a proposal function which randomly generates the next sample given the current one. However, given the current sample, we still have the problem of finding a trajectory with non-zero probability. For example if we generate a new trajectory by perturbing one or more elements of the last sample at random (a common strategy with Metropolis-Hastings), it's very unlikely that we'll end up with a trajectory that is valid, contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
 
 \section{Approximating the support of the posterior}
 %##########################################
-
 
 To solve this problem we'd like to constrain our proposal function to the support of the posterior, $\supp(P(T^t_{\psi a}|\Omega))$ (i.e. the set of trajectories that have non-zero probability).
 
@@ -270,13 +268,17 @@ If we let
 \]
 Then from equation \ref{posterior}
 \begin{equation}
-\supp (P( \,.\, |\Omega)) = 
-\bigcap_{(\omega,v) \in \Omega}  \supp\left(P\left(\omega(.)=v\right)\right) \cap
-\bigcap_{t, \psi, a} \left(\supp\left(P\left( \pi'(t,\psi,.) = a \right)\right) \cup \left\{T^s_{\xi b}: T^t_{\psi a} = 0\right\}\right) \cap
-\left\{T^t_{\psi a} \mid T^t_{\psi a} \text{is valid}\right\}
+\supp (P( T |\Omega)) =
+\supp(P(T^0\mathbf{1}))\cap 
+\bigcap_{(\omega,v) \in \Omega}  \supp\left(P\left(\omega(T)=v\right)\right) \cap
+\bigcap_{T^t_{\psi a} \ne 0} \supp\left(P\left( \pi'(t,\psi,T) = a \right)\right) \cap \left\{T \mid T \text{ is valid}\right\}
 \label{support}
 \end{equation}
-i.e. in order for the posterior to be non-zero, all the observation likelihoods must be non-zero, the probability of each agent's action at every timestep must be non-zero and the trajectory must be valid (note that we've dropped the exponent in the agent action term as it doesn't affect the support).
+i.e. in order for the posterior to be non-zero, all the observation likelihoods must be non-zero, the probability of each agent's action at every timestep must be non-zero and the trajectory must be valid.
+
+TODO: Fermionic trajectory implies convexity... Leads to convex PMF. Also if all supports have only integer vertices on the unit hypercube (i.e. are the convex hull of points on the unit hypercube) then the union is also a convex hull of points on the unit hypercube.
+
+\section{Abstract interpretation using convex polyhedra}
 
 The first two terms in equation \ref{support} consists of the supports of computer programs whose inputs are ABM trajectories and whose outputs are given, i.e. the set of trajectories that, when passed to a computer program, would produce a given output.
 
@@ -433,7 +435,7 @@ However, note that in a valid Fermionic trajectory, all the structural variables
 
 \subsubsection{Infeasible states}
 
-In order to improve mixing during MCMC we allow simplex states that are infeasible. In order to introduce these into the MCMC scheme, we must assign a probability to each infeasible state and define a way of choosing pivots.
+In order to improve mixing during MCMC we allow the Markov chain to pass through simplex states that are infeasible. In order to make these Markov states, we must assign a probability to each infeasible state and define a way of proposing transitions to and from these states.
 
 A state can become infeasible when one or more of the basic variables goes outside their bounds.
 
@@ -446,7 +448,7 @@ x-u & \text{if }x>u\\
 0 & \text{otherwise}
 \end{cases}
 \]
-and let the infeasibility of a basic vector $X_B$
+be the infeasibility of a variable $x$ in relation to its lower, $l$ and upper $u$ bounds, and let the infeasibility of a basic vector, $X_B$, be
 \[
 \iota(X_B) = \sum_i \iota^{u_i}_{l_i}(X_{Bi})
 \]
@@ -461,15 +463,15 @@ Now let
 \]
 be the derivative of the infeasibility $\iota$ so that
 \[
-R_i(X_B) = \frac{d\iota(X_B)}{dX_{Bi}} = \rho^{u_i}_{l_i}(X_{Bi})
+\frac{d\iota(X_B)}{dX_{Bi}} = \rho^{u_i}_{l_i}(X_{Bi}) = R(X_B)
 \]
-and $R(X_B)$ can be thought of as an infeasibility objective for a given basic vector $X_B$, for which the reduced objective, $D$, is defined as
+and $R(X_B)$ can be thought of as an ``infeasibility objective function'' for a given basic vector $X_B$, for which the reduced objective, $D$, is defined as
 \[
 D = -R(X_B)B^{-1}N
 \]
 so that
 \[
-D_j = \sum_i -R_i(X_B)B^{-1}N_j = \sum_i \frac{d\iota(X_B)}{dX_{Bi}} \frac{dX_{Bi}}{dX_{Nj}} = \frac{d\iota(X_B)}{dX_{Nj}}
+D_j = -R(X_B)B^{-1}N_j = \sum_i \frac{d\iota(X_B)}{dX_{Bi}} \frac{dX_{Bi}}{dX_{Nj}} = \frac{d\iota(X_B)}{dX_{Nj}}
 \]
 is the rate of change of $X_B$-infeasibility with the $j^th$ non-basic variable.
 
@@ -479,9 +481,9 @@ When proposing a pivot, we first decide which column to pivot on.
  
 Let the potential energy of the $j^{th}$ non-basic variable be
 \[
-E_j = (2X_{Nj}-1)\,sgn(D_j)
+E_j = D_j(X_{Nj} - H(-D_j))
 \]
-where $sgn(.)$ is the sign operation.
+where $H$ is the Heaviside step function.
 
 A column is chosen with probability proportional to the exponential of its potential energy
 \[
@@ -547,7 +549,13 @@ TODO: should $k_c$ and $k_r$ (or alternatively $E_P$ and $\iota$) be per column 
 
 An efficient way of calculating the infeasibility of all pivots on a column is as follows:
 
+\section{An alternative proposal function}
 
+If we restrict ourselves to degenerate pivots (i.e. pivots that don't change state) and bound swaps, then we have the following algorithm:
+
+First choose column with zero probability for columns with zero reduced objective [need to have finite probability to allow swaps that reduce the objective to zero for this column], and with probability equal to the exponential of their potential energy otherwise. [instead, have a finite weight $w_0$ for low energy columns and exponentials for high, so prob of choosing a high-potential column is $e^{kE_j}/(e^{kE_P} + w_0)$]
+
+Once a column is chosen, we choose to either swap bounds or make a degenerate pivot. A degenerate pivot can be performed on any row that is on one of its bounds (i.e. not one that is currently outside its bound) and that has a non zero pivot element. We choose to bound swap with probability proportional to the exponential of the reduction in infeasibility (how do we normalise this?). If we choose a degenerate pivot, we choose with uniform probability from among the possibilities.
 
 -------------
 

@@ -145,11 +145,11 @@ void Experiments::PredPreyAssimilation() {
 
 void Experiments::PredPreySingleObservation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
-    PredPreyAgent::GRIDSIZE = 4;
-    constexpr int windowSize = 2;
+    PredPreyAgent::GRIDSIZE = 3;
+    constexpr int nTimesteps = 2;
     constexpr double pPredator = 0.1;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
-    constexpr int nSamplesPerWindow = 1500000; //250000;
+    constexpr int nSamples = 1500000; //250000;
     constexpr int nBurninSamples = 10000;
     constexpr int nRejectionSamples = 250000;
     //    constexpr int plotTimestep = nTimesteps-1;
@@ -163,7 +163,7 @@ void Experiments::PredPreySingleObservation() {
     std::cout << "Initial state distribution = " << startStateDist << std::endl;
 
     AssimilationWindow <PredPreyAgent> window(
-            windowSize,
+            nTimesteps,
             startStateDist,
             AgentStateObservation<PredPreyAgent>(
                     State<PredPreyAgent>(1,PredPreyAgent(1, 1, PredPreyAgent::PREY)),
@@ -179,7 +179,7 @@ void Experiments::PredPreySingleObservation() {
 
     MCMCSampler sampler(window.posterior, window.priorSampler());
     for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
-    ModelStateSampleStatistics<PredPreyAgent> sampleStats(sampler, nSamplesPerWindow);
+    ModelStateSampleStatistics<PredPreyAgent> sampleStats(sampler, nSamples);
 
     std::cout << "Analysis histograms:\n" << sampleStats << std::endl;
     std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
@@ -261,11 +261,13 @@ void Experiments::CatMouseAssimilation() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Experiments::CatMouseSingleObservation() {
+    // TODO: analysis probs slightly out at 3 timesteps (with infeasibleExpectationFraction = 0.5. Closer when 1.0)
+    constexpr int nTimesteps = 3;
     constexpr int nBurninSamples = 10000;
     constexpr int nSamples = 1000000;
 
     AssimilationWindow<CatMouseAgent> window(
-            2,
+            nTimesteps,
             BernoulliModelState<CatMouseAgent>({0.9, 0.1, 0.1, 0.9}),
             AgentStateObservation<CatMouseAgent>(
                     State<CatMouseAgent>(
@@ -296,12 +298,14 @@ void Experiments::CatMouseSingleObservation() {
 
 
 void Experiments::BinomialAgentAssimilation() {
-    BinomialAgent::GRIDSIZE = 3;
     constexpr int nTimesteps = 2;
+    BinomialAgent::GRIDSIZE = nTimesteps + 1;
     constexpr int nSamplesPerWindow = 1000000;
     constexpr int nBurninSamples = 5000;
 
-    BernoulliModelState<BinomialAgent> startState({1.0,0.1,0.1});
+    BernoulliModelState<BinomialAgent> startState([](BinomialAgent agent) {
+        return agent.stateId==0?1.0:0.1;
+    });
 
     AgentStateObservation<BinomialAgent> observation(State<BinomialAgent>(1, 0),1,0.9);
 

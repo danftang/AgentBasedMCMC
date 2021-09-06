@@ -60,9 +60,9 @@ using glp::X;
 
 int main(int argc, char *argv[]) {
 
-   Experiments::BinomialAgentAssimilation();
+//    Experiments::BinomialAgentAssimilation();
 //    Experiments::CatMouseSingleObservation();
-//        Experiments::CatMouseAssimilation();
+    Experiments::CatMouseAssimilation();
 //    Experiments::PredPreySingleObservation();
 //    Experiments::PredPreyAssimilation();
 

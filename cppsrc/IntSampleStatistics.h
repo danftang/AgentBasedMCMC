@@ -132,15 +132,18 @@ public:
 
 
     std::vector<double> logMarginals() const {
+        assert(nSamples > 0);
         std::vector<double> logMargs(histograms.size());
-        double expectationP = 0.0;
         for(int i=0; i<histograms.size(); ++i) {
+            double expectationP = 0.0;
             const std::vector<int> &histogram = histograms[i];
             for (int j = 0; j < histogram.size(); ++j) {
-                expectationP += histogram[j] * histogram[j] * 1.0 / (nSamples * nSamples);
+                double p = histogram[j]*1.0/nSamples;
+                expectationP += p*p;
             }
             logMargs[i] = log(infeasibleExpectationFraction * expectationP);
         }
+//        std::cout << "Log marginals " << logMargs << std::endl;
         return logMargs;
     }
 
