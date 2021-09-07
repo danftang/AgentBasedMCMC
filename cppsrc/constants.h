@@ -6,7 +6,7 @@
 #define GLPKTEST_CONSTANTS_H
 
 constexpr double tol = 1e-8;
-constexpr double infeasibleExpectationFraction = 0.5;//0.75;
+constexpr double infeasibleExpectationFraction = 1.0;//0.75;
 
 #endif //GLPKTEST_CONSTANTS_H
 

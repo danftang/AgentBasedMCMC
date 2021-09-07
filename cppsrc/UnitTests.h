@@ -213,6 +213,28 @@ public:
 
     }
 
+    static void testConstraintImplication() {
+        CatMouseAgent leftMouse(CatMouseAgent::MOUSE, CatMouseAgent::LEFT);
+        Event<CatMouseAgent> leftMouseMove(0, leftMouse, CatMouseAgent::MOVE);
+        Event<CatMouseAgent> leftMouseStay(0, leftMouse, CatMouseAgent::STAYPUT);
+
+        std::vector<glp::Constraint> constraints;
+        std::vector<glp::Constraint> y = leftMouse.constraints(0, CatMouseAgent::MOVE);
+        ABMConstraints<CatMouseAgent>::push_xImpliesY(constraints, leftMouseMove, y[0]);
+
+        std::cout << leftMouseMove << " implies " << y[0] << std::endl;
+        std::cout << constraints << std::endl << std::endl;
+
+        constraints.clear();
+        y.clear();
+        y = leftMouse.constraints(0, CatMouseAgent::STAYPUT);
+        ABMConstraints<CatMouseAgent>::push_xImpliesY(constraints, leftMouseStay, y[0]);
+
+        std::cout << leftMouseStay << " implies " << y[0] << std::endl;
+        std::cout << constraints << std::endl;
+
+    }
+
 
 };
 

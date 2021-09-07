@@ -21,7 +21,7 @@ public:
     std::vector<AGENT> consequences() const { return agent().consequences(act()); }
 
     friend std::ostream &operator <<(std::ostream &out, const Event &event) {
-        out << "[" << event.time() << ", " << event.agent() << " -> " << event.act() << "]";
+        out << event.agent() << ":" << event.act() << "@T" << event.time();
         return out;
     }
 };

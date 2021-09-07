@@ -51,7 +51,7 @@ public:
     std::vector<glp::Constraint> constraints(int time, Act act) const; // to be generated automatically by static analysis...eventually.
 
     friend std::ostream &operator <<(std::ostream &out, const CatMouseAgent &agent) {
-        out << agent.type() << ":" << agent.position();
+        out << (agent.type()==CAT?"CAT":"MSE") << ":" << (agent.position()==LEFT?"L":"R");
         return out;
     }
 

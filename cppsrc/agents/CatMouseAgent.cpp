@@ -54,7 +54,7 @@ std::vector<glp::Constraint> CatMouseAgent::constraints(int time, Act act) const
         if(act == MOVE) {
             return std::vector({ 1.0*State(time,CatMouseAgent(CAT, position())) >= 1 });
         } else {
-            return std::vector({ 1.0*State(time,CatMouseAgent(CAT, position())) == 0 });
+            return std::vector({ 1.0*State(time,CatMouseAgent(CAT, position())) <= 0 });
         }
     } else {
         return std::vector<glp::Constraint>();

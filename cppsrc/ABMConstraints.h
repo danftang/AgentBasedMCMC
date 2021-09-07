@@ -50,7 +50,7 @@ public:
         return constraints;
     }
 
-    // Returns constraint x -> y
+    // Pushes the constraint x -> y onto 'constraints'
     // under the assumption that
     // 0 <= x <= 1
     // and 0 <= y_i <= 1

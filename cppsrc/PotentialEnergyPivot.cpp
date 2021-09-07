@@ -7,8 +7,10 @@
 #include "Random.h"
 #include "StlStream.h"
 
-PotentialEnergyPivot::PotentialEnergyPivot(glp::Simplex &simplex):
-Phase1Pivot(simplex,0,0) {
+PotentialEnergyPivot::PotentialEnergyPivot(glp::Simplex &simplex)
+:
+Phase1Pivot(simplex,0,0),
+kappaCol(std::max(std::log(p1*simplex.nNonBasic()),1.0)) {
     infeasibilityCount = initInfeasibilityGradient();
     chooseCol();
     chooseRow();
