@@ -34,6 +34,8 @@ public:
     }
 
     static int sign(double x);
+
+    void calcAcceptanceContrib2();
 };
 
 

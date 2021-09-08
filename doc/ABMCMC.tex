@@ -174,7 +174,7 @@ A trajectory, $T^t_{\psi a}$, must also be \textit{continuous} which means that 
 \end{equation}
 where the trajectory runs from $t=0$ to $t=n$. If a trajectory satisfies constraints \ref{nonNegativeInt} and \ref{continuous} we say that it is \textit{valid}.
 
-If we let $\Psi^t_\psi$ be the number of agents in state $\psi$ at the beginning of timestep $t$ then the prior probability of a trajectory is
+If we let $\Psi^t$ be the vector whose $\psi^{th}$ element is the number of agents in state $\psi$ at the beginning of timestep $t$, then the prior probability of a trajectory is
 \[
 P(T) =
 \begin{cases}
@@ -255,26 +255,64 @@ P(\Psi^0 = T^0\mathbf{1})
 
 In many practical applications, sampling from this posterior is difficult because it has zero probability for the vast majority of trajectories (i.e. most trajectories are invalid, contain an impossible action or are refuted by the observations). This is true of our predator/prey model, for example. Even though we can generate valid trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the trajectory has no predator or prey at a time and place that we observed footprints, then the observations refute the trajectory and the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling, for example, are not practical. Techniques based on particle filtering can sometimes have more success but often suffer from particle degeneracy.
 
-In this paper we'll use the Metropolis-Hastings algorithm to generate samples. However, this method requires a proposal function which randomly generates the next sample given the current one. However, given the current sample, we still have the problem of finding a trajectory with non-zero probability. For example if we generate a new trajectory by perturbing one or more elements of the last sample at random (a common strategy with Metropolis-Hastings), it's very unlikely that we'll end up with a trajectory that is valid, contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
+In this paper we'll use the Metropolis-Hastings algorithm to generate samples. This algorithm requires a proposal function which randomly generates a proposed next sample given the current one. However, given the current sample, we still have the problem of finding a trajectory with non-zero probability. For example if we generate a new trajectory by perturbing one or more elements of the last sample at random (a common strategy with Metropolis-Hastings), it's very unlikely that we'll end up with a trajectory that is valid, contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
 
 \section{Approximating the support of the posterior}
 %##########################################
 
-To solve this problem we'd like to constrain our proposal function to the support of the posterior, $\supp(P(T^t_{\psi a}|\Omega))$ (i.e. the set of trajectories that have non-zero probability).
+We'll solve this problem by first calculating the support of the posterior, $\supp(P(T^t_{\psi a}|\Omega))$ (i.e. the set of trajectories that have non-zero probability).
 
-If we let
-\[
-\pi'(s, \xi, T^t_{\psi a}) = \pi(\xi,\sum_bT^{s}_{\phi b})
-\]
-Then from equation \ref{posterior}
+From equation \ref{posterior}
 \begin{equation}
 \supp (P( T |\Omega)) =
-\supp(P(T^0\mathbf{1}))\cap 
+\supp(P(\Psi^0 = T^0\mathbf{1}))\cap 
 \bigcap_{(\omega,v) \in \Omega}  \supp\left(P\left(\omega(T)=v\right)\right) \cap
 \bigcap_{T^t_{\psi a} \ne 0} \supp\left(P\left( \pi'(t,\psi,T) = a \right)\right) \cap \left\{T \mid T \text{ is valid}\right\}
 \label{support}
 \end{equation}
 i.e. in order for the posterior to be non-zero, all the observation likelihoods must be non-zero, the probability of each agent's action at every timestep must be non-zero and the trajectory must be valid.
+
+\subsection{Fermionic Trajectories}
+We define a Fermionic trajectory to be one whose elements are all either 0 or 1. i.e. in addition to the validity constraints of equations \ref{nonNegativeInt} and \ref{continuous} a Fermionic trajectory also satisfies the \textit{Fermionic constraints}
+\begin{equation}
+\forall t,\psi,a: T^t_{\psi a} \in \left\{ 0,1 \right\}
+\label{fermionic}
+\end{equation}
+This can be interpreted as meaning that no two agents in the same state at the same time, can perform the same action.
+
+By ****'s theorem, the Fermionic constraints of equation \ref{fermionic} are equivalent to requiring that a Fermionic trajectory must lie on a vertex of the unit hypercube defined by
+\begin{equation}
+\forall t,\psi,a: 0 \le T^t_{\psi a} \le 1
+\label{linearfermionic}
+\end{equation}
+Written in this way, we can see that the non-negative constraints of equations \ref{nonNegativeInt} are implied by the Fermionic constraints. What's more, since the vertices of a hypercube describe a convex polyhedron, and any subset of the vertices of a convex polyhedron also describes the vertex set of a convex polyhedron, then, if we condition the posterior on the Fermionic constraints (in addition to all the other constraints) we ensure that the support of the posterior can be described as the vertices of a convex polyhedron.
+
+If we begin by adding the continuity constraints of equation \ref{continuous}, since they describe a set of flow constraints then, by ****'s theorem, the resulting set of linear constraints describes a convex polyhedron whose vertices are the valid, Fermionic trajectories.
+
+
+
+
+ Since the continuity constraints are also linear, 
+ 
+Since the Fermionic trajectories consist entirely of elements in $\{0,1\}$ we can map each one to a vertex of the unit hypercube of appropriate dimension. So, the set of all Fermionic trajectories forms a subset of the vertices of the unit hypercube. Since the unit hypercube is a convex polyhedron, then the polyhedron whose vertex set is the set of Fermionic trajectories is also a convex polyhedron. 
+
+In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so the addition of the Fermionic constraint will have very little effect on the dynamics of the model. However, if the Fermionic constraint is not acceptable, section ** describes how to remove this constraint.
+
+Given a Fermionic trajectory we can easily convert the union term in equation \ref{linearSupport} 
+\[
+\mathcal{P}(\pi'(t,\psi,.), a) \cup \left\{T^s_{\xi b}: T^t_{\psi a} = 0\right\}
+\]
+into a set of linear constraints. Expanding $\mathcal{P}$ we have
+\[
+\left(\bigcap_j \sum_i a_{ij}x_i \le b_j \right) \cup \left\{X: x_k = 0\right\} = \bigcap_j \left( \sum_i a_{ij}x_i \le b_j  \cup \left\{X: x_k = 0\right\}\right)
+\]
+where, for conveinence, we've projected the elements of the trajectory $T^t_{\psi a}$ into a vector $X$. But
+\[
+\sum_i a_{ij}x_i \le b_j  \cup \left\{X: x_k = 0\right\} = \sum_i a_{ij}x_i + \left(\sum_i \frac{|a_{ij}| + a_{ij}}{2} - b_j\right)x_k \le \sum_i \frac{|a_{ij}| + a_{ij}}{2} 
+\]
+since all $x_i$ are also either 0 or 1 so $\sum_i a_{ij}x_i$ must be less than $\frac{|a_{ij}| + a_{ij}}{2}$ and the constraint is satisfied if $x_k$ is 0, whereas we have the original constraint if $x_k$ is 1.
+
+------------------
 
 TODO: Fermionic trajectory implies convexity... Leads to convex PMF. Also if all supports have only integer vertices on the unit hypercube (i.e. are the convex hull of points on the unit hypercube) then the union is also a convex hull of points on the unit hypercube.
 
@@ -344,26 +382,6 @@ Given a set of inequalities that contain the support of the posterior, we next n
 \label{Fermionic}
 %#############################################
 
-We define a Fermionic ABM to be one where no two agents in the same state can perform the same action. i.e. in addition to the validity constraints of equations \ref{nonNegativeInt} and \ref{continuous} the trajectory of a Fermionic ABM also satisfies the \textit{Fermionic constraint}
-\begin{equation}
-T^t_{\psi a} \in \left\{ 0,1 \right\}
-\label{fermionic}
-\end{equation}
-in which case we call it a \textit{Fermionic trajectory}. In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so the Fermionic constraint will have very little effect on the dynamics of the model. However, if the Fermionic constraint is not acceptable, section ** describes how to remove this constraint.
-
-Given a Fermionic trajectory we can easily convert the union term in equation \ref{linearSupport} 
-\[
-\mathcal{P}(\pi'(t,\psi,.), a) \cup \left\{T^s_{\xi b}: T^t_{\psi a} = 0\right\}
-\]
-into a set of linear constraints. Expanding $\mathcal{P}$ we have
-\[
-\left(\bigcap_j \sum_i a_{ij}x_i \le b_j \right) \cup \left\{X: x_k = 0\right\} = \bigcap_j \left( \sum_i a_{ij}x_i \le b_j  \cup \left\{X: x_k = 0\right\}\right)
-\]
-where, for conveinence, we've projected the elements of the trajectory $T^t_{\psi a}$ into a vector $X$. But
-\[
-\sum_i a_{ij}x_i \le b_j  \cup \left\{X: x_k = 0\right\} = \sum_i a_{ij}x_i + \left(\sum_i \frac{|a_{ij}| + a_{ij}}{2} - b_j\right)x_k \le \sum_i \frac{|a_{ij}| + a_{ij}}{2} 
-\]
-since all $x_i$ are also either 0 or 1 so $\sum_i a_{ij}x_i$ must be less than $\frac{|a_{ij}| + a_{ij}}{2}$ and the constraint is satisfied if $x_k$ is 0, whereas we have the original constraint if $x_k$ is 1.
 
 So, taking our predator prey agent of algorithm \ref{agentTimestep} as an example, we can see that the move, reproduce and die actions can be returned irrespective of the state of other agents\footnote{the Fermionic constraint is dealt with separately, so we don't need to worry about that here}, so for these actions the union is also unconditionally true. However, the reproduction actions of a predator are conditional on there being some prey on neighbouring gridsquares. So, suppose we have a predator in state $\psi$ at time $t$, the support of it's timestep function given that it returns a reproduction action is
 \[
@@ -479,9 +497,9 @@ is the rate of change of $X_B$-infeasibility with the $j^th$ non-basic variable.
 
 When proposing a pivot, we first decide which column to pivot on.
  
-Let the potential energy of the $j^{th}$ non-basic variable be
+Let the potential energy of the $j^{th}$ non-basic variable in pivot state $\mu$ be
 \[
-E_j = D_j(X_{Nj} - H(-D_j))
+E_j(\mu) = D_j(X_{Nj} - H(-D_j))
 \]
 where $H$ is the Heaviside step function.
 
@@ -497,13 +515,13 @@ be the total potential energy of the Markov state, and let the \textit{energy pe
 \[
 P_E = \frac{\sum_j e^{k_cE_j}}{n\prod_j e^{k_cE_j}} = \frac{\sum_j e^{k_cE_j}}{n} e^{-k_cE_P} 
 \]
-where $n$ is the number of non-basic variables. Notice that the energy penalty of a feasible state is 1, so it only affects infeasible states.
+where $n$ is the number of non-basic variables. Notice that the energy penalty of all feasible states is 1.
 
 So, if we multiply the probability of the Markov state by its energy penalty then
 \[
 P_EP(j) = \frac{e^{-k_c(E_P - E_j)}}{n}
 \]
-If we multiply the probability of the Markov state by its energy penalty then the contribution of the column decision to the Metropolis-Hastings acceptance probability becomes
+and the contribution of the column decision to the Metropolis-Hastings acceptance probability becomes
 \[
 \lambda_j = \frac{P_E'P'(j)}{P_EP(j)} = e^{k_c((E_P-E_j) - (E_P' - E'_j))} = e^{-k_c(\Delta E_P - \Delta E_j)}
 \]
@@ -518,7 +536,7 @@ An active pivot point is chosen with a probability proportional to the exponenti
 \[
 P(\iota \to \iota'|j) = \frac{e^{-k_r\iota'}}{\sum_{\iota''(X_B +\Delta''T_j) : \Delta'',i''\in \alpha_j}  e^{-k_r\iota''}}
 \]
-where $T_j = -B^{-1}N_j$ is the tableau values of column $j$.
+where $T_j = -B^{-1}N_j$ is the $t^{th}$ column of the tableau.
 
 TODO: Need to include column j itself in this, and its contribution to infeasibility.
 
@@ -536,13 +554,33 @@ and multiply the probability of a Markov state by its infeasibility penalty, the
 \]
 Notice again that the infeasibility penalty of feasible states is 1, so again it has not effect on feasible states.
 
-So, the compound penalty of a Markov state is the energy penalty times the infeasibility penalty
+\subsubsection{Proposal function summary}
+
+To summarise, the probability of a Markov state, $\mu$, is the probability of the trajectory times the energy penalty times the infeasibility penalty
 \[
-P_{E\iota} = \frac{\sum_j e^{k_cE_j}}{n} e^{-k_cE_P-k_r\iota}
+P(\mu) = P(X(\mu))\frac{\sum_j e^{k_cE_j(\mu)}}{n} e^{-k_cE_P(\mu)}e^{-k_r\iota(\mu)}
 \]
-but the final contribution to the MH acceptance probbility is 
+The probability of proposing a pivot $(i,j,l)$, where $l$ identifies the bound of the leaving variable (or the $j^{th}$ column if $i=-1$) is given by
 \[
-\lambda_j = e^{-k_c(\Delta E_P - \Delta E_j)}
+P(\mu \rightarrow \mu') = 
+\frac{e^{k_c E_{j(\mu\rightarrow\mu')}(\mu)}}{\sum_{j'} e^{k_c E_{j'}(\mu)}}
+\frac{e^{-k_r \iota(\mu')}}{\sum_{\mu'' \in a_j}e^{-k_r\iota(\mu'')}}
+\]
+So
+\[
+P(\mu)P(\mu\rightarrow\mu') = 
+\frac{P(X(\mu))e^{-k_c(E_P(\mu) - E_{j(\mu\rightarrow\mu')}(\mu))}e^{-k_r(\iota(\mu)+\iota(\mu'))}}
+{n\sum_{\mu'' \in a_{j(\mu\rightarrow\mu')}}e^{-k_r\iota(\mu'')}} 
+\]
+So, the MH acceptance probability is
+\[
+\frac{P(\mu')P(\mu'\rightarrow \mu)}{P(\mu)P(\mu\rightarrow \mu')} =
+\frac{P(X(\mu'))e^{-k_c(E_P(\mu') - E_{j(\mu'\rightarrow\mu)}(\mu'))}}
+{P(X(\mu))e^{-k_c(E_P(\mu) - E_{j(\mu\rightarrow\mu')}(\mu))}}
+\]
+So the final contribution to the MH acceptance probability is 
+\[
+\lambda_j = e^{k_c(\Delta E_P - \Delta E_j)}
 \]
 
 TODO: should $k_c$ and $k_r$ (or alternatively $E_P$ and $\iota$) be per column and row so that the rate of decay doesn't depend on the size of the problem? Can we approximate the number of infeasible vertices (for given infeasible variable set. For n infeasible vars, the infeasible vertices are described by $2^n$ nnc polyhedra. Alternatively, if we ensure that $k_r\iota$ dominates over $k_cE_P$ then we should expect the dynamics of a phase 1 potential energy pivot...i.e. ensure that probabilities increase monotonically in the forward phase 1 direction).

@@ -9,6 +9,8 @@
 #include "LinearSum.h"
 #include "Event.h"
 
+template<typename A> class Trajectory;
+
 template<typename AGENT>
 class State {
 public:
@@ -25,6 +27,8 @@ public:
     double forwardOccupationNumber(const std::vector<double> &trajectory) const;
 
     double backwardOccupationNumber(const std::vector<double> &trajectory) const;
+
+    double occupationNumber(const std::vector<double> &trajectory) const;
 
     double occupationUpperBound() const {
         return std::min(AGENT::actDomainSize()*1.0, incomingEventsByState[agent].size()*1.0);
@@ -99,5 +103,10 @@ double State<AGENT>::forwardOccupationNumber(const std::vector<double> &trajecto
     return occupation;
 }
 
+template<typename AGENT>
+double State<AGENT>::occupationNumber(const std::vector<double> &trajectory) const {
+    if(trajectory.size() == Trajectory<AGENT>::dimension(time)) return backwardOccupationNumber(trajectory);
+    return forwardOccupationNumber(trajectory);
+}
 
 #endif //GLPKTEST_STATE_H

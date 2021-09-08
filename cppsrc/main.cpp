@@ -61,13 +61,11 @@ using glp::X;
 int main(int argc, char *argv[]) {
 
 
-//    UnitTests::testConstraintImplication();
-
 //    Experiments::BinomialAgentAssimilation();
 //    Experiments::CatMouseSingleObservation();
-    Experiments::CatMouseAssimilation();
+//    Experiments::CatMouseAssimilation();
 //    Experiments::PredPreySingleObservation();
-//    Experiments::PredPreyAssimilation();
+    Experiments::PredPreyAssimilation();
 
 
 //    PoissonState<PredPreyAgent> startState;

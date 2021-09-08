@@ -151,7 +151,7 @@ void Experiments::PredPreySingleObservation() {
     constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
     constexpr int nSamples = 1500000; //250000;
     constexpr int nBurninSamples = 10000;
-    constexpr int nRejectionSamples = 250000;
+    constexpr int nRejectionSamples = 500000;
     //    constexpr int plotTimestep = nTimesteps-1;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
@@ -207,9 +207,12 @@ void Experiments::CatMouseAssimilation() {
     constexpr double pMakeObservation = 0.3;//0.04;    // prob of making an observation of each gridsquare at each timestep
     constexpr double pObserveIfPresent = 1.0;
     constexpr int nSamplesPerWindow = 1500000; //250000;
-    constexpr int nBurninSamples = 5000;
-    constexpr int nPriorSamples = 100000;
+    constexpr int nBurninSamples = 10000;
+//    constexpr int nPriorSamples = 100000;
 
+//    with all agent states at T=0 observed 1, 0 ,0 ,1
+//    Analysis Means = {0.609056, 0.390944, 0.280905, 0.719095}
+//    Exact exactEndState = {0.625, 0.375, 0.25, 0.75}
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
 
     BernoulliModelState<CatMouseAgent> startStateDist({0.9, 0.1, 0.1, 0.9});
@@ -246,14 +249,81 @@ void Experiments::CatMouseAssimilation() {
         std::cout << "Exact exactEndState = " << exact.exactEndState << std::endl;
     }
 
-    ModelStateSampleStatistics<CatMouseAgent> priorEnd;
-    priorEnd.sampleFromEndState(
-            Trajectory<CatMouseAgent>::priorSampler(nWindows * windowSize, startStateDist.sampler()),
-            nPriorSamples
-    );
-    std::cout << "Prior end means = " << priorEnd.means() << std::endl;
-    std::cout << "Real end state = " << realTrajectory.endState() << std::endl;
-    std::cout << "Total information gain = " << informationGain(realTrajectory.endState(), priorEnd, sampleStats) << std::endl;
+//    ModelStateSampleStatistics<CatMouseAgent> priorEnd;
+//    priorEnd.sampleFromEndState(
+//            Trajectory<CatMouseAgent>::priorSampler(nWindows * windowSize, startStateDist.sampler()),
+//            nPriorSamples
+//    );
+//    std::cout << "Prior end means = " << priorEnd.means() << std::endl;
+//    std::cout << "Real end state = " << realTrajectory.endState() << std::endl;
+//    std::cout << "Total information gain = " << informationGain(realTrajectory.endState(), priorEnd, sampleStats) << std::endl;
+
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+void Experiments::CatMouseMultiObservation() {
+    constexpr int nTimesteps = 2;
+//    constexpr int nBurninSamples = 1000;
+    constexpr int nSamples = 10000000;
+
+    Random::gen.seed(530673);
+
+    BernoulliModelState<CatMouseAgent>      startState({0.9, 0.1, 0.1, 0.9});
+    ConvexPMF<Trajectory<CatMouseAgent>>    prior(nTimesteps, startState.PMF());
+    ConvexPMF<Trajectory<CatMouseAgent>> likelihood(nTimesteps, {
+            AgentStateObservation<CatMouseAgent>(
+                    State<CatMouseAgent>(0,CatMouseAgent(CatMouseAgent::CAT, CatMouseAgent::LEFT)),
+                    1,
+                    1.0
+            ),
+            AgentStateObservation<CatMouseAgent>(
+                    State<CatMouseAgent>(0,CatMouseAgent(CatMouseAgent::CAT, CatMouseAgent::RIGHT)),
+                    0,
+                    1.0
+            ),
+            AgentStateObservation<CatMouseAgent>(
+                    State<CatMouseAgent>(0,CatMouseAgent(CatMouseAgent::MOUSE, CatMouseAgent::LEFT)),
+                    0,
+                    1.0
+            ),
+            AgentStateObservation<CatMouseAgent>(
+                    State<CatMouseAgent>(0,CatMouseAgent(CatMouseAgent::MOUSE, CatMouseAgent::RIGHT)),
+                    1,
+                    1.0
+            )
+    });
+    ConvexPMF<Trajectory<CatMouseAgent>> posterior(prior*likelihood);
+
+    std::cout << "Prior support is \n" << prior.convexSupport << std::endl;
+    std::cout << "Likelihood support is \n" << likelihood.convexSupport << std::endl;
+    std::cout << "Posterior support is \n" << posterior.convexSupport << std::endl;
+
+    MCMCSampler sampler(posterior, Trajectory<CatMouseAgent>(
+//            {0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1} // cat stay,stay
+    {0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0} // cat move,stay
+    ));
+    //    for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
+
+    std::multiset<Trajectory<CatMouseAgent>> trajHistogram;
+    for(int s=0; s<nSamples; ++s) {
+        trajHistogram.insert(sampler.nextSample());
+    }
+
+//    ModelStateSampleStatistics<CatMouseAgent> sampleStats(sampler, nSamples);
+
+    std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
+    std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
+    std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl;
+
+    //    std::cout << "Analysis means = " << sampleStats.means() << std::endl;
+    for(auto Tp = trajHistogram.begin(); Tp != trajHistogram.end(); Tp = trajHistogram.upper_bound(*Tp)) {
+        std::cout << trajHistogram.count(*Tp) << " " << *Tp << std::endl;
+    }
+
+    ExactSolver<CatMouseAgent> exact(posterior);
+    std::cout << "Exact means = " << exact.exactEndState << std::endl;
 
 }
 
@@ -294,6 +364,35 @@ void Experiments::CatMouseSingleObservation() {
     ExactSolver<CatMouseAgent> exact(window.posterior);
     std::cout << "Exact means = " << exact.exactEndState << std::endl;
 
+}
+
+
+void Experiments::CatMousePrior() {
+    ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
+    constexpr int nTimesteps = 2;
+    constexpr int nSamples = 1500000; //250000;
+    constexpr int nBurninSamples = 5000;
+    constexpr int nPriorSamples = 100000;
+
+    ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
+
+    BernoulliModelState<CatMouseAgent> startStateDist({0.9, 0.1, 0.1, 0.9});
+    ConvexPMF<Trajectory<CatMouseAgent>> priorPMF(nTimesteps, startStateDist.PMF());
+    std::cout << "Prior support = \n" << priorPMF.convexSupport << std::endl;
+
+    MCMCSampler sampler(priorPMF, Trajectory<CatMouseAgent>(nTimesteps, startStateDist.sampler()));
+    for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
+    ModelStateSampleStatistics<CatMouseAgent> sampleStats(sampler, nSamples);
+
+    std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
+    std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
+    std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl;
+
+    std::cout << "Analysis histograms =\n" << sampleStats << std::endl;
+    std::cout << "Analysis Means = " << sampleStats.means() << std::endl;
+
+    ExactSolver<CatMouseAgent> exact(priorPMF);
+    std::cout << "Exact exactEndState = " << exact.exactEndState << std::endl;
 }
 
 

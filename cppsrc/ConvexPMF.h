@@ -53,6 +53,9 @@ public:
     ConvexPMF(int nTimesteps, const AgentStateObservation<AGENT> &observation)
     : ConvexPMF(likelihood(nTimesteps, observation)) { }
 
+    ConvexPMF(int nTimesteps, std::vector<AgentStateObservation<AGENT>> observations)
+            : ConvexPMF(likelihood(nTimesteps, std::move(observations))) { }
+
 
     ConvexPMF(int nTimesteps, ConvexPMF<ModelState<AGENT>> priorStartState)
     : ConvexPMF([startState = std::move(priorStartState.extendedLogProb)](const Trajectory<AGENT> &T) {
@@ -100,6 +103,21 @@ public:
             };
         }
         return ConvexPMF(std::move(extendedLogP), Trajectory<AGENT>::dimension(nTimesteps), observation.support());
+    }
+
+    static ConvexPMF<Trajectory<AGENT>> likelihood(int nTimesteps, std::vector<AgentStateObservation<AGENT>> observations) {
+        ConvexPolyhedron support;
+        for(const AgentStateObservation<AGENT> &observation: observations) {
+            support += observation.support();
+        }
+        std::function<double(const Trajectory<AGENT> &)> extendedLogP = [observations = std::move(observations)](const Trajectory<AGENT> &X) {
+            double extLogP = 0.0;
+            for(const AgentStateObservation<AGENT> &observation: observations) {
+                extLogP += observation.extendedLogP(observation.state.occupationNumber(X));
+            }
+            return extLogP;
+        };
+        return ConvexPMF(std::move(extendedLogP), Trajectory<AGENT>::dimension(nTimesteps), std::move(support));
     }
 
 

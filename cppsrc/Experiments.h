@@ -18,6 +18,7 @@ public:
 
 //    static void PredPreySingleObservation();
     static void CatMouseSingleObservation();
+    static void CatMouseMultiObservation();
     static void RandomWalk();
 //    static void GnuplotTest();
 
@@ -57,6 +58,8 @@ public:
     }
 
     static void PredPreySingleObservation();
+
+    static void CatMousePrior();
 };
 
 

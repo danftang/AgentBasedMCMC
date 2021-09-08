@@ -30,7 +30,7 @@ public:
                         int occupation = std::round(M[agentId]);
                         double p = prob(AGENT(agentId));
                         switch(occupation) {
-                            case 0: extendedLogP += log(1.0 - p); break;
+                            case 0: extendedLogP += log(1.0 - p); break; // TODO: extend if p == 1 or 0
                             case 1: extendedLogP += log(p); break;
                             default: extendedLogP += log(infeasibleExpectationFraction *(p*p + (1.0-p)*(1.0-p)));
                         }
