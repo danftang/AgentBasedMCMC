@@ -464,25 +464,31 @@ void Experiments::RandomWalk() {
 // Fermionic + continuity constraints are all integer
 void Experiments::FermionicIntegrality() {
     PredPreyAgent::GRIDSIZE = 3;
-    int nTimesteps = 3;
+    int nTimesteps = 2;
     ConvexPolyhedron fermi =
-            ABMConstraints<PredPreyAgent>::actFermionicABMConstraints(nTimesteps) +
+            ABMConstraints<PredPreyAgent>::actFermionicConstraints(nTimesteps) +
             ABMConstraints<PredPreyAgent>::continuityConstraints(nTimesteps);
 
     std::cout << "Constraints:\n" << fermi << std::endl;
 
     glp::Problem lp = fermi.toLPProblem();
-//    std::cout << "LP problem:\n" << lp << std::endl;
+    std::cout << "LP problem:\n" << lp << std::endl;
 
     SimplexMCMC  simplex(lp, nullPMF);
 
     std::cout << "Simplex:\n" << simplex << std::endl;
 
     int nFractional = 0;
-    int nSamples = 10000;
+    int nSamples = 1000;
     for(int sample=0; sample < nSamples; ++sample) {
         simplex.randomWalk();
-        if(!simplex.solutionIsInteger()) ++nFractional;
+        if(!simplex.solutionIsInteger()) {
+            ++nFractional;
+            for(int eventId = 1; eventId < simplex.X().size(); ++eventId) {
+                if(fabs(simplex.X()[eventId]) > tol)
+                    std::cout << simplex.X()[eventId] << " " << Event<PredPreyAgent>(eventId) << std::endl;
+            }
+        }
         std::cout << "Sample is: " << nFractional << " " << simplex.X() << std::endl;
     }
 
