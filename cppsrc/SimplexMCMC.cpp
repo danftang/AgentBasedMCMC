@@ -201,7 +201,7 @@ void SimplexMCMC::setLPState(const std::vector<double> &lpState) {
 }
 
 void SimplexMCMC::randomWalk() {
-    pivot(proposePivot());
+    pivot(Phase2Pivot(*this, Random::nextInt(1, nNonBasic()+1)));
 }
 
 ProposalPivot SimplexMCMC::proposePivot() {
@@ -319,6 +319,12 @@ bool SimplexMCMC::solutionIsPrimaryFeasible() {
     return true;
 }
 
+bool SimplexMCMC::solutionIsInteger() {
+    for(int i=1; i<=nBasic(); ++i) {
+        if(fabs(beta[i] - round(beta[i])) > tol) return false;
+    }
+    return true;
+};
 
 glp::Problem &SimplexMCMC::initialiseProblem(glp::Problem &lp) {
     lp.advBasis();

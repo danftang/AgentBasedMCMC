@@ -60,6 +60,8 @@ public:
     static void PredPreySingleObservation();
 
     static void CatMousePrior();
+
+    static void FermionicIntegrality();
 };
 
 

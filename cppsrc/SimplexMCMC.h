@@ -85,6 +85,7 @@ public:
     bool abmSanityChecks();
 
     bool solutionIsPrimaryFeasible();
+    bool solutionIsInteger();
 protected:
     bool processProposal(const ProposalPivot &proposal);
     ProposalPivot proposePivot();

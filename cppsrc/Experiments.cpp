@@ -459,6 +459,37 @@ void Experiments::RandomWalk() {
     }
 }
 
+
+// Test whether all vertices of the polyhedron described by the
+// Fermionic + continuity constraints are all integer
+void Experiments::FermionicIntegrality() {
+    PredPreyAgent::GRIDSIZE = 3;
+    int nTimesteps = 3;
+    ConvexPolyhedron fermi =
+            ABMConstraints<PredPreyAgent>::actFermionicABMConstraints(nTimesteps) +
+            ABMConstraints<PredPreyAgent>::continuityConstraints(nTimesteps);
+
+    std::cout << "Constraints:\n" << fermi << std::endl;
+
+    glp::Problem lp = fermi.toLPProblem();
+//    std::cout << "LP problem:\n" << lp << std::endl;
+
+    SimplexMCMC  simplex(lp, nullPMF);
+
+    std::cout << "Simplex:\n" << simplex << std::endl;
+
+    int nFractional = 0;
+    int nSamples = 10000;
+    for(int sample=0; sample < nSamples; ++sample) {
+        simplex.randomWalk();
+        if(!simplex.solutionIsInteger()) ++nFractional;
+        std::cout << "Sample is: " << nFractional << " " << simplex.X() << std::endl;
+    }
+
+//    std::cout << "Simplex:\n" << simplex << std::endl;
+    std::cout << "Fractional proportion = " << nFractional * 1.0/nSamples << std::endl;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 

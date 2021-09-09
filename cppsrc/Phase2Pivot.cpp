@@ -32,8 +32,13 @@ Phase2Pivot::Phase2Pivot(glp::Simplex &lp, int j, std::vector<double> column): P
         }
     }
     if(!pivotRows.empty()) this->i = pivotRows.front();
-    if(lp.isAtUpperBound(j)) deltaj = -deltaj;
-    orderPivotRows(lp);
+    if(lp.isAtUpperBound(j)) {
+        deltaj = -deltaj;
+        leavingVarToUpperBound = (col[i] < 0.0);
+    } else {
+        leavingVarToUpperBound = (col[i] > 0.0);
+    }
+//    orderPivotRows(lp);
 }
 
 

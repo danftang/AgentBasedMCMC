@@ -64,9 +64,10 @@ int main(int argc, char *argv[]) {
 //    Experiments::CatMouseSingleObservation();
 //    Experiments::CatMouseAssimilation();
 //    Experiments::CatMouseMultiObservation();
-    Experiments::PredPreySingleObservation();
+//    Experiments::PredPreySingleObservation();
 //    Experiments::PredPreyAssimilation();
 
+    Experiments::FermionicIntegrality();
 
 //    PoissonState<PredPreyAgent> startState;
 //    TrajectoryPriorDistribution<PredPreyAgent> myPrior(startState, 8);
