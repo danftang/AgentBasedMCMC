@@ -266,7 +266,7 @@ void Experiments::CatMouseAssimilation() {
 void Experiments::CatMouseMultiObservation() {
     constexpr int nTimesteps = 2;
 //    constexpr int nBurninSamples = 1000;
-    constexpr int nSamples = 10000000;
+    constexpr int nSamples = 1000000;
 
     Random::gen.seed(530673);
 
@@ -319,11 +319,12 @@ void Experiments::CatMouseMultiObservation() {
 
     //    std::cout << "Analysis means = " << sampleStats.means() << std::endl;
     for(auto Tp = trajHistogram.begin(); Tp != trajHistogram.end(); Tp = trajHistogram.upper_bound(*Tp)) {
-        std::cout << trajHistogram.count(*Tp) << " " << *Tp << std::endl;
+        std::cout << trajHistogram.count(*Tp)*1.0/nSamples << " " << *Tp << std::endl;
     }
 
-    ExactSolver<CatMouseAgent> exact(posterior);
-    std::cout << "Exact means = " << exact.exactEndState << std::endl;
+    std::cout << "Exact values (calculated by hand) should be: 0.5625, 0.1875, 0.1875, 0.0625" << std::endl;
+//    ExactSolver<CatMouseAgent> exact(posterior);
+//    std::cout << "Exact means = " << exact.exactEndState << std::endl;
 
 }
 
@@ -334,7 +335,7 @@ void Experiments::CatMouseSingleObservation() {
     // TODO: analysis probs slightly out at 3 timesteps (with infeasibleExpectationFraction = 0.5. Closer when 1.0)
     constexpr int nTimesteps = 3;
     constexpr int nBurninSamples = 10000;
-    constexpr int nSamples = 1000000;
+    constexpr int nSamples = 1500000;
 
     AssimilationWindow<CatMouseAgent> window(
             nTimesteps,

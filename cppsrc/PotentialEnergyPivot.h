@@ -11,8 +11,8 @@
 
 class PotentialEnergyPivot: public Phase1Pivot {
 public:
-    static constexpr double kappaRow = -3.5;//-5.0; // exponential coefficient for probabilities of choosing row based on change in infeasibility
-    static constexpr double p1 = 0.1; // Given a simplex state that has only one high energy column, p1 gives the probability that the high energy col will be proposed
+    static constexpr double kappaRow = -1.0;//-5.0; // exponential coefficient for probabilities of choosing row based on change in infeasibility
+    static constexpr double p1 = 0.2; // Given a simplex state that has only one high energy column, p1 gives the probability that the high energy col will be proposed
 //    static constexpr double p0 = 0.01; // relative probability of choosing column with zero reduced cost compared to a high potential col
 //    static constexpr double p1 = 0.1; // relative probability of choosing a column with a low potential compared to a high potential col
 

@@ -160,8 +160,7 @@ The timestep function for a predator/prey agent is shown in algorithm \ref{agent
 	\end{algorithmic}
 \end{algorithm}
 
-\subsection{The posterior}
-A trajectory must satisfy a number of constraints in order to be a valid trajectory of an ABM. Since the elements of a trajectory are counts, they must all be non-negative integers, we'll call this the \textit{non-negative integer constraint}
+A tensor must satisfy a number of constraints in order to be a valid trajectory of an ABM. Since the elements of a trajectory are counts, they must all be non-negative integers, we'll call this the \textit{non-negative integer constraint}
 \begin{equation}
 \forall t,\psi, a: T^t_{\psi a} \ge 0, T^t_{\psi a} \in \mathbb{Z}
 \label{nonNegativeInt}
@@ -172,13 +171,17 @@ A trajectory, $T^t_{\psi a}$, must also be \textit{continuous} which means that 
 \forall t \in 1 ... n:\forall \phi: \sum_{\psi, a} F(\psi, a)_\phi T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0
 \label{continuous}
 \end{equation}
-where the trajectory runs from $t=0$ to $t=n$. If a trajectory satisfies constraints \ref{nonNegativeInt} and \ref{continuous} we say that it is \textit{valid}.
+where the trajectory runs from $t=0$ to $t=n$.
+
+So, for a given number of timesteps, $N$, number of agent states, $S$, and number of agent actions, $A$, we can define the set of all trajectories, $\mathcal{T}^N_{SA}$ to be the set of tensors that satisfy the equations \ref{nonNegativeInt} and \ref{continuous}.
+
+\subsection{The posterior}
 
 If we let $\Psi^t$ be the vector whose $\psi^{th}$ element is the number of agents in state $\psi$ at the beginning of timestep $t$, then the prior probability of a trajectory is
 \[
 P(T) =
 \begin{cases}
-P\left(\Psi^0 = T^0 \mathbf{1} \right) \prod_{\psi, t} P\left(T^t_{\psi} \mid \Psi^t = T^t \mathbf{1}\right) & \text{if } T \text{ is valid} \\
+P\left(\Psi^0 = T^0 \mathbf{1} \right) \prod_{\psi, t} P\left(T^t_{\psi} \mid \Psi^t = T^t \mathbf{1}\right) & \text{if } T \in \mathcal{T}^N_{SA} \\
 0 & \text{otherwise}
 \end{cases}
 \]
@@ -195,7 +198,7 @@ P(T) =
 \begin{cases}
 P(\Psi^0 = T^0\mathbf{1})
 \prod_{t, \psi}\left(T^t_{\psi} \cdot \mathbf{1} \right)!
-\prod_a \frac{P(\pi(\psi, T^{t}\mathbf{1})=a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T^t_{\psi a} \text{ is valid} \\
+\prod_a \frac{P(\pi(\psi, T^{t}\mathbf{1})=a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA} \\
 0 & \text{otherwise}\\
 \end{cases}
 \]
@@ -247,15 +250,15 @@ P(T|\Omega) \propto
 P(\Psi^0 = T^0\mathbf{1})
 \prod_{(\omega,v) \in \Omega} P\left(\omega(T)=v\right)
 \prod_{t, \psi}\left(T^t_{\psi}\cdot\mathbf{1}\right)!
-\prod_{a}\frac{P(\pi(\psi,T^t\mathbf{1})=a)^{T^{t}_{\psi a}}}{T^t_{\psi a}!} & \text{if } T^t_{\psi a} \text{ is valid} \\
+\prod_{a}\frac{P(\pi(\psi,T^t\mathbf{1})=a)^{T^{t}_{\psi a}}}{T^t_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA} \\
 0 & \text{otherwise}\\
 \end{cases}
 \label{posterior}
 \end{equation}
 
-In many practical applications, sampling from this posterior is difficult because it has zero probability for the vast majority of trajectories (i.e. most trajectories are invalid, contain an impossible action or are refuted by the observations). This is true of our predator/prey model, for example. Even though we can generate valid trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the trajectory has no predator or prey at a time and place that we observed footprints, then the observations refute the trajectory and the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling, for example, are not practical. Techniques based on particle filtering can sometimes have more success but often suffer from particle degeneracy.
+In many practical applications, sampling from this posterior is difficult because it has zero probability for the vast majority of tensors (i.e. most tensors are not trajectories, contain an impossible action or are refuted by the observations). Even though we can generate trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the trajectory has no predator or prey at a time and place that we observed footprints, then the observations refute the trajectory and the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling, for example, are not practical. Techniques based on particle filtering may have more success but will likely soon reach a state containing a set of particles, none of which can be fit to the observations.
 
-In this paper we'll use the Metropolis-Hastings algorithm to generate samples. This algorithm requires a proposal function which randomly generates a proposed next sample given the current one. However, given the current sample, we still have the problem of finding a trajectory with non-zero probability. For example if we generate a new trajectory by perturbing one or more elements of the last sample at random (a common strategy with Metropolis-Hastings), it's very unlikely that we'll end up with a trajectory that is valid, contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
+In this paper we'll show how the Metropolis-Hastings algorithm can be used to generate samples from equation \ref{posterior}. The key challenge will be to create a proposal function which randomly generates a proposed next sample given the current one. Given the current sample, finding a new trajectory with non-zero probability is still not easy. For example, a common strategy with Metropolis-Hastings is to generate a new sample by perturbing one or more elements of the previous sample at random. However, if we do this with an ABM trajectory it's very unlikely that the perturbed tensor will be a trajectory that contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
 
 \section{Approximating the support of the posterior}
 %##########################################
@@ -265,38 +268,43 @@ We'll solve this problem by first calculating the support of the posterior, $\su
 From equation \ref{posterior}
 \begin{equation}
 \supp (P( T |\Omega)) =
+\mathcal{T}^N_{SA} \cap 
 \supp(P(\Psi^0 = T^0\mathbf{1}))\cap 
 \bigcap_{(\omega,v) \in \Omega}  \supp\left(P\left(\omega(T)=v\right)\right) \cap
-\bigcap_{T^t_{\psi a} \ne 0} \supp\left(P\left( \pi'(t,\psi,T) = a \right)\right) \cap \left\{T \mid T \text{ is valid}\right\}
+\bigcap_{T^t_{\psi a} \ne 0} \supp\left(P\left( \pi'(t,\psi,T) = a \right)\right) 
 \label{support}
 \end{equation}
-i.e. in order for the posterior to be non-zero, all the observation likelihoods must be non-zero, the probability of each agent's action at every timestep must be non-zero and the trajectory must be valid.
+i.e. in order for $T$ to have non-zero posterior probability, it must be a trajectory of the ABM, it must have a start state that has non-zero prior probability, all the observation likelihoods must be non-zero and the probability of each agent's action at every timestep must be non-zero.
 
 \subsection{Fermionic Trajectories}
-We define a Fermionic trajectory to be one whose elements are all either 0 or 1. i.e. in addition to the validity constraints of equations \ref{nonNegativeInt} and \ref{continuous} a Fermionic trajectory also satisfies the \textit{Fermionic constraints}
+
+In the following we will restrict ourselves to considering \textit{Fermionic trajectories}, which we define to be any trajectory whose elements are all either 0 or 1. i.e. in order to be a Fermionic trajectory a tensor must not only satisfy the constraints of equations \ref{nonNegativeInt} and \ref{continuous} but must also satisfy the \textit{Fermionic constraints}
 \begin{equation}
 \forall t,\psi,a: T^t_{\psi a} \in \left\{ 0,1 \right\}
 \label{fermionic}
 \end{equation}
-This can be interpreted as meaning that no two agents in the same state at the same time, can perform the same action.
+This can be interpreted as meaning that no two agents in the same state at the same time can perform the same action. Notice that the Fermionic constraints imply the non-negative integer constraints, so a Fermionic trajectory is any tensor that satisfies equations \ref{fermionic} and \ref{continuous}. We'll refer to the set of all Fermionic trajectories as $\mathcal{F}^N_{SA}$.
 
-By ****'s theorem, the Fermionic constraints of equation \ref{fermionic} are equivalent to requiring that a Fermionic trajectory must lie on a vertex of the unit hypercube defined by
+In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so the switch from $\mathcal{T}^N_{SA}$ to $\mathcal{F}^N_{SA}$ in equations $\ref{posterior}$ and \ref{fermionic} will often be an acceptable assumption that will have very little effect. However, if the Fermionic constraints are not acceptable, section ** describes how to extend the algorithm to apply to non-Fermionic trajectories.
+
+\subsection{Convex polyhedra}
+
+Since a trajectory in $\mathcal{F}^N_{SA}$ has $NSA$ elements, we can think of each trajectory as a single point in an $NSA$-dimensional space, and the set of all trajectories, $\mathcal{F}^N_{SA}$, as a set of points in this space.
+
+The Fermionic constraints are equivalent to requiring that a Fermionic trajectory must lie on a vertex of the unit hypercube in $NSA$-dimensional space, defined by
 \begin{equation}
 \forall t,\psi,a: 0 \le T^t_{\psi a} \le 1
 \label{linearfermionic}
 \end{equation}
-Written in this way, we can see that the non-negative constraints of equations \ref{nonNegativeInt} are implied by the Fermionic constraints. What's more, since the vertices of a hypercube describe a convex polyhedron, and any subset of the vertices of a convex polyhedron also describes the vertex set of a convex polyhedron, then, if we condition the posterior on the Fermionic constraints (in addition to all the other constraints) we ensure that the support of the posterior can be described as the vertices of a convex polyhedron.
+
+
+TODO: just add constraints and define polyhedron in terms of linear constraints
+Since the vertices of a hypercube describe a convex polyhedron, and any subset of the vertices of a convex polyhedron also describes the vertex set of a convex polyhedron, then, as we add the  if we condition the posterior on the Fermionic constraints (in addition to all the other constraints) we ensure that the support of the posterior can be described as the vertices of a convex polyhedron.
+
+
 
 If we begin by adding the continuity constraints of equation \ref{continuous}, since they describe a set of flow constraints then, by ****'s theorem, the resulting set of linear constraints describes a convex polyhedron whose vertices are the valid, Fermionic trajectories.
 
-
-
-
- Since the continuity constraints are also linear, 
- 
-Since the Fermionic trajectories consist entirely of elements in $\{0,1\}$ we can map each one to a vertex of the unit hypercube of appropriate dimension. So, the set of all Fermionic trajectories forms a subset of the vertices of the unit hypercube. Since the unit hypercube is a convex polyhedron, then the polyhedron whose vertex set is the set of Fermionic trajectories is also a convex polyhedron. 
-
-In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so the addition of the Fermionic constraint will have very little effect on the dynamics of the model. However, if the Fermionic constraint is not acceptable, section ** describes how to remove this constraint.
 
 Given a Fermionic trajectory we can easily convert the union term in equation \ref{linearSupport} 
 \[
