@@ -49,7 +49,7 @@
 \maketitle
 
 \begin{abstract}
-The discipline of data assimilation (DA) addresses the problem of how to make use of partial, noisy experimental observations to provide information about the time evolution of unobserved properties of a dynamical system. DA has developed rapidly in applications such as weather forecasting \cite{kalnay_atmospheric_2003} but relatively little progress has been made in developing techniques that are applicable when the dynamical system is an agent based model. ABMs consist of `agents' which often make discrete choices from a number of possible actions, meaning the space of model trajectories is not continuous and we cannot use assimilation techniques that require the gradient of the posterior in this space. In addition, a set of observations will typically refute a large proportion of model trajectories, making it difficult to even identify trajectories that have non-zero probability given the observations, and making it challenging to use algorithms that rely on sampling.
+The discipline of data assimilation (DA), sometimes known as data fusion, addresses the problem of how to make use of noisy, imcomplete experimental observations to provide information about the time evolution of unobserved properties of a dynamical system. DA has developed rapidly in applications such as weather forecasting but relatively little progress has been made in developing techniques that are applicable when the dynamical system is an agent based model. ABMs consist of `agents' which often make discrete choices from a number of possible actions, meaning the space of model trajectories is not continuous and we cannot use techniques based on gradient ascent, such as 4D-VAR, that require the gradient of the posterior in this space. In addition, a set of observations will typically refute the vast majority of model trajectories, making it difficult to even identify trajectories that could have given rise to the observations, and so making it challenging to use algorithms that rely on perturbing the current solution such as non-gradient optimisation or most sampling algorithms.
 
 Here we present an algorithm that generates samples of the time evolution of an agent based model, given a set of noisy, incomplete experimental observations of the system. The algorithm approximates the set of possible trajectories as a linear program and uses an extension of the simplex algorithm to provide a proposal function for Markov-Chain-Monte-Carlo sampling.
 
@@ -76,89 +76,72 @@ Suppose we have a timestepping ABM where agents have a finite number of possible
 	
 	\item A domain of agent states $\mathcal{S} = \{\psi_0 ... \psi_m\}$
 	
-	\item An \textit{agent timestep}, which is a computer program, $\pi(\psi,\Psi)$, where $\psi \in \mathcal{S}$ the state of an agent and $\Psi \in \mathbb{Z}^m$ is a (usually sparse) vector whose $i^{th}$ element is the number of agents in state $\psi_i$ at the start of the timestep. The program returns an action $a \in \mathcal{A}$ which defines the behaviour of an agent in state $\psi$ and environment $\Psi$ in a timestep. The program may make calls to a random number generator that returns a value $0 \le r < 1$ with uniform probability, so its returned value may be non-deterministic and we write $P(\pi(\psi,\Psi)=a)$ to be the probability that the program will return action $a$, given inputs $\psi$ and $\Psi$. 
+	\item An \textit{agent timestep}, $\pi : \mathcal{S}\times\mathbb{Z}^{|\mathcal{S}|}\times\mathcal{A} \to \mathbb{R}$, such that $\pi(\psi,\Phi,a)$ gives the probability that an agent in state $\psi$, surrounded by agents, $\Phi$, will perform action $a$ (where $\Phi$ is a vector whose $i^{th}$ element is the number of agents in state $\psi_i$ at the start of the timestep).
 	
-	\item An \textit{action function}, $F: \mathcal{S} \times \mathcal{A} \to \mathbb{Z}^m$, which defines the effect of an action on the world, where $F(\psi, a)$ returns a (sparse) vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $i$ that result from an agent in state $\psi$ performing act $a$ (including the final state of the acting agent).
+	\item An \textit{action function}, $F: \mathcal{S} \times \mathcal{A} \to \mathbb{Z}^m$, which defines the effect of an action on the world, where $F(\psi, a)$ returns a vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $i$ that result from an agent in state $\psi$ performing act $a$ (including the final state of the acting agent).
 \end{itemize}
 
-As a simple demonstration, consider a spatial predator-prey model where agents are either predator or prey moving about a 2-dimensional grid. In this case, the domain of actions are $\mathcal{A} = \{ a_0=\textrm{move-left}, a_1=\textrm{move-right}, a_2=\textrm{move-up}, a_3=\textrm{move-down}, a_4=\textrm{give-birth}, a_5=\textrm{die}\}$, and the domain of agent states, $\mathcal{S}$, can be thought of as the class 
-\begin{lstlisting}
-class Agent {
-	Boolean	isaPredator
-	Integer	yPosition
-	Integer	xPosition
-}
-\end{lstlisting}
+As a simple illustration, consider a model consisting of just two gridsquares, left and right, within which can roam cats and mice. In any given timestep, agents can either move or stay still, so the domain of actions is $\mathcal{A} = \{\textrm{move}, \textrm{stay still}\} = \{a_0, a_1\}$, and the domain of agent states is, $\mathcal{S} = \{\textrm{left cat}, \textrm{right cat}, \textrm{left mouse}, \textrm{right mouse} \} = \{\psi_0, \psi_1, \psi_2, \psi_3\}$.
 
-It will be useful in the following to define an ordering of agent states. The ordering we choose isn't important but we choose to place agent \texttt{a} in the (\texttt{a.isaPredator*G$^2$ + a.yPositition*G + a.xPosition})$^{th}$ position, where \texttt{G} is the number of positions along one side of the grid. So, for example, in the $2\times 2$ grid of Figure~\ref{fig:AB-MCMC-1} there are a total of 8 \texttt{Agent} states:
-\begin{align*}
-\psi_0 &= [0, 0, 0] \\
-\psi_1 &= [0, 0, 1] \\
-\psi_2 &= [0, 1, 0] \\
-\psi_3 &= [0, 1, 1] \\
-\psi_4 &= [1, 0, 0] \\
-\psi_5 &= [1, 0, 1] \\
-\psi_6 &= [1, 1, 0] \\
-\psi_7 &= [1, 1, 1]  \\
-\end{align*}
-where $[p,y,x]$ denotes an \texttt{Agent} in state (\texttt{isaPredator=p, yPosition=y, xPosition=x}).
+A cat moves with probability $0.75$, irrespective of other agents, while a mouse will only move if there is a cat on the same gridsquare. So, the agent timestep function is
+\begin{equation}
+\begin{aligned}
+\pi(\psi, \Phi, a_0) &=
+\begin{cases}
+0.75 & \text{if } \psi \in {\psi_0, \psi_1}\\
+1 & \text{ if } \psi = \psi_2, \Phi_1 > 0 \text{ or } \psi=\psi_3, \Phi_2 > 0\\
+0 & \text{ otherwise}
+\end{cases}\\
+\pi(\psi, \Phi, a_1) &=
+\begin{cases}
+0.25 & \text{if } \psi \in {\psi_0, \psi_1}\\
+1 & \text{ if } \psi = \psi_2, \Phi_1 = 0 \text{ or } \psi=\psi_3, \Phi_2 = 0\\
+0 & \text{ otherwise}
+\end{cases}
+\end{aligned}
+\end{equation}
+
+The action function expresses the movement of the agents
+\begin{equation}
+\begin{aligned}
+F(\psi_0, a_0) &= \{0,1,0,0\}\\
+F(\psi_1, a_0) &= \{1,0,0,0\}\\
+F(\psi_2, a_0) &= \{0,0,0,1\}\\
+F(\psi_3, a_0) &= \{0,0,1,0\}\\
+F(\psi_0, a_1) &= \{1,0,0,0\}\\
+F(\psi_1, a_1) &= \{0,1,0,0\}\\
+F(\psi_2, a_1) &= \{0,0,1,0\}\\
+F(\psi_3, a_1) &= \{0,0,0,1\}\\
+\end{aligned}
+\end{equation}
+
+\subsection{Trajectories}
 
 \begin{figure}
 	\centering
 	\resizebox{0.5\textwidth}{!}{
-		\includegraphics[scale=0.5]{figs/AB-MCMC-1}
+		\includegraphics[scale=0.5]{figs/catMouseSm}
 	}
-	\caption{A simple predator-prey example.\label{fig:AB-MCMC-1}}
+	\caption{A simple cat and mouse model.\label{fig:AB-MCMC-1}}
 \end{figure}
 
+
 Let a model timestep consist of a matrix $E$ whose elements $e_{\psi a}$ are the number of agents in state $\psi$ that perform act $a$ in this timestep. For example, the timestep shown in Figure~\ref{fig:AB-MCMC-1} would be
+
 \[
 E = \kbordermatrix{
-	& a_0 & a_1 & a_2 & a_3 & a_4 & a_5 \\
-	\psi_0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-	\psi_1 & 0 & 0 & 1 & 0 & 0 & 0 \\
-	\psi_2 & 0  & 0 & 0 & 0 & 0 & 0 \\
-	\psi_3 & 0 & 0 & 0 & 0 & 0 & 0 \\
-	\psi_4 & 0  & 0 & 0 & 0 & 0 & 0 \\
-	\psi_5 & 0 & 0 & 0 & 0 & 0 & 0 \\
-	\psi_6 & 0 & 0 & 0 & 0 & 0 & 0 \\
-	\psi_7 & 1 & 0 & 0 & 0 & 0 & 0 \\ 
+	& a_0 & a_1 \\
+	\psi_0 & 0 & 0 \\
+	\psi_1 & 1 & 0 \\
+	\psi_2 & 0  & 1 \\
+	\psi_3 & 0 & 0 \\
 }
 \]
-where all elements are zero except those representing agent $\psi_1$ performing action $a_2$ and agent $\psi_7$ performing action $a_0$. Note that this matrix will generally be very sparse. 
+where all elements are zero except those representing agent $\psi_1$ performing action $a_0$ and agent $\psi_2$ performing action $a_1$.
 
-Finally, let a model trajectory be a tensor, $T$, consisting of a number of model timesteps. We use the notation $T^t$ to denote the $t^{th}$ timestep matrix, $T^t_\psi$ to denote the $\psi^{th}$ row of the $t^{th}$ timestep matrix and $T^t_{\psi a}$ to denote the $a^{th}$ element of the $\psi^{th}$ row of the $t^{th}$ timestep. By convention, we'll let indices begin at 0.
 
-The timestep function for a predator/prey agent is shown in algorithm \ref{agentTimestep} (where we assume the grid has periodic boundary conditions).
+Finally, let a model trajectory be a tensor, $T$, consisting of a number of model timesteps. We use the notation $T^t$ to denote the $t^{th}$ timestep matrix, $T^t_\psi$ to denote the $\psi^{th}$ row of the $t^{th}$ timestep matrix and $T^t_{\psi a}$ to denote the $a^{th}$ element of the $\psi^{th}$ row of the $t^{th}$ timestep. By convention, we'll let indices begin at 0. Note that this tensor will generally be very large for more realistic models, but also very sparse, so it can be dealt with computationally using a sparse representation.
 
-\begin{algorithm}
-	\caption{Timestep of a predator/prey agent}
-	\label{agentTimestep}
-	\begin{algorithmic}
-		\Function{Timestep}{agent, otherAgents}
-		\If{agent.isaPredator}
-		\If{\Call{random}{ } < $\beta_0$ and number of prey on neighbouring gridsquares of otherAgents > 0}
-		\State\Return give-birth \Comment{more likely to reproduce when food is available}
-		\EndIf
-		\If{\Call{random}{ } < $\gamma_0$}
-		\State\Return die
-		\EndIf
-		\Else
-		\If{\Call{random}{ } < $\beta_1$}
-		\State\Return give-birth
-		\EndIf
-		\If{\Call{random}{ } < $\gamma_1$}
-		\State\Return die
-		\EndIf
-		\If{\Call{random}{ } < $\delta$ and number of predators on this or neighbouring gridsquares of otherAgents > 0}
-		\State\Return die \Comment{been eaten by predator}
-		\EndIf
-		
-		\EndIf
-		\State \Return move-left, move-right, move-up or move-down based on a call to \Call{Random}{ }
-		\EndFunction
-	\end{algorithmic}
-\end{algorithm}
 
 A tensor must satisfy a number of constraints in order to be a valid trajectory of an ABM. Since the elements of a trajectory are counts, they must all be non-negative integers, we'll call this the \textit{non-negative integer constraint}
 \begin{equation}
@@ -188,9 +171,9 @@ P\left(\Psi^0 = T^0 \mathbf{1} \right) \prod_{\psi, t} P\left(T^t_{\psi} \mid \P
 where $P(\Psi^0)$ is our prior beliefs about the state at time $t=0$, and we use $\mathbf{1}$ to denote a vector whose elements are all 1.
 
 
-The probability that a single agent in a given state will perform an action, given the state of the other agents, $\Psi^t$, is given by the agent timestep function, $P(\pi(\psi,\Psi^t)=a)$, so the joint probability that $\Psi^t_\psi$ agents will perform actions $T^t_{\psi}$ in an environment of other agents $\Psi^t$, is given by the multinomial distribution
+The probability that a single agent in a given state will perform an action, given the state of the other agents, $\Psi^t$, is given by the agent timestep function, $\pi(\psi,\Psi^t,a)$, so the joint probability that $\Psi^t_\psi$ agents will perform actions $T^t_{\psi}$ in an environment of other agents $\Psi^t$, is given by the multinomial distribution
 \[
-P\left(T^t_{\psi} \mid \Psi^t \right) = \Psi^t_\psi!\prod_a \frac{P\left(\pi(\psi,\Psi^t)=a\right)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!}.
+P\left(T^t_{\psi} \mid \Psi^t \right) = \Psi^t_\psi!\prod_a \frac{\pi(\psi,\Psi^t,a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!}.
 \]
 So the prior probability of a trajectory is
 \[
@@ -198,7 +181,7 @@ P(T) =
 \begin{cases}
 P(\Psi^0 = T^0\mathbf{1})
 \prod_{t, \psi}\left(T^t_{\psi} \cdot \mathbf{1} \right)!
-\prod_a \frac{P(\pi(\psi, T^{t}\mathbf{1})=a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA} \\
+\prod_a \frac{\pi(\psi, T^{t}\mathbf{1},a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA} \\
 0 & \text{otherwise}\\
 \end{cases}
 \]
@@ -208,37 +191,7 @@ Suppose now we have a set of noisy, aggregate observations, $\Omega$, that have 
 P(T|\Omega) \propto P\left(\Omega \middle| T\right)P(T)
 \]
 
-Without loss of generality, we take $\Omega$ to consist of some number of observations that are independent of each other given the trajectory, so that the members $(\omega,v)\in \Omega$ consist of a stochastic observation operator $\omega$ and an observed value $v$ (which may be a vector). We write $P(\omega(T)=v)$ to denote the probability of observation operator $\omega$ making observation $v$ on trajectory $T$.
-
-In the case of the predator prey model, let's suppose that at the end of every day we go out to a fixed set of inspection sites and check for footprints. Suppose that if predators were present in the grid-square containing an inspection site on that day, there's a 50\% chance we'll see a footprint, and if prey were present, there's a 25\% chance. The observation function for a site is shown in algorithm \ref{observationFunc}
-
-\begin{algorithm}
-	\caption{Function for observing predator/prey footprints at a site}
-	\label{observationFunc}
-	\begin{algorithmic}
-		\Function{ObserveFootprints}{T} \Comment{T is the ABM trajectory}
-		\State $t \leftarrow$ time of observation
-		\State $x \leftarrow$ x-position of observation
-		\State $y \leftarrow$ y-position of observation
-		\State $G \leftarrow$ size of grid
-		\State $\psi \leftarrow G^2 + Gy + x$   \Comment{state of predator in this gridsquare}  
-		\State $\phi \leftarrow Gy + x$     \Comment{state of prey in this gridsquare}
-		\State $F_{pred} \leftarrow$ \Call{False}{}  \Comment{did we observe predator footprints?}
-		\State $F_{prey} \leftarrow$ \Call{False}{}  \Comment{did we observe prey footprints?}
-		
-		\If{$\sum_a T^t_{\psi a} > 0$ and \Call{Random}{ } < 0.5}
-		\State $F_{pred} \leftarrow$ \Call{True}{}
-		\EndIf
-		\If{$\sum_a T^t_{\phi a} > 0$ and \Call{Random}{ } < 0.25}
-		\State $F_{prey} \leftarrow$ \Call{True}{}
-		\EndIf
-		\State\Return $F_{pred}$, $F_{prey}$
-		\EndFunction
-	\end{algorithmic}
-\end{algorithm}
-
-
-Given this
+Without loss of generality, we take $\Omega$ to consist of some number of observations that are independent of each other given the trajectory, so that the members $(\omega,v)\in \Omega$ consist of a stochastic observation operator $\omega$ and an observed value $v$ (which may be a vector). We write $P(\omega(T)=v)$ to denote the probability of observation operator $\omega$ making observation $v$ on trajectory $T$. So
 \[
 P(\Omega|T) = \prod_{(\omega,v) \in \Omega} P(\omega(T)=v)
 \]
@@ -250,20 +203,20 @@ P(T|\Omega) \propto
 P(\Psi^0 = T^0\mathbf{1})
 \prod_{(\omega,v) \in \Omega} P\left(\omega(T)=v\right)
 \prod_{t, \psi}\left(T^t_{\psi}\cdot\mathbf{1}\right)!
-\prod_{a}\frac{P(\pi(\psi,T^t\mathbf{1})=a)^{T^{t}_{\psi a}}}{T^t_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA} \\
+\prod_{a}\frac{\pi(\psi,T^t\mathbf{1},a)^{T^{t}_{\psi a}}}{T^t_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA} \\
 0 & \text{otherwise}\\
 \end{cases}
 \label{posterior}
 \end{equation}
 
-In many practical applications, sampling from this posterior is difficult because it has zero probability for the vast majority of tensors (i.e. most tensors are not trajectories, contain an impossible action or are refuted by the observations). Even though we can generate trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the trajectory has no predator or prey at a time and place that we observed footprints, then the observations refute the trajectory and the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling, for example, are not practical. Techniques based on particle filtering may have more success but will likely soon reach a state containing a set of particles, none of which can be fit to the observations.
+The problem we're interested in is how to sample from this distribution. In many practical applications, sampling is difficult because the posterior has zero probability for the vast majority of tensors (i.e. most tensors are not trajectories, contain an impossible action or are refuted by the observations). Even though we can generate trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the observations refute the trajectory the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling, for example, are not practical. Techniques based on particle filtering may have more success but, for similar reasons, will likely soon reach a state containing a set of particles, none of which can be fit to the observations.
 
-In this paper we'll show how the Metropolis-Hastings algorithm can be used to generate samples from equation \ref{posterior}. The key challenge will be to create a proposal function which randomly generates a proposed next sample given the current one. Given the current sample, finding a new trajectory with non-zero probability is still not easy. For example, a common strategy with Metropolis-Hastings is to generate a new sample by perturbing one or more elements of the previous sample at random. However, if we do this with an ABM trajectory it's very unlikely that the perturbed tensor will be a trajectory that contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
+In this paper we'll show how the Metropolis-Hastings algorithm can be used to generate samples from equation \ref{posterior}. The challenge will be to create a proposal function which randomly generates a proposed next sample given the current one. For example, a common strategy with Metropolis-Hastings is to generate a new sample by perturbing one or more elements of the previous sample at random. However, if we do this with an ABM trajectory it's very unlikely that the perturbed tensor will be a trajectory that contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
 
 \section{Approximating the support of the posterior}
 %##########################################
 
-We'll solve this problem by first calculating the support of the posterior, $\supp(P(T^t_{\psi a}|\Omega))$ (i.e. the set of trajectories that have non-zero probability).
+We solve this problem by first calculating the support of the posterior, $\supp(P(T^t_{\psi a}|\Omega))$ (i.e. the set of trajectories that have non-zero probability).
 
 From equation \ref{posterior}
 \begin{equation}
@@ -271,7 +224,7 @@ From equation \ref{posterior}
 \mathcal{T}^N_{SA} \cap 
 \supp(P(\Psi^0 = T^0\mathbf{1}))\cap 
 \bigcap_{(\omega,v) \in \Omega}  \supp\left(P\left(\omega(T)=v\right)\right) \cap
-\bigcap_{T^t_{\psi a} \ne 0} \supp\left(P\left( \pi'(t,\psi,T) = a \right)\right) 
+\bigcap_{T^t_{\psi a} \ne 0} \supp\left(\pi(\psi,T^t\mathbf{1},a)\right) 
 \label{support}
 \end{equation}
 i.e. in order for $T$ to have non-zero posterior probability, it must be a trajectory of the ABM, it must have a start state that has non-zero prior probability, all the observation likelihoods must be non-zero and the probability of each agent's action at every timestep must be non-zero.
@@ -285,9 +238,11 @@ In the following we will restrict ourselves to considering \textit{Fermionic tra
 \end{equation}
 This can be interpreted as meaning that no two agents in the same state at the same time can perform the same action. Notice that the Fermionic constraints imply the non-negative integer constraints, so a Fermionic trajectory is any tensor that satisfies \ref{fermionic} and \ref{continuous}. We'll refer to the set of all Fermionic trajectories as $\mathcal{F}^N_{SA}$, and from now on assume that it replaces $\mathcal{T}^N_{AS}$ in the posterior, equation \ref{posterior}, and its support, equation \ref{support}, 
 
-In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so the switch from $\mathcal{T}^N_{SA}$ to $\mathcal{F}^N_{SA}$ in equations $\ref{posterior}$ and \ref{fermionic} will often be an acceptable assumption that will have very little effect. However, if the Fermionic constraints are not acceptable, section ** describes how to extend the algorithm to apply to non-Fermionic trajectories.
+In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so the switch from $\mathcal{T}^N_{SA}$ to $\mathcal{F}^N_{SA}$ in equations $\ref{posterior}$ and \ref{support} will often be an acceptable assumption that will have very little effect. However, if the Fermionic constraints are not acceptable, section ** describes how to extend the algorithm to apply to non-Fermionic trajectories.
 
 \subsection{Convex polyhedra}
+
+TODO: decide how to move from linear constraints to vertices... unit hypercube to subset of unit hypercube? Intersection of vertex sets / intersection of convex polyhedra and vertices of hypercube
 
 Since a trajectory in $\mathcal{F}^N_{SA}$ has $NSA$ elements, we can think of each trajectory as a single point in an $NSA$-dimensional space, and the set of all trajectories, $\mathcal{F}^N_{SA}$, as a set of points in this space.
 
@@ -297,7 +252,10 @@ Taken alone, the Fermionic constraints are equivalent to requiring that a Fermio
 \label{linearfermionic}
 \end{equation}
 
-If we add the continuity constraints from \ref{continuous} then we have a set of linear inequalities that defines a convex polyhedron whose vertices are $\mathcal{F}^N_{SA}$ (TODO: prove the integrality of this polyhedron).
+Since we are constraining $P(T|\Omega)$ to the fermionic trajectories, we can say its support is a subset of the set of vertices of the unit hypercube. 
+
+
+If we add the continuity constraints from \ref{continuous} then we have a set of linear inequalities which can be thought of as describing a convex polyhedron in the $NSA$-dimensional space. Since all tensors that satisfy the Fermionic constraints lie on vertices of the unit hypercube, all Fermionic trajectories must lie on the vertices of this polyhedron.
 
 
 
@@ -764,6 +722,67 @@ Given this, it's clear that all the necessary properties of the proposal functio
 \section{Results}
 
 \section{Conclusion}
+
+\section{Notes}
+
+The timestep function for a predator/prey agent is shown in algorithm \ref{agentTimestep} (where we assume the grid has periodic boundary conditions).
+
+\begin{algorithm}
+	\caption{Timestep of a predator/prey agent}
+	\label{agentTimestep}
+	\begin{algorithmic}
+		\Function{Timestep}{agent, otherAgents, act}
+		\If{\Call{IsaPredator}{agent}}
+		\If{\Call{random}{ } < $\beta_0$ and number of prey on neighbouring gridsquares of otherAgents > 0}
+		\State\Return give-birth \Comment{more likely to reproduce when food is available}
+		\EndIf
+		\If{\Call{random}{ } < $\gamma_0$}
+		\State\Return die
+		\EndIf
+		\Else
+		\If{\Call{random}{ } < $\beta_1$}
+		\State\Return give-birth
+		\EndIf
+		\If{\Call{random}{ } < $\gamma_1$}
+		\State\Return die
+		\EndIf
+		\If{\Call{random}{ } < $\delta$ and number of predators on this or neighbouring gridsquares of otherAgents > 0}
+		\State\Return die \Comment{been eaten by predator}
+		\EndIf
+		
+		\EndIf
+		\State \Return move-left, move-right, move-up or move-down based on a call to \Call{Random}{ }
+		\EndFunction
+	\end{algorithmic}
+\end{algorithm}
+
+In the case of the predator prey model, let's suppose that at the end of every day we go out to a fixed set of inspection sites and check for footprints. Suppose that if predators were present in the grid-square containing an inspection site on that day, there's a 50\% chance we'll see a footprint, and if prey were present, there's a 25\% chance. The observation function for a site is shown in algorithm \ref{observationFunc}
+
+\begin{algorithm}
+	\caption{Function for observing predator/prey footprints at a site}
+	\label{observationFunc}
+	\begin{algorithmic}
+		\Function{ObserveFootprints}{T} \Comment{T is the ABM trajectory}
+		\State $t \leftarrow$ time of observation
+		\State $x \leftarrow$ x-position of observation
+		\State $y \leftarrow$ y-position of observation
+		\State $G \leftarrow$ size of grid
+		\State $\psi \leftarrow G^2 + Gy + x$   \Comment{state of predator in this gridsquare}  
+		\State $\phi \leftarrow Gy + x$     \Comment{state of prey in this gridsquare}
+		\State $F_{pred} \leftarrow$ \Call{False}{}  \Comment{did we observe predator footprints?}
+		\State $F_{prey} \leftarrow$ \Call{False}{}  \Comment{did we observe prey footprints?}
+		
+		\If{$\sum_a T^t_{\psi a} > 0$ and \Call{Random}{ } < 0.5}
+		\State $F_{pred} \leftarrow$ \Call{True}{}
+		\EndIf
+		\If{$\sum_a T^t_{\phi a} > 0$ and \Call{Random}{ } < 0.25}
+		\State $F_{prey} \leftarrow$ \Call{True}{}
+		\EndIf
+		\State\Return $F_{pred}$, $F_{prey}$
+		\EndFunction
+	\end{algorithmic}
+\end{algorithm}
+
 
 
 %\bibliographystyle{unsrtnat}
