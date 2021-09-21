@@ -216,7 +216,7 @@ In this paper we'll show how the Metropolis-Hastings algorithm can be used to ge
 \section{Approximating the support of the posterior}
 %##########################################
 
-We solve this problem by first calculating the support of the posterior, $\supp(P(T^t_{\psi a}|\Omega))$ (i.e. the set of trajectories that have non-zero probability).
+We solve this problem by first approximating the support of the posterior, $\supp(P(T^t_{\psi a}|\Omega))$ (i.e. the set of trajectories that have non-zero probability).
 
 From equation \ref{posterior}
 \begin{equation}
@@ -236,24 +236,58 @@ In the following we will restrict ourselves to considering \textit{Fermionic tra
 \forall t,\psi,a: T^t_{\psi a} \in \left\{ 0,1 \right\}
 \label{fermionic}
 \end{equation}
-This can be interpreted as meaning that no two agents in the same state at the same time can perform the same action. Notice that the Fermionic constraints imply the non-negative integer constraints, so a Fermionic trajectory is any tensor that satisfies \ref{fermionic} and \ref{continuous}. We'll refer to the set of all Fermionic trajectories as $\mathcal{F}^N_{SA}$, and from now on assume that it replaces $\mathcal{T}^N_{AS}$ in the posterior, equation \ref{posterior}, and its support, equation \ref{support}, 
+This can be interpreted as meaning that no two agents in the same state at the same time can perform the same action. Notice that the Fermionic constraints imply the non-negative integer constraints, so a Fermionic trajectory is any tensor that satisfies \ref{fermionic} and \ref{continuous}. We'll refer to the set of all tensors that satisfy \ref{fermionic} as $\mathcal{B}^N_{SA}$ and the set of all Fermionic trajectories as $\mathcal{F}^N_{SA}$.
 
-In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so the switch from $\mathcal{T}^N_{SA}$ to $\mathcal{F}^N_{SA}$ in equations $\ref{posterior}$ and \ref{support} will often be an acceptable assumption that will have very little effect. However, if the Fermionic constraints are not acceptable, section ** describes how to extend the algorithm to apply to non-Fermionic trajectories.
+If we now condition the posterior on $T \in \mathcal{B}^N_{SA}$ then the support of the posterior becomes
+\begin{equation}
+supp(P(T|\Omega, T\in\mathcal{B}^N_{SA})) = \mathcal{B}^N_{SA} \cap supp(P(T|\Omega))
+\label{fermionicSupport1}
+\end{equation}
 
-\subsection{Convex polyhedra}
+In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so the intersection with $\mathcal{B}^N_{SA}$ will often have very little effect on whatever metric we're interested in. However, if the Fermionic constraints are not acceptable, section ** describes how to extend the algorithm to apply to non-Fermionic trajectories.
 
-TODO: decide how to move from linear constraints to vertices... unit hypercube to subset of unit hypercube? Intersection of vertex sets / intersection of convex polyhedra and vertices of hypercube
+\subsection{Convex $\mathcal{B}$-polyhedra}
 
-Since a trajectory in $\mathcal{F}^N_{SA}$ has $NSA$ elements, we can think of each trajectory as a single point in an $NSA$-dimensional space, and the set of all trajectories, $\mathcal{F}^N_{SA}$, as a set of points in this space.
+We define a $\mathcal{B}$-polyhedron to be a set of binary vectors
+\[
+\mathcal{B}^N_{SA} \cap P
+\]
+where $P$ is a set of linear constraints.
 
-Taken alone, the Fermionic constraints are equivalent to requiring that a Fermionic trajectory must lie on a vertex of the unit hypercube in $NSA$-dimensional space. The unit hypercube can be defined by
+\begin{theorem}
+For any $X$ there exists a set of linear constraints $P$ such that
+\[
+\mathcal{B}^N_{SA} \cap X = \mathcal{B}^N_{SA} \cap P
+\]
+\end{theorem}
+\begin{proof}
+$\mathcal{B}^N_{SA}$ consists of the vertices of the $NSA$-dimensional unit hypercube
 \begin{equation}
 \forall t,\psi,a: 0 \le T^t_{\psi a} \le 1
 \label{linearfermionic}
 \end{equation}
+Let $Y = \mathcal{B}^N_{SA} \cap X$ and let $P$ be the convex hull of $Y$. Clearly if $T\in Y$ then $T\in \mathcal{B}^N_{SA} \cap P$. To show the converse, suppose there is a member $T' \in \mathcal{B}^N_{SA} \cap P$. Since $T'\in P$ then there must be a convex combination of points in $Y$ that equals $T'$. However, since $T' \in \mathcal{B}^N_{SA}$ and $Y\subset \mathcal{B}^N_{SA}$ and no member of $\mathcal{B}^N_{SA}$ is a convex combination of any other member then $T'$ must be a member of $Y$. So $\mathcal{B}^N_{SA} \cap X = \mathcal{B}^N_{SA} \cap P$. Since $P$ is convex, by Weyl-Minkowski's theorem (see, e.g. \cite{fukuda2020polyhedral}) it can be expressed as a set of linear constraints.
+\end{proof}
 
-Since we are constraining $P(T|\Omega)$ to the fermionic trajectories, we can say its support is a subset of the set of vertices of the unit hypercube. 
+Under the assumption that all trajectories are Fermionic, we can rewrite equation \ref{support} in the form
+\begin{equation}
+\begin{aligned}
+\mathcal{B}^N_{SA} \cap \supp (P( T |\Omega)) &= \mathcal{B}^N_{SA} \cap \mathcal{T}^N_{SA}\\
+&\cap \mathcal{B}^N_{SA} \cap  \supp(P(\Psi^0 = T^0\mathbf{1}))\\
+&\cap \bigcap_{(\omega,v) \in \Omega}   \mathcal{B}^N_{SA} \cap \supp\left(P\left(\omega(T)=v\right)\right)\\
+&\cap \bigcap_{T^t_{\psi a} \ne 0}  \mathcal{B}^N_{SA} \cap \supp\left(\pi(\psi,T^t\mathbf{1},a)\right)\\
+\end{aligned}
+\label{fermionicSupport}
+\end{equation}
+so that each term can be expressed as a $\mathcal{B}$-polyhedron.
 
+The intersection of two $\mathcal{B}$-polyhedra is given by
+\[
+(\mathcal{B}^N_{SA} \cap P_1) \cap (\mathcal{B}^N_{SA} \cap P_2) = \mathcal{B}^N_{SA} \cap (P_1 \cap P_2)
+\]
+So we can calculate \ref{fermionicSupport} by calculating each term and simply concatenating the linear constraints.
+
+Each member of $\supp (P( T |\Omega))$ is then located at a vertex of this polyhedron. However, the converse is not necessarily true; because this final intersection operation is the intersection of the polyhedra rather than the vertices of the polyhedra, a vertex of the resulting polyhedron may not belong to $\supp (P( T |\Omega))$. 
 
 If we add the continuity constraints from \ref{continuous} then we have a set of linear inequalities which can be thought of as describing a convex polyhedron in the $NSA$-dimensional space. Since all tensors that satisfy the Fermionic constraints lie on vertices of the unit hypercube, all Fermionic trajectories must lie on the vertices of this polyhedron.
 
