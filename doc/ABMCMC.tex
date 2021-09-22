@@ -202,8 +202,8 @@ P(T|\Omega) \propto
 \begin{cases}
 P(\Psi^0 = T^0\mathbf{1})
 \prod_{(\omega,v) \in \Omega} P\left(\omega(T)=v\right)
-\prod_{t, \psi}\left(T^t_{\psi}\cdot\mathbf{1}\right)!
-\prod_{a}\frac{\pi(\psi,T^t\mathbf{1},a)^{T^{t}_{\psi a}}}{T^t_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA} \\
+\prod_{t, \psi, a}\left(T^t_{\psi}\cdot\mathbf{1}\right)!
+\frac{\pi(\psi,T^t\mathbf{1},a)^{T^{t}_{\psi a}}}{T^t_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA} \\
 0 & \text{otherwise}\\
 \end{cases}
 \label{posterior}
@@ -220,18 +220,19 @@ We solve this problem by first approximating the support of the posterior, $\sup
 
 From equation \ref{posterior}
 \begin{equation}
-\supp (P( T |\Omega)) =
-\mathcal{T}^N_{SA} \cap 
-\supp(P(\Psi^0 = T^0\mathbf{1}))\cap 
-\bigcap_{(\omega,v) \in \Omega}  \supp\left(P\left(\omega(T)=v\right)\right) \cap
-\bigcap_{T^t_{\psi a} \ne 0} \supp\left(\pi(\psi,T^t\mathbf{1},a)\right) 
+\begin{aligned}
+\supp (P( T |\Omega)) = & \mathcal{T}^N_{SA} \cap \\ 
+&\supp(P(\Psi^0 = T^0\mathbf{1})) \cap \\
+&\bigcap_{(\omega,v) \in \Omega}  \supp\left(P\left(\omega(T)=v\right)\right) \cap \\
+&\bigcap_{t, \psi, a} \left( \supp\left(\pi(\psi,T^t\mathbf{1},a)\right) \cup \left\{T:T^t_{\psi a} = 0\right\} \right)
+\end{aligned}
 \label{support}
 \end{equation}
-i.e. in order for $T$ to have non-zero posterior probability, it must be a trajectory of the ABM, it must have a start state that has non-zero prior probability, all the observation likelihoods must be non-zero and the probability of each agent's action at every timestep must be non-zero.
+i.e. in order for $T$ to have non-zero posterior probability, it must be a trajectory of the ABM, it must have a start state that has non-zero prior probability, all the observation likelihoods must be non-zero and each element of $T$ must either denote an agent action with non-zero probability or must be equal to zero (to account for the fact that $0^0=1$ in the exponent terms in \ref{posterior}).
 
 \subsection{Fermionic Trajectories}
 
-In the following we will restrict ourselves to considering \textit{Fermionic trajectories}, which we define to be any trajectory whose elements are all either 0 or 1. i.e. in order to be a Fermionic trajectory a tensor must not only satisfy the constraints of equations \ref{nonNegativeInt} and \ref{continuous} but must also satisfy the \textit{Fermionic constraints}
+In the following we will consider only \textit{Fermionic trajectories}, which we define to be any trajectory whose elements are all either 0 or 1. i.e. a Fermionic trajectory must not only satisfy the constraints in \ref{nonNegativeInt} and \ref{continuous} but must also satisfy the \textit{Fermionic constraints}
 \begin{equation}
 \forall t,\psi,a: T^t_{\psi a} \in \left\{ 0,1 \right\}
 \label{fermionic}
@@ -244,7 +245,7 @@ supp(P(T|\Omega, T\in\mathcal{B}^N_{SA})) = \mathcal{B}^N_{SA} \cap supp(P(T|\Om
 \label{fermionicSupport1}
 \end{equation}
 
-In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so the intersection with $\mathcal{B}^N_{SA}$ will often have very little effect on whatever metric we're interested in. However, if the Fermionic constraints are not acceptable, section ** describes how to extend the algorithm to apply to non-Fermionic trajectories.
+In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so it is overwhelmingly likely that a sample from the posterior will be Fermionic, and so intersection with $\mathcal{B}^N_{SA}$ will often have very little effect on the posterior. However, section ** describes how to extend the algorithm to apply to non-Fermionic trajectories when the Fermionic constraints are not acceptable.
 
 \subsection{Convex $\mathcal{B}$-polyhedra}
 
@@ -252,72 +253,88 @@ We define a $\mathcal{B}$-polyhedron to be a set of binary vectors
 \[
 \mathcal{B}^N_{SA} \cap P
 \]
-where $P$ is a set of linear constraints.
+where $P$ is a convex polyhedron defined by a set of linear constraints on the elements of a tensor.
 
 \begin{theorem}
-For any $X$ there exists a set of linear constraints $P$ such that
+For any set $X$ there exists a set of linear constraints $P$ such that
 \[
 \mathcal{B}^N_{SA} \cap X = \mathcal{B}^N_{SA} \cap P
 \]
 \end{theorem}
 \begin{proof}
-$\mathcal{B}^N_{SA}$ consists of the vertices of the $NSA$-dimensional unit hypercube
-\begin{equation}
-\forall t,\psi,a: 0 \le T^t_{\psi a} \le 1
-\label{linearfermionic}
-\end{equation}
-Let $Y = \mathcal{B}^N_{SA} \cap X$ and let $P$ be the convex hull of $Y$. Clearly if $T\in Y$ then $T\in \mathcal{B}^N_{SA} \cap P$. To show the converse, suppose there is a member $T' \in \mathcal{B}^N_{SA} \cap P$. Since $T'\in P$ then there must be a convex combination of points in $Y$ that equals $T'$. However, since $T' \in \mathcal{B}^N_{SA}$ and $Y\subset \mathcal{B}^N_{SA}$ and no member of $\mathcal{B}^N_{SA}$ is a convex combination of any other member then $T'$ must be a member of $Y$. So $\mathcal{B}^N_{SA} \cap X = \mathcal{B}^N_{SA} \cap P$. Since $P$ is convex, by Weyl-Minkowski's theorem (see, e.g. \cite{fukuda2020polyhedral}) it can be expressed as a set of linear constraints.
+$\mathcal{B}^N_{SA}$ consists of the vertices of the $NSA$-dimensional unit hypercube Let $Y = \mathcal{B}^N_{SA} \cap X$ and let $P$ be the convex hull of $Y$. Clearly if a tensor $T\in Y$ then $T\in \mathcal{B}^N_{SA} \cap P$. To show the converse, suppose there is a member $T' \in \mathcal{B}^N_{SA} \cap P$. Since $T'\in P$ then there must be a convex combination of points in $Y$ that equals $T'$. Call those points $Z$. However, since $T' \in \mathcal{B}^N_{SA}$ and $Z\subset \mathcal{B}^N_{SA}$ and no member of $\mathcal{B}^N_{SA}$ is a convex combination of any other member then $T'$ must be a member of $Z$ and so $T'\in Y$. So $\mathcal{B}^N_{SA} \cap X = \mathcal{B}^N_{SA} \cap P$. Since $P$ is convex, by Weyl-Minkowski's theorem (see, e.g. \cite{fukuda2020polyhedral}) it can be expressed as a set of linear constraints.
 \end{proof}
 
 Under the assumption that all trajectories are Fermionic, we can rewrite equation \ref{support} in the form
 \begin{equation}
 \begin{aligned}
-\mathcal{B}^N_{SA} \cap \supp (P( T |\Omega)) &= \mathcal{B}^N_{SA} \cap \mathcal{T}^N_{SA}\\
-&\cap \mathcal{B}^N_{SA} \cap  \supp(P(\Psi^0 = T^0\mathbf{1}))\\
-&\cap \bigcap_{(\omega,v) \in \Omega}   \mathcal{B}^N_{SA} \cap \supp\left(P\left(\omega(T)=v\right)\right)\\
-&\cap \bigcap_{T^t_{\psi a} \ne 0}  \mathcal{B}^N_{SA} \cap \supp\left(\pi(\psi,T^t\mathbf{1},a)\right)\\
+\mathcal{B}^N_{SA} \cap \supp (P( T |\Omega)) = 
+& \mathcal{B}^N_{SA} \cap \mathcal{T}^N_{SA} \cap \\
+& \mathcal{B}^N_{SA} \cap  \supp(P(\Psi^0 = T^0\mathbf{1})) \cap\\
+& \bigcap_{(\omega,v) \in \Omega}   \mathcal{B}^N_{SA} \cap \supp\left(P\left(\omega(T)=v\right)\right) \cap \\
+& \bigcap_{t,\psi, a}
+\mathcal{B}^N_{SA} \cap \left(\supp\left(\pi(\psi,T^t\mathbf{1},a)\right)
+\cup
+\left\{T: T^t_{\psi a} = 0\right\}\right)
+\\
 \end{aligned}
 \label{fermionicSupport}
 \end{equation}
-so that each term can be expressed as a $\mathcal{B}$-polyhedron.
+which is an intersection of terms in the form $\mathcal{B}^N_{SA} \cap X$, so each term can equivalently be expressed as a $\mathcal{B}$-polyhedron.
 
-The intersection of two $\mathcal{B}$-polyhedra is given by
+The union in the last line would be inconvenient to deal with computationally so we transform it away in the following way. Let $P^t_{\psi a}(T)$ be a convex polyhedron such that
+\[
+\mathcal{B}^N_{SA} \cap P^t_{\psi a}(T) = \mathcal{B}^N_{SA} \cap \supp\left(\pi(\psi,T^t\mathbf{1},a)\right)
+\]
+but
+\[
+\mathcal{B}^N_{SA} \cap P^t_{\psi a}(T) \cup \left\{T: T^t_{\psi a} = 0\right\} = \bigcap_{r \in P^t_{\psi a}(T)} \mathcal{B}^N_{SA} \cap \left( r \cup \left\{T: T^t_{\psi a} = 0\right\}\right)
+\]
+where each $r$ is a single linear constraint. But given a linear constraint
+\[
+r = \left[ \sum a^t_{\psi a} T^t_{\psi a} \le b \right]
+\]
+we have the identity
+\begin{equation}
+\mathcal{B}^N_{SA} \cap \left(r  \cup \left\{T: T^{t'}_{\psi' a'} = 0\right\}\right) = \mathcal{B}^N_{SA} \cap \left[ \sum a^t_{\psi a}T^t_{\psi a} + \left(\sum \frac{|a^t_{\psi a}| + a^t_{\psi a}}{2} - b\right)T^{t'}_{\psi' a'} \le \sum \frac{|a^t_{\psi a}| + a^t_{\psi a}}{2} \right]
+\label{implication}
+\end{equation}
+
+Using this transformation the Fermionic support of the posterior can be reduced to the intersection of $\mathcal{B}$-polyhedra. Given the identity
 \[
 (\mathcal{B}^N_{SA} \cap P_1) \cap (\mathcal{B}^N_{SA} \cap P_2) = \mathcal{B}^N_{SA} \cap (P_1 \cap P_2)
 \]
-So we can calculate \ref{fermionicSupport} by calculating each term and simply concatenating the linear constraints.
+we can calculate \ref{fermionicSupport} by calculating each term and simply concatenating their linear constraints.
 
-Each member of $\supp (P( T |\Omega))$ is then located at a vertex of this polyhedron. However, the converse is not necessarily true; because this final intersection operation is the intersection of the polyhedra rather than the vertices of the polyhedra, a vertex of the resulting polyhedron may not belong to $\supp (P( T |\Omega))$. 
-
-If we add the continuity constraints from \ref{continuous} then we have a set of linear inequalities which can be thought of as describing a convex polyhedron in the $NSA$-dimensional space. Since all tensors that satisfy the Fermionic constraints lie on vertices of the unit hypercube, all Fermionic trajectories must lie on the vertices of this polyhedron.
-
-
-
-TODO: just add constraints and define polyhedron in terms of linear constraints
-Since the vertices of a hypercube describe a convex polyhedron, and any subset of the vertices of a convex polyhedron also describes the vertex set of a convex polyhedron, then, as we add the  if we condition the posterior on the Fermionic constraints (in addition to all the other constraints) we ensure that the support of the posterior can be described as the vertices of a convex polyhedron.
-
-
-
-If we begin by adding the continuity constraints of equation \ref{continuous}, since they describe a set of flow constraints then, by ****'s theorem, the resulting set of linear constraints describes a convex polyhedron whose vertices are the valid, Fermionic trajectories.
-
-
-Given a Fermionic trajectory we can easily convert the union term in equation \ref{linearSupport} 
+As an illustration, consider two timesteps of the Cat and mouse model. Suppose we flip a fair coin to decide whether each agent state is occupied or empty at $t=0$ and that we observe a cat in the left gridsquare at time $t=1$. Our aim is to construct a set of linear constraints, $Q$, such that
 \[
-\mathcal{P}(\pi'(t,\psi,.), a) \cup \left\{T^s_{\xi b}: T^t_{\psi a} = 0\right\}
+\mathcal{B}^2_{4\,2} \cap \supp(P(T|\Omega)) = \mathcal{B}^2_{4\,2} \cap Q
 \]
-into a set of linear constraints. Expanding $\mathcal{P}$ we have
+Working through \ref{fermionicSupport} term by term, the $\mathcal{B}^N_{SA} \cap \mathcal{T}^N_{SA}$ term is equivalent to a $\mathcal{B}$-polyhedron with the continuity constraints in \ref{continuous}, which are already in linear form. The second term is the support of the prior. This constrains each agent state at $t=0$ to be at most 1. This can be expressed as
 \[
-\left(\bigcap_j \sum_i a_{ij}x_i \le b_j \right) \cup \left\{X: x_k = 0\right\} = \bigcap_j \left( \sum_i a_{ij}x_i \le b_j  \cup \left\{X: x_k = 0\right\}\right)
+\bigcap_\psi \left[T^0_{\psi 0} + T^0_{\psi 1} \le 1\right]
 \]
-where, for conveinence, we've projected the elements of the trajectory $T^t_{\psi a}$ into a vector $X$. But
+
+The third term is the support of the observation. In this case, we need to add the constraint that there is exactly one cat in the left gridsquare at time $t=1$
 \[
-\sum_i a_{ij}x_i \le b_j  \cup \left\{X: x_k = 0\right\} = \sum_i a_{ij}x_i + \left(\sum_i \frac{|a_{ij}| + a_{ij}}{2} - b_j\right)x_k \le \sum_i \frac{|a_{ij}| + a_{ij}}{2} 
+T^1_{0 0} + T^1_{0 1} = 1
 \]
-since all $x_i$ are also either 0 or 1 so $\sum_i a_{ij}x_i$ must be less than $\frac{|a_{ij}| + a_{ij}}{2}$ and the constraint is satisfied if $x_k$ is 0, whereas we have the original constraint if $x_k$ is 1.
-
-------------------
-
-TODO: Fermionic trajectory implies convexity... Leads to convex PMF. Also if all supports have only integer vertices on the unit hypercube (i.e. are the convex hull of points on the unit hypercube) then the union is also a convex hull of points on the unit hypercube.
+The final term guards against impossible actions. The only impossible action is a mouse staying put when there is a cat on the same gridsquare. So, 
+\[
+\supp(\pi(\psi_2,T^t\mathbf{1},a_1)) = \left[ T^t_{0 0} + T^t_{0 1} \le 0 \right]
+\]
+and
+\[
+\supp(\pi(\psi_3,T^t\mathbf{1},a_1)) = \left[ T^t_{1 0} + T^t_{1 1} \le 0 \right]
+\]
+Using the identity in \ref{implication} to add the union gives
+\[
+\begin{aligned}
+T^t_{0 0} + T^t_{0 1} + 2T^t_{2 1} & \le 2 \\
+T^t_{1 0} + T^t_{1 1} + 2T^t_{3 1} & \le 2
+\end{aligned}
+\]
+for $t=0$ and $t=1$.
 
 \section{Abstract interpretation using convex polyhedra}
 
