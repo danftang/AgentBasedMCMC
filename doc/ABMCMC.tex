@@ -72,30 +72,30 @@ and population movement~\cite{lueck_who_2019}. Many DA algorithms rely on the di
 
 Suppose we have a timestepping ABM where agents have a finite number of possible internal states and a finite number of ways of acting on their world. Given this, we can define an ABM as:
 \begin{itemize}
-	\item A domain of agent actions $\mathcal{A} =\{ a_0 ... a_n \}$
+	\item A vector of agent actions $\mathcal{A} =\left< A_0 ... A_n \right>$
 	
-	\item A domain of agent states $\mathcal{S} = \{\psi_0 ... \psi_m\}$
+	\item A vector of agent states $\mathcal{S} = \left<S_0 ... S_m\right>$
 	
-	\item An \textit{agent timestep}, $\pi : \mathcal{S}\times\mathbb{Z}^{|\mathcal{S}|}\times\mathcal{A} \to \mathbb{R}$, such that $\pi(\psi,\Phi,a)$ gives the probability that an agent in state $\psi$, surrounded by agents, $\Phi$, will perform action $a$ (where $\Phi$ is a vector whose $i^{th}$ element is the number of agents in state $\psi_i$ at the start of the timestep).
+	\item An \textit{agent timestep}, $\pi : \mathbb{Z}\times\mathbb{Z}^{m+1}\times\mathbb{Z} \to \mathbb{R}$, which defines the probability that an agent will act in a particular way such that $\pi(\psi,\Phi,a)$ gives the probability that an agent in state $S_\psi$, surrounded by agents, $\Phi$, will perform action $A_a$ (where $\Phi$ is a vector whose $i^{th}$ element is the number of agents in state $S_i$ at the start of the timestep).
 	
-	\item An \textit{action function}, $F: \mathcal{S} \times \mathcal{A} \to \mathbb{Z}^m$, which defines the effect of an action on the world, where $F(\psi, a)$ returns a vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $i$ that result from an agent in state $\psi$ performing act $a$ (including the final state of the acting agent).
+	\item An \textit{action function}, $F: \mathbb{Z} \times \mathbb{Z} \to \mathbb{Z}^{m+1}$, which defines the effect of an action on the world such that $F(\psi, a)$ returns a vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $S_i$ that result from an agent in state $S_\psi$ performing act $A_a$ (including the final state of the acting agent).
 \end{itemize}
 
-As a simple illustration, consider a model consisting of just two gridsquares, left and right, within which can roam cats and mice. In any given timestep, agents can either move or stay still, so the domain of actions is $\mathcal{A} = \{\textrm{move}, \textrm{stay still}\} = \{a_0, a_1\}$, and the domain of agent states is, $\mathcal{S} = \{\textrm{left cat}, \textrm{right cat}, \textrm{left mouse}, \textrm{right mouse} \} = \{\psi_0, \psi_1, \psi_2, \psi_3\}$.
+As a simple illustration, consider the simple ``cat and mouse'' ABM, which consists of just two gridsquares, left and right, within which can roam cats and mice, so the vector of agent states is, $\mathcal{S} = \left<\textrm{left cat}, \textrm{right cat}, \textrm{left mouse}, \textrm{right mouse} \right>$. In any given timestep, agents can either move or stay still, so the vector of actions is $\mathcal{A} = \left<\textrm{move}, \textrm{stay still}\right>$.
 
-A cat moves with probability $0.75$, irrespective of other agents, while a mouse will only move if there is a cat on the same gridsquare. So, the agent timestep function is
+A cat moves with probability $0.5$, irrespective of other agents, while a mouse will move if there is one or more cats on the same gridsquare, otherwise it will stay still. So, the agent timestep function is
 \begin{equation}
 \begin{aligned}
-\pi(\psi, \Phi, a_0) &=
+\pi(\psi, \Phi, 0) &=
 \begin{cases}
-0.75 & \text{if } \psi \in {\psi_0, \psi_1}\\
-1 & \text{ if } \psi = \psi_2, \Phi_1 > 0 \text{ or } \psi=\psi_3, \Phi_2 > 0\\
+0.5 & \text{if } \psi \in \left\{0,1\right\}\\
+1 & \text{ if } \psi = 2, \Phi_1 > 0 \text{ or } \psi=3, \Phi_2 > 0\\
 0 & \text{ otherwise}
 \end{cases}\\
-\pi(\psi, \Phi, a_1) &=
+\pi(\psi, \Phi, 1) &=
 \begin{cases}
-0.25 & \text{if } \psi \in {\psi_0, \psi_1}\\
-1 & \text{ if } \psi = \psi_2, \Phi_1 = 0 \text{ or } \psi=\psi_3, \Phi_2 = 0\\
+0.5 & \text{if } \psi \in \left\{0, 1\right\}\\
+1 & \text{ if } \psi = 2, \Phi_1 = 0 \text{ or } \psi=3, \Phi_2 = 0\\
 0 & \text{ otherwise}
 \end{cases}
 \end{aligned}
@@ -104,14 +104,14 @@ A cat moves with probability $0.75$, irrespective of other agents, while a mouse
 The action function expresses the movement of the agents
 \begin{equation}
 \begin{aligned}
-F(\psi_0, a_0) &= \{0,1,0,0\}\\
-F(\psi_1, a_0) &= \{1,0,0,0\}\\
-F(\psi_2, a_0) &= \{0,0,0,1\}\\
-F(\psi_3, a_0) &= \{0,0,1,0\}\\
-F(\psi_0, a_1) &= \{1,0,0,0\}\\
-F(\psi_1, a_1) &= \{0,1,0,0\}\\
-F(\psi_2, a_1) &= \{0,0,1,0\}\\
-F(\psi_3, a_1) &= \{0,0,0,1\}\\
+F(0, 0) &= \{0,1,0,0\}\\
+F(1, 0) &= \{1,0,0,0\}\\
+F(2, 0) &= \{0,0,0,1\}\\
+F(3, 0) &= \{0,0,1,0\}\\
+F(0, 1) &= \{1,0,0,0\}\\
+F(1, 1) &= \{0,1,0,0\}\\
+F(2, 1) &= \{0,0,1,0\}\\
+F(3, 1) &= \{0,0,0,1\}\\
 \end{aligned}
 \end{equation}
 
@@ -126,45 +126,47 @@ F(\psi_3, a_1) &= \{0,0,0,1\}\\
 \end{figure}
 
 
-Let a model timestep consist of a matrix $E$ whose elements $e_{\psi a}$ are the number of agents in state $\psi$ that perform act $a$ in this timestep. For example, the timestep shown in Figure~\ref{fig:AB-MCMC-1} would be
-
+Let a model timestep consist of a matrix $E$ whose elements $e_{\psi a}$ are the number of agents in state $\psi$ that perform act $a$ in this timestep. For example, the timestep shown in Figure~\ref{fig:AB-MCMC-1} for the cat and mouse example would be
 \[
 E = \kbordermatrix{
-	& a_0 & a_1 \\
-	\psi_0 & 0 & 0 \\
-	\psi_1 & 1 & 0 \\
-	\psi_2 & 0  & 1 \\
-	\psi_3 & 0 & 0 \\
+	& A_0 & A_1 \\
+	S_0 & 0 & 0 \\
+	S_1 & 1 & 0 \\
+	S_2 & 0  & 1 \\
+	S_3 & 0 & 0 \\
 }
 \]
-where all elements are zero except those representing agent $\psi_1$ performing action $a_0$ and agent $\psi_2$ performing action $a_1$.
-
+where all elements are zero except those representing agent $S_1$ performing action $A_0$ and agent $S_2$ performing action $A_1$.
 
 Finally, let a model trajectory be a tensor, $T$, consisting of a number of model timesteps. We use the notation $T^t$ to denote the $t^{th}$ timestep matrix, $T^t_\psi$ to denote the $\psi^{th}$ row of the $t^{th}$ timestep matrix and $T^t_{\psi a}$ to denote the $a^{th}$ element of the $\psi^{th}$ row of the $t^{th}$ timestep. By convention, we'll let indices begin at 0. Note that this tensor will generally be very large for more realistic models, but also very sparse, so it can be dealt with computationally using a sparse representation.
 
+It will occasionally be useful to refer to the set of all tensors of a given shape. For this we'll use $\mathbb{R}$ adorned with the number of elements in each index position. For example, a trajectory representing $N$ timesteps of a model with $S$ agent states and $A$ actions must be a member of the set of tensors $\mathbb{R}^N_{SA}$.
 
-A tensor must satisfy a number of constraints in order to be a valid trajectory of an ABM. Since the elements of a trajectory are counts, they must all be non-negative integers, we'll call this the \textit{non-negative integer constraint}
+A tensor must satisfy a number of constraints in order to be a valid trajectory of an ABM. Since the elements of a trajectory are counts, they must all be non-negative integers, we'll call this the \textit{non-negative integer constraint} and define the set of all non-negative integer tensors
 \begin{equation}
-\forall t,\psi, a: T^t_{\psi a} \ge 0, T^t_{\psi a} \in \mathbb{Z}
+\mathcal{I}^N_{SA} = \left\{ T \in \mathbb{R^N_{SA}}: \forall t,\psi, a: T^t_{\psi a} \ge 0, T^t_{\psi a} \in \mathbb{Z}\right\}
 \label{nonNegativeInt}
 \end{equation}
 
-A trajectory, $T^t_{\psi a}$, must also be \textit{continuous} which means that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. This can be expressed as the \textit{continuity constraints}:
+A trajectory must also be \textit{continuous} by which we mean that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. We call this the \textit{continuity constraint} and define the set of continuous tensors:
 \begin{equation}
-\forall t \in 1 ... n:\forall \phi: \sum_{\psi, a} F(\psi, a)_\phi T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0
+\mathcal{C}^N_{SA}(F) = \left\{T\in\mathbb{R}^N_{SA}:  \forall t \in 1 ... N-1:\forall \phi: \sum_{\psi, a} F(\psi, a)_\phi T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0\right\}
 \label{continuous}
 \end{equation}
-where the trajectory runs from $t=0$ to $t=n$.
 
-So, for a given number of timesteps, $N$, number of agent states, $S$, and number of agent actions, $A$, we can define the set of all trajectories, $\mathcal{T}^N_{SA}$ to be the set of tensors that satisfy the equations \ref{nonNegativeInt} and \ref{continuous}.
+So, the set of valid trajectories, $\mathcal{T}^N_{SA}(F)$, is given by the set of tensors that satisfy \ref{nonNegativeInt} and \ref{continuous}.
+\begin{equation}
+\mathcal{T}^N_{SA}(F) = \mathcal{I}^N_{SA} \cap \mathcal{C}^N_{SA}(F)
+\end{equation}
+
 
 \subsection{The posterior}
 
-If we let $\Psi^t$ be the vector whose $\psi^{th}$ element is the number of agents in state $\psi$ at the beginning of timestep $t$, then the prior probability of a trajectory is
+If we let $\Psi^t$ be the vector whose $\psi^{th}$ element is the number of agents in state $S_\psi$ at the beginning of timestep $t$, then the prior probability of a trajectory is
 \[
 P(T) =
 \begin{cases}
-P\left(\Psi^0 = T^0 \mathbf{1} \right) \prod_{\psi, t} P\left(T^t_{\psi} \mid \Psi^t = T^t \mathbf{1}\right) & \text{if } T \in \mathcal{T}^N_{SA} \\
+P\left(\Psi^0 = T^0 \mathbf{1} \right) \prod_{\psi, t} P\left(T^t_{\psi} \mid \Psi^t = T^t \mathbf{1}\right) & \text{if } T \in \mathcal{T}^N_{SA}(F) \\
 0 & \text{otherwise}
 \end{cases}
 \]
@@ -181,7 +183,7 @@ P(T) =
 \begin{cases}
 P(\Psi^0 = T^0\mathbf{1})
 \prod_{t, \psi}\left(T^t_{\psi} \cdot \mathbf{1} \right)!
-\prod_a \frac{\pi(\psi, T^{t}\mathbf{1},a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA} \\
+\prod_a \frac{\pi(\psi, T^{t}\mathbf{1},a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA}(F) \\
 0 & \text{otherwise}\\
 \end{cases}
 \]
@@ -203,7 +205,7 @@ P(T|\Omega) \propto
 P(\Psi^0 = T^0\mathbf{1})
 \prod_{(\omega,v) \in \Omega} P\left(\omega(T)=v\right)
 \prod_{t, \psi, a}\left(T^t_{\psi}\cdot\mathbf{1}\right)!
-\frac{\pi(\psi,T^t\mathbf{1},a)^{T^{t}_{\psi a}}}{T^t_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA} \\
+\frac{\pi(\psi,T^t\mathbf{1},a)^{T^{t}_{\psi a}}}{T^t_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA}(F) \\
 0 & \text{otherwise}\\
 \end{cases}
 \label{posterior}
@@ -234,10 +236,13 @@ i.e. in order for $T$ to have non-zero posterior probability, it must be a traje
 
 In the following we will consider only \textit{Fermionic trajectories}, which we define to be any trajectory whose elements are all either 0 or 1. i.e. a Fermionic trajectory must not only satisfy the constraints in \ref{nonNegativeInt} and \ref{continuous} but must also satisfy the \textit{Fermionic constraints}
 \begin{equation}
-\forall t,\psi,a: T^t_{\psi a} \in \left\{ 0,1 \right\}
+\mathcal{B}^N_{SA} = \left\{T\in\mathbb{R}^N_{SA} : \forall t,\psi,a: T^t_{\psi a} \in \left\{ 0,1 \right\}\right\}
 \label{fermionic}
 \end{equation}
-This can be interpreted as meaning that no two agents in the same state at the same time can perform the same action. Notice that the Fermionic constraints imply the non-negative integer constraints, so a Fermionic trajectory is any tensor that satisfies \ref{fermionic} and \ref{continuous}. We'll refer to the set of all tensors that satisfy \ref{fermionic} as $\mathcal{B}^N_{SA}$ and the set of all Fermionic trajectories as $\mathcal{F}^N_{SA}$.
+This can be interpreted as meaning that no two agents in the same state at the same time can perform the same action. Notice that the Fermionic constraints imply the non-negative integer constraints, so the set of Fermionic trajectories, $\mathcal{F}^N_{SA}$, is the set of tensors that satisfy \ref{fermionic} and \ref{continuous}.
+\begin{equation}
+\mathcal{F}^N_{SA}(F) = \mathcal{B}^N_{SA} \cap \mathcal{C}^N_{SA}(F)
+\end{equation}
 
 If we now condition the posterior on $T \in \mathcal{B}^N_{SA}$ then the support of the posterior becomes
 \begin{equation}
@@ -249,27 +254,32 @@ In practice, the number of agents in an ABM is usually much smaller than the num
 
 \subsection{Convex $\mathcal{B}$-polyhedra}
 
+
+
 We define a $\mathcal{B}$-polyhedron to be a set of binary vectors
 \[
-\mathcal{B}^N_{SA} \cap P
+\mathcal{B}^N_{SA} \cap \mathcal{P}
 \]
-where $P$ is a convex polyhedron defined by a set of linear constraints on the elements of a tensor.
+where $\mathcal{P} \subset \mathcal{R}^N_{SA}$ is a convex polyhedron in the sense that it can be expressed as a set of tensors that satisfy some number of linear constraints on their elements. More formally, there exists a tensor $C \in \mathbb{R}^{SA}_{NJ}$ and a vector $B \in \mathbb{R}_J$ such that:
+\[
+\mathcal{P} = \left\{ T\in\mathbb{R}^N_{SA} : \sum_{t,\psi,a} A^{\psi a}_{t} T^t_{\psi a} \le B \right\}
+\]
 
 \begin{theorem}
-For any set $X$ there exists a set of linear constraints $P$ such that
+For any set $X$ there exists a convex polyhedron $P$ such that
 \[
-\mathcal{B}^N_{SA} \cap X = \mathcal{B}^N_{SA} \cap P
+\mathcal{B}^N_{SA} \cap \mathcal{X} = \mathcal{B}^N_{SA} \cap \mathcal{P}
 \]
 \end{theorem}
 \begin{proof}
-$\mathcal{B}^N_{SA}$ consists of the vertices of the $NSA$-dimensional unit hypercube Let $Y = \mathcal{B}^N_{SA} \cap X$ and let $P$ be the convex hull of $Y$. Clearly if a tensor $T\in Y$ then $T\in \mathcal{B}^N_{SA} \cap P$. To show the converse, suppose there is a member $T' \in \mathcal{B}^N_{SA} \cap P$. Since $T'\in P$ then there must be a convex combination of points in $Y$ that equals $T'$. Call those points $Z$. However, since $T' \in \mathcal{B}^N_{SA}$ and $Z\subset \mathcal{B}^N_{SA}$ and no member of $\mathcal{B}^N_{SA}$ is a convex combination of any other member then $T'$ must be a member of $Z$ and so $T'\in Y$. So $\mathcal{B}^N_{SA} \cap X = \mathcal{B}^N_{SA} \cap P$. Since $P$ is convex, by Weyl-Minkowski's theorem (see, e.g. \cite{fukuda2020polyhedral}) it can be expressed as a set of linear constraints.
+Let $\mathcal{Y} = \mathcal{B}^N_{SA} \cap \mathcal{X}$ and let $\mathcal{P}$ be the convex hull of $\mathcal{Y}$. Clearly if a tensor $T\in \mathcal{Y}$ then $T\in \mathcal{B}^N_{SA} \cap \mathcal{P}$. To show the converse, suppose there is a member $T' \in \mathcal{B}^N_{SA} \cap \mathcal{P}$. Since $T'\in \mathcal{P}$ then there must be a convex combination of points in $\mathcal{Y}$ that equals $T'$. Call those points $\mathcal{Z}$. However, since $T' \in \mathcal{B}^N_{SA}$ and $\mathcal{Z}\subset \mathcal{B}^N_{SA}$ and no member of $\mathcal{B}^N_{SA}$ is a convex combination of any other member then $T'$ must be a member of $\mathcal{Z}$ and so $T'\in \mathcal{Y}$. So $\mathcal{B}^N_{SA} \cap \mathcal{X} = \mathcal{B}^N_{SA} \cap \mathcal{P}$. 
 \end{proof}
 
 Under the assumption that all trajectories are Fermionic, we can rewrite equation \ref{support} in the form
 \begin{equation}
 \begin{aligned}
 \mathcal{B}^N_{SA} \cap \supp (P( T |\Omega)) = 
-& \mathcal{B}^N_{SA} \cap \mathcal{T}^N_{SA} \cap \\
+& \mathcal{B}^N_{SA} \cap \mathcal{C}^N_{SA}(F) \cap \\
 & \mathcal{B}^N_{SA} \cap  \supp(P(\Psi^0 = T^0\mathbf{1})) \cap\\
 & \bigcap_{(\omega,v) \in \Omega}   \mathcal{B}^N_{SA} \cap \supp\left(P\left(\omega(T)=v\right)\right) \cap \\
 & \bigcap_{t,\psi, a}
@@ -280,25 +290,46 @@ Under the assumption that all trajectories are Fermionic, we can rewrite equatio
 \end{aligned}
 \label{fermionicSupport}
 \end{equation}
-which is an intersection of terms in the form $\mathcal{B}^N_{SA} \cap X$, so each term can equivalently be expressed as a $\mathcal{B}$-polyhedron.
+which is an intersection of terms in the form $\mathcal{B}^N_{SA} \cap \mathcal{X}$, so each term can equivalently be expressed as a $\mathcal{B}$-polyhedron.
 
-The union in the last line would be inconvenient to deal with computationally so we transform it away in the following way. Let $P^t_{\psi a}(T)$ be a convex polyhedron such that
+The union in the last line would be inconvenient to deal with computationally so we transform it away in the following way. Let $\mathcal{P}^t_{\psi a}$ be a convex polyhedron such that
 \[
-\mathcal{B}^N_{SA} \cap P^t_{\psi a}(T) = \mathcal{B}^N_{SA} \cap \supp\left(\pi(\psi,T^t\mathbf{1},a)\right)
+\mathcal{B}^N_{SA} \cap \mathcal{P}^t_{\psi a} = \mathcal{B}^N_{SA} \cap \supp\left(\pi(\psi,T^t\mathbf{1},a)\right)
 \]
-but
+so
 \[
-\mathcal{B}^N_{SA} \cap P^t_{\psi a}(T) \cup \left\{T: T^t_{\psi a} = 0\right\} = \bigcap_{r \in P^t_{\psi a}(T)} \mathcal{B}^N_{SA} \cap \left( r \cup \left\{T: T^t_{\psi a} = 0\right\}\right)
+\mathcal{B}^N_{SA} \cap \left(\supp\left(\pi(\psi,T^t\mathbf{1},a)\right) \cup
+\left\{T: T^t_{\psi a} = 0\right\}\right)
+=
+\mathcal{B}^N_{SA} \cap \left(\mathcal{P}^t_{\psi a} \cup \left\{T: T^t_{\psi a} = 0\right\}\right)
 \]
-where each $r$ is a single linear constraint. But given a linear constraint
+If we let
 \[
-r = \left[ \sum a^t_{\psi a} T^t_{\psi a} \le b \right]
+\mathcal{P}^t_{\psi a} = \left\{ T\in\mathbb{R}^N_{SA} : \sum_{s,\phi,b} A^{\phi b}_{s} T^s_{\phi b} \le B \right\}
 \]
-we have the identity
-\begin{equation}
-\mathcal{B}^N_{SA} \cap \left(r  \cup \left\{T: T^{t'}_{\psi' a'} = 0\right\}\right) = \mathcal{B}^N_{SA} \cap \left[ \sum a^t_{\psi a}T^t_{\psi a} + \left(\sum \frac{|a^t_{\psi a}| + a^t_{\psi a}}{2} - b\right)T^{t'}_{\psi' a'} \le \sum \frac{|a^t_{\psi a}| + a^t_{\psi a}}{2} \right]
+for some $A \in \mathbb{R}^{SA}_{NJ}$ and $B\in\mathbb{R}_J$ then we can remove the union using the identity
+\begin{multline}
+\mathcal{B}^N_{SA} \cap
+\left(
+\left\{ T\in\mathbb{R}^N_{SA} : \sum_{s,\phi,b} A^{\phi b}_{s} T^s_{\phi b} \le B \right\}
+\cup
+\left\{T: T^t_{\psi a} = 0\right\}\right)
+=\\
+\mathcal{B}^N_{SA} \cap
+\left\{
+T\in\mathbb{R}^N_{SA}:
+\sum_{s,\phi,b} A^{\phi b}_{s} T^s_{\phi b}
++
+(C-B)T^{t}_{\psi a}
+\le C
+\right\}
 \label{implication}
-\end{equation}
+\end{multline}
+where the elements of $C\in\mathbb{R}_J$ are defined as
+\[
+C_j = \frac{\sum_{s,\phi,b} \left( |A^{\phi b}_{sj}| + A^{\phi b}_{sj}\right)}{2}
+\]
+To see why this identity holds, consider the final polyhedron in \ref{implication}. When $T^t_{\psi a}=1$ it is equal to $\mathcal{P}^t_{\psi a}$ whereas when $T^t_{\psi a}=0$ it equal to $\sum_{s,\phi,b} A^{\phi b}_{s} T^s_{\phi b} \le C$. But each element $C_j$ is an upper bound on the value of $\sum_{s,\phi,b} A^{\phi b}_{sj} T^s_{\phi b}$ given that $T\in\mathcal{B}^N_{SA}$, so this is satisfied for all $\mathcal{B}^N_{SA}$ such that $T^t_{\psi a}=0$.
 
 Using this transformation the Fermionic support of the posterior can be reduced to the intersection of $\mathcal{B}$-polyhedra. Given the identity
 \[
@@ -306,37 +337,47 @@ Using this transformation the Fermionic support of the posterior can be reduced 
 \]
 we can calculate \ref{fermionicSupport} by calculating each term and simply concatenating their linear constraints.
 
-As an illustration, consider two timesteps of the Cat and mouse model. Suppose we flip a fair coin to decide whether each agent state is occupied or empty at $t=0$ and that we observe a cat in the left gridsquare at time $t=1$. Our aim is to construct a set of linear constraints, $Q$, such that
+As an illustration, consider two timesteps of the cat and mouse model. Suppose we flip a fair coin to decide whether each agent state is occupied or empty at $t=0$ and that we observe a cat in the left grid-square at time $t=1$. Our aim is to construct a set of linear constraints, $Q$, such that
 \[
 \mathcal{B}^2_{4\,2} \cap \supp(P(T|\Omega)) = \mathcal{B}^2_{4\,2} \cap Q
 \]
-Working through \ref{fermionicSupport} term by term, the $\mathcal{B}^N_{SA} \cap \mathcal{T}^N_{SA}$ term is equivalent to a $\mathcal{B}$-polyhedron with the continuity constraints in \ref{continuous}, which are already in linear form. The second term is the support of the prior. This constrains each agent state at $t=0$ to be at most 1. This can be expressed as
+Working through \ref{fermionicSupport} term by term, the $\mathcal{B}^N_{SA} \cap \mathcal{C}^N_{SA}(F)$ term is equivalent to a $\mathcal{B}$-polyhedron with the continuity constraints in \ref{continuous}, which are already in linear form so we're done. The second term is the support of the prior. This constrains each agent state at $t=0$ to be at most 1, which can be expressed as
 \[
-\bigcap_\psi \left[T^0_{\psi 0} + T^0_{\psi 1} \le 1\right]
+\bigcap_\psi \left\{T:T^0_{\psi 0} + T^0_{\psi 1} \le 1\right\}
 \]
 
-The third term is the support of the observation. In this case, we need to add the constraint that there is exactly one cat in the left gridsquare at time $t=1$
+The third term is the support of the observation. Since we observe a cat in the left grid-square at time $t=1$ we need to add the constraint
 \[
 T^1_{0 0} + T^1_{0 1} = 1
 \]
-The final term guards against impossible actions. The only impossible action is a mouse staying put when there is a cat on the same gridsquare. So, 
-\[
-\supp(\pi(\psi_2,T^t\mathbf{1},a_1)) = \left[ T^t_{0 0} + T^t_{0 1} \le 0 \right]
-\]
-and
-\[
-\supp(\pi(\psi_3,T^t\mathbf{1},a_1)) = \left[ T^t_{1 0} + T^t_{1 1} \le 0 \right]
-\]
-Using the identity in \ref{implication} to add the union gives
+The final term guards against impossible actions. The only impossible actions are a mouse staying put when there is a cat on the same gridsquare or moving when there are no cats, which translates to the four cases
 \[
 \begin{aligned}
+\supp(\pi(2,T^t\mathbf{1},0)) &= \left\{ T: -T^t_{0 0} - T^t_{0 1} \le -1 \right\}\\
+\supp(\pi(3,T^t\mathbf{1},0)) &= \left\{ T: -T^t_{1 0} - T^t_{1 1} \le -1 \right\}\\
+\supp(\pi(2,T^t\mathbf{1},1)) &= \left\{ T: T^t_{0 0} + T^t_{0 1} \le 0 \right\}\\
+\supp(\pi(3,T^t\mathbf{1},1)) &= \left\{ T: T^t_{1 0} + T^t_{1 1} \le 0 \right\}
+\end{aligned}
+\]
+Using the identity in \ref{implication} to take the union of each of these with $\left\{T: T^t_{\psi a} = 0\right\}$ gives the four constraints
+\[
+\begin{aligned}
+-T^t_{0 0} - T^t_{0 1} + T^t_{2 0} & \le 0\\
+-T^t_{1 0} - T^t_{1 1} + T^t_{3 0} & \le 0\\
 T^t_{0 0} + T^t_{0 1} + 2T^t_{2 1} & \le 2 \\
 T^t_{1 0} + T^t_{1 1} + 2T^t_{3 1} & \le 2
 \end{aligned}
 \]
-for $t=0$ and $t=1$.
+for each timestep $t=0$ and $t=1$.
 
-\section{Abstract interpretation using convex polyhedra}
+Taken together, these constraints define the set of Fermionic trajectories for the cat and mouse ABM.
+
+\subsection{Abstract interpretation using convex polyhedra}
+
+In many cases a $\mathcal{B}$-polyhedron of the set of Fermionic trajectories in the support of the prior, observations and timestep of an agent can easily be constructed by hand in the form of a set of linear inequalities. In some cases, however, it may be less obvious how to construct this. In this case the linear inequalities can be constructed automatically from a computer program that calculates the function whose support we're trying to find.
+
+
+
 
 The first two terms in equation \ref{support} consists of the supports of computer programs whose inputs are ABM trajectories and whose outputs are given, i.e. the set of trajectories that, when passed to a computer program, would produce a given output.
 
