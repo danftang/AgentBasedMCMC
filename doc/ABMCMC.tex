@@ -254,15 +254,13 @@ In practice, the number of agents in an ABM is usually much smaller than the num
 
 \subsection{Convex $\mathcal{B}$-polyhedra}
 
-
-
 We define a $\mathcal{B}$-polyhedron to be a set of binary vectors
 \[
 \mathcal{B}^N_{SA} \cap \mathcal{P}
 \]
-where $\mathcal{P} \subset \mathcal{R}^N_{SA}$ is a convex polyhedron in the sense that it can be expressed as a set of tensors that satisfy some number of linear constraints on their elements. More formally, there exists a tensor $C \in \mathbb{R}^{SA}_{NJ}$ and a vector $B \in \mathbb{R}_J$ such that:
+where $\mathcal{P} \subset \mathcal{R}^N_{SA}$ is a convex polyhedron in the sense that it can be expressed as a set of tensors that satisfy some number of linear constraints on their elements. More formally, there exists a tensor $C \in \mathbb{R}^{SA}_{NJ}$ and vectors $L \in \mathbb{R}_J$ and $U \in \mathbb{R}_J$ such that:
 \[
-\mathcal{P} = \left\{ T\in\mathbb{R}^N_{SA} : \sum_{t,\psi,a} A^{\psi a}_{t} T^t_{\psi a} \le B \right\}
+\mathcal{P} = \left\{ T\in\mathbb{R}^N_{SA} : L \le \sum_{t,\psi,a} C^{\psi a}_{t} T^t_{\psi a} \le U \right\}
 \]
 
 \begin{theorem}
@@ -305,31 +303,44 @@ so
 \]
 If we let
 \[
-\mathcal{P}^t_{\psi a} = \left\{ T\in\mathbb{R}^N_{SA} : \sum_{s,\phi,b} A^{\phi b}_{s} T^s_{\phi b} \le B \right\}
+\mathcal{P}^t_{\psi a} = \left\{ T\in\mathbb{R}^N_{SA} : L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U \right\}
 \]
-for some $A \in \mathbb{R}^{SA}_{NJ}$ and $B\in\mathbb{R}_J$ then we can remove the union using the identity
+for some $C \in \mathbb{R}^{SA}_{NJ}$ and $L\in\mathbb{R}_J$ and $U\in\mathbb{R}_J$ then we can remove the union using the identity
 \begin{multline}
 \mathcal{B}^N_{SA} \cap
 \left(
-\left\{ T\in\mathbb{R}^N_{SA} : \sum_{s,\phi,b} A^{\phi b}_{s} T^s_{\phi b} \le B \right\}
+\left\{ T\in\mathbb{R}^N_{SA} : L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U \right\}
 \cup
 \left\{T: T^t_{\psi a} = 0\right\}\right)
 =\\
 \mathcal{B}^N_{SA} \cap
 \left\{
 T\in\mathbb{R}^N_{SA}:
-\sum_{s,\phi,b} A^{\phi b}_{s} T^s_{\phi b}
+-\infty \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b}
 +
-(C-B)T^{t}_{\psi a}
-\le C
+(\overline{B}-U)T^{t}_{\psi a}
+\le \overline{B}
+\right\}
+\cap\\
+\mathcal{B}^N_{SA} \cap
+\left\{
+T\in\mathbb{R}^N_{SA}:
+\underline{B} \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b}
++
+(\underline{B}-L)T^{t}_{\psi a} \le \infty
 \right\}
 \label{implication}
 \end{multline}
-where the elements of $C\in\mathbb{R}_J$ are defined as
+where the elements of $\overline{B}\in\mathbb{R}_J$ are defined as
 \[
-C_j = \frac{\sum_{s,\phi,b} \left( |A^{\phi b}_{sj}| + A^{\phi b}_{sj}\right)}{2}
+\overline{B}_j = \frac{\sum_{s,\phi,b} \left( |C^{\phi b}_{sj}| + C^{\phi b}_{sj}\right)}{2}
 \]
-To see why this identity holds, consider the final polyhedron in \ref{implication}. When $T^t_{\psi a}=1$ it is equal to $\mathcal{P}^t_{\psi a}$ whereas when $T^t_{\psi a}=0$ it equal to $\sum_{s,\phi,b} A^{\phi b}_{s} T^s_{\phi b} \le C$. But each element $C_j$ is an upper bound on the value of $\sum_{s,\phi,b} A^{\phi b}_{sj} T^s_{\phi b}$ given that $T\in\mathcal{B}^N_{SA}$, so this is satisfied for all $\mathcal{B}^N_{SA}$ such that $T^t_{\psi a}=0$.
+and the elements of $\underline{B}\in\mathbb{R}_J$ are defined as
+\[
+\underline{B}_j = \frac{\sum_{s,\phi,b} \left( |C^{\phi b}_{sj}| - C^{\phi b}_{sj}\right)}{2}
+\]
+
+To see why this identity holds, consider the right hand polyhedrons in \ref{implication}. When $T^t_{\psi a}=1$ the first is equal to $\sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U$ and the second is equal to $L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b}$ so their intersection is $\mathcal{P}^t_{\psi a}$, whereas when $T^t_{\psi a}=0$ the right hand side terms give $\underline{B} \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le \overline{B}$. But the elements $\underline{B}_j$ and $\overline{B}_j$ are an lower and upper bounds on the value of $\sum_{s,\phi,b} C^{\phi b}_{sj} T^s_{\phi b}$ given that $T\in\mathcal{B}^N_{SA}$, so this is satisfied for all $\mathcal{B}^N_{SA}$ such that $T^t_{\psi a}=0$.
 
 Using this transformation the Fermionic support of the posterior can be reduced to the intersection of $\mathcal{B}$-polyhedra. Given the identity
 \[
@@ -372,61 +383,25 @@ for each timestep $t=0$ and $t=1$.
 
 Taken together, these constraints define the set of Fermionic trajectories for the cat and mouse ABM.
 
-\subsection{Abstract interpretation using convex polyhedra}
+\section{Navigating around a $\mathcal{B}$-polyhedron}
+%#####################################################
 
-In many cases a $\mathcal{B}$-polyhedron of the set of Fermionic trajectories in the support of the prior, observations and timestep of an agent can easily be constructed by hand in the form of a set of linear inequalities. In some cases, however, it may be less obvious how to construct this. In this case the linear inequalities can be constructed automatically from a computer program that calculates the function whose support we're trying to find.
-
-
-
-
-The first two terms in equation \ref{support} consists of the supports of computer programs whose inputs are ABM trajectories and whose outputs are given, i.e. the set of trajectories that, when passed to a computer program, would produce a given output.
-
-Calculating the support of a computer program for a given output is, in full generality, NP-complete\footnote{Consider, for example, a program that accepts an assignment of variables to truth values, and returns true if that assignment satisfies a Boolean formula. Deciding whether the support of this program, given that it returns true, is empty or not is equivalent to solving the Boolean satisfiability problem, which is known to be NP-complete\cite{cook1971complexity}} but it is possible to use a technique known as \textit{abstract interpretation}\cite{cousot1977abstract} to efficiently calculate a superset of the support. So, given a computer program $\rho$, we can calculate a set $\mathcal{P}(\rho, v)$ such that
+Now that we can express the support of the posterior as a $\mathcal{B}$-polyhedron
 \[
-\supp(P(\rho(.)=y)) \subset \mathcal{P}(\rho, v)
+\supp(P(T|\Omega) = \left\{T: L \le \sum_{t,\psi,a} C^{\psi a}_t T^t_{\psi a} \le U \right\}
 \]
-Tools to perform abstract interpretation already exist (e.g. PAGAI\cite{henry2012pagai}) and are used widely in applications such as the verification of safety critical systems\cite{blanchet2003static} and in practice $\mathcal{P}(\rho, v)$ is often reasonably tight (i.e. most members of $\mathcal{P}(\rho, v)$ are in $\supp(P(\rho(.)=y))$). For our application we choose to express $\mathcal{P}(\rho, v)$ in terms of a set of linear inequalities on $\rho$'s inputs, this corresponds to the abstract domain of convex polyhedra\cite{cousot1978automatic}\cite{becchi2018efficient}. Calls to the random number generator can be dealt with in the abstract domain by generating a new variable, $r$, that satisfies $0 \le r < 1$ for each call to \texttt{Random()}. These can either be left in as ``auxiliary'' variables in the same way as slack variables, or removed as soon as the variable goes out of scope by finding the convex hull of the projection into a lower dimensional space (this can be done using the double description method\cite{motzkin1953double}).
+we now describe a way of moving from one point in the polyhedron to another. In this way we'll move one step closer to creating a proposal function which we can use in the Metropolis-Hastings algorithm.
 
-If we replace the supports in equation \ref{support} with their equivalent supersets we end up with a superset of the posterior
-\begin{equation}
-\supp(P(.|\Omega)) \subset
-\bigcap_{(\omega,v) \in \Omega}  \mathcal{P}(\omega, v) \cap
-\bigcap_{t, \psi, a} \left( \mathcal{P}(\pi'(t,\psi,.), a) \cup \left\{T^s_{\xi b}: T^t_{\psi a} = 0\right\} \right)\cap
-\left\{T^t_{\psi a} \mid T^t_{\psi a} \text{is valid}\right\}
-\label{linearSupport}
-\end{equation}
-
-Constraining our proposal function to members of the superset in equation \ref{linearSupport} instead of the true support won't affect the stationary distribution of the Markov Chain. If the proposal function happens to return a trajectory that isn't in $\supp(P(\rho(.)=y))$ then it will just be rejected. This is fine as long as we generate acceptable proposals at a reasonable rate.
-
-The final term in equation \ref{linearSupport}, which requires the trajectories in the support to be valid, consists of the continuity constraints of equation \ref{continuous}, which are also linear constraints so can be treated along with the other constraints, and the non-negative integer constraints of equation \ref{nonNegativeInt} which we leave as separate constraints.
-
-The union term in equation \ref{linearSupport} can also be transformed to a set of linear constraints, but the way we do this depends on the type of ABM we're dealing with, so we defer the explanation until sections \ref{Fermionic} and ...
-
-Without loss of generality, we express inequalities as equalities by introducing slack variables so that
+Without loss of generality, we will express polyhedra in the form
 \[
-\sum_i c_i x_i \le y
-\]
-is equivalent to
-\[
-\begin{split}
-\sum_i c_i x_i + \lambda & = y \\
-\text{subject to}\ \lambda & \ge 0 \\
-\end{split}
+\supp(P(T|\Omega) = \left\{T: B = \sum_{t,\psi,a} C^{\psi a}_t T^t_{\psi a}, L \le B \le U \right\}
 \]
 
-All the constraints can now be gathered into a standard matrix form
-\begin{equation}
-\begin{split}
-AX &= b \\
-\text{subject to }\ l_i \le x_i &\le u_i\\
-x_i &\in \mathbb{Z}
-\end{split}
-\label{Axy}
-\end{equation}
-where the vector $X$ contains the elements of the trajectory tensor $T^t_{\psi a}$ and the slack variables $\lambda$.
 
 \section{From convex polyhedron to Markov process}
-%#####################################################
+%#################################################
+
+
 
 Given a set of inequalities that contain the support of the posterior, we next need to define a stochastic proposal function $f:\mathbb{S} \to \mathbb{S}$ on a set of Markov states, $\mathbb{S}$, where each state, $S$, is associated with a trajectory $T(S)$. The proposal function should have the following properties:
 \begin{itemize}
@@ -812,6 +787,25 @@ where the probability of a pivot state is given by algorithm \ref{probAlgorithm}
 Given this, it's clear that all the necessary properties of the proposal function are fulfilled.
 
 \section{Results}
+
+\section{Further work}
+\subsection{Abstract interpretation using convex polyhedra}
+
+In many cases a $\mathcal{B}$-polyhedron of the set of Fermionic trajectories in the support of the prior, observations and timestep of an agent can easily be constructed by hand in the form of a set of linear inequalities. In some cases, however, it may be less obvious how to construct this. In this case the linear inequalities can be constructed automatically from a computer program that calculates the function whose support we're trying to find.
+
+
+
+
+The first two terms in equation \ref{support} consists of the supports of computer programs whose inputs are ABM trajectories and whose outputs are given, i.e. the set of trajectories that, when passed to a computer program, would produce a given output.
+
+Calculating the support of a computer program for a given output is, in full generality, NP-complete\footnote{Consider, for example, a program that accepts an assignment of variables to truth values, and returns true if that assignment satisfies a Boolean formula. Deciding whether the support of this program, given that it returns true, is empty or not is equivalent to solving the Boolean satisfiability problem, which is known to be NP-complete\cite{cook1971complexity}} but it is possible to use a technique known as \textit{abstract interpretation}\cite{cousot1977abstract} to efficiently calculate a superset of the support. So, given a computer program $\rho$, we can calculate a set $\mathcal{P}(\rho, v)$ such that
+\[
+\supp(P(\rho(.)=y)) \subset \mathcal{P}(\rho, v)
+\]
+Tools to perform abstract interpretation already exist (e.g. PAGAI\cite{henry2012pagai}) and are used widely in applications such as the verification of safety critical systems\cite{blanchet2003static} and in practice $\mathcal{P}(\rho, v)$ is often reasonably tight (i.e. most members of $\mathcal{P}(\rho, v)$ are in $\supp(P(\rho(.)=y))$). For our application we choose to express $\mathcal{P}(\rho, v)$ in terms of a set of linear inequalities on $\rho$'s inputs, this corresponds to the abstract domain of convex polyhedra\cite{cousot1978automatic}\cite{becchi2018efficient}. Calls to the random number generator can be dealt with in the abstract domain by generating a new variable, $r$, that satisfies $0 \le r < 1$ for each call to \texttt{Random()}. These can either be left in as ``auxiliary'' variables in the same way as slack variables, or removed as soon as the variable goes out of scope by finding the convex hull of the projection into a lower dimensional space (this can be done using the double description method\cite{motzkin1953double}).
+
+
+Constraining our proposal function to members of the superset in equation \ref{linearSupport} instead of the true support won't affect the stationary distribution of the Markov Chain. If the proposal function happens to return a trajectory that isn't in $\supp(P(\rho(.)=y))$ then it will just be rejected. This is fine as long as we generate acceptable proposals at a reasonable rate.
 
 \section{Conclusion}
 
