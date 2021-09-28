@@ -252,7 +252,9 @@ supp(P(T|\Omega, T\in\mathcal{B}^N_{SA})) = \mathcal{B}^N_{SA} \cap supp(P(T|\Om
 
 In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so it is overwhelmingly likely that a sample from the posterior will be Fermionic, and so intersection with $\mathcal{B}^N_{SA}$ will often have very little effect on the posterior. However, section ** describes how to extend the algorithm to apply to non-Fermionic trajectories when the Fermionic constraints are not acceptable.
 
-\subsection{Convex $\mathcal{B}$-polyhedra}
+\subsection{The support as a ``convex $\mathcal{B}$-polyhedron''}
+%################################################################
+\label{BPoly}
 
 We define a $\mathcal{B}$-polyhedron to be a set of binary vectors
 \[
@@ -387,63 +389,91 @@ Taken together, these constraints define a $mathcal{B}$-polyhedron that is the s
 %#####################################################
 
 Now that we can express the support of the posterior as a $\mathcal{B}$-polyhedron in the form
-\[
+\begin{equation}
 \supp(P(T|\Omega) = \mathcal{B}^N_{SA} \cap \left\{T: L \le \sum_{t,\psi,a} C^{\psi a}_t T^t_{\psi a} \le U \right\}
-\]
+\label{bPolySupport}
+\end{equation}
 we now describe a way of moving from one point in the $\mathcal{B}$-polyhedron to another. In this way we'll move one step closer to creating a proposal function which we can use in the Metropolis-Hastings algorithm.
 
-Without loss of generality, we will express polyhedra in the form
-\[
-\supp(P(T|\Omega) = \left\{T: X_B = \sum_{t,\psi,a} C^{\psi a}_t T^t_{\psi a}, L \le X_B \le U, T^t_{\psi a} \in \left\{0,1\right\} \right\}
-\]
-where we've explicitly added the Fermionic limits on $T$. Notice that with these limits explicitly stated, the members of the $\mathcal{B}$-polyhedron are all at the vertices of the polyhedron described by the term in curly braces.
-
-Now let $R\in\mathbb{R}^{SA}_{NJ}$ where $J=NSA$ be a tensor that ``flattens'' a trajectory tensor into an $NSA$-dimensional vector without changing the values of the elements (i.e. for every $(t, \psi, a)$ there is exactly one $j$ such that $R^{\psi a}_{t j} = 1$ and for all $j' \ne j$, $R^{\psi a}_{t j'} = 0$), then we can write
+In the following, we'll express $\mathcal{B}$-polyhedra in the slightly more general form
 \begin{equation}
-\supp(P(T|\Omega) = \left\{X: (b,X)^T = Q(X_B|X_N)^T, X_B = NX_N, L \le X_B \le U, X_{Ni} \in \left\{ 0,1\right\} \right\}
+\mathcal{B} = \left\{X: X = Q{X_B\choose X_N}, X_B = NX_N + b, X_B\in\mathbb{I}^I, L \le X_B \le U, X \in \left\{ 0,1\right\}^K, X_N \in \left\{0,1\right\}^J \right\}
 \label{canonicalpolyhedron}
 \end{equation}
-where
+where $X\in \mathbb{R}^K$, $X_N\in\mathbb{R}^J$ and $X_B\in\mathbb{R}^I$ are now vectors and $Q$ is a $K\times (I+J)$ matrix that selects $K$ elements from $(X_B|X_N)^T$ (i.e. each column has at most one element equal to 1, each row has exactly one element equal to 1 and all other elements are 0).
+
+Equation \ref{bPolySupport} can easily be expressed in the form \ref{canonicalpolyhedron} by ``flattening'' the trajectory, $T$, into a $J$-dimensional vector (without changing the values of the elements) using a tensor $R\in\mathbb{R}^{SA}_{NJ}$ where $J=NSA$ (i.e. for every $(t, \psi, a)$ there is exactly one $j$ such that $R^{\psi a}_{t j} = 1$ and for every $j$ there is exactly one $(t,\psi,a)$ such that $R^{\psi a}_{t j} = 1$ and all other elements are zero) so that
 \[
 X_N = \sum_{t,\psi,a}R^{\psi a}_t T^t_{\psi a}
 \]
-is a $J$-dimensional vector,
+and letting $N$ be the $I\times J$ matrix
 \[
 N = \sum_{t,\psi,a} C^{\psi a}_t R^{\psi a}_t
 \]
-is an $I\times J$ matrix and $Q$ is a permutation matrix. 
+and finally letting Q be the matrix such that $X_N = Q(X_B|X_N)$ and $b = \mathbf{0}$. The constraint $X_B\in\mathbb{I}^I$ is satisfied since all the elements of $N$ are integers.
 
-\subsection{Removing fixed variables}
+\subsection{The pivot transformation}
 
-Defined in this way, there are a number of constraints that have the same set of solutions, so we can transform the constraints without changing the set that they represent. As defined so far, some of the elements of $X_B$ will be fixed (i.e. $L_i = U_i$, this will be the case for at least all the continuity constraints). Fixed variables can be removed in the following way: [TODO: can removal of fixed variables cause non-integer coefficients?]
+The introduction of the matrix $Q$ in \ref{canonicalpolyhedron} allows us to transform the representation without changing the $\mathcal{B}$-polyhedron that is represented. We now describe the ``pivot transformation'' which will be a central operation in the sampling algorithm.
+
+We begin by expressing \ref{canonicalpolyhedron} in the equivalent form
+\begin{equation}
+\mathcal{B} = \left\{X: X = Q{X_B\choose X_N}, (I|-N){X_B\choose X_N} = b, {L\choose \mathbf{0}} \le {X_B \choose X_N} \le {U\choose \mathbf{1}}, X \in \left\{ 0,1\right\}^K, {X_B\choose X_N} \in \mathbb{I}^{I+J} \right\}
+\label{joinedpolyhedron}
+\end{equation}
+
+If we let $S_{ij}$ be the permutation matrix such that
+\[
+{X'_B\choose X'_N} = S_{ij}{X_B\choose X_N}
+\]
+has the effect of swapping the $i^{th}$ element of $X_B$ with the $j^{th}$ element of $X_N$ then, noting that $S^{-1}_{ij} = S_{ij}$ we can change variables in the equality constraint
+\[
+(I|-N)S_{ij}{X'_B \choose X'_N} = b
+\]
+However, the matrix $(I|-N)S_{ij}$ is no longer in the canonical form since $S_{ij}$ has the effect of swapping a column in the identity with a column in the $-N$ matrix. However, as long as $N_{ij} \ne 0$, we can pre-multiply left and right hand sides by the square matrix
+\[
+E = \left((I|-N)S_{ij}{I \choose \mathbf{0}}\right)^{-1} = 
+\begin{pmatrix}
+1 &  & -\frac{N_{0j}}{N_{ij}} & & \\
+  & \ddots & \vdots & &\\
+ & & \frac{1}{-N_{ij}} & &\\
+  & & \vdots & \ddots &\\
+  & & -\frac{N_{nj}}{N_{ij}} & &1\\
+\end{pmatrix}
+\]
+and recover the canonical form
+\[
+E(I|-N)S_{ij} = Eb = (I|-N') = b'
+\]
+Since $E$ is invertible the transformed constraint is equivalent to the original, so if we let
+\[
+Q' = QS_{ij}
+\]
+we can express $\mathcal{B}$ in the form
+\begin{equation}
+\mathcal{B} = \left\{X: X = Q'{X'_B\choose X'_N}, (I|-N'){X'_B\choose X'_N} = b', S_{ij}{L\choose \mathbf{0}} \le {X'_B \choose X'_N} \le S_{ij}{U\choose \mathbf{1}}, X \in \left\{ 0,1\right\}^K, {X'_B\choose X'_N} \in \mathbb{I}^{I+J} \right\}
+\end{equation}
+
+This is almost in the canonical form, apart from the lower and upper bounds on $X'_N$ which may have an element with bounds other than 0 and 1. However, if we choose $i$ such that $L_i = 0$ and $U_i=1$ then $S_{ij}$ makes no change and the transformed representation is canonical.
+
+\subsection{Removal of fixed variables}
+
+If we use the method described in section \ref{BPoly} to create a $\mathcal{B}$-polyhedron of the support then each continuity constraint (and possibly some of the observation constraints) will result in elements of $X_B$ that have fixed values (i.e. $L_i = U_i$). Removing these will reduce the dimensionality of $X_N$ and so make valid solutions easier to find.
+
+Given a representation with a fixed variable in the $i^{th}$ element of $X_B$, we can perform a pivot on $(i,j)$ to swap the variable with the $j^{th}$ element of $X_N$ so that the fixed variable ends up in $X_N$. This would leave the upper and lower bounds in a non-canonical state since $X_N$ must have bounds $\mathbf{0} \le X_N \le \mathbf{1}$. However, the fixed variable can be removed from $X_N$ by adding the $j^{th}$ column of $N$, times the fixed variable to left and right sides of the equation
+\[
+(I|-N){X_B \choose X_N} + N^jX_{Nj} = b + N^jX_{Nj} = (I|-N'){X_B \choose X'_N} = b'
+\]
+where $N^j$ denotes the $j^{th}$ column of $N$, $X'_N$ is $X_N$ with the $j^{th}$ element removed and $N'$ is $N$ with the $j^{th}$ column removed. Since $X_{Nj}$ is fixed, then $b'$ is also fixed and we have recovered the canonical form, but now with $X'_N$ having one less dimension than $X_N$.
+
+[Pivoting...in order to find a new point...so that each Markov state consists of a pivot-state (a partition of variables into m basic varaibles and N-m fixed/binary non-basic variables) and a value $X_N$ for the non-basics such that each element is on one of its bounds...i.e. a vertex. Sets of interest: the set of unbounded vertices (no bounds on basics) with binary non-basics, the set of vertices that can be reached through unit pivots.]
+
+[if the pivot is between two feasible solutions then there exists an equivalent degenerate pivot and a bounds swap.]
+
 
 \subsection{Bounds swapping}
 
 Given a $\mathcal{B}$-polyhedron in the form \ref{canonicalpolyhedron} it can be seen that a given solution is defined given a binary vector $X_N$. One possible simple perturbation of this state is to swap the $i^{th}$ element of $X_N$ to it's other value. If we're lucky this will not push $X_B$ outside its bounds, but there is no guarantee that this is the case, and often it will not be.
-
-\subsection{Pivoting}
-
-[Pivoting...in order to find a new point...so that each Markov state consists of a pivot-state (a partition of variables into m basic varaibles and N-m fixed/binary non-basic variables) and a value $X_N$ for the non-basics such that each element is on one of its bounds...i.e. a vertex. Sets of interest: the set of unbounded vertices (no bounds on basics) with binary non-basics, the set of vertices that can be reached through unit pivots.]
-
-[Pivoting as transformation of polyhedron that has the same solution points (but different infeasible distances between points)...with consequence that if the pivot is between feasible points then there exists an equivalent degenerate pivot and a bounds swap.]
-
-
-Choose an $(i,j)$ in $N$ such that $|N_{ij}|=1$ and $X_{Bi}$ is binary or fixed (i.e. $L_i=U_i$). If we change variables $Q' = QS^{-1}_{ij}$, $(X'_B|X'_N) = S_{ij}(X_B|X_N)$ 
-\[
-\] 
-\[
-EX_B = ENX_N
-\]
-such that $EN_j = \delta_j$. Now swap column in $E_j$ on left with column $(EN)_j$ on right so that
-\[
-X'_B = (EN + C)X'_N
-\]
-\[
-X_B + \Delta N_j = N(X_N + \Delta \delta_j)
-\]
-\[
-(X_B' | X_N')^T  = Q(X_B | X_N)^T
-\]
 
 \section{From convex polyhedron to Markov process}
 %#################################################
