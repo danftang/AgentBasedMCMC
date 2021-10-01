@@ -61,13 +61,13 @@ using glp::X;
 int main(int argc, char *argv[]) {
 
 //    Experiments::BinomialAgentAssimilation();
-//    Experiments::CatMouseSingleObservation();
+//  Experiments::CatMouseSingleObservation();
 //    Experiments::CatMouseAssimilation();
 //    Experiments::CatMouseMultiObservation();
 //    Experiments::PredPreySingleObservation();
-//    Experiments::PredPreyAssimilation();
+    Experiments::PredPreyAssimilation();
 
-    Experiments::FermionicIntegrality();
+//    Experiments::FermionicIntegrality();
 
 //    PoissonState<PredPreyAgent> startState;
 //    TrajectoryPriorDistribution<PredPreyAgent> myPrior(startState, 8);

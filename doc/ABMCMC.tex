@@ -252,7 +252,7 @@ supp(P(T|\Omega, T\in\mathcal{B}^N_{SA})) = \mathcal{B}^N_{SA} \cap supp(P(T|\Om
 
 In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so it is overwhelmingly likely that a sample from the posterior will be Fermionic, and so intersection with $\mathcal{B}^N_{SA}$ will often have very little effect on the posterior. However, section ** describes how to extend the algorithm to apply to non-Fermionic trajectories when the Fermionic constraints are not acceptable.
 
-\subsection{The support as a ``convex $\mathcal{B}$-polyhedron''}
+\subsection{Convex $\mathcal{B}$-polyhedra and $\mathcal{B}$-distributions}
 %################################################################
 \label{BPoly}
 
@@ -266,7 +266,7 @@ where $\mathcal{P} \subset \mathcal{R}^N_{SA}$ is a convex polyhedron in the sen
 \]
 
 \begin{theorem}
-For any set $X$ there exists a convex polyhedron $P$ such that
+For any set $\mathcal{X}$ there exists a convex polyhedron $P$ such that
 \[
 \mathcal{B}^N_{SA} \cap \mathcal{X} = \mathcal{B}^N_{SA} \cap \mathcal{P}
 \]
@@ -348,7 +348,9 @@ Using this transformation the Fermionic support of the posterior can be reduced 
 \[
 (\mathcal{B}^N_{SA} \cap P_1) \cap (\mathcal{B}^N_{SA} \cap P_2) = \mathcal{B}^N_{SA} \cap (P_1 \cap P_2)
 \]
-we can calculate \ref{fermionicSupport} by calculating each term and simply concatenating their linear constraints.
+we can calculate \ref{fermionicSupport}, and thereby represent the support of the posterior as a set of linear constraints, by calculating each term and simply concatenating their linear constraints.
+
+The idea of a $\mathcal{B}$-polyhedron as the support for a probability distribution naturally leads to the idea of a $\mathcal{B}-distribution$ which is a probability distribution which is a discrete distribution defined on the points of a $\mathcal{B}-polyhedron$. From the above, it can be seen that the posterior distribution of an ABM trajectory is a $\mathcal{B}-distribution$.
 
 As an illustration, consider two timesteps of the cat and mouse model. Suppose we flip a fair coin to decide whether each agent state is occupied or empty at $t=0$ and that we observe a cat in the left grid-square at time $t=1$. Our aim is to construct a set of linear constraints, $Q$, such that
 \[
@@ -383,9 +385,9 @@ T^t_{1 0} + T^t_{1 1} + 2T^t_{3 1} & \le 2
 \]
 for each timestep $t=0$ and $t=1$.
 
-Taken together, these constraints define a $mathcal{B}$-polyhedron that is the set of Fermionic trajectories for the cat and mouse ABM.
+Taken together, these constraints define a $\mathcal{B}$-polyhedron that is the set of Fermionic trajectories for the cat and mouse ABM, and when combined with equation \ref{posterior} defines $P(T|\Omega)$ as a $\mathcal{B}-distribution$.
 
-\section{Navigating around a $\mathcal{B}$-polyhedron}
+\section{Transforming between representations of a $\mathcal{B}$-polyhedron}
 %#####################################################
 
 Now that we can express the support of the posterior as a $\mathcal{B}$-polyhedron in the form
@@ -393,16 +395,18 @@ Now that we can express the support of the posterior as a $\mathcal{B}$-polyhedr
 \supp(P(T|\Omega) = \mathcal{B}^N_{SA} \cap \left\{T: L \le \sum_{t,\psi,a} C^{\psi a}_t T^t_{\psi a} \le U \right\}
 \label{bPolySupport}
 \end{equation}
-we now describe a way of moving from one point in the $\mathcal{B}$-polyhedron to another. In this way we'll move one step closer to creating a proposal function which we can use in the Metropolis-Hastings algorithm.
+we now describe some different ways of representing the same $\mathcal{B}$-polyhedron and methods of transforming from one representation to another. This will be useful in the development that follows.
 
-In the following, we'll express $\mathcal{B}$-polyhedra in the equivalent form
+\subsection{The standard form of a $\mathcal{B}$-polyhedron}
+
+Since there are many ways of representing a polyhedron, it will be useful to define a standard form when representing $\mathcal{B}$-polyhedra. We'll use the form
 \begin{equation}
-\mathcal{B}(Q,N,b,U,L) = \left\{X: X = Q{X_B\choose X_N}, X_B = NX_N + b, X_B\in\mathbb{I}^I, L \le X_B \le U, X \in \left\{ 0,1\right\}^K, X_N \in \left\{0,1\right\}^J \right\}
-\label{canonicalpolyhedron}
+\mathcal{B}(Q,N,b,L,U) = \left\{X: X = Q{X_B\choose X_N}, X_B = NX_N + b, X_B\in\mathbb{Z}^I, L \le X_B \le U, X \in \left\{ 0,1\right\}^K, X_N \in \left\{0,1\right\}^J \right\}
+\label{standardpolyhedron}
 \end{equation}
-where $X\in \mathbb{R}^K$, $X_N\in\mathbb{R}^J$ and $X_B\in\mathbb{R}^I$ are now vectors and $Q$ is a $K\times (I+J)$ matrix that selects $J \le K \le I+J$ elements from $(X_B|X_N)^T$ (i.e. each column of $Q$ has at most one element equal to 1, each row has exactly one element equal to 1 and all other elements are 0). We'll call the elements of $X_B$ ``basic-variables'' and the elements of $X_N$ ``non-basic variables''.
+where $X\in \mathbb{R}^K$, $X_N\in\mathbb{R}^J$ and $X_B\in\mathbb{R}^I$ are now vectors and $Q$ is a $K\times (I+J)$ matrix that selects $J \le K \le I+J$ elements from $(X_B|X_N)^T$ (i.e. each column of $Q$ has at most one element equal to 1, each row has exactly one element equal to 1 and all other elements are 0). We'll call the elements of $X_B$ ``basic-variables'' and the elements of $X_N$ ``non-basic variables''\footnote{The introduction of the requirement that $X_B \in \mathbb{Z}$ does not reduce expressivity as long as the elements of $N$ and $b$ can be expressed as rational numbers. In this case they can be converted to integers by multiplying each row by the product of the denominators on that row and dividing by the greatest common divisor. Once $N$ and $b$ are integer then $X_B$ is guaranteed to be integer for any $X_N\in\{0,1\}^J$.}.
 
-Equation \ref{bPolySupport} can easily be expressed in the form \ref{canonicalpolyhedron} by ``flattening'' the trajectory, $T$, into a $J$-dimensional vector (without changing the values of the elements) using a tensor $R\in\mathbb{R}^{SA}_{NJ}$ where $J=NSA$ (i.e. for every $(t, \psi, a)$ there is exactly one $j$ such that $R^{\psi a}_{t j} = 1$ and for every $j$ there is exactly one $(t,\psi,a)$ such that $R^{\psi a}_{t j} = 1$ and all other elements are zero) so that
+Equation \ref{bPolySupport} can easily be expressed in the form \ref{standardpolyhedron} by ``flattening'' the trajectory, $T$, into a $J$-dimensional vector (without changing the values of the elements) using a tensor $R\in\mathbb{R}^{SA}_{NJ}$ where $J=NSA$ (i.e. for every $(t, \psi, a)$ there is exactly one $j$ such that $R^{\psi a}_{t j} = 1$ and for every $j$ there is exactly one $(t,\psi,a)$ such that $R^{\psi a}_{t j} = 1$ and all other elements are zero) so that
 \[
 X_N = \sum_{t,\psi,a}R^{\psi a}_t T^t_{\psi a}
 \]
@@ -410,13 +414,13 @@ and letting $N$ be the $I\times J$ matrix
 \[
 N = \sum_{t,\psi,a} C^{\psi a}_t R^{\psi a}_t
 \]
-and finally letting Q be the matrix such that $X_N = Q(X_B|X_N)$ and $b = \mathbf{0}$. The constraint $X_B\in\mathbb{I}^I$ is satisfied since all the elements of $N$ are integers.
+and finally letting Q be the matrix such that $X_N = Q(X_B|X_N)$ and $b = \mathbf{0}$. The constraint $X_B\in\mathbb{I}^I$ is satisfied since all the elements of $N$ are integers in our case.
 
 \subsection{The pivot transformation}
 
-The introduction of the matrix $Q$ in \ref{canonicalpolyhedron} allows us to transform the representation without changing the $\mathcal{B}$-polyhedron that is represented. We now describe the ``pivot transformation'' which will be a central operation in the sampling algorithm, and should look familiar to anyone acquainted with the simplex algorithm \cite{vanderbei2015linear}.
+The introduction of the matrix $Q$ in \ref{standardpolyhedron} allows us to transform the representation without changing the $\mathcal{B}$-polyhedron that is represented. We now describe the ``pivot transformation'' which will be a central operation in the sampling algorithm, and should look familiar to anyone acquainted with the simplex algorithm (see e.g. \cite{vanderbei2015linear}).
 
-We begin by expressing \ref{canonicalpolyhedron} in the equivalent form
+We begin by transforming \ref{standardpolyhedron} to the equivalent form
 \begin{equation}
 \mathcal{B} = \left\{X: X = Q{X_B\choose X_N}, (I|-N){X_B\choose X_N} = b, {L\choose \mathbf{0}} \le {X_B \choose X_N} \le {U\choose \mathbf{1}}, X \in \left\{ 0,1\right\}^K, {X_B\choose X_N} \in \mathbb{I}^{I+J} \right\}
 \label{joinedpolyhedron}
@@ -426,13 +430,19 @@ If we let $S_{ij}$ be the permutation matrix such that
 \[
 {X'_B\choose X'_N} = S_{ij}{X_B\choose X_N}
 \]
-has the effect of swapping the $i^{th}$ element of $X_B$ with the $j^{th}$ element of $X_N$ then, noting that $S^{-1}_{ij} = S_{ij}$ we can change variables in the equality constraint
+has the effect of swapping the $i^{th}$ element of $X_B$ with the $j^{th}$ element of $X_N$ then we can change variables in the equality constraint so that
 \[
-(I|-N)S_{ij}{X'_B \choose X'_N} = b
+(I|-N)S^{-1}_{ij}{X'_B \choose X'_N} = b
 \]
-However, the matrix $(I|-N)S_{ij}$ is no longer in the canonical form since $S_{ij}$ has the effect of swapping a column in the identity with a column in the $-N$ matrix. However, as long as $N_{ij} \ne 0$, we can pre-multiply left and right hand sides by the square matrix
+(note that $S^{-1}_{ij} = S_{ij}$).
+
+However, the matrix $(I|-N)S^{-1}_{ij}$ is no longer in the standard form since $S^{-1}_{ij}$ has the effect of replacing a column in the identity with a column in the $-N$ matrix, leaving the first $I$ columns of $(I|-N)S^{-1}_{ij}$ equal to
 \[
-E = \left((I|-N)S_{ij}{I \choose \mathbf{0}}\right)^{-1} = 
+B = (I|-N)S^{-1}_{ij}{I \choose \mathbf{0}}
+\]
+which is not, in general, the identity. However, as long as $N_{ij} \ne 0$ then $B$ is invertible, having the simple form
+\[
+B^{-1} =  
 \begin{pmatrix}
 1 &  & -\frac{N_{0j}}{N_{ij}} & & \\
   & \ddots & \vdots & &\\
@@ -441,43 +451,56 @@ E = \left((I|-N)S_{ij}{I \choose \mathbf{0}}\right)^{-1} =
   & & -\frac{N_{nj}}{N_{ij}} & &1\\
 \end{pmatrix}
 \]
-and recover the canonical form
+We can now recover the standard form by pre-multiplying by $B^{-1}$
 \[
-E(I|-N)S_{ij} = Eb = (I|-N') = b'
+B^{-1}(I|-N)S^{-1}_{ij} = (B^{-1}|-B^{-1}N)S^{-1}_{ij} = (I|-N') = B^{-1}b  = b'
 \]
-Since $E$ is invertible the transformed constraint is equivalent to the original, so if we let
+Since $B^{-1}$ is invertible the transformed constraint is equivalent to the original, so if we let
 \[
-Q' = QS_{ij}
+Q' = QS^{-1}_{ij}
 \]
 we can express $\mathcal{B}$ in the form
 \begin{equation}
 \mathcal{B} = \left\{X: X = Q'{X'_B\choose X'_N}, (I|-N'){X'_B\choose X'_N} = b', S_{ij}{L\choose \mathbf{0}} \le {X'_B \choose X'_N} \le S_{ij}{U\choose \mathbf{1}}, X \in \left\{ 0,1\right\}^K, {X'_B\choose X'_N} \in \mathbb{I}^{I+J} \right\}
 \end{equation}
 
-This is almost in the canonical form, apart from the lower and upper bounds on $X'_N$ which may have an element with bounds other than 0 and 1. However, if we add the constraint that a pivot transformation can only be performed for $i: L_i = 0, U_i=1$ then $S_{ij}$ makes no change and the transformed representation is canonical.
+This is almost in the standard form, apart from the lower and upper bounds on $X'_N$ which may have an element with bounds other than 0 and 1. However, if we add the constraint that a pivot transformation can only be performed for $i: L_i = 0, U_i=1$ then $S_{ij}$ makes no change and the transformed representation is standard.
+
+It is easy to see that this transformation can be extended to any permutation matrix $S$ such that $B = (I|-N)S^{-1}(I|\mathbf{0})^T$ is invertible. So, given a reference representation of a $\mathcal{B}$-polyhedron, $\mathcal{B}(Q,N,b,L,U)$, we can define the set of all equivalent ``pivot states'' with respect to $(N,L,U)$ to be
+\[
+\mathcal{S}(N,L,U) = \left\{S : S \text{ is a permutation matrix }, (I|-N)S^{-1}{I\choose \mathbf{0}} \text{ is invertible}, \exists L',U': S{L|U \choose \mathbf{0}|\mathbf{1}} = {L'|U' \choose \mathbf{0}|\mathbf{1}} \right\}
+\]
+so that each pivot state, when applied to the reference state, gives an equivalent standard form representation.
 
 \subsection{Removal of fixed variables}
 
 If we use the method described in section \ref{BPoly} to create a $\mathcal{B}$-polyhedron of the support then each continuity constraint (and possibly some of the observation constraints) will result in elements of $X_B$ that have fixed values (i.e. $L_i = U_i$). Removing these will reduce the dimensionality of the problem and so make valid solutions easier to find.
 
-Suppose the $i^{th}$ element of $X_B$ is fixed. We can perform a pivot on $(i,j)$, for some $j:N_{ij}\ne 0$ to swap the fixed variable with the $j^{th}$ element of $X_N$ so that the fixed variable ends up in $X_N$. This would leave the upper and lower bounds in a non-canonical state since $X_N$ must have bounds $\mathbf{0} \le X_N \le \mathbf{1}$. However, the fixed variable can be removed from $X_N$ by adding the $j^{th}$ column of $N$ times the fixed variable to left and right sides of the equality constraint.
+Suppose the $i^{th}$ element of $X_B$ is fixed. We can perform a pivot on $(i,j)$, for some $j:N_{ij}\ne 0$ to swap the fixed variable with the $j^{th}$ element of $X_N$ so that the fixed variable ends up in $X_N$. This would leave the upper and lower bounds in a non-standard state since $X_N$ must have bounds $\mathbf{0} \le X_N \le \mathbf{1}$. However, the fixed variable can be removed from $X_N$ by adding the $j^{th}$ column of $N$ times the fixed variable to left and right sides of the equality constraint.
 \[
 (I|-N){X_B \choose X_N} + N^jX_{Nj} = b + N^jX_{Nj} = (I|-N'){X_B \choose X'_N} = b'
 \]
-where $N^j$ denotes the $j^{th}$ column of $N$, $X'_N$ is $X_N$ with the $j^{th}$ element removed and $N'$ is $N$ with the $j^{th}$ column removed. Since $X_{Nj}$ is fixed, then $b'$ is also fixed and we have recovered the canonical form, but now with $X'_N$ having one less dimension than $X_N$.
+where $N^j$ denotes the $j^{th}$ column of $N$, $X'_N$ is $X_N$ with the $j^{th}$ element removed and $N'$ is $N$ with the $j^{th}$ column removed. Since $X_{Nj}$ is fixed, then $b'$ is also fixed and we have recovered the standard form, but now with $X'_N$ having one less dimension than $X_N$.
 
-With the variable change, we also need to update $Q$ and the upper and lower bounds by pre-multiplying by $S_{ij}$ then removing the $j^{th}$ column (since the fixed variable is not part of $X$, the $j^{th}$ column in $Q$ will be $\mathbf{0}$ so will not change $X$, and the $j^{th}$ column in the bounds will be the offending fixed variable bounds, which, when removed will return them to the canonical form).
+With the variable change, we also need to update $Q$ and the upper and lower bounds by pre-multiplying by $S_{ij}$ then removing the $j^{th}$ column (since the fixed variable is not part of $X$, the $j^{th}$ column in $Q$ will be $\mathbf{0}$ so will not change $X$, and the $j^{th}$ column in the bounds will be the offending fixed variable bounds, which, when removed will return them to the standard form).
 
+In the following, we'll assume that all fixed variables have been removed from any representation of a $\mathcal{B}$-polyhedron.
 
-[if the pivot is between two feasible solutions then there exists an equivalent degenerate pivot and a bounds swap.]
-
-
-
-
-\section{From convex polyhedron to Markov process}
+\section{Sampling from a $\mathcal{B}$-distribution}
 %#################################################
 
-Now that we can represent the support of the posterior as a $\mathcal{B}$-polyhedron and have some tools to manipulate representations and solutions of a $\mathcal{B}$-polyhedron, our next task is to use this to define a Markov process from which we can take samples. To do this we need to define a set of Markov states, $\mathcal{M}$, and a stochastic proposal function $f:\mathcal{M} \to \mathcal{M}$ from which we can generate state transitions given the current state, and a probability measure $P: \mathcal{M} \to \mathbb{R}$ which gives the probability of each Markov state (this need not be normalised, though, as we'll only ever be interested in probability ratios). Finally, we need a mapping $E:\mathcal{M} \to \mathbb{R}^T_{SA}$ which maps Markov states to trajectories so we can recover the sample.
+Armed with the ability to express $P(T|\Omega)$ as a $\mathcal{B}$-distribution and some tools to manipulate representations of $\mathcal{B}$-polyhedra, we can now go about defining a Markov process which will allow us to sample from a $\mathcal{B}$-distribution.
+
+To do this we need to define
+\begin{itemize}
+\item a set of Markov states, $\mathcal{M}$
+
+\item a probability measure $P: \mathcal{M} \to \mathbb{R}$ which gives the probability of each Markov state (this need not be normalised, though, as we'll only ever be interested in probability ratios)
+
+\item a stochastic proposal function $f:\mathcal{M} \to \mathcal{M}$ from which we can generate transitions to a new Markov state given the current Markov state
+
+\item a mapping $E:\mathcal{M} \to \mathbb{R}^T_{SA}$ which maps Markov states to trajectories so we can recover the sample.
+\end{itemize}
 
 In order to be useable in the Metropolis-Hastings algorithm, the proposal function, $f$, must have the following properties:
 \begin{itemize}
@@ -488,35 +511,51 @@ In order to be useable in the Metropolis-Hastings algorithm, the proposal functi
 	\item There should be a computationally efficient way of generating a proposal given the current state. 
 \end{itemize}
 
-\subsection{Bounds swapping}
 
-Given a $\mathcal{B}$-polyhedron in the form \ref{canonicalpolyhedron} it can be seen that a binary vector $X_N$ uniquely defines a point in the polyhedron given by
-\[
-Q{NX_N + b \choose X_N}
-\]
-So, given a current $X_N$, one possible simple perturbation of this state is to swap the $i^{th}$ element of $X_N$ to it's other value. If we're lucky this will not push $X_B$ outside its bounds and we'll have found another solution. However, not all bound swaps are feasible in this way, and worse, there is no guarantee that given two feasible solutions there exists a sequence of feasible bound swaps that forms a path from one to the other.
-
-\subsection{The Markov state}
-\label{Fermionic}
+\subsection{The Markov states}
 %#############################################
 
-Given a $\mathcal{B}$-polyhedron expressed in canonical form \ref{canonicalpolyhedron}, $\mathcal{B}(Q,N,b,U,L)$, we define a Markov state to be a pair $(X,S)$ where $X \in \mathcal{B}(Q,N,b,U,L)$ is a solution and $S$ is a ``pivot state'' which is an $I+J \times I+J$ permutation matrix expressible as a sequence of swap matrices
-\[
-S = \prod_n S_{i_nj_n}
-\]
-which defines a variable change
+Given a $\mathcal{B}$-polyhedron and a reference representation in standard form, $\mathcal{B}(Q,N,b,U,L)$, we define a Markov state to be a pair $(X,S)$ where $X \in \mathcal{B}(Q,N,b,U,L)$ is a member of the $\mathcal{B}$-polyhedron and $S$ is a pivot state which defines a variable permutation
 \[
 {X'_B \choose X'_N} = S{X_B \choose X_N}
 \]
-which, when applied to the ``base representation'', $(Q,N,b,U,L)$, as a sequence of pivot transformations gives a transformed representation $(Q',N',b',U,L)$.
+which, when applied to the reference representation gives a transformed representation $(Q',N',b',U,L)$.
 
-Notice that for a given solution, $X$, there are many Markov states, one for each possible pivot state. However, since each pivot only ever involves pairs of binary variables, which always lie on their bounds in a feasible solution, each solution has the same set of possible pivot states. So, we assign to each Markov state a probability $\frac{P(X)}{N}$, where $P(X)$ is the probability of solution $X$ and $N$ is the number of valid pivot states and so the probability of being in a Markov state associated with solution $X$ is $P(X)$. In the Metropolis-Hastings algorithm we only ever need to calculate probability ratios so, since $N$ is independent of $X$, we never need to calculate the value of $N$\footnote{which is handy because it would be very difficult to calculate}.
+Given a solution $X$, there is clearly a unique $X_N$ for the representation where all elements of $X$ are in $X_N$ (such a representation must exist as it's the representation we begin with when we first construct the polyhedron from the ABM). So for any transformed representation there is also a unique $X'_N$ which can be found by transforming to a representation with all $X$ in $X_N$, calculating $(X_B|X_N)$ and transforming back to get $(X'_B|X'_N)$. Clearly the converse also holds, given an $X_N$ in any representation there is a unique $X$ given by
+\[
+X = Q{N X_N + b \choose X_N}
+\]
+so we can talk interchangeably of the $X$ or $X'_N$ of the Markov state.
 
-\subsection{Infeasibility, infeasibility objective and potential energy}
+\subsection{The probability of a Markov state}
 
-In order to improve mixing during MCMC we allow the Markov chain to pass through states that are infeasible in the sense that at leat one element of $X_B$ is outside its bound. In order to include these states in our Markov process, we must assign a probability to each infeasible state and define a way of transitioning to and from these states.
+Notice that for a given feasible solution, $X$, there are many Markov states, one for each possible pivot state. However, since the number of pivot states is the same for all feasible states we can assign to each feasible Markov state a probability $\frac{P(X)}{N}$, where $P(X)$ is the probability of solution $X$ and $N$ is the number of valid pivot states. So, the probability of being in a Markov state associated with solution $X$ (summed over all pivot states) is $P(X)$. In the Metropolis-Hastings algorithm we only ever need to calculate probability ratios so, since $N$ is independent of $X$, we never need to calculate the value of $N$\footnote{which is handy because it would be very difficult to calculate}.
 
-Let the infeasibility of a scalar $x$ be defined as
+\subsection{The transitions between Markov states}
+
+\subsubsection{Bounds swaps}
+Given the $X_N$ of a Markov state, a simple transition between Markov states is to swap the $i^{th}$ element of $X_N$ to it's other value while keeping the representation fixed. We'll call this a bound swap. If we're lucky the bound swap will not push $X_B$ outside its bounds and we'll have found another feasible Markov state. However, not all bound swaps are feasible in this way, and worse, there is no guarantee that given two feasible Markov states with the same representation there exists a sequence of feasible bound swaps that forms a path from one to the other.
+
+\subsubsection{Pivot transitions}
+Another simple transition between Markov states is to apply the pivot transition $S_{ij}$ to the representation for some valid $i$ and $j$. Since the variable that moves from $X_B$ to $X_N$ must end up having a value of either 0 or 1, we also specify which state this variable should end up in after the pivot. So, a pivot transition is fully defined by a triplet $(i,j,b)$.
+
+\subsubsection{Infeasibility, infeasibility objective and potential energy}
+
+Unfortunately, if we only allow bound swaps and pivot transitions between feasible states there is no guarantee that there is a path between any two feasible states since the constraints on the non-binary basic variables (which can't be involved in a valid pivot transition) may end up making all paths infeasible. In order to deal with this, we include infeasible states in our Markov process by allowing the values of $X_B$ to go outside their bounds. Bound swaps and pivot transitions remain well defined after this relaxation.
+
+With this relaxation, a path between any two feasible states can be constructed by, for example, just performing bound swaps on the elements of $X_N$.
+
+With the introduction of infeasible states, some of the samples from the Metropolis Hastings algorithm will be infeasible so will not represent valid posterior ABM trajectories. However, if we just throw these away the remaining feasible samples will have the correct distribution. So, as long as the proportion of infeasible samples is small, allowing infeasibility is not a problem.
+
+\subsection{Choosing a transition}
+
+Now that we've defined the Markov states and the transitions between them, we next provide an algorithm to choose a proposal transition given the current Markov state. The algorithm should be able to make the choice, and work out the ratio of the probability of choosing that transition and the probability of choosing the reverse transition from the destination state.
+
+The challenge here is to ensure that, during the sampling process, infeasible states are passed through occasionally (in order to ensure good mixing) but once in an infeasible state, the sampling process quickly moves back to a feasible state to create the next feasible sample.
+
+\subsubsection{Infeasibility and potential energy}
+
+In order to describe our algorithm we need to introduce a few concepts. Let the infeasibility of a scalar $x$ be defined as
 \[
 \iota^u_l(x) =
 \begin{cases}
