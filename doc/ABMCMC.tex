@@ -35,8 +35,8 @@
     Leeds Institute for Data Analytics, University of Leeds, UK\thanks{This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No. 757455)}\\
   \texttt{D.Tang@leeds.ac.uk}\\
   \AND
-  Nicholas Malleson\\
-  Leeds Institute for Data Analytics University of Leeds, UK\\  
+  Nick Malleson\\
+  School of Geography, University of Leeds, UK\\  
   %% examples of more authors
   %% \AND
   %% Coauthor \\
@@ -61,14 +61,18 @@ We demonstrate the algorithm by performing data assimilation in an agent-based, 
 
 \section{Introduction}
 
-\subsection{Background}\label{sec:background}
+\todo[inline]{NM: Paragraph for intro / context}
 
-Data assimilation (DA) is a technique that has been widely used in the physical sciences such as meteorology~\cite{kalnay_atmospheric_2003}, oceanography~\cite{bertino_sequential_2003} and the earth sciences more broadly~\cite{reichle_data_2008}. Specific applications of DA to ABMs are much rarer. Examples of data assimilation using well known DA methods such as Particle Filters and variants of the Kalman Filter applied to ABMs include models of crime~\cite{lloyd_exploring_2016}, bus routes~\cite{kieu_dealing_2020}, pedestrian dynamics~\cite{wang_data_2015, ward_dynamic_2016, clay_realtime_2020, malleson_simulating_2020};
+Data assimilation (DA) is a technique that has been widely used in the physical sciences such as meteorology~\cite{kalnay_atmospheric_2003}, oceanography~\cite{bertino_sequential_2003} and the earth sciences more broadly~\cite{reichle_data_2008}. Specific applications of DA to ABMs are, however, much rarer. Examples of data assimilation using well-known DA methods such as Particle Filters and variants of the Kalman Filter applied to ABMs include models of crime~\cite{lloyd_exploring_2016}, bus routes~\cite{kieu_dealing_2020}, pedestrian dynamics~\cite{wang_data_2015, ward_dynamic_2016, clay_realtime_2020, malleson_simulating_2020};
 and population movement~\cite{lueck_who_2019}. Many DA algorithms rely on the differentiability of the model~\cite{lewis_dynamic_2006}.
+\todo[inline]{NM: More detail on drawbacks and limitations of those approaches}
+
+\todo[inline]{NM: Aims of this paper and knowledge gap it fills.}
+
+\todo[inline]{NM: ``This paper has been structured as follows ... ''}
 
 \section{Formulation of the problem}
 %##########################################
-
 
 Suppose we have a timestepping ABM where agents have a finite number of possible internal states and a finite number of ways of acting on their world. Given this, we can define an ABM as:
 \begin{itemize}
