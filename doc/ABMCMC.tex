@@ -506,9 +506,9 @@ In order to be useable in the Metropolis-Hastings algorithm, the proposal functi
 \begin{itemize}
 	\item For any two Markov states there should exist a set of transitions with non-zero probability which forms a path between those states.
 	
-	\item For any transition from state $S_a \to S_b$ with non-zero probability, the probability of the reverse transition from $S_b \to S_a$ should also be non-zero. This allows us to attain detailed balance in the Metropolis Hastings algorithm.
+	\item For any transition from state $S_a \to S_b$ with non-zero probability, the probability of the reverse transition from $S_b \to S_a$ should also be non-zero. This allows us to attain detailed balance in the Metropolis Hastings algorithm. The average ratio of forward and backward probabilities times the ratio of start and end state probabilities should be close to 1 to ensure that a reasonable proportion of proposals are accepted.
 	
-	\item There should be a computationally efficient way of generating a proposal given the current state. 
+	\item Given a current Markov state, there should be computationally efficient ways of generating a proposal and calculating the ratio the probability of that transition and the reverse transition. 
 \end{itemize}
 
 
@@ -541,55 +541,66 @@ Another simple transition between Markov states is to apply the pivot transition
 
 \subsubsection{Infeasibility, infeasibility objective and potential energy}
 
-Unfortunately, if we only allow bound swaps and pivot transitions between feasible states there is no guarantee that there is a path between any two feasible states since the constraints on the non-binary basic variables (which can't be involved in a valid pivot transition) may end up making all paths infeasible. In order to deal with this, we include infeasible states in our Markov process by allowing the values of $X_B$ to go outside their bounds. Bound swaps and pivot transitions remain well defined after this relaxation.
+Unfortunately, if we only allow bound swaps and pivot transitions between feasible states there is no guarantee that there is a path between any two feasible states (note that we can't pivot on the non-binary basic variables so we can't guarantee that all vertices of the polyhedron are reachable and so can't rely on the proof that the polyhedron is connected).
 
-With this relaxation, a path between any two feasible states can be constructed by, for example, just performing bound swaps on the elements of $X_N$.
+In order to deal with this, we relax the bounds on the basic variables, $L \le X_B \le U$, and include Markov states where some elements of $X_B$ go outside their bounds. This ensures a path between any two feasible states (for example, by just performing bound swaps on the elements of $X_N$) without affecting the definition of bound swaps and pivot transitions.
 
-With the introduction of infeasible states, some of the samples from the Metropolis Hastings algorithm will be infeasible so will not represent valid posterior ABM trajectories. However, if we just throw these away the remaining feasible samples will have the correct distribution. So, as long as the proportion of infeasible samples is small, allowing infeasibility is not a problem.
+With this modification the sampling algorithm will sometimes return infeasible samples which don't represent valid posterior ABM trajectories. However, if we just throw these away the remaining feasible samples will have the correct distribution. So, our aim will be to ensure that the infeasible/feasible sample ratio is small enough not to excessively slow down the sampling process while being large enough to ensure proper mixing in the Markov process.
 
 \subsection{Choosing a transition}
 
 Now that we've defined the Markov states and the transitions between them, we next provide an algorithm to choose a proposal transition given the current Markov state. The algorithm should be able to make the choice, and work out the ratio of the probability of choosing that transition and the probability of choosing the reverse transition from the destination state.
 
-The challenge here is to ensure that, during the sampling process, infeasible states are passed through occasionally (in order to ensure good mixing) but once in an infeasible state, the sampling process quickly moves back to a feasible state to create the next feasible sample.
+The challenge here is to ensure that, during the sampling process, feasible states sometimes transition to infeasible states (in order to ensure good mixing) while ensuring that, once in an infeasible state, the sampling process quickly moves back to a (probably different) feasible state to create the next feasible sample.
+
+In order to do this we take as our inspiration the algorithm described in \cite{maros1986general}. This algorithm is intended to be used as a ``phase 1'' of the simplex algorithm (see e.g. \cite{vanderbei2015linear}) where the aim is just to find a feasible state as efficiently as possible rather than to create a Markov process. Here we describe a Markov process that has a high probability of making the same transition as Maros' algorithm. Given this, we should expect the Markov process to quickly move into a feasible state.
 
 \subsubsection{Infeasibility and potential energy}
 
-In order to describe our algorithm we need to introduce a few concepts. Let the infeasibility of a scalar $x$ be defined as
+We'll first introduce a few concepts.  Given a Markov state, let the infeasibility of the $i^{th}$ basic variable be defined as
 \[
-\iota^u_l(x) =
+\iota_i =
 \begin{cases}
-l-x & \text{if }x<l\\
-x-u & \text{if }x>u\\
+L_i-X_{Bi} & \text{if }X_{Bi}<L_i\\
+X_{Bi}-U_i & \text{if }X_{Bi}>U_i\\
 0 & \text{otherwise}
 \end{cases}
 \]
-and let the infeasibility of a basic vector, $X_B$, be
+and let the total infeasibility be
 \[
-\iota^U_L(X_B) = \sum_i \iota^{U_i}_{L_i}(X_{Bi})
+\iota = \sum_i \iota_i
 \]
-Now let
+Note that this function is piecewise linear.
 \[
-R^U_L(X_B) = \frac{d\iota(X_B)}{dX_B}
+\iota = R(X-B)X_B - r(X_B)
 \]
-be the derivative of the infeasibility $\iota$ with respect to $X_B$ so that the $i^{th}$ element of $R$
+where $R$ is the "infeasibility objective", a row-vector whose $i^{th}$ element is
 \[
-R^U_{Li}(X_B) = \frac{d\left(\iota^{U_i}_{L_i}(x)\right)}{dx} =
+R_i(X_B) = 
 \begin{cases}
--1 & \text{if }x<L_i\\
-1 & \text{if }x>U_i\\
+-1 & \text{if }X_{Bi}<L_i\\
+1 & \text{if }X_{Bi}>U_i\\
 0 & \text{otherwise}
 \end{cases}
 \]
-and $R(X_B)$ can be thought of as an ``infeasibility objective function'' for a given basic vector $X_B$, for which the reduced objective, $D$, is defined as
+and
 \[
-D = -R(X_B)B^{-1}N
+r(X_B) = \sum_i 
+\begin{cases}
+-L_i & \text{if }X_{Bi}<L_i\\
+U_i & \text{if }X_{Bi}>U_i\\
+0 & \text{otherwise}
+\end{cases}
 \]
-so that
+Since $X_B = NX_N + b$
 \[
-D_j = -R(X_B)B^{-1}N_j = \sum_i \frac{d\iota(X_B)}{dX_{Bi}} \frac{dX_{Bi}}{dX_{Nj}} = \frac{d\iota(X_B)}{dX_{Nj}}
+\iota = R(NX_N)NX_N + R(NX_N)b - r(NX_N)
 \]
-is the rate of change of $X_B$-infeasibility with the $j^th$ non-basic variable.
+and, within a linear segment,
+\[
+D = \frac{d\iota}{dX_N} = R(X_B)N
+\]
+i.e. $D$ is the gradient of the total infeasibility at the current value of $X_B$.
 
 \subsubsection{Proposing a pivot column: Potential energy}
 
@@ -599,7 +610,7 @@ Let the potential energy of the $j^{th}$ non-basic variable in pivot state $\mu$
 \[
 E_j(\mu) = D_j(X_{Nj} - H(-D_j))
 \]
-where $H$ is the Heaviside step function.
+where $H$ is the Heaviside step function, so that a variable has zero potential energy if, at the current infeasibility gradient, a bound-swap would increase the total infeasibility, whereas the potential energy is positive if a bound-swap would decrease the total infeasibility.
 
 A column is chosen with probability proportional to the exponential of its potential energy
 \[
