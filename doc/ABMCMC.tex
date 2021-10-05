@@ -468,7 +468,7 @@ This is almost in the standard form, apart from the lower and upper bounds on $X
 
 It is easy to see that this transformation can be extended to any permutation matrix $S$ such that $B = (I|-N)S^{-1}(I|\mathbf{0})^T$ is invertible. So, given a reference representation of a $\mathcal{B}$-polyhedron, $\mathcal{B}(Q,N,b,L,U)$, we can define the set of all equivalent ``pivot states'' with respect to $(N,L,U)$ to be
 \[
-\mathcal{S}(N,L,U) = \left\{S : S \text{ is a permutation matrix }, (I|-N)S^{-1}{I\choose \mathbf{0}} \text{ is invertible}, \exists L',U': S{L|U \choose \mathbf{0}|\mathbf{1}} = {L'|U' \choose \mathbf{0}|\mathbf{1}} \right\}
+\mathcal{S}(N,L,U) = \left\{S : S \text{ is a permutation matrix }, (I|-N)S^{-1}{I\choose \mathbf{0}} \text{ is invertible}, S{L|U \choose \mathbf{0}|\mathbf{1}} = {L|U \choose \mathbf{0}|\mathbf{1}} \right\}
 \]
 so that each pivot state, when applied to the reference state, gives an equivalent standard form representation.
 
@@ -541,7 +541,7 @@ Another simple transition between Markov states is to apply the pivot transition
 
 \subsubsection{Infeasibility, infeasibility objective and potential energy}
 
-Unfortunately, if we only allow bound swaps and pivot transitions between feasible states there is no guarantee that there is a path between any two feasible states (note that we can't pivot on the non-binary basic variables so we can't guarantee that all vertices of the polyhedron are reachable and so can't rely on the proof that the polyhedron is connected).
+Unfortunately, if we only allow bound swaps and pivot transitions between feasible states there is no guarantee that there is a path between any two feasible states (note that we can't pivot on the non-binary basic variables or on elements of $N$ that don't have an absolute value of 1, so we can't guarantee that all vertices of the polyhedron are reachable and so can't rely on the proof that the polyhedron is connected).
 
 In order to deal with this, we relax the bounds on the basic variables, $L \le X_B \le U$, and include Markov states where some elements of $X_B$ go outside their bounds. This ensures a path between any two feasible states (for example, by just performing bound swaps on the elements of $X_N$) without affecting the definition of bound swaps and pivot transitions.
 
@@ -555,76 +555,62 @@ The challenge here is to ensure that, during the sampling process, feasible stat
 
 In order to do this we take as our inspiration the algorithm described in \cite{maros1986general}. This algorithm is intended to be used as a ``phase 1'' of the simplex algorithm (see e.g. \cite{vanderbei2015linear}) where the aim is just to find a feasible state as efficiently as possible rather than to create a Markov process. Here we describe a Markov process that has a high probability of making the same transition as Maros' algorithm. Given this, we should expect the Markov process to quickly move into a feasible state.
 
-\subsubsection{Infeasibility and potential energy}
 
-We'll first introduce a few concepts.  Given a Markov state, let the infeasibility of the $i^{th}$ basic variable be defined as
+\subsubsection{Choosing a non-basic variable: Infeasibility and potential energy}
+
+The first step in the algorithm to propose a transition is to choose a non-basic variable to modify. To understand how this is done we'll first introduce a few concepts.
+
+Given a Markov state, $\mu$, let the infeasibility of the $i^{th}$ basic variable, $\iota^\mu_i$, be defined to be equal to 0 if the variable is within its bounds or equal to the distance to the nearest bound otherwise
 \[
-\iota_i =
+\iota^\mu_i =
 \begin{cases}
 L_i-X_{Bi} & \text{if }X_{Bi}<L_i\\
 X_{Bi}-U_i & \text{if }X_{Bi}>U_i\\
 0 & \text{otherwise}
 \end{cases}
 \]
-and let the total infeasibility be
+and let the total infeasibility be the sum of infeasibilities of all basic variables
 \[
-\iota = \sum_i \iota_i
+\iota^\mu = \sum_i \iota^\mu_i
 \]
-Note that this function is piecewise linear.
+Note that the total infeasibility is piecewise linear, convex, has a minimum of 0 and all feasible points lie at the minimum. So, a good strategy would be to move down the gradient of $\iota$ towards zero.
+
+The gradient of $\iota^\mu$ at any point is given by
 \[
-\iota = R(X-B)X_B - r(X_B)
-\]
-where $R$ is the "infeasibility objective", a row-vector whose $i^{th}$ element is
-\[
-R_i(X_B) = 
+\frac{d\iota^\mu}{dX_{Bi}} = 
 \begin{cases}
 -1 & \text{if }X_{Bi}<L_i\\
 1 & \text{if }X_{Bi}>U_i\\
 0 & \text{otherwise}
 \end{cases}
 \]
-and
-\[
-r(X_B) = \sum_i 
-\begin{cases}
--L_i & \text{if }X_{Bi}<L_i\\
-U_i & \text{if }X_{Bi}>U_i\\
-0 & \text{otherwise}
-\end{cases}
-\]
-Since $X_B = NX_N + b$
-\[
-\iota = R(NX_N)NX_N + R(NX_N)b - r(NX_N)
-\]
-and, within a linear segment,
-\[
-D = \frac{d\iota}{dX_N} = R(X_B)N
-\]
-i.e. $D$ is the gradient of the total infeasibility at the current value of $X_B$.
 
-\subsubsection{Proposing a pivot column: Potential energy}
-
-When proposing a pivot, we first decide which column to pivot on.
- 
-Let the potential energy of the $j^{th}$ non-basic variable in pivot state $\mu$ be
+Since $X_B = NX_N + b$, the gradient of $\iota^\mu$ with respect to $X_N$, which we'll call it $D^\mu$ for convenience, is given by
 \[
-E_j(\mu) = D_j(X_{Nj} - H(-D_j))
+D^\mu = \frac{d\iota^\mu}{dX_N} = \frac{d\iota^\mu}{dX_B}\frac{dX_B}{dX_N} =  \frac{d\iota^\mu}{dX_B}N
 \]
-where $H$ is the Heaviside step function, so that a variable has zero potential energy if, at the current infeasibility gradient, a bound-swap would increase the total infeasibility, whereas the potential energy is positive if a bound-swap would decrease the total infeasibility.
 
-A column is chosen with probability proportional to the exponential of its potential energy
+So, given $D^\mu$, we can tell which direction each non-basic variable, $X_{Nj}$, needs to be perturbed in order to potentially reduce infeasibility. More precisely, $D^\mu_j$ gives the infeasibility gradient with respect to $X_{Nj}$ at the current value of $X_N$, but any perturbation may cross a piecewise linear boundary so the gradient may change as $X_N$ changes. However, because of the convexity of $\iota$ we know that heading up the gradient will definitely increase infeasibility, for any size of perturbation, whereas heading down the gradient will reduce infeasibility unless we're already at a minimum with respect to $X_{Nj}$ (note that in a piecewise linear function the minimum may lie at the junction between linear segments that have non-zero gradient). So, variables for which a bound-swap would move down the gradient are good potential candidates for perturbation compared to those that don't.
+
+Given this, we define the potential energy of the $j^{th}$ non-basic variable to be equal to $|D^\mu_j|$ if a bound-swap would move down the gradient, and 0 otherwise. This can be expressed mathematically as
 \[
-P(j) = \frac{e^{k_cE_j}}{\sum_{j'} e^{k_cE_{j'}}}
+E^\mu_j = D^\mu_j(X_{Nj} - H(-D^\mu_j))
+\]
+where $H$ is the Heaviside step function.
+
+In order to encourage the selection of columns with positive potential, the $j^{th}$ non-basic variable is chosen with probability proportional to the exponential of its potential energy times some constant $k_c$
+\[
+P(j|\mu) = \frac{e^{k_cE^\mu_j}}{\sum_l e^{k_cE^\mu_l}}
 \]
 Let
 \[
-E_P = \sum_j E_j
+E^\mu = \sum_j E^\mu_j
 \]
 be the total potential energy of the Markov state, and let the \textit{energy penalty} be
 \[
 P_E = \frac{\sum_j e^{k_cE_j}}{n\prod_j e^{k_cE_j}} = \frac{\sum_j e^{k_cE_j}}{n} e^{-k_cE_P} 
 \]
-where $n$ is the number of non-basic variables. Notice that the energy penalty of all feasible states is 1.
+where $n$ is the number of non-basic variables. Notice that the energy penalty of every feasible state is 1.
 
 So, if we multiply the probability of the Markov state by its energy penalty then
 \[
@@ -635,23 +621,18 @@ and the contribution of the column decision to the Metropolis-Hastings acceptanc
 \lambda_j = \frac{P_E'P'(j)}{P_EP(j)} = e^{k_c((E_P-E_j) - (E_P' - E'_j))} = e^{-k_c(\Delta E_P - \Delta E_j)}
 \]
 
-\subsubsection{Proposing a pivot row and column offset}
+\subsubsection{Choosing a column perturbation and pivot row}
 
-Once a pivot-column is chosen, a pivot row on that column is chosen, along with an offset, $\Delta_j$ for the column, to give the proposed pivot. In order to be a valid pivot, $\Delta_j$ should bring the leaving variable to one of its bounds. If $\Delta_j$ brings column $j$ to its opposite bound, we also have the option to swap the active bound of column $j$ without performing any pivot. Let this be signified by a pivot-row of $-1$. If $\Delta_j=0$ we also have the option to perform the `null-pivot' which leaves everything unchanged.
+Once a non-basic variable, $X_{Nj}$, is chosen for the transition, we can choose to perform a bound-swap on $X_{Nj}$ or perform a pivot transition on $j^{th}$ column and any row that satisfies $|N_j|=1$. If a pivot is chosen, the value of the new non-basic variable needs to be chosen to be either 0 or 1. An efficient algorithm to calculate the infeasibility resulting from each of these transitions is described in \cite[Chapter~9]{maros2002computational}. For reasons that will become clear later, we also include the ``null transition'' which is a loop back to the same Markov state.
 
-Pivots that make a non-binary variable non-basic are immediately excluded. In order to maintain integer solutions, we also restrict ourselves to pivot points whose tableau coefficient have an absolute value of 1 (TODO: prove that this maintains integer solutions and maintains connectedness of the Markov states). Let $\alpha_j$ be the set of remaining pivots on column $j$.
-
-An active pivot point is chosen with a probability proportional to the exponential of the infeasibility of the post-pivot solution (note that this includes any infeasibility of the entering variable). i.e.
+Let $\alpha^\mu_j$ be the set of destination states reachable through transitions on $X_{Nj}$. In order to encourage transitions to lower infeasibility, while maintaining the possibility of reverse transitions to allow detailed balance, a transition, $\mu\to\mu'$, is chosen with a probability proportional to the exponential of $-k_r\iota^{\mu'}$ for some constant $k_r$. i.e.
+\begin{equation}
+P(\mu'|j,\mu) = \frac{e^{-k_r\iota^{\mu'}}}{\sum_{\rho \in \alpha^\mu_j}  e^{-k_r\iota^\rho}}
+\label{pTransitionGivenJ}
+\end{equation}
+After any transition $\mu\to\mu'$, the set of reachable states from $\mu'$, given the same choice of non-basic variable index, j, is also $\alpha_j$ (thanks to the fact that we included the null transition) so the probability of the reverse pivot $P(\mu' \to \mu|j)$ has the same denominator in equation \ref{pTransitionGivenJ}. So,
 \[
-P(\iota \to \iota'|j) = \frac{e^{-k_r\iota'}}{\sum_{\iota''(X_B +\Delta''T_j) : \Delta'',i''\in \alpha_j}  e^{-k_r\iota''}}
-\]
-where $T_j = -B^{-1}N_j$ is the $t^{th}$ column of the tableau.
-
-TODO: Need to include column j itself in this, and its contribution to infeasibility.
-
-After any pivot, the set of available vertices of the reverse pivot is the same as for the forward pivot so the probability of the reverse pivot $P(\iota' \to \iota|j)$ have the same denominator sums. So,
-\[
-\frac{P(\iota \to \iota'|j)}{P(\iota' \to \iota|j)} = \frac{e^{-k_r\iota'}}{e^{-k_r\iota}} = e^{-k_r(\iota'-\iota)}
+\frac{P(\mu \to \mu'|j)}{P(\mu' \to \mu|j)} = \frac{e^{-k_r\iota^{\mu'}}}{e^{-k_r\iota^\mu}} = e^{-k_r(\iota^{\mu'}-\iota^\mu)} = e^{-k_r\Delta\iota}
 \]
 If we let the \textit{infeasibility penalty} of a Markov state be
 \[
@@ -661,19 +642,23 @@ and multiply the probability of a Markov state by its infeasibility penalty, the
 \[
 \frac{P_\iota' P(\iota'\to\iota|j)}{P_\iota P(\iota\to\iota'|j)} = \frac{e^{-k_r\iota'}e^{-k_r\iota}}{e^{-k_r\iota}e^{-k_r\iota'}} = 1
 \]
-Notice again that the infeasibility penalty of feasible states is 1, so again it has not effect on feasible states.
+Notice again that the infeasibility penalty of feasible states is 1, so again it has no effect on feasible states.
 
 \subsubsection{Proposal function summary}
+
+Given that we're in Markov state $\mu$, the probability of proposing a transition $\mu\to\mu'$ is given by the probability of choosing the column $j$ times the probability of subsequently choosing an end state $\mu'$
+\[
+P(\mu \rightarrow \mu') = P(\mu'|j,\mu)P(j|\mu) =
+\frac{e^{-k_r \iota^{\mu'}}}{\sum_{\rho \in \alpha^\mu_j}e^{-k_r\iota^\rho}}
+\frac{e^{k_c E^\mu_j}}{\sum_l e^{k_c E^\mu_l}}
+\]
+so the acceptance probability is
+
+TODO: finish this...
 
 To summarise, the probability of a Markov state, $\mu$, is the probability of the trajectory times the energy penalty times the infeasibility penalty
 \[
 P(\mu) = P(X(\mu))\frac{\sum_j e^{k_cE_j(\mu)}}{n} e^{-k_cE_P(\mu)}e^{-k_r\iota(\mu)}
-\]
-The probability of proposing a pivot $(i,j,l)$, where $l$ identifies the bound of the leaving variable (or the $j^{th}$ column if $i=-1$) is given by
-\[
-P(\mu \rightarrow \mu') = 
-\frac{e^{k_c E_{j(\mu\rightarrow\mu')}(\mu)}}{\sum_{j'} e^{k_c E_{j'}(\mu)}}
-\frac{e^{-k_r \iota(\mu')}}{\sum_{\mu'' \in a_j}e^{-k_r\iota(\mu'')}}
 \]
 So
 \[
@@ -692,19 +677,34 @@ So the final contribution to the MH acceptance probability is
 \lambda_j = e^{k_c(\Delta E_P - \Delta E_j)}
 \]
 
+
+
+\section{Results}
+
+\section{Further work}
+\subsection{Abstract interpretation using convex polyhedra}
+
+In many cases a $\mathcal{B}$-polyhedron of the set of Fermionic trajectories in the support of the prior, observations and timestep of an agent can easily be constructed by hand in the form of a set of linear inequalities. In some cases, however, it may be less obvious how to construct this. In this case the linear inequalities can be constructed automatically from a computer program that calculates the function whose support we're trying to find.
+
+
+
+
+The first two terms in equation \ref{support} consists of the supports of computer programs whose inputs are ABM trajectories and whose outputs are given, i.e. the set of trajectories that, when passed to a computer program, would produce a given output.
+
+Calculating the support of a computer program for a given output is, in full generality, NP-complete\footnote{Consider, for example, a program that accepts an assignment of variables to truth values, and returns true if that assignment satisfies a Boolean formula. Deciding whether the support of this program, given that it returns true, is empty or not is equivalent to solving the Boolean satisfiability problem, which is known to be NP-complete\cite{cook1971complexity}} but it is possible to use a technique known as \textit{abstract interpretation}\cite{cousot1977abstract} to efficiently calculate a superset of the support. So, given a computer program $\rho$, we can calculate a set $\mathcal{P}(\rho, v)$ such that
+\[
+\supp(P(\rho(.)=y)) \subset \mathcal{P}(\rho, v)
+\]
+Tools to perform abstract interpretation already exist (e.g. PAGAI\cite{henry2012pagai}) and are used widely in applications such as the verification of safety critical systems\cite{blanchet2003static} and in practice $\mathcal{P}(\rho, v)$ is often reasonably tight (i.e. most members of $\mathcal{P}(\rho, v)$ are in $\supp(P(\rho(.)=y))$). For our application we choose to express $\mathcal{P}(\rho, v)$ in terms of a set of linear inequalities on $\rho$'s inputs, this corresponds to the abstract domain of convex polyhedra\cite{cousot1978automatic}\cite{becchi2018efficient}. Calls to the random number generator can be dealt with in the abstract domain by generating a new variable, $r$, that satisfies $0 \le r < 1$ for each call to \texttt{Random()}. These can either be left in as ``auxiliary'' variables in the same way as slack variables, or removed as soon as the variable goes out of scope by finding the convex hull of the projection into a lower dimensional space (this can be done using the double description method\cite{motzkin1953double}).
+
+
+Constraining our proposal function to members of the superset in equation \ref{linearSupport} instead of the true support won't affect the stationary distribution of the Markov Chain. If the proposal function happens to return a trajectory that isn't in $\supp(P(\rho(.)=y))$ then it will just be rejected. This is fine as long as we generate acceptable proposals at a reasonable rate.
+
+\section{Conclusion}
+
+\section{Notes}
+
 TODO: should $k_c$ and $k_r$ (or alternatively $E_P$ and $\iota$) be per column and row so that the rate of decay doesn't depend on the size of the problem? Can we approximate the number of infeasible vertices (for given infeasible variable set. For n infeasible vars, the infeasible vertices are described by $2^n$ nnc polyhedra. Alternatively, if we ensure that $k_r\iota$ dominates over $k_cE_P$ then we should expect the dynamics of a phase 1 potential energy pivot...i.e. ensure that probabilities increase monotonically in the forward phase 1 direction).
-
-An efficient way of calculating the infeasibility of all pivots on a column is as follows:
-
-\section{An alternative proposal function}
-
-If we restrict ourselves to degenerate pivots (i.e. pivots that don't change state) and bound swaps, then we have the following algorithm:
-
-First choose column with zero probability for columns with zero reduced objective [need to have finite probability to allow swaps that reduce the objective to zero for this column], and with probability equal to the exponential of their potential energy otherwise. [instead, have a finite weight $1/N$ for low energy columns, where $N$ is the total number of columns, and exponentials for high, so prob of choosing a high-potential column is $e^{kE_j}/(\sum e^{kE_l} + w_0)$ and prob of choosing a low-potential column is $w_0/n_0(\sum e^{kE_l} + w_0)$ where $n_0$ is the number of low energy columns. So, if we make the penalty prob $(\sum e^{kE_l} + w_0)/((w_0/n_0)^n_0e^{kE_P})$ but since this needs to be 1 in the feasible case, $(w_0/n_0)^(n_0-N)e^{kE_P}$]
-
-Once a column is chosen, we choose to either swap bounds or make a degenerate pivot. A degenerate pivot can be performed on any row that is on one of its bounds (i.e. not one that is currently outside its bound) and that has a non zero pivot element. We choose to bound swap with probability proportional to the exponential of the reduction in infeasibility (how do we normalise this?). If we choose a degenerate pivot, we choose with uniform probability from among the possibilities.
-
--------------
 
 
 The proposal function for ordered pivot states is shown in algorithm \ref{proposal}
@@ -859,30 +859,13 @@ where the probability of a pivot state is given by algorithm \ref{probAlgorithm}
 
 Given this, it's clear that all the necessary properties of the proposal function are fulfilled.
 
-\section{Results}
+\subsection{An alternative proposal function}
 
-\section{Further work}
-\subsection{Abstract interpretation using convex polyhedra}
+If we restrict ourselves to degenerate pivots (i.e. pivots that don't change state) and bound swaps, then we have the following algorithm:
 
-In many cases a $\mathcal{B}$-polyhedron of the set of Fermionic trajectories in the support of the prior, observations and timestep of an agent can easily be constructed by hand in the form of a set of linear inequalities. In some cases, however, it may be less obvious how to construct this. In this case the linear inequalities can be constructed automatically from a computer program that calculates the function whose support we're trying to find.
+First choose column with zero probability for columns with zero reduced objective [need to have finite probability to allow swaps that reduce the objective to zero for this column], and with probability equal to the exponential of their potential energy otherwise. [instead, have a finite weight $1/N$ for low energy columns, where $N$ is the total number of columns, and exponentials for high, so prob of choosing a high-potential column is $e^{kE_j}/(\sum e^{kE_l} + w_0)$ and prob of choosing a low-potential column is $w_0/n_0(\sum e^{kE_l} + w_0)$ where $n_0$ is the number of low energy columns. So, if we make the penalty prob $(\sum e^{kE_l} + w_0)/((w_0/n_0)^n_0e^{kE_P})$ but since this needs to be 1 in the feasible case, $(w_0/n_0)^(n_0-N)e^{kE_P}$]
 
-
-
-
-The first two terms in equation \ref{support} consists of the supports of computer programs whose inputs are ABM trajectories and whose outputs are given, i.e. the set of trajectories that, when passed to a computer program, would produce a given output.
-
-Calculating the support of a computer program for a given output is, in full generality, NP-complete\footnote{Consider, for example, a program that accepts an assignment of variables to truth values, and returns true if that assignment satisfies a Boolean formula. Deciding whether the support of this program, given that it returns true, is empty or not is equivalent to solving the Boolean satisfiability problem, which is known to be NP-complete\cite{cook1971complexity}} but it is possible to use a technique known as \textit{abstract interpretation}\cite{cousot1977abstract} to efficiently calculate a superset of the support. So, given a computer program $\rho$, we can calculate a set $\mathcal{P}(\rho, v)$ such that
-\[
-\supp(P(\rho(.)=y)) \subset \mathcal{P}(\rho, v)
-\]
-Tools to perform abstract interpretation already exist (e.g. PAGAI\cite{henry2012pagai}) and are used widely in applications such as the verification of safety critical systems\cite{blanchet2003static} and in practice $\mathcal{P}(\rho, v)$ is often reasonably tight (i.e. most members of $\mathcal{P}(\rho, v)$ are in $\supp(P(\rho(.)=y))$). For our application we choose to express $\mathcal{P}(\rho, v)$ in terms of a set of linear inequalities on $\rho$'s inputs, this corresponds to the abstract domain of convex polyhedra\cite{cousot1978automatic}\cite{becchi2018efficient}. Calls to the random number generator can be dealt with in the abstract domain by generating a new variable, $r$, that satisfies $0 \le r < 1$ for each call to \texttt{Random()}. These can either be left in as ``auxiliary'' variables in the same way as slack variables, or removed as soon as the variable goes out of scope by finding the convex hull of the projection into a lower dimensional space (this can be done using the double description method\cite{motzkin1953double}).
-
-
-Constraining our proposal function to members of the superset in equation \ref{linearSupport} instead of the true support won't affect the stationary distribution of the Markov Chain. If the proposal function happens to return a trajectory that isn't in $\supp(P(\rho(.)=y))$ then it will just be rejected. This is fine as long as we generate acceptable proposals at a reasonable rate.
-
-\section{Conclusion}
-
-\section{Notes}
+Once a column is chosen, we choose to either swap bounds or make a degenerate pivot. A degenerate pivot can be performed on any row that is on one of its bounds (i.e. not one that is currently outside its bound) and that has a non zero pivot element. We choose to bound swap with probability proportional to the exponential of the reduction in infeasibility (how do we normalise this?). If we choose a degenerate pivot, we choose with uniform probability from among the possibilities.
 
 The timestep function for a predator/prey agent is shown in algorithm \ref{agentTimestep} (where we assume the grid has periodic boundary conditions).
 
