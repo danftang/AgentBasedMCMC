@@ -74,20 +74,33 @@ and population movement~\cite{lueck_who_2019}. Many DA algorithms rely on the di
 \section{Formulation of the problem}
 %##########################################
 
+Broadly, this paper presents a new method that can be used to conduct data assimilation for agent-based models. The method provides a means of sampling possible ABM trajectories, confronting them with observations from the target system, and generating a posterior. This posterior provides the best estimate of the true system state. 
+
+\subsection{Agents, States and Actions}
+
+Formally, we define the problem as follows.
 Suppose we have a timestepping ABM where agents have a finite number of possible internal states and a finite number of ways of acting on their world. Given this, we can define an ABM as:
 \begin{itemize}
 	\item A vector of agent actions $\mathcal{A} =\left< A_0 ... A_n \right>$
 	
 	\item A vector of agent states $\mathcal{S} = \left<S_0 ... S_m\right>$
 	
-	\item An \textit{agent timestep}, $\pi : \mathbb{Z}\times\mathbb{Z}^{m+1}\times\mathbb{Z} \to \mathbb{R}$, which defines the probability that an agent will act in a particular way such that $\pi(\psi,\Phi,a)$ gives the probability that an agent in state $S_\psi$, surrounded by agents, $\Phi$, will perform action $A_a$ (where $\Phi$ is a vector whose $i^{th}$ element is the number of agents in state $S_i$ at the start of the timestep).
+	\item An \textit{agent timestep}, $\pi : \mathbb{Z}\times\mathbb{Z}^{m+1}\times\mathbb{Z} \to \mathbb{R}$, which defines the probability that an agent will act in a particular way such that $\pi(\psi,\Phi,a)$ \todo{can we define as $\pi(S_\psi,\Phi,A_a)$?} gives the probability that an agent in state $S_\psi$, surrounded by agents, $\Phi$, will perform action $A_a$ (where $\Phi$ is a vector whose $i^{th}$ element is the number of agents in state $S_i$ at the start of the timestep).
 	
 	\item An \textit{action function}, $F: \mathbb{Z} \times \mathbb{Z} \to \mathbb{Z}^{m+1}$, which defines the effect of an action on the world such that $F(\psi, a)$ returns a vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $S_i$ that result from an agent in state $S_\psi$ performing act $A_a$ (including the final state of the acting agent).
 \end{itemize}
 
-As a simple illustration, consider the simple ``cat and mouse'' ABM, which consists of just two gridsquares, left and right, within which can roam cats and mice, so the vector of agent states is, $\mathcal{S} = \left<\textrm{left cat}, \textrm{right cat}, \textrm{left mouse}, \textrm{right mouse} \right>$. In any given timestep, agents can either move or stay still, so the vector of actions is $\mathcal{A} = \left<\textrm{move}, \textrm{stay still}\right>$.
+\todo[inline]{Mention that the more traditional way of defining ABMs (e.g. using objects and step functions) can be easily mapped to this formulation}
 
-A cat moves with probability $0.5$, irrespective of other agents, while a mouse will move if there is one or more cats on the same gridsquare, otherwise it will stay still. So, the agent timestep function is
+As a simple illustration, consider a simple ``cat and mouse'' ABM, which consists of just two gridsquares, left and right, within which roam a cat and a mouse. Using the definitions above: 
+
+\begin{description}
+
+\item[Agent actions, $\mathcal{A}$.] In any given timestep, agents can either move or stay still, so $\mathcal{A} = \left<\textrm{move}, \textrm{stay still}\right> = \left<0, 1\right>$.
+
+\item[Agent states, $\mathcal{S}$.] The cat and mouse can exist on either of the two squares, so $\mathcal{S} = \left<\textrm{left cat}, \textrm{right cat}, \textrm{left mouse}, \textrm{right mouse} \right> = \left<0, 1, 2, 3 \right>$. 
+
+\item[Agent timestep, $\pi$.] A cat moves with probability $0.5$, irrespective of other agents, while a mouse will move if there is one or more cats on the same gridsquare, otherwise it will stay still. So, the agent timestep function is
 \begin{equation}
 \begin{aligned}
 \pi(\psi, \Phi, 0) &=
@@ -105,7 +118,7 @@ A cat moves with probability $0.5$, irrespective of other agents, while a mouse 
 \end{aligned}
 \end{equation}
 
-The action function expresses the movement of the agents
+\item[Action function, $F$] expresses the movement of the agents. 
 \begin{equation}
 \begin{aligned}
 F(0, 0) &= \{0,1,0,0\}\\
@@ -118,6 +131,8 @@ F(2, 1) &= \{0,0,1,0\}\\
 F(3, 1) &= \{0,0,0,1\}\\
 \end{aligned}
 \end{equation}
+
+\end{description}
 
 \subsection{Trajectories}
 
@@ -140,7 +155,7 @@ E = \kbordermatrix{
 	S_3 & 0 & 0 \\
 }
 \]
-where all elements are zero except those representing agent $S_1$ performing action $A_0$ and agent $S_2$ performing action $A_1$.
+where all elements are zero except those representing agent $S_1$ (\textit{right cat}) performing action $A_0$ (\textit{move}) and agent $S_2$ (\textit{left mouse}) performing action $A_1$ (\textit{stay still}).
 
 Finally, let a model trajectory be a tensor, $T$, consisting of a number of model timesteps. We use the notation $T^t$ to denote the $t^{th}$ timestep matrix, $T^t_\psi$ to denote the $\psi^{th}$ row of the $t^{th}$ timestep matrix and $T^t_{\psi a}$ to denote the $a^{th}$ element of the $\psi^{th}$ row of the $t^{th}$ timestep. By convention, we'll let indices begin at 0. Note that this tensor will generally be very large for more realistic models, but also very sparse, so it can be dealt with computationally using a sparse representation.
 
@@ -152,7 +167,7 @@ A tensor must satisfy a number of constraints in order to be a valid trajectory 
 \label{nonNegativeInt}
 \end{equation}
 
-A trajectory must also be \textit{continuous} by which we mean that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. We call this the \textit{continuity constraint} and define the set of continuous tensors:
+The \textit{continuity constraint} requires that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. \todo{Can agents leave the system?} We define the set of continuous tensors:
 \begin{equation}
 \mathcal{C}^N_{SA}(F) = \left\{T\in\mathbb{R}^N_{SA}:  \forall t \in 1 ... N-1:\forall \phi: \sum_{\psi, a} F(\psi, a)_\phi T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0\right\}
 \label{continuous}
