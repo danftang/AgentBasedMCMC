@@ -85,7 +85,7 @@ Suppose we have a timestepping ABM where agents have a finite number of possible
 	
 	\item A vector of agent states $\mathcal{S} = \left<S_0 ... S_m\right>$
 	
-	\item An \textit{agent timestep}, $\pi : \mathbb{Z}\times\mathbb{Z}^{m+1}\times\mathbb{Z} \to \mathbb{R}$, which defines the probability that an agent will act in a particular way such that $\pi(\psi,\Phi,a)$ \todo{can we define as $\pi(S_\psi,\Phi,A_a)$?} gives the probability that an agent in state $S_\psi$, surrounded by agents, $\Phi$, will perform action $A_a$ (where $\Phi$ is a vector whose $i^{th}$ element is the number of agents in state $S_i$ at the start of the timestep).
+	\item An \textit{agent timestep}, $\pi : \mathbb{Z}\times\mathbb{Z}^{m+1}\times\mathbb{Z} \to \mathbb{R}$, which defines the probability that an agent will act in a particular way such that $\pi(\psi,\Phi,a) $gives the probability that an agent in state $S_\psi$, surrounded by agents, $\Phi$, will perform action $A_a$ (where $\Phi$ is a vector whose $i^{th}$ element is the number of agents in state $S_i$ at the start of the timestep).
 	
 	\item An \textit{action function}, $F: \mathbb{Z} \times \mathbb{Z} \to \mathbb{Z}^{m+1}$, which defines the effect of an action on the world such that $F(\psi, a)$ returns a vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $S_i$ that result from an agent in state $S_\psi$ performing act $A_a$ (including the final state of the acting agent).
 \end{itemize}
@@ -103,16 +103,16 @@ As a simple illustration, consider a simple ``cat and mouse'' ABM, which consist
 \item[Agent timestep, $\pi$.] A cat moves with probability $0.5$, irrespective of other agents, while a mouse will move if there is one or more cats on the same gridsquare, otherwise it will stay still. So, the agent timestep function is
 \begin{equation}
 \begin{aligned}
-\pi(\psi, \Phi, 0) &=
+\pi(\psi, \Phi, 0) &=   % MOVE equation
 \begin{cases}
-0.5 & \text{if } \psi \in \left\{0,1\right\}\\
-1 & \text{ if } \psi = 2, \Phi_1 > 0 \text{ or } \psi=3, \Phi_2 > 0\\
-0 & \text{ otherwise}
+0.5 & \text{if } \psi \in \left\{0,1\right\}\\  % IF I'm a cat (0 and 1 are both cat) then prob move is 0.5%
+1 & \text{ if } \psi = 2, \Phi_1 > 0 \text{ or } \psi=3, \Phi_2 > 0\\ % mouse left & >0 cats in same square OR mouse right and >0 cats then move
+0 & \text{ otherwise} %otherwise stay still
 \end{cases}\\
-\pi(\psi, \Phi, 1) &=
+\pi(\psi, \Phi, 1) &= % STAY STILL equation
 \begin{cases}
-0.5 & \text{if } \psi \in \left\{0, 1\right\}\\
-1 & \text{ if } \psi = 2, \Phi_1 = 0 \text{ or } \psi=3, \Phi_2 = 0\\
+0.5 & \text{if } \psi \in \left\{0, 1\right\}\\  % IF I'm a cat (0 and 1 are both cat) then prob stay still is 0.5%
+1 & \text{ if } \psi = 2, \Phi_1 = 0 \text{ or } \psi=3, \Phi_2 = 0\\ % definitely stay still if mouse and no cats in same square
 0 & \text{ otherwise}
 \end{cases}
 \end{aligned}
@@ -167,7 +167,7 @@ A tensor must satisfy a number of constraints in order to be a valid trajectory 
 \label{nonNegativeInt}
 \end{equation}
 
-The \textit{continuity constraint} requires that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. \todo{Can agents leave the system?} We define the set of continuous tensors:
+The \textit{continuity constraint} requires that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. \todo{Can agents leave the system? - yes but birth/death would be part of an act. Every change must be caused by an actions.} We define the set of continuous tensors:
 \begin{equation}
 \mathcal{C}^N_{SA}(F) = \left\{T\in\mathbb{R}^N_{SA}:  \forall t \in 1 ... N-1:\forall \phi: \sum_{\psi, a} F(\psi, a)_\phi T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0\right\}
 \label{continuous}
