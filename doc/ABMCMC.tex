@@ -61,13 +61,18 @@ We demonstrate the algorithm by performing data assimilation in an agent-based, 
 
 \section{Introduction}
 
-\todo[inline]{NM: Paragraph for intro / context}
+Agent-based modelling (ABM) has become a popular tool for use in modelling systems that are driven by the behaviours and interactions of discrete, heterogeneous entities, such as human and animal systems.
+Although progress has been made towards the development and adaptation of techniques to conduct parameter optimisation~\cite{thiele_facilitating_2014}, such methods are not able to dynamically optimise the model \textit{state}. 
+Agent-based models (ABMs) are typically optimised once, by repeatedly comparing their outputs under various parameter configurations to some real-world data, and then used to make predictions. 
+However, in many circumstances, particularly when attempting to model complex systems, natural stochasticity causes the model to diverge from the real system, regardless of how well the parameters have been optimised.
+Although some studies have attempted to re-calibrate model parameters during runtime~\cite{oloo_predicting_2018, oloo_adaptive_2017}, this does not prevent the model \textit{state} from diverging.
+The field of ABM has yet to develop methods that allow the model state to be updated dynamically in response to new data, which is a serious methodological drawback. 
 
-Data assimilation (DA) is a technique that has been widely used in the physical sciences such as meteorology~\cite{kalnay_atmospheric_2003}, oceanography~\cite{bertino_sequential_2003} and the earth sciences more broadly~\cite{reichle_data_2008}. Specific applications of DA to ABMs are, however, much rarer. Examples of data assimilation using well-known DA methods such as Particle Filters and variants of the Kalman Filter applied to ABMs include models of crime~\cite{lloyd_exploring_2016}, bus routes~\cite{kieu_dealing_2020}, pedestrian dynamics~\cite{wang_data_2015, ward_dynamic_2016, clay_realtime_2020, malleson_simulating_2020};
-and population movement~\cite{lueck_who_2019}. Many DA algorithms rely on the differentiability of the model~\cite{lewis_dynamic_2006}.
-\todo[inline]{NM: More detail on drawbacks and limitations of those approaches}
+This paper presents a new method that will allow for \textit{data assimilation} (DA) to be applied to ABMs in order to optimise the model state in response to new data that arise during runtime. The discipline of DA, sometimes known as data fusion, addresses the problem of how to make use of noisy, imcomplete experimental observations to provide information about the time evolution of unobserved properties of a dynamical system.
+It is a technique that has developed rapidly in applications such as weather forecasting~\cite{kalnay_atmospheric_2003} and the earth sciences more broadly~\cite{reichle_data_2008}, but little progress has been made in developing techniques that are applicable when the dynamical system is an agent based model. DA methods typically rely on the differentiability of the model~\cite{lewis_dynamic_2006}. As ABMs consist of `agents' that often make discrete choices from a number of possible actions, the the space of model trajectories is not continuous so techniques based on gradient ascent, such as 4D-VAR, that require the gradient of the posterior in this space, cannot be used. 
+In addition, a vast number of possible model trajectories will be refuted by the observations, making it challenging to use algorithms that rely on perturbing the current solution such as non-gradient optimisation or most sampling algorithms. For this reason, examples of data assimilation using well-known DA methods such as Particle Filters and variants of the Kalman Filter -- in applications such as crime~\cite{lloyd_exploring_2016}, bus routes~\cite{kieu_dealing_2020}, pedestrian dynamics~\cite{wang_data_2015, ward_dynamic_2016, clay_realtime_2020, malleson_simulating_2020} and population movement~\cite{lueck_who_2019} -- are necessarily limited to extremely small systems, quickly becoming intractable.\todo{Reviewers may want a more comprehensive lit review}
 
-\todo[inline]{NM: Aims of this paper and knowledge gap it fills.}
+Here we present an algorithm that generates samples of the time evolution of an agent based model, given a set of noisy, incomplete experimental observations of the system. This allows for DA on an ABM by creating a posterior distribution within a reasonable amount of time. The algorithm approximates the set of possible trajectories as a linear program and uses an extension of the simplex algorithm to provide a proposal function for Markov-Chain-Monte-Carlo sampling. We demonstrate the algorithm by performing data assimilation in an agent-based, spatial predator-prey model.
 
 \todo[inline]{NM: ``This paper has been structured as follows ... ''}
 
@@ -172,7 +177,7 @@ A tensor must satisfy a number of constraints in order to be a valid trajectory 
 \label{nonNegativeInt}
 \end{equation}
 
-The \textit{continuity constraint} requires that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. \todo{Can agents leave the system? - yes but birth/death would be part of an act. Every change must be caused by an actions.} We define the set of continuous tensors:
+The \textit{continuity constraint}\footnote{The continuity constraint does not mean that agents cannot leave or enter the system, only that if they do then that change must be defined as part of an action.} requires that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. We define the set of continuous tensors:
 \begin{equation}
 \mathcal{C}^N_{SA}(F) = \left\{T\in\mathbb{R}^N_{SA}:  \forall t \in 1 ... N-1:\forall \phi: \sum_{\psi, a} F(\psi, a)_\phi T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0\right\}
 \label{continuous}
