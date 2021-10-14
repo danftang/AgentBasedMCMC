@@ -92,7 +92,7 @@ Suppose we have a timestepping ABM where agents have a finite number of possible
 
 \todo[inline]{Mention that the more traditional way of defining ABMs (e.g. using objects and step functions) can be easily mapped to this formulation}
 
-As a simple illustration, consider a simple ``cat and mouse'' ABM, which consists of just two gridsquares, left and right, within which roam a cat and a mouse. Using the definitions above: 
+As a simple illustration, consider a simple ``cat and mouse'' ABM, which consists of just two gridsquares, left and right, within which roam a cat and a mouse. Using the definitions above, the model can be formulated as follows: 
 
 \begin{description}
 
@@ -100,15 +100,20 @@ As a simple illustration, consider a simple ``cat and mouse'' ABM, which consist
 
 \item[Agent states, $\mathcal{S}$.] The cat and mouse can exist on either of the two squares, so $\mathcal{S} = \left<\textrm{left cat}, \textrm{right cat}, \textrm{left mouse}, \textrm{right mouse} \right> = \left<0, 1, 2, 3 \right>$. 
 
-\item[Agent timestep, $\pi$.] A cat moves with probability $0.5$, irrespective of other agents, while a mouse will move if there is one or more cats on the same gridsquare, otherwise it will stay still. So, the agent timestep function is
-\begin{equation}
+\item[Agent timestep, $\pi$.] As there are two possible actions ($\mathcal{A}=\left<0, 1\right>$) then there are two variants to the agent timestep. With respect to the \textit{move} action ($\mathcal{A}=0$), a cat moves with probability $0.5$, irrespective of other agents, while a mouse will move if there are one or more cats on the same gridsquare, otherwise it will stay still:
+\[
 \begin{aligned}
 \pi(\psi, \Phi, 0) &=   % MOVE equation
 \begin{cases}
 0.5 & \text{if } \psi \in \left\{0,1\right\}\\  % IF I'm a cat (0 and 1 are both cat) then prob move is 0.5%
 1 & \text{ if } \psi = 2, \Phi_1 > 0 \text{ or } \psi=3, \Phi_2 > 0\\ % mouse left & >0 cats in same square OR mouse right and >0 cats then move
 0 & \text{ otherwise} %otherwise stay still
-\end{cases}\\
+\end{cases}
+\end{aligned}
+\]
+With respect to the \textit{stay still} action  ($\mathcal{A}=1$), the probability of the cat staying still remains at 0.5, where as the mouse remains still if there are no cats on the same grid square, otherwise it will move:
+\[
+\begin{aligned}
 \pi(\psi, \Phi, 1) &= % STAY STILL equation
 \begin{cases}
 0.5 & \text{if } \psi \in \left\{0, 1\right\}\\  % IF I'm a cat (0 and 1 are both cat) then prob stay still is 0.5%
@@ -116,10 +121,10 @@ As a simple illustration, consider a simple ``cat and mouse'' ABM, which consist
 0 & \text{ otherwise}
 \end{cases}
 \end{aligned}
-\end{equation}
+\]
 
-\item[Action function, $F$] expresses the movement of the agents. 
-\begin{equation}
+\item[Action function, $F$.] Expresses the movement of the agents. For example, $F(\psi=1, a=0)$ states that if there is an agent in state $\psi=1$ (\textit{right cat}) and it performs the action $a=0$ (\textit{move)} then the result is one cat in state $\psi=0$ (\textit{left cat}):  $\Phi=\{1,0,0,0\}$. The full range of possible inputs and outputs from the action function is:
+\[
 \begin{aligned}
 F(0, 0) &= \{0,1,0,0\}\\
 F(1, 0) &= \{1,0,0,0\}\\
@@ -130,7 +135,7 @@ F(1, 1) &= \{0,1,0,0\}\\
 F(2, 1) &= \{0,0,1,0\}\\
 F(3, 1) &= \{0,0,0,1\}\\
 \end{aligned}
-\end{equation}
+\]
 
 \end{description}
 
