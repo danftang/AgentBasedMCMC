@@ -3,6 +3,7 @@
 //
 
 #include <vector>
+#include <thread>
 #include "compose.h"
 #include "Experiments.h"
 #include "agents/CatMouseAgent.h"
@@ -26,6 +27,11 @@
 #include "MCMCSampler.h"
 #include "ModelStateSampleStatistics.h"
 #include "RejectionSampler.h"
+#include "diagnostics/MeanAndVariance.h"
+#include "diagnostics/ValarrayLogger.h"
+#include "diagnostics/ScaleReduction.h"
+#include "diagnostics/Autocorrelation.h"
+#include "GnuplotExtensions.h"
 
 std::vector<double> Experiments::informationIncrease(int argc, char *argv[]) {
     if(argc != 9) {
@@ -335,7 +341,7 @@ void Experiments::CatMouseSingleObservation() {
     // TODO: analysis probs slightly out at 3 timesteps (with infeasibleExpectationFraction = 0.5. Closer when 1.0)
     constexpr int nTimesteps = 3;
     constexpr int nBurninSamples = 10000;
-    constexpr int nSamples = 1500000;
+    constexpr int nSamples = 50000;
 
     AssimilationWindow<CatMouseAgent> window(
             nTimesteps,
@@ -353,17 +359,49 @@ void Experiments::CatMouseSingleObservation() {
     std::cout << "Likelihood support is \n" << window.likelihoodPMF.convexSupport << std::endl;
     std::cout << "Posterior support is \n" << window.posterior.convexSupport << std::endl;
 
-    MCMCSampler sampler(window.posterior, window.priorSampler());
-    for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
-    ModelStateSampleStatistics<CatMouseAgent> sampleStats(sampler, nSamples);
+    constexpr int NCHAINS = 4;
+    std::vector<MeanAndVariance>                            meanVariances(NCHAINS,MeanAndVariance(window.dimension()));
+    std::vector<ValarrayLogger<std::valarray<double>>>      loggers(NCHAINS, ValarrayLogger<std::valarray<double>>(nSamples));
+    std::vector<MCMCSampler<Trajectory<CatMouseAgent>>>     samplers;
+    samplers.reserve(4);
 
-    std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
-    std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
-    std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl;
-    std::cout << "Analysis means = " << sampleStats.means() << std::endl;
+    for(int chain=0; chain<NCHAINS; ++chain) {
+        std::cout << "Starting thread " << chain << std::endl;
+        auto &sampler = samplers.emplace_back(window.posterior, window.priorSampler());
+        sampler.sampleInThread(nSamples,[&vaLogger = loggers[chain], &mvLogger=meanVariances[chain]](const Trajectory<CatMouseAgent> &sample) {
+            mvLogger(sample);
+            vaLogger(std::valarray<double>(sample.data(), sample.size()));
+        });
+//        sampler.sample(nSamples,[&vaLogger = loggers[chain], &mvLogger=meanVariances[chain]](const Trajectory<CatMouseAgent> &sample) {
+//            mvLogger(sample);
+//            vaLogger(std::valarray<double>(sample.data(), sample.size()));
+//        });
+    }
 
-    ExactSolver<CatMouseAgent> exact(window.posterior);
-    std::cout << "Exact means = " << exact.exactEndState << std::endl;
+
+//    MCMCSampler sampler(window.posterior, window.priorSampler());
+//    for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
+//    ModelStateSampleStatistics<CatMouseAgent> sampleStats(sampler, nSamples);
+
+
+    for(int thread=0; thread<NCHAINS; ++thread) {
+        samplers[thread].join();
+        std::cout << "Statistics for chain number " << thread << std::endl;
+        std::cout << "Feasible stats =\n" << samplers[thread].simplex.feasibleStatistics << std::endl;
+        std::cout << "Infeasible stats =\n" << samplers[thread].simplex.infeasibleStatistics << std::endl;
+        std::cout << "Infeasible proportion = "
+                  << samplers[thread].simplex.infeasibleStatistics.nSamples * 100.0 / samplers[thread].simplex.feasibleStatistics.nSamples
+                  << "%" << std::endl;
+        std::valarray<std::valarray<double>> ac = geyerAutocorrelation(loggers[thread].samples, 100, 0.9);
+        std::cout << "Geyer autocorrelation: " << ac << std::endl;
+        Gnuplot gp;
+        gp << ac;
+    }
+    std::cout << "Gelman scale reduction: " << gelmanScaleReduction(meanVariances) << std::endl;
+//    std::cout << "Analysis means = " << sampleStats.means() << std::endl;
+
+//    ExactSolver<CatMouseAgent> exact(window.posterior);
+//    std::cout << "Exact means = " << exact.exactEndState << std::endl;
 
 }
 
@@ -500,22 +538,22 @@ void Experiments::FermionicIntegrality() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-Gnuplot &Experiments::plotAgents(Gnuplot &gp, const ModelState<PredPreyAgent> &state) {
-    std::vector<std::tuple<double,double,double>> pointData;
-    for(int x=0; x<PredPreyAgent::GRIDSIZE; ++x) {
-        for(int y=0; y<PredPreyAgent::GRIDSIZE; ++y) {
-            int colour = 2*(state[PredPreyAgent(x,y,PredPreyAgent::PREDATOR)]>0.0)
-                         + (state[PredPreyAgent(x,y,PredPreyAgent::PREY)]>0.0);
-            if(colour != 0)
-                pointData.emplace_back(x, y, colour);
-        }
-    }
-
-    gp << "set linetype 1 lc 'red'\n";
-    gp << "set linetype 2 lc 'blue'\n";
-    gp << "plot [-0.5:" << PredPreyAgent::GRIDSIZE-0.5 << "][-0.5:" << PredPreyAgent::GRIDSIZE-0.5 << "] ";
-    gp << "'-' with points pointtype 5 pointsize 0.5 lc variable\n";
-    gp.send1d(pointData);
-    return gp;
-}
-
+//Gnuplot &Experiments::plotAgents(Gnuplot &gp, const ModelState<PredPreyAgent> &state) {
+//    std::vector<std::tuple<double,double,double>> pointData;
+//    for(int x=0; x<PredPreyAgent::GRIDSIZE; ++x) {
+//        for(int y=0; y<PredPreyAgent::GRIDSIZE; ++y) {
+//            int colour = 2*(state[PredPreyAgent(x,y,PredPreyAgent::PREDATOR)]>0.0)
+//                         + (state[PredPreyAgent(x,y,PredPreyAgent::PREY)]>0.0);
+//            if(colour != 0)
+//                pointData.emplace_back(x, y, colour);
+//        }
+//    }
+//
+//    gp << "set linetype 1 lc 'red'\n";
+//    gp << "set linetype 2 lc 'blue'\n";
+//    gp << "plot [-0.5:" << PredPreyAgent::GRIDSIZE-0.5 << "][-0.5:" << PredPreyAgent::GRIDSIZE-0.5 << "] ";
+//    gp << "'-' with points pointtype 5 pointsize 0.5 lc variable\n";
+//    gp.send1d(pointData);
+//    return gp;
+//}
+//

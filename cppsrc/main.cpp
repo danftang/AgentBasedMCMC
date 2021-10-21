@@ -1,4 +1,5 @@
 #include <iostream>
+#include <thread>
 #include "glpkppinclude/glpkpp.h"
 #include "agents/CatMouseAgent.h"
 #include "ABMProblem.h"
@@ -57,15 +58,32 @@ using glp::X;
 //
 //};
 
+//template<class... Types>
+//void f(Types... inits) {
+////    std::tuple<Types...> t(inits...);
+////    std::index_sequence_for<Types...> indices;
+//
+//    ((std::cout << inits << std::endl),...);
+//
+//}
+//
+//template<class... Types, size_t... Indices>
+//void expandTuple(std::tuple<Types...> &tuple, std::index_sequence<Indices...> indx) {
+//    ((std::cout << std::get<Indices>(tuple) << std::endl),...);
+//}
+//
+//template<class... Types>
+//void expandTuple(std::tuple<Types...> &tuple) {
+//    expandTuple(tuple,std::index_sequence_for<Types...>());
+//}
 
 int main(int argc, char *argv[]) {
-
 //    Experiments::BinomialAgentAssimilation();
-//  Experiments::CatMouseSingleObservation();
+  Experiments::CatMouseSingleObservation();
 //    Experiments::CatMouseAssimilation();
 //    Experiments::CatMouseMultiObservation();
 //    Experiments::PredPreySingleObservation();
-    Experiments::PredPreyAssimilation();
+//    Experiments::PredPreyAssimilation();
 
 //    Experiments::FermionicIntegrality();
 

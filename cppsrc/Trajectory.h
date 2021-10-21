@@ -159,6 +159,8 @@ public:
 
     int nTimesteps() const { return (size()-1)/(AGENT::domainSize()*AGENT::actDomainSize()); }
 
+    int dimension() const { return size(); }
+
     static int dimension(int nTimesteps) { return AGENT::domainSize()*AGENT::actDomainSize()*nTimesteps + 1; }
 
     // Log probability given fixed start state, as defined by this trajectory

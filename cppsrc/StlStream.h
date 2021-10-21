@@ -19,6 +19,15 @@ std::ostream &operator <<(std::ostream &out, const std::vector<T> &vec) {
     return out;
 }
 
+template<typename T>
+std::ostream &operator <<(std::ostream &out, const std::valarray<T> &vec) {
+    out << "{";
+    for(int i=0; i<vec.size(); ++i) out << vec[i] << ", ";
+    out << "\b\b}";
+    return out;
+}
+
+
 template<typename KEY, typename VALUE>
 std::ostream &operator <<(std::ostream &out, const std::map<KEY,VALUE> &map) {
     out << "{";

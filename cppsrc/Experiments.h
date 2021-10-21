@@ -25,7 +25,7 @@ public:
     static double nullPMF(const std::vector<double> &X) { return 0.0; }
 
 //    static Gnuplot &plotHeatMap(Gnuplot &gp, const PoissonState<PredPreyAgent> &aggregateState, const ModelState<PredPreyAgent> &realState);
-    static Gnuplot &plotAgents(Gnuplot &gp, const ModelState<PredPreyAgent> &state);
+//    static Gnuplot &plotAgents(Gnuplot &gp, const ModelState<PredPreyAgent> &state);
 
     static void PredPreyAssimilation();
 
@@ -62,6 +62,7 @@ public:
     static void CatMousePrior();
 
     static void FermionicIntegrality();
+
 };
 
 
