@@ -340,8 +340,8 @@ void Experiments::CatMouseMultiObservation() {
 void Experiments::CatMouseSingleObservation() {
     // TODO: analysis probs slightly out at 3 timesteps (with infeasibleExpectationFraction = 0.5. Closer when 1.0)
     constexpr int nTimesteps = 3;
-    constexpr int nBurninSamples = 10000;
-    constexpr int nSamples = 50000;
+    constexpr int nBurninSamples = 2000;
+    constexpr int nSamples = 20000;
 
     AssimilationWindow<CatMouseAgent> window(
             nTimesteps,
@@ -360,17 +360,20 @@ void Experiments::CatMouseSingleObservation() {
     std::cout << "Posterior support is \n" << window.posterior.convexSupport << std::endl;
 
     constexpr int NCHAINS = 4;
+    std::vector<std::vector<double>>                        energies(NCHAINS);
     std::vector<MeanAndVariance>                            meanVariances(NCHAINS,MeanAndVariance(window.dimension()));
     std::vector<ValarrayLogger<std::valarray<double>>>      loggers(NCHAINS, ValarrayLogger<std::valarray<double>>(nSamples));
     std::vector<MCMCSampler<Trajectory<CatMouseAgent>>>     samplers;
-    samplers.reserve(4);
+    samplers.reserve(NCHAINS);
 
     for(int chain=0; chain<NCHAINS; ++chain) {
         std::cout << "Starting thread " << chain << std::endl;
         auto &sampler = samplers.emplace_back(window.posterior, window.priorSampler());
-        sampler.sampleInThread(nSamples,[&vaLogger = loggers[chain], &mvLogger=meanVariances[chain]](const Trajectory<CatMouseAgent> &sample) {
+        sampler.burnIn(nBurninSamples);
+        sampler.sampleInThread(nSamples,[&vaLogger = loggers[chain], &mvLogger=meanVariances[chain], &E = energies[chain]](const Trajectory<CatMouseAgent> &sample) {
             mvLogger(sample);
             vaLogger(std::valarray<double>(sample.data(), sample.size()));
+            E.push_back(-sample.logProb());
         });
 //        sampler.sample(nSamples,[&vaLogger = loggers[chain], &mvLogger=meanVariances[chain]](const Trajectory<CatMouseAgent> &sample) {
 //            mvLogger(sample);
@@ -392,12 +395,20 @@ void Experiments::CatMouseSingleObservation() {
         std::cout << "Infeasible proportion = "
                   << samplers[thread].simplex.infeasibleStatistics.nSamples * 100.0 / samplers[thread].simplex.feasibleStatistics.nSamples
                   << "%" << std::endl;
-        std::valarray<std::valarray<double>> ac = geyerAutocorrelation(loggers[thread].samples, 100, 0.9);
+        std::valarray<std::valarray<double>> ac = geyerAutocorrelation(loggers[thread].samples, 40, 0.2);
         std::cout << "Geyer autocorrelation: " << ac << std::endl;
         Gnuplot gp;
         gp << ac;
+        Gnuplot gp2;
+        gp2 << "plot '-' with lines\n";
+        gp2.send1d(energies[thread]);
     }
-    std::cout << "Gelman scale reduction: " << gelmanScaleReduction(meanVariances) << std::endl;
+    std::valarray<double> gelman = gelmanScaleReduction(meanVariances);
+    std::cout << "Gelman scale reduction: " << gelman << std::endl;
+    std::vector<double> gelmanV(std::begin(gelman),std::end(gelman));
+    Gnuplot gp;
+    gp << "plot '-' with lines\n";
+    gp.send1d(gelmanV);
 //    std::cout << "Analysis means = " << sampleStats.means() << std::endl;
 
 //    ExactSolver<CatMouseAgent> exact(window.posterior);

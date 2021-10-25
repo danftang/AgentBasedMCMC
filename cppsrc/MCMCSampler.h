@@ -9,18 +9,9 @@
 
 template<typename DOMAIN>
 class MCMCSampler {
-    MCMCSampler(const MCMCSampler &other): simplex(other.simplex) {
-        std::cout << "Copying MCMCSampler: WARNING: don't copy SimplexMCMC!" << std::endl;
-    }
-
 public:
     SimplexMCMC simplex;
     std::thread *thread;
-
-    MCMCSampler(MCMCSampler &&other): simplex(std::move(other.simplex)), thread(other.thread) {
-        other.thread = NULL;
-        std::cout << "Moving MCMCSampler" << std::endl;
-    }
 
     MCMCSampler(const ConvexPMF<DOMAIN> &pmf, const DOMAIN &initialState = std::vector<double>())
     : simplex(
@@ -29,6 +20,14 @@ public:
         initialState
     ),
     thread(NULL) { }
+
+    MCMCSampler(MCMCSampler &&other): simplex(std::move(other.simplex)), thread(other.thread) {
+        other.thread = NULL;
+        std::cout << "Moving MCMCSampler" << std::endl;
+    }
+
+    MCMCSampler(const MCMCSampler<DOMAIN> &other) = delete; // copying a sampler is a bad idea, construct again from pmf
+
 
     ~MCMCSampler() {
         if(thread != NULL) delete(thread);

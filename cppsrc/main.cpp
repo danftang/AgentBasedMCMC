@@ -12,6 +12,7 @@
 #include "ConvexPolyhedron.h"
 #include "ABMConstraints.h"
 #include "AssimilationProblem.h"
+#include "diagnostics/Dataflow.h"
 
 using glp::X;
 
@@ -77,9 +78,34 @@ using glp::X;
 //    expandTuple(tuple,std::index_sequence_for<Types...>());
 //}
 
+
 int main(int argc, char *argv[]) {
 //    Experiments::BinomialAgentAssimilation();
-  Experiments::CatMouseSingleObservation();
+
+    using namespace dataflow;
+
+    dataflow::Producer<int> p = []() { return 5; };
+    dataflow::Consumer<int> c = [](int x) { std::cout << x << std::endl; return true; };
+
+//    p >>= Take(5) >>= c;
+//    p >>= Take(5) >>= Map<int(int)>([](int x) { return x+1;}) >>= c;
+    p >>= Take{5} >>= Split {
+        Take{2} >>= Map<int(int)>{[](int x) { return x+1;}} >>= c,
+        switchAfter(
+                3,
+                Map<int(int)>([](int x) { return x+2;}) >>= c,
+                Map<int(int)>([](int x) { return x+200;}) >>= c)
+    };
+
+//    p >>= Split {
+//        Take(5) >>= Map([](int x) { return x+1; }) >>= c,
+//        Take(4) >>= c,
+//        Take(3) >>= c
+//    };
+
+//    dataflow::map([](int x) -> int { return x+1; });
+
+//  Experiments::CatMouseSingleObservation();
 //    Experiments::CatMouseAssimilation();
 //    Experiments::CatMouseMultiObservation();
 //    Experiments::PredPreySingleObservation();
