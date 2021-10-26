@@ -63,6 +63,10 @@ public:
 
     static void FermionicIntegrality();
 
+    static std::vector<double> Synopsis(const Trajectory<PredPreyAgent> &trajectory);
+
+    static void PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyAgent>> &posterior,
+                              Trajectory<PredPreyAgent> startState);
 };
 
 

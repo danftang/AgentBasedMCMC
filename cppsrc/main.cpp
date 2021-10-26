@@ -78,27 +78,26 @@ using glp::X;
 //    expandTuple(tuple,std::index_sequence_for<Types...>());
 //}
 
-
 int main(int argc, char *argv[]) {
 //    Experiments::BinomialAgentAssimilation();
 
     using namespace dataflow;
 
-    dataflow::Producer<int> p = []() { return 5; };
-    dataflow::Consumer<int> c = [](int x) { std::cout << x << std::endl; return true; };
+    Producer<int> p = []() { return 5; };
+    Consumer<int> c = [](int x) { std::cout << x << std::endl; return true; };
+    Map<int(int)> add1([](int x) { return x+1;});
 
-//    p >>= Take(5) >>= c;
-//    p >>= Take(5) >>= Map<int(int)>([](int x) { return x+1;}) >>= c;
     p >>= Take{5} >>= Split {
-        Take{2} >>= Map<int(int)>{[](int x) { return x+1;}} >>= c,
-        switchAfter(
-                3,
-                Map<int(int)>([](int x) { return x+2;}) >>= c,
-                Map<int(int)>([](int x) { return x+200;}) >>= c)
+        Take{2} >>= add1 >>= c,
+        SwitchAfter {
+            3,
+            Drop(1) >>= add1 >>= add1 >>= c,
+            add1 >>= add1 >>= add1 >>= c
+        }
     };
 
 //    p >>= Split {
-//        Take(5) >>= Map([](int x) { return x+1; }) >>= c,
+//        Take(5) >>= Map<int(int)>([](int x) { return x+1; }) >>= c,
 //        Take(4) >>= c,
 //        Take(3) >>= c
 //    };

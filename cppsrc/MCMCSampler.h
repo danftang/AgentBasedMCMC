@@ -35,6 +35,10 @@ public:
 
     DOMAIN nextSample() const { return DOMAIN(const_cast<SimplexMCMC &>(simplex).nextSample()); }
 
+    const DOMAIN &operator()() const {
+        return static_cast<const DOMAIN &>(const_cast<SimplexMCMC &>(simplex).nextSample());
+    }
+
     // Loggers can be any number of objects that have operator() to consume samples
 //    template<typename...LOGGERS>
 //    void sample(int nSamples, LOGGERS &... loggers) {

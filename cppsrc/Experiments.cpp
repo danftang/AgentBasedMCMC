@@ -87,6 +87,10 @@ std::vector<double> Experiments::informationIncrease(
     return std::vector<double>(); //assimilation.calculateInformationGain();
 }
 
+void Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyAgent>> &posterior, Trajectory<PredPreyAgent> startState) {
+    MCMCSampler sampler(posterior, startState);
+
+}
 
 void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
@@ -543,6 +547,37 @@ void Experiments::FermionicIntegrality() {
 
 //    std::cout << "Simplex:\n" << simplex << std::endl;
     std::cout << "Fractional proportion = " << nFractional * 1.0/nSamples << std::endl;
+}
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// Creates a low-dimensional measure of a Predator-Prey trajectory in the following way:
+//  - calculate the end state of the trajectory
+//  - take the total predator and prey occupation of the lower-left corner (rounded down in size)
+//    of the grid as two measures and recurse on the upper-right partition until the
+//    partition size is smaller than 2x2.
+/////////////////////////////////////////////////////////////////////////////////////////
+std::vector<double> Experiments::Synopsis(const Trajectory<PredPreyAgent> &trajectory) {
+    std::vector<double> synopsis;
+    ModelState<PredPreyAgent> endState = trajectory.endState();
+    int origin = 0;
+    synopsis.reserve(lround(log2(PredPreyAgent::GRIDSIZE) + 1.0));
+    for(int partitionSize = PredPreyAgent::GRIDSIZE / 2; partitionSize > 1; partitionSize /=2) {
+        double predOccupation = 0.0;
+        double preyOccupation = 0.0;
+        for(int x=0; x < partitionSize; ++x) {
+            for(int y=0; y < partitionSize; ++y) {
+                predOccupation += endState[PredPreyAgent(origin + x,origin + y,PredPreyAgent::PREDATOR)];
+                preyOccupation += endState[PredPreyAgent(origin + x,origin + y,PredPreyAgent::PREY)];
+            }
+        }
+        synopsis.push_back(predOccupation);
+        synopsis.push_back(preyOccupation);
+        origin += partitionSize;
+    }
+    return synopsis;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
