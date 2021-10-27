@@ -36,7 +36,12 @@ std::ostream &operator <<(std::ostream &out, const std::map<KEY,VALUE> &map) {
     }
     out << "\b\b}";
     return out;
+}
 
+template<typename T1, typename T2>
+std::ostream &operator <<(std::ostream &out, const std::pair<T1,T2> &pair) {
+    out << "(" << pair.first << ", " << pair.second << ")";
+    return out;
 }
 
 #endif //GLPKTEST_STLSTREAM_H

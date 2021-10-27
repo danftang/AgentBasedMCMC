@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <thread>
+#include <future>
 #include "compose.h"
 #include "Experiments.h"
 #include "agents/CatMouseAgent.h"
@@ -32,6 +33,7 @@
 #include "diagnostics/ScaleReduction.h"
 #include "diagnostics/Autocorrelation.h"
 #include "GnuplotExtensions.h"
+#include "diagnostics/Dataflow.h"
 
 std::vector<double> Experiments::informationIncrease(int argc, char *argv[]) {
     if(argc != 9) {
@@ -87,10 +89,81 @@ std::vector<double> Experiments::informationIncrease(
     return std::vector<double>(); //assimilation.calculateInformationGain();
 }
 
-void Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyAgent>> &posterior, Trajectory<PredPreyAgent> startState) {
+
+auto Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyAgent>> &posterior, Trajectory<PredPreyAgent> startState) {
+    using namespace dataflow;
+    constexpr int nSamples = 100000; //250000;
+    constexpr int nBurnIn = nSamples*0.25;
+    std::vector<double>     energy;
+    MeanAndVariance         meanVariances;
+    std::vector<std::vector<double>> synopsisSamples;
+    auto trajectoryToEnergy = [](const Trajectory<PredPreyAgent> &trajectory) { return -trajectory.logProb(); };
     MCMCSampler sampler(posterior, startState);
 
+    sampler >>= Drop(nBurnIn) >>= Take(nSamples) >>= Split {
+            Map { trajectoryToEnergy } >>= pushBack(energy),
+            Map { Experiments::Synopsis } >>= Split {
+                    meanVariances.consumer(),
+                    pushBack(synopsisSamples)
+            }
+    };
+
+    return std::tuple(std::move(energy), std::move(meanVariances), std::move(synopsisSamples));
 }
+
+
+void Experiments::PredPreyConvergence() {
+    PredPreyAgent::GRIDSIZE = 8;
+    constexpr int windowSize = 2;
+    constexpr double pPredator = 0.08;//0.08;          // Poisson prob of predator in each gridsquare at t=0
+    constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
+    constexpr double pMakeObservation = 0.2;//0.04;    // prob of making an observation of each gridsquare at each timestep
+    constexpr double pObserveIfPresent = 0.9;
+    constexpr int nSamplesPerWindow = 1500000; //250000;
+    constexpr int nBurninSamples = 1000;
+    constexpr int nPriorSamples = 100000;
+    constexpr int nThreads = 4;
+//    constexpr int plotTimestep = nTimesteps-1;
+
+    ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
+
+    BernoulliModelState<PredPreyAgent> startStateDist([pPredator,pPrey](PredPreyAgent agent) {
+        return agent.type() == PredPreyAgent::PREDATOR?pPredator:pPrey;
+    });
+    std::cout << "Initial state distribution = " << startStateDist << std::endl;
+    Trajectory<PredPreyAgent> realTrajectory(windowSize, startStateDist.sampler());
+
+    ModelStateSampleStatistics<PredPreyAgent> sampleStats;
+    AssimilationWindow<PredPreyAgent> window(startStateDist,realTrajectory, pMakeObservation, pObserveIfPresent);
+
+    std::future<std::tuple<std::vector<double>,MeanAndVariance,std::vector<std::vector<double>>>> futureResults[nThreads];
+    for(int thread = 0; thread < nThreads; ++thread) {
+        futureResults[thread] = std::async(&PredPreyConvergenceThread, window.posterior, window.priorSampler());
+    }
+
+    std::vector<MeanAndVariance> meanvariances;
+    for(int thread=0; thread<nThreads; ++thread) {
+        std::vector<double> energies;
+        std::vector<std::vector<double>> synopsisSamples;
+        std::tie(energies,meanvariances[thread],synopsisSamples) = futureResults[thread].get();
+        std::cout << "Statistics for chain number " << thread << std::endl;
+        std::valarray<std::valarray<double>> ac = geyerAutocorrelation(synopsisSamples, 40, 0.2);
+        std::cout << "Geyer autocorrelation: " << ac << std::endl;
+        Gnuplot gp;
+        gp << ac;
+        Gnuplot gp2;
+        gp2 << "plot '-' with lines\n";
+        gp2.send1d(energies);
+    }
+    std::valarray<double> gelman = gelmanScaleReduction(meanvariances);
+    std::cout << "Gelman scale reduction: " << gelman << std::endl;
+    std::vector<double> gelmanV(std::begin(gelman),std::end(gelman));
+    Gnuplot gp;
+    gp << "plot '-' with lines\n";
+    gp.send1d(gelmanV);
+
+}
+
 
 void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
@@ -365,7 +438,7 @@ void Experiments::CatMouseSingleObservation() {
 
     constexpr int NCHAINS = 4;
     std::vector<std::vector<double>>                        energies(NCHAINS);
-    std::vector<MeanAndVariance>                            meanVariances(NCHAINS,MeanAndVariance(window.dimension()));
+    std::vector<MeanAndVariance>                            meanVariances(NCHAINS,MeanAndVariance());
     std::vector<ValarrayLogger<std::valarray<double>>>      loggers(NCHAINS, ValarrayLogger<std::valarray<double>>(nSamples));
     std::vector<MCMCSampler<Trajectory<CatMouseAgent>>>     samplers;
     samplers.reserve(NCHAINS);

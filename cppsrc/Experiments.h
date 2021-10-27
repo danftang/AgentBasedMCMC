@@ -65,8 +65,10 @@ public:
 
     static std::vector<double> Synopsis(const Trajectory<PredPreyAgent> &trajectory);
 
-    static void PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyAgent>> &posterior,
+    static auto PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyAgent>> &posterior,
                               Trajectory<PredPreyAgent> startState);
+
+    static void PredPreyConvergence();
 };
 
 

@@ -8,73 +8,105 @@
 namespace dataflow {
     template<typename T> using Consumer = std::function<bool(T)>;
 
-    template<typename T> using Producer = std::function<std::optional<T>()>;
+    template<typename T> using Producer = std::function<T()>;
 
-    template<typename T, typename = void>
-    static constexpr bool isProducer = false;
-    template<typename T>
-    static constexpr bool isProducer<T, std::void_t<decltype(std::declval<T>()())>> = true;
+//    template<typename OPT>
+//    static constexpr bool is_std_optional = false;
+//
+//    template<typename T>
+//    static constexpr bool is_std_optional<std::optional<T>> = true;
 
-    template<typename T, typename IN, typename = void>
-    static constexpr bool isConsumerOf = false;
-    template<typename T, typename IN>
-    static constexpr bool isConsumerOf<T, IN, std::void_t<decltype(std::declval<T>()(std::declval<IN>()))>> = std::is_same<decltype(std::declval<T>()(std::declval<IN>())),bool>::value;
+//    template<typename T, typename=void>
+//    static constexpr bool is_producer = false;
+//    template<typename T>
+//    static constexpr bool is_producer<T,std::enable_if_t<std::is_invocable_v<T>>> = is_std_optional<std::invoke_result_t<T>>;
+
 
 //    template<typename DATAIN, typename DATAOUT> using Transform = std::function<Consumer<DATAIN>(Consumer<DATAOUT>)>;
 
     // Transform concept: any object for which OBJ(Consumer<OUT> &&) evaluates to RET such that RET(IN) evaluates to bool
 
+//    template<typename OPT>
+//    struct enable_if_std_optional { };
+//
+//    template<typename T>
+//    struct enable_if_std_optional<std::optional<T>> {
+//        typedef T type;
+//    };
+//    template<typename OPT>
+//    using enable_if_std_optional_t = typename enable_if_std_optional<OPT>::type;
+
+
+    template<typename T, typename FUNCTIONTEST=void>
+    struct unary_function_traits {
+    };
+
+    template<typename IN, typename OUT>
+    struct unary_function_traits<std::function<OUT(IN)>> {
+        typedef void    is_valid_tag;
+        typedef IN      argument_type;
+        typedef OUT     result_type;
+    };
+
+    template<typename T>
+    struct unary_function_traits<T, std::void_t<decltype(std::function(std::declval<T>()))>>:
+        public unary_function_traits<decltype(std::function(std::declval<T>()))> { };
+
+
     template<typename P, typename PRODUCERTEST=void>
-    struct producer_traits {
-        typedef void not_valid_tag;
-    };
+    struct enable_if_producer { };
 
-
-    // TODO: check that P is returning an optional
     template<typename P>
-    struct producer_traits<P, std::void_t<typename decltype(std::declval<P>()())::value_type>> {
-        typedef typename decltype(std::declval<P>()())::value_type value_type;
+    struct enable_if_producer<P, std::void_t<decltype(std::declval<P>()())>> {
+        typedef decltype(std::declval<P>()()) type;
     };
 
-    template<typename CONSUMER, typename CONSUMEROF, typename CONSUMERTEST=void>
-    struct consumer_traits {
-        typedef void not_valid_tag;
+    template<typename PRODUCER>
+    using enable_if_producer_t = typename enable_if_producer<PRODUCER>::type;
+
+    template<typename T, typename TEST=void>
+    struct enable_if_consumer {
     };
 
-    template<typename CONSUMER, typename CONSUMEROF>
-    struct consumer_traits<CONSUMER, CONSUMEROF, std::void_t<decltype(std::declval<CONSUMER>()(std::declval<CONSUMEROF>()))>> {
-        typedef CONSUMEROF input_type;
+    template<typename CONSUMER>
+    struct enable_if_consumer<CONSUMER, std::enable_if_t<
+            std::is_same_v<typename unary_function_traits<CONSUMER>::result_type, bool>
+            >> {
+        typedef typename unary_function_traits<CONSUMER>::argument_type type;
     };
 
-    template<typename TRANSFORM, typename DOWNSTREAM, typename TRANSFORMTEST=void>
-    struct transform_traits {
-        typedef void not_valid_tag;
-    };
+    template<typename CONSUMER>
+    using enable_if_consumer_t = typename enable_if_consumer<CONSUMER>::type;
 
-    template<typename TRANSFORM, typename DOWNSTREAM>
-    struct transform_traits<TRANSFORM,DOWNSTREAM,std::void_t<decltype(std::declval<TRANSFORM>()(std::declval<std::function<bool(DOWNSTREAM)>>()))>> {
-        typedef decltype(std::declval<TRANSFORM>()(std::declval<std::function<bool(DOWNSTREAM)>>())) upstream_consumer;
-    };
+    template<typename CONSUMER, typename TYPE>
+    using enable_if_consumer_of = std::enable_if_t<std::is_same_v<enable_if_consumer_t<CONSUMER>,TYPE>>;
+
+//    template<typename T, typename IN, typename = void>
+//    static constexpr bool is_consumer_of = false;
+//    template<typename T, typename IN>
+//    static constexpr bool is_consumer_of<T, IN, std::void_t<decltype(std::declval<T>()(std::declval<IN>()))>> = std::is_same_v<decltype(std::declval<T>()(std::declval<IN>())),bool>;
 
 
-    // requires that TRANSFORM(DOWNSTREAMCONSUMER) is valid
-    template<typename TRANSFORM, typename DOWNSTREAMCONSUMER>
-    decltype(std::declval<TRANSFORM>()(std::declval<DOWNSTREAMCONSUMER>())) operator >>=(TRANSFORM &&t, DOWNSTREAMCONSUMER downStreamConsumer) {
+
+
+    // requires that DOWNSTREAMCONSUMER is a consumer and TRANSFORM(DOWNSTREAMCONSUMER) is a consumer
+    template<typename TRANSFORM, typename DOWNSTREAMCONSUMER, typename CONDITIONS = std::void_t<
+            enable_if_consumer_t<DOWNSTREAMCONSUMER>,
+            enable_if_consumer_t<decltype(std::declval<TRANSFORM>()(std::declval<DOWNSTREAMCONSUMER>()))>
+            >>
+    auto operator >>=(TRANSFORM &&t, DOWNSTREAMCONSUMER downStreamConsumer) {
         return t(std::move(downStreamConsumer));
     }
 
-    // TODO: abstract over consumer type, requiring that PRODUCER() -> std::optional<T> and CONSUMER(T) -> bool
-    template<typename PRODUCER>
-    void operator >>=(PRODUCER &producer, dataflow::Consumer<typename decltype(std::declval<PRODUCER>()())::value_type> consumer) {
-        auto nextItem = producer();
-        bool channelIsOpen = nextItem.has_value();
-        while(channelIsOpen) {
-            channelIsOpen = consumer(nextItem.value());
-            nextItem = producer();
-            channelIsOpen &= nextItem.has_value();
-        }
+    // requires that PRODUCER is a producer of T and CONSUMER is a consumer of T
+    template<typename PRODUCER, typename CONSUMER, typename = std::void_t<
+                std::enable_if_t<
+                    std::is_same_v<decltype(std::declval<CONSUMER>()(std::declval<PRODUCER>()())), bool>
+                >
+            >>
+    void operator >>=(PRODUCER &producer, CONSUMER consumer) {
+        while(consumer(producer())) {};
     }
-
 
     template<typename T>
     class Split: public Consumer<T> {
@@ -107,17 +139,19 @@ namespace dataflow {
         }
     };
 
-    template<typename SIG>
+    template<typename FUNC, typename = typename unary_function_traits<FUNC>::is_valid_tag>
     class Map {
     public:
-        std::function<SIG> mapFunc;
-        typedef typename std::function<SIG>::result_type out_type;
-        typedef typename std::function<SIG>::argument_type in_type;
+        FUNC mapFunc;
 
-        Map(std::function<SIG> mapFunction): mapFunc(mapFunction) { }
+        typedef typename unary_function_traits<FUNC>::argument_type upstream_type;
+        typedef typename unary_function_traits<FUNC>::result_type   downstream_type;
 
-        Consumer<in_type> operator()(Consumer<out_type> downstreamConsumer) {
-            return [downstreamConsumer = std::move(downstreamConsumer), mapFunc=this->mapFunc](in_type item) {
+        Map(FUNC mapFunction): mapFunc(mapFunction) { }
+
+        template<typename CONSUMER>
+        Consumer<upstream_type> operator()(CONSUMER downstreamConsumer) {
+            return [downstreamConsumer = std::move(downstreamConsumer), mapFunc=this->mapFunc](upstream_type item) {
                 return downstreamConsumer(mapFunc(item));
             };
         }
@@ -153,121 +187,13 @@ namespace dataflow {
         }) { }
     };
 
-
-//    template<typename... ARGS>
-//    auto consumer(ARGS &&... args) {
-//        return (std::move(args) >>= ...);
-//    }
-
-//    template<typename IN, typename OUT>
-//    Transform<IN,OUT> map(std::function<OUT(IN)> t) {
-//        return [outert=std::move(t)](Consumer<OUT> downStreamConsumer) {
-//            return [innert=std::move(outert), downStreamConsumer](IN inItem) { return downStreamConsumer(innert(inItem)); };
-//        };
-//    }
-
-
-//    template<typename LEFT, typename FUNC>
-//    auto operator >> (Producer<LEFT> &&p, FUNC map) -> Producer<decltype(map(p().value()))> {
-//        typedef decltype(map(p().value())) RETURN;
-//        return [&p,map]() {
-//            const std::optional<LEFT> &nextItem = p();
-//            return nextItem.has_value()?std::optional(map(nextItem.value())):std::optional<RETURN>();
-//        };
-//    }
-//
-//
-//
-//    template<typename LEFT, typename RIGHT>
-//    Producer<RIGHT> operator >> (Producer<LEFT> &&p, std::function<std::optional<RIGHT>(std::optional<LEFT>)> map) {
-//        return [&p,map]() {
-//            return map(p());
-//        };
-//    }
-
-
-
-//    template<typename LEFT, typename MID, typename RIGHT>
-//    Transform<LEFT,RIGHT> operator >>(Transform<LEFT,MID> leftTransform, Transform<MID,RIGHT> rightTransform) {
-//        return [leftTransform = std::move(leftTransform),rightTransform=std::move(rightTransform)](Consumer<RIGHT> &&c) {
-//            return leftTransform(rightTransform(c));
-//        };
-//    }
-//
-//    template<typename LEFT, typename MID, typename FUNC>
-//    auto operator >>(Transform<LEFT,MID> leftTransform, FUNC map) -> Transform<LEFT,decltype(map(*static_cast<MID*>(nullptr)))> {
-//        typedef decltype(map(*static_cast<MID*>(nullptr))) RIGHT;
-//        return [leftTransform=std::move(leftTransform), map](Consumer<RIGHT> downStreamConsumer) {
-//            return leftTransform([map, downStreamConsumer](MID inItem) { return downStreamConsumer(map(inItem)); });
-//        };
-//    }
-//
-
-//        template<typename T>
-//        operator Transform<T,T>() {
-//            return [n=countDown](Consumer<T> c) {
-//                return [n, c](T item) mutable {
-//                    bool downstreamOpen = c(item);
-//                    --n;
-//                    return (downstreamOpen && n != 0);
-//                };
-//            };
-//        }
-
-
-//    template<typename T>
-//    Producer<T> operator >>(Producer<T> &p, Take &&t) {
-//        return [&p,&t]() mutable {
-//            if(t.countDown == 0) return std::optional<T>();
-//            --t.countDown;
-//            return p();
-//        };
-//    }
-//
-//    template<typename T>
-//    Consumer<T> operator<<(Consumer<T> &c, Take &&t) {
-//        return [&c,&t](T item) {
-//            bool downstreamOpen = c(item);
-//            --t.countDown;
-//            return (downstreamOpen && t.countDown != 0);
-//        };
-//    }
-
-//    template<typename T>
-//    Transform<T,T> takeTransform(int n) {
-//        return [n](Consumer<T> c) {
-//            return [n, c](T item) mutable {
-//                bool downstreamOpen = c(item);
-//                --n;
-//                return (downstreamOpen && n != 0);
-//            };
-//        };
-//    }
-
+    template<typename T>
+    Consumer<const T &> pushBack(std::vector<T> &vectorLog) {
+        return [&vectorLog](const T &item) {
+            vectorLog.push_back(item);
+            return true;
+        };
+    }
 };
-
-//template<typename T>
-//void operator |(dataflow::Producer<T> producer, dataflow::Consumer<T> consumer) {
-//    std::optional<T> nextItem = producer();
-//    bool channelIsOpen = nextItem.has_value();
-//    while(channelIsOpen) {
-//        channelIsOpen = consumer(nextItem.value());
-//        nextItem = producer();
-//        channelIsOpen &= nextItem.has_value();
-//    }
-//}
-
-//template<typename PRODUCED, typename CHAIN>
-//Chain<CHAIN> operator >>(dataflow::Producer<PRODUCED> &producer, dataflow::Transform<PRODUCED,CHAIN> transform) {
-//    return Chain(producer, transform);
-//}
-
-//template<typename IN, typename OUT>
-//dataflow::Consumer<IN> operator >>(dataflow::Transform<IN,OUT> t, dataflow::Consumer<OUT> &&downStreamConsumer) {
-//    return t(std::move(downStreamConsumer));
-//}
-
-
-
 
 #endif //GLPKTEST_DATAFLOW_H
