@@ -7,7 +7,6 @@
 
 
 #include <valarray>
-#include "Dataflow.h"
 
 // DATA can be any object with .size() and operator[]
 //template<typename DATA, typename = std::void_t<decltype(std::declval<DATA>()[0]), decltype(std::declval<DATA>().size())>>
@@ -33,7 +32,7 @@ public:
         return true;
     }
 
-    dataflow::Consumer<const std::vector<double> &> consumer() {
+    auto consumer() {
         return [this](const std::vector<double> &sample) { return (*this)(sample); };
     }
 

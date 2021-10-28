@@ -22,7 +22,7 @@
 #include "ExactSolver.h"
 #include "agents/BinomialAgent.h"
 #include "MCMCSolver.h"
-#include "ABMPlotter.h"
+#include "Plotter.h"
 #include "StlStream.h"
 #include "BernoulliModelState.h"
 #include "MCMCSampler.h"
@@ -35,80 +35,52 @@
 #include "GnuplotExtensions.h"
 #include "diagnostics/Dataflow.h"
 
-std::vector<double> Experiments::informationIncrease(int argc, char *argv[]) {
-    if(argc != 9) {
-        std::cout << "Wrong number of arguments. Should be <GRIDSIZE> <nTimestepsPerWindow> <nWindows> <pPredator> <pPrey> <pMakeObservation> <pObserveIfPresent> <nSamplesPerWindow> <nBurnInSamples>" << std::endl;
-        return std::vector<double>();
-    }
-    glp_term_out(GLP_OFF); // turn off GLPK terminal output
-    int gridsize = atoi(argv[1]);
-    int windowSize = atoi(argv[2]);
-    int nWindows = atoi(argv[3]);
-    double pPredator = atof(argv[4]);         // Poisson prob of predator in each gridsquare at t=0
-    double pPrey = atof(argv[5]);             // Poisson prob of prey in each gridsquare at t=0
-    double pMakeObservation = atof(argv[6]);  // prob of making an observation of each gridsquare at each timestep
-    double pObserveIfPresent = atof(argv[7]); // prob of detecting an agent given that it is present
-    int nSamplesPerWindow = atoi(argv[8]);
-    int nBurnInSamples = atoi(argv[9]);
-    return informationIncrease(gridsize, windowSize, nWindows, pPredator, pPrey,
-                               pMakeObservation, pObserveIfPresent, nSamplesPerWindow, nBurnInSamples);
-}
 
-
-std::vector<double> Experiments::informationIncrease(
-        int gridsize,
-        int windowSize,
-        int nWindows,
-        double pPredator,         // Poisson prob of predator in each gridsquare at t=0
-        double pPrey,             // Poisson prob of prey in each gridsquare at t=0
-        double pMakeObservation,  // prob of making an observation of each gridsquare at each timestep
-        double pObserveIfPresent, // prob of detecting an agent given that it is present
-        int nSamplesPerWindow,
-        int nBurnInSamples
-        ) {
-    glp_term_out(GLP_OFF); // turn off GLPK terminal output
-    PredPreyAgent::GRIDSIZE = gridsize;
-
-//    std::vector<boost::math::binomial_distribution<double>> startWeights(PredPreyAgent::domainSize());
-//    for(int agentId=0; agentId < PredPreyAgent::domainSize(); ++agentId) {
-//        startWeights[agentId] = boost::math::binomial_distribution<double>(
-//                1,(PredPreyAgent(agentId).type() == PredPreyAgent::PREDATOR?pPredator:pPrey)
-//                );
-//    }
-
-    BernoulliModelState<PredPreyAgent> startStateDist([pPredator,pPrey](PredPreyAgent agent) {
-        return agent.type() == PredPreyAgent::PREDATOR?pPredator:pPrey;
-    });
-
-    AssimilationWindow<PredPreyAgent> window(windowSize, startStateDist, pMakeObservation, pObserveIfPresent);
-
-    MCMCSampler sampler(window.posterior);
-//    solver.solve(nBurnInSamples, nSamplesPerWindow);
-
-
-    return std::vector<double>(); //assimilation.calculateInformationGain();
-}
-
-
-auto Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyAgent>> &posterior, Trajectory<PredPreyAgent> startState) {
+void Experiments::DataflowDemo() {
     using namespace dataflow;
-    constexpr int nSamples = 100000; //250000;
-    constexpr int nBurnIn = nSamples*0.25;
-    std::vector<double>     energy;
-    MeanAndVariance         meanVariances;
-    std::vector<std::vector<double>> synopsisSamples;
-    auto trajectoryToEnergy = [](const Trajectory<PredPreyAgent> &trajectory) { return -trajectory.logProb(); };
-    MCMCSampler sampler(posterior, startState);
+    int nBurnIn = 100;
+    int nSamples = 200;
+    auto sampler = [n = 0]() mutable { return ++n; };
+    auto cint = [](int x) { std::cout << x << std::endl; return true; };
+    auto cany = [](auto x) { std::cout << x << std::endl; return true; };
 
-    sampler >>= Drop(nBurnIn) >>= Take(nSamples) >>= Split {
-            Map { trajectoryToEnergy } >>= pushBack(energy),
-            Map { Experiments::Synopsis } >>= Split {
-                    meanVariances.consumer(),
-                    pushBack(synopsisSamples)
+    auto trajectoryToEnergy = [](int i) { return -i*i; };
+    auto synopsis = [](int i) { return std::vector<double>{ 1.0*i, 2.0*i }; };
+    MeanAndVariance  meanVariances;
+    std::vector<std::vector<double>> measureLog;
+
+    sampler >>= Drop(nBurnIn) >>= Split {
+            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter<double>(nSamples/10, "Energy"),
+            Take(nSamples) >>= Map { synopsis } >>= Split {
+                meanVariances.consumer(),
+                pushBack(measureLog)
             }
     };
 
-    return std::tuple(std::move(energy), std::move(meanVariances), std::move(synopsisSamples));
+    std::cout << meanVariances.mean() << std::endl;
+    std::cout << meanVariances.sampleVariance() << std::endl;
+    std::cout << measureLog << std::endl;
+
+
+}
+
+auto Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyAgent>> &posterior, Trajectory<PredPreyAgent> startState) {
+    using namespace dataflow;
+    constexpr int nSamples = 50000; //250000;
+    constexpr int nBurnIn = nSamples*0.25;
+    MeanAndVariance         meanVariances;
+    auto trajectoryToEnergy = [](const Trajectory<PredPreyAgent> &trajectory) { return -trajectory.logProb(); };
+    MCMCSampler sampler(posterior, startState);
+
+    sampler >>= Drop(nBurnIn) >>= Split {
+            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter<double>(nSamples/10, "Energy"),
+            Take(nSamples) >>= Map { Experiments::Synopsis } >>= Split {
+                    meanVariances.consumer(),
+                    CollectThenEmit<std::vector<double>>(nSamples) >>= geyerAutocorrelationConsumer(40, 0.2)
+            }
+    };
+
+    return std::move(meanVariances);
 }
 
 
@@ -119,11 +91,7 @@ void Experiments::PredPreyConvergence() {
     constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
     constexpr double pMakeObservation = 0.2;//0.04;    // prob of making an observation of each gridsquare at each timestep
     constexpr double pObserveIfPresent = 0.9;
-    constexpr int nSamplesPerWindow = 1500000; //250000;
-    constexpr int nBurninSamples = 1000;
-    constexpr int nPriorSamples = 100000;
     constexpr int nThreads = 4;
-//    constexpr int plotTimestep = nTimesteps-1;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
 
@@ -136,32 +104,17 @@ void Experiments::PredPreyConvergence() {
     ModelStateSampleStatistics<PredPreyAgent> sampleStats;
     AssimilationWindow<PredPreyAgent> window(startStateDist,realTrajectory, pMakeObservation, pObserveIfPresent);
 
-    std::future<std::tuple<std::vector<double>,MeanAndVariance,std::vector<std::vector<double>>>> futureResults[nThreads];
+    std::future<MeanAndVariance> futureResults[nThreads];
     for(int thread = 0; thread < nThreads; ++thread) {
         futureResults[thread] = std::async(&PredPreyConvergenceThread, window.posterior, window.priorSampler());
     }
 
     std::vector<MeanAndVariance> meanvariances;
     for(int thread=0; thread<nThreads; ++thread) {
-        std::vector<double> energies;
-        std::vector<std::vector<double>> synopsisSamples;
-        std::tie(energies,meanvariances[thread],synopsisSamples) = futureResults[thread].get();
-        std::cout << "Statistics for chain number " << thread << std::endl;
-        std::valarray<std::valarray<double>> ac = geyerAutocorrelation(synopsisSamples, 40, 0.2);
-        std::cout << "Geyer autocorrelation: " << ac << std::endl;
-        Gnuplot gp;
-        gp << ac;
-        Gnuplot gp2;
-        gp2 << "plot '-' with lines\n";
-        gp2.send1d(energies);
+        meanvariances.push_back(futureResults[thread].get());
     }
     std::valarray<double> gelman = gelmanScaleReduction(meanvariances);
-    std::cout << "Gelman scale reduction: " << gelman << std::endl;
-    std::vector<double> gelmanV(std::begin(gelman),std::end(gelman));
-    Gnuplot gp;
-    gp << "plot '-' with lines\n";
-    gp.send1d(gelmanV);
-
+    std::cout << std::endl << "Gelman scale reduction factors: " << gelman << std::endl;
 }
 
 
@@ -207,7 +160,7 @@ void Experiments::PredPreyAssimilation() {
         std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl;
         std::cout << "Analysis means = " << sampleStats.means() << std::endl;
 
-        ABMPlotter<PredPreyAgent> gp;
+        Plotter gp;
         gp.plot(window.realTrajectory.endState(), sampleStats.means());
 //        ModelStateSampleStatistics priorEnd(window.priorSampler, 10000);
 //        std::cout << "Window information gain = "
@@ -274,10 +227,10 @@ void Experiments::PredPreySingleObservation() {
     ModelStateSampleStatistics<PredPreyAgent> rejectionSampleStats(rejectionSampler, nRejectionSamples);
     std::cout << "Rejection means = " << rejectionSampleStats.means() << std::endl;
 
-    ABMPlotter<PredPreyAgent> gp;
+    Plotter gp;
     gp.plot(window.realTrajectory.endState(), sampleStats.means());
 
-    ABMPlotter<PredPreyAgent> gp2;
+    Plotter gp2;
     gp2.plot(window.realTrajectory.endState(), rejectionSampleStats.means());
 
 }
@@ -652,6 +605,61 @@ std::vector<double> Experiments::Synopsis(const Trajectory<PredPreyAgent> &traje
     }
     return synopsis;
 }
+
+std::vector<double> Experiments::informationIncrease(int argc, char *argv[]) {
+    if(argc != 9) {
+        std::cout << "Wrong number of arguments. Should be <GRIDSIZE> <nTimestepsPerWindow> <nWindows> <pPredator> <pPrey> <pMakeObservation> <pObserveIfPresent> <nSamplesPerWindow> <nBurnInSamples>" << std::endl;
+        return std::vector<double>();
+    }
+    glp_term_out(GLP_OFF); // turn off GLPK terminal output
+    int gridsize = atoi(argv[1]);
+    int windowSize = atoi(argv[2]);
+    int nWindows = atoi(argv[3]);
+    double pPredator = atof(argv[4]);         // Poisson prob of predator in each gridsquare at t=0
+    double pPrey = atof(argv[5]);             // Poisson prob of prey in each gridsquare at t=0
+    double pMakeObservation = atof(argv[6]);  // prob of making an observation of each gridsquare at each timestep
+    double pObserveIfPresent = atof(argv[7]); // prob of detecting an agent given that it is present
+    int nSamplesPerWindow = atoi(argv[8]);
+    int nBurnInSamples = atoi(argv[9]);
+    return informationIncrease(gridsize, windowSize, nWindows, pPredator, pPrey,
+                               pMakeObservation, pObserveIfPresent, nSamplesPerWindow, nBurnInSamples);
+}
+
+
+std::vector<double> Experiments::informationIncrease(
+        int gridsize,
+        int windowSize,
+        int nWindows,
+        double pPredator,         // Poisson prob of predator in each gridsquare at t=0
+        double pPrey,             // Poisson prob of prey in each gridsquare at t=0
+        double pMakeObservation,  // prob of making an observation of each gridsquare at each timestep
+        double pObserveIfPresent, // prob of detecting an agent given that it is present
+        int nSamplesPerWindow,
+        int nBurnInSamples
+) {
+    glp_term_out(GLP_OFF); // turn off GLPK terminal output
+    PredPreyAgent::GRIDSIZE = gridsize;
+
+//    std::vector<boost::math::binomial_distribution<double>> startWeights(PredPreyAgent::domainSize());
+//    for(int agentId=0; agentId < PredPreyAgent::domainSize(); ++agentId) {
+//        startWeights[agentId] = boost::math::binomial_distribution<double>(
+//                1,(PredPreyAgent(agentId).type() == PredPreyAgent::PREDATOR?pPredator:pPrey)
+//                );
+//    }
+
+    BernoulliModelState<PredPreyAgent> startStateDist([pPredator,pPrey](PredPreyAgent agent) {
+        return agent.type() == PredPreyAgent::PREDATOR?pPredator:pPrey;
+    });
+
+    AssimilationWindow<PredPreyAgent> window(windowSize, startStateDist, pMakeObservation, pObserveIfPresent);
+
+    MCMCSampler sampler(window.posterior);
+//    solver.solve(nBurnInSamples, nSamplesPerWindow);
+
+
+    return std::vector<double>(); //assimilation.calculateInformationGain();
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////

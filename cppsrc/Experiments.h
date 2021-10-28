@@ -69,6 +69,8 @@ public:
                               Trajectory<PredPreyAgent> startState);
 
     static void PredPreyConvergence();
+
+    static void DataflowDemo();
 };
 
 

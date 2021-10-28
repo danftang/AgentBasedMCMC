@@ -18,82 +18,16 @@
 
 using glp::X;
 
-template<typename C, typename R, typename A>
-void unwrap(R(C::*f)(A) const) {
-}
-
-auto doThread(int nBurnIn, int nSamples) {
-    using namespace dataflow;
-    Producer<int> sampler = [n = 0]() mutable { return ++n; };
-    std::vector<double> energy;
-    Consumer<int> c = [](int x) { std::cout << x << std::endl; return true; };
-    auto trajectoryToEnergy = [](int i) { return -i*0.1; };
-    auto synopsis = [](int i) { return std::vector<double>{ 1.0*i }; };
-    MeanAndVariance  meanVariances;
-
-    sampler >>= Drop(nBurnIn) >>= Take(nSamples) >>= Split {
-            Map { trajectoryToEnergy } >>= pushBack(energy),
-            Map { synopsis } >>= meanVariances.consumer()
-    };
-    return std::pair(energy,meanVariances);
-}
+//template<typename C, typename R, typename A>
+//void unwrap(R(C::*f)(A) const) {
+//}
 
 int main(int argc, char *argv[]) {
+
+    Experiments::DataflowDemo();
+//    Experiments::PredPreyConvergence();
+
 //    Experiments::BinomialAgentAssimilation();
-
-//    using namespace dataflow;
-//    int nBurnIn = 100;
-//    int nSamples = 200;
-//    Producer<int> sampler = [n = 0]() mutable { return ++n; };
-//    std::vector<double> energy;
-//    Consumer<int> c = [](int x) { std::cout << x << std::endl; return true; };
-//    auto trajectoryToEnergy = [](int i) { return -i*0.1; };
-//    auto synopsis = [](int i) { return std::vector<double>{ 1.0*i }; };
-//    MeanAndVariance  meanVariances;
-//
-//    sampler >>= Drop(nBurnIn) >>= Take(nSamples) >>= Split {
-//            Map { trajectoryToEnergy } >>= pushBack(energy),
-//            Map { synopsis } >>= meanVariances.consumer()
-//    };
-//
-//    std::cout << energy << std::endl;
-//    std::cout << meanVariances.mean() << std::endl;
-//    std::cout << meanVariances.sampleVariance() << std::endl;
-
-    auto threadResult = std::async(&doThread,100,200);
-
-    std::cout << threadResult.get();
-
-//    p >>= Take{5} >>= Split {
-//        Take{2} >>= add1 >>= c,
-//        SwitchAfter {
-//            3,
-//            Drop(1) >>= add1 >>= add1 >>= c,
-//            add1 >>= add1 >>= add1 >>= c
-//        }
-//    };
-
-
-
-//    unwrap(&decltype(f)::operator());
-//    myFunc(std::function(f));
-
-//    std::cout << d << std::endl;
-//    myFunc(1);
-//    myFunc(MyClass());
-//    myFunc(f);
-
-//    decltype(myFunc(std::function(std::declval<MyClass>()))) d = 1.234;
-//    std::cout << d << std::endl;
-
-//    p >>= Split {
-//        Take(5) >>= Map<int(int)>([](int x) { return x+1; }) >>= c,
-//        Take(4) >>= c,
-//        Take(3) >>= c
-//    };
-
-//    dataflow::map([](int x) -> int { return x+1; });
-
 //  Experiments::CatMouseSingleObservation();
 //    Experiments::CatMouseAssimilation();
 //    Experiments::CatMouseMultiObservation();

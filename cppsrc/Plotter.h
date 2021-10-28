@@ -2,13 +2,13 @@
 // Created by daniel on 24/08/2021.
 //
 
-#ifndef GLPKTEST_ABMPLOTTER_H
-#define GLPKTEST_ABMPLOTTER_H
+#ifndef GLPKTEST_PLOTTER_H
+#define GLPKTEST_PLOTTER_H
 
-template<typename AGENT>
-class ABMPlotter: Gnuplot {
+class Plotter: public Gnuplot {
 public:
 
+    template<typename AGENT>
     void plot(const ModelState<AGENT> &realState, const std::vector<double> &analysis) {
         typedef std::tuple<double, double, double, double, double> HeatRecord;
         std::vector <std::vector<HeatRecord>> heatData;
@@ -44,7 +44,21 @@ public:
         send2d(heatData);
         send1d(pointData);
     }
+
+    template<typename T>
+    void heatmap(const T &matrixData) {
+        std::vector<std::vector<double>> stlData(matrixData.size());
+        for(int i=0; i < matrixData.size(); ++i) {
+            stlData[i].reserve(matrixData[i].size());
+            for(int j=0; j < matrixData[i].size(); ++j) {
+                stlData[i].push_back(matrixData[i][j]);
+            }
+        }
+//    gp << "plot [-0.5:" << matrixData[0].size() << "][-0.5:" << matrixData.size() << "] ";
+        (*this) << "plot '-' matrix with image notitle\n";
+        send1d(stlData);
+    }
 };
 
 
-#endif //GLPKTEST_ABMPLOTTER_H
+#endif //GLPKTEST_PLOTTER_H
