@@ -40,8 +40,8 @@ void Experiments::DataflowDemo() {
     using namespace dataflow;
     int nBurnIn = 100;
     int nSamples = 200;
-    auto sampler = [n = 0]() mutable { return ++n; };
-    auto cint = [](int x) { std::cout << x << std::endl; return true; };
+    auto sampler = [n = 0]() mutable { return n++; };
+    std::function<bool(int)> cint = [](int x) { std::cout << x << std::endl; return true; };
     auto cany = [](auto x) { std::cout << x << std::endl; return true; };
 
     auto trajectoryToEnergy = [](int i) { return -i*i; };
@@ -49,11 +49,11 @@ void Experiments::DataflowDemo() {
     MeanAndVariance  meanVariances;
     std::vector<std::vector<double>> measureLog;
 
-    sampler >>= Drop(nBurnIn) >>= Split {
+    sampler >>= Drop{nBurnIn} >>= Split {
             Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter<double>(nSamples/10, "Energy"),
-            Take(nSamples) >>= Map { synopsis } >>= Split {
-                meanVariances.consumer(),
-                pushBack(measureLog)
+            Take(nSamples) >>= Map { synopsis } >>= Split{
+                    meanVariances.consumer(),
+                    pushBack(measureLog)
             }
     };
 
@@ -71,10 +71,11 @@ auto Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyA
     MeanAndVariance         meanVariances;
     auto trajectoryToEnergy = [](const Trajectory<PredPreyAgent> &trajectory) { return -trajectory.logProb(); };
     MCMCSampler sampler(posterior, startState);
+    std::vector<double> energies;
 
-    sampler >>= Drop(nBurnIn) >>= Split {
+    sampler >>= Split {
             Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter<double>(nSamples/10, "Energy"),
-            Take(nSamples) >>= Map { Experiments::Synopsis } >>= Split {
+            Drop(nBurnIn) >>= Take(nSamples) >>= Map { Experiments::Synopsis } >>= Split {
                     meanVariances.consumer(),
                     CollectThenEmit<std::vector<double>>(nSamples) >>= geyerAutocorrelationConsumer(40, 0.2)
             }

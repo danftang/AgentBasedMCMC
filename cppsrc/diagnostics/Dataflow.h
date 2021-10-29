@@ -149,8 +149,8 @@ namespace dataflow {
         std::tuple<CONSUMERS...> consumers;
         std::vector<bool> isOpen;
 
-        Split(CONSUMERS &&... consumers):
-        consumers(std::forward_as_tuple(consumers...)),
+        Split(CONSUMERS... consumers):
+        consumers(std::move(consumers)...),
         isOpen(sizeof...(consumers), true) {}
 
         template<typename T>

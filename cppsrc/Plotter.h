@@ -5,6 +5,20 @@
 #ifndef GLPKTEST_PLOTTER_H
 #define GLPKTEST_PLOTTER_H
 
+#include "gnuplot-iostream/gnuplot-iostream.h"
+
+// template specialization to allow valarrays to be recognized
+template <typename T>
+class gnuplotio::ArrayTraits<std::valarray<T>> : public gnuplotio::ArrayTraitsDefaults<T> {
+public:
+    typedef IteratorRange<const T*, T> range_type;
+
+    static range_type get_range(const std::valarray<T> &arg) {
+        return range_type(begin(arg), end(arg));
+    }
+};
+
+
 class Plotter: public Gnuplot {
 public:
 
@@ -47,16 +61,16 @@ public:
 
     template<typename T>
     void heatmap(const T &matrixData) {
-        std::vector<std::vector<double>> stlData(matrixData.size());
-        for(int i=0; i < matrixData.size(); ++i) {
-            stlData[i].reserve(matrixData[i].size());
-            for(int j=0; j < matrixData[i].size(); ++j) {
-                stlData[i].push_back(matrixData[i][j]);
-            }
-        }
+//        std::vector<std::vector<double>> stlData(matrixData.size());
+//        for(int i=0; i < matrixData.size(); ++i) {
+//            stlData[i].reserve(matrixData[i].size());
+//            for(int j=0; j < matrixData[i].size(); ++j) {
+//                stlData[i].push_back(matrixData[i][j]);
+//            }
+//        }
 //    gp << "plot [-0.5:" << matrixData[0].size() << "][-0.5:" << matrixData.size() << "] ";
         (*this) << "plot '-' matrix with image notitle\n";
-        send1d(stlData);
+        send1d(matrixData);
     }
 };
 
