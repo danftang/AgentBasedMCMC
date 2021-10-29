@@ -1,4 +1,6 @@
 #include <iostream>
+#include <thread>
+#include <future>
 #include "glpkppinclude/glpkpp.h"
 #include "agents/CatMouseAgent.h"
 #include "ABMProblem.h"
@@ -11,61 +13,26 @@
 #include "ConvexPolyhedron.h"
 #include "ABMConstraints.h"
 #include "AssimilationProblem.h"
+#include "diagnostics/Dataflow.h"
+#include "diagnostics/MeanAndVariance.h"
 
 using glp::X;
 
-//
-//class MyClass {
-//public:
-//    int i;
-//
-//    MyClass(): i(0) { std::cout << "Default constructing" << std::endl;}
-//    MyClass(int j): i(j) { std::cout << "Initialising" << std::endl; }
-//    MyClass(const MyClass &other): i(other.i) { std::cout << "Copying" << std::endl;}
-//    MyClass(MyClass &&other): i(other.i) { other.i = -1; std::cout << "Moving" << std::endl;}
-//
-//    int operator()() const { return i; }
-//
-//    operator std::function<int()>() const & { return [*this]() { return i; }; }
-//    operator std::function<int()>() && { return [c = MyClass(std::move(*this))]() { return c.i; }; }
-//
-//    void myFunc(const MyClass &other) { std::cout << "myFunc const lValue ref" << std::endl;}
-//    void myFunc(MyClass &&other) { std::cout << "myFunc rValue ref" << std::endl;}
-//
-//    template<typename T>
-//    void myTFunc(T &other) { std::cout << "myTFunc lValue ref" << std::endl;}
-//    template<typename T>
-//    void myTFunc(T &&other) { std::cout << "myTFunc rValue ref" << std::endl;}
-//};
-
-//template<typename T>
-//class MyClass {
-//public:
-//    T i;// = 1234;
-//
-//    MyClass(T p) { i = p; }
-//
-//    T x() { return i; }
-//
-//    int myFunc();
-//
-////    double logP(const std::vector<double> &X) { return i; }
-////
-////    int operator()() { return i; }
-////    double operator()(double x) { return i+x; }
-//
-//
-//};
-
+//template<typename C, typename R, typename A>
+//void unwrap(R(C::*f)(A) const) {
+//}
 
 int main(int argc, char *argv[]) {
+
+    Experiments::DataflowDemo();
+//    Experiments::PredPreyConvergence();
 
 //    Experiments::BinomialAgentAssimilation();
 //  Experiments::CatMouseSingleObservation();
 //    Experiments::CatMouseAssimilation();
 //    Experiments::CatMouseMultiObservation();
 //    Experiments::PredPreySingleObservation();
-    Experiments::PredPreyAssimilation();
+//    Experiments::PredPreyAssimilation();
 
 //    Experiments::FermionicIntegrality();
 

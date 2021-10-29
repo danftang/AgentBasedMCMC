@@ -85,6 +85,7 @@ public:
     {
     }
 
+    int dimension() { return realTrajectory.dimension(); }
 //    void doAnalysis(int nSamples, int nBurnInSamples) {
 //        SimplexMCMC sampler = SimplexMCMC(posterior, priorSampler());
 //

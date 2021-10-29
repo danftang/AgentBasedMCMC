@@ -97,5 +97,4 @@ public:
 
 };
 
-
 #endif //GLPKTEST_MODELSTATE_H

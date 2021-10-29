@@ -35,8 +35,8 @@
     Leeds Institute for Data Analytics, University of Leeds, UK\thanks{This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No. 757455)}\\
   \texttt{D.Tang@leeds.ac.uk}\\
   \AND
-  Nick Malleson\\
-  School of Geography, University of Leeds, UK\\  
+  Nicholas Malleson\\
+  Leeds Institute for Data Analytics University of Leeds, UK\\  
   %% examples of more authors
   %% \AND
   %% Coauthor \\
@@ -61,75 +61,48 @@ We demonstrate the algorithm by performing data assimilation in an agent-based, 
 
 \section{Introduction}
 
-Agent-based modelling (ABM) has become a popular tool for use in modelling systems that are driven by the behaviours and interactions of discrete, heterogeneous entities, such as human and animal systems.
-Although progress has been made towards the development and adaptation of techniques to conduct parameter optimisation~\cite{thiele_facilitating_2014}, such methods are not able to dynamically optimise the model \textit{state}. 
-Agent-based models (ABMs) are typically optimised once, by repeatedly comparing their outputs under various parameter configurations to some real-world data, and then used to make predictions. 
-However, in many circumstances, particularly when attempting to model complex systems, natural stochasticity causes the model to diverge from the real system, regardless of how well the parameters have been optimised.
-Although some studies have attempted to re-calibrate model parameters during runtime~\cite{oloo_predicting_2018, oloo_adaptive_2017}, this does not prevent the model \textit{state} from diverging.
-The field of ABM has yet to develop methods that allow the model state to be updated dynamically in response to new data, which is a serious methodological drawback. 
+\subsection{Background}\label{sec:background}
 
-This paper presents a new method that will allow for \textit{data assimilation} (DA) to be applied to ABMs in order to optimise the model state in response to new data that arise during runtime. The discipline of DA, sometimes known as data fusion, addresses the problem of how to make use of noisy, imcomplete experimental observations to provide information about the time evolution of unobserved properties of a dynamical system.
-It is a technique that has developed rapidly in applications such as weather forecasting~\cite{kalnay_atmospheric_2003} and the earth sciences more broadly~\cite{reichle_data_2008}, but little progress has been made in developing techniques that are applicable when the dynamical system is an agent based model. DA methods typically rely on the differentiability of the model~\cite{lewis_dynamic_2006}. As ABMs consist of `agents' that often make discrete choices from a number of possible actions, the the space of model trajectories is not continuous so techniques based on gradient ascent, such as 4D-VAR, that require the gradient of the posterior in this space, cannot be used. 
-In addition, a vast number of possible model trajectories will be refuted by the observations, making it challenging to use algorithms that rely on perturbing the current solution such as non-gradient optimisation or most sampling algorithms. For this reason, examples of data assimilation using well-known DA methods such as Particle Filters and variants of the Kalman Filter -- in applications such as crime~\cite{lloyd_exploring_2016}, bus routes~\cite{kieu_dealing_2020}, pedestrian dynamics~\cite{wang_data_2015, ward_dynamic_2016, clay_realtime_2020, malleson_simulating_2020} and population movement~\cite{lueck_who_2019} -- are necessarily limited to extremely small systems, quickly becoming intractable.\todo{Reviewers may want a more comprehensive lit review}
-
-Here we present an algorithm that generates samples of the time evolution of an agent based model, given a set of noisy, incomplete experimental observations of the system. This allows for DA on an ABM by creating a posterior distribution within a reasonable amount of time. The algorithm approximates the set of possible trajectories as a linear program and uses an extension of the simplex algorithm to provide a proposal function for Markov-Chain-Monte-Carlo sampling. We demonstrate the algorithm by performing data assimilation in an agent-based, spatial predator-prey model.
-
-\todo[inline]{NM: ``This paper has been structured as follows ... ''}
+Data assimilation (DA) is a technique that has been widely used in the physical sciences such as meteorology~\cite{kalnay_atmospheric_2003}, oceanography~\cite{bertino_sequential_2003} and the earth sciences more broadly~\cite{reichle_data_2008}. Specific applications of DA to ABMs are much rarer. Examples of data assimilation using well known DA methods such as Particle Filters and variants of the Kalman Filter applied to ABMs include models of crime~\cite{lloyd_exploring_2016}, bus routes~\cite{kieu_dealing_2020}, pedestrian dynamics~\cite{wang_data_2015, ward_dynamic_2016, clay_realtime_2020, malleson_simulating_2020};
+and population movement~\cite{lueck_who_2019}. Many DA algorithms rely on the differentiability of the model~\cite{lewis_dynamic_2006}.
 
 \section{Formulation of the problem}
 %##########################################
 
-Broadly, this paper presents a new method that can be used to conduct data assimilation for agent-based models. The method provides a means of sampling possible ABM trajectories, confronting them with observations from the target system, and generating a posterior. This posterior provides the best estimate of the true system state. 
 
-\subsection{Agents, States and Actions}
-
-Formally, we define the problem as follows.
 Suppose we have a timestepping ABM where agents have a finite number of possible internal states and a finite number of ways of acting on their world. Given this, we can define an ABM as:
 \begin{itemize}
 	\item A vector of agent actions $\mathcal{A} =\left< A_0 ... A_n \right>$
 	
 	\item A vector of agent states $\mathcal{S} = \left<S_0 ... S_m\right>$
 	
-	\item An \textit{agent timestep}, $\pi : \mathbb{Z}\times\mathbb{Z}^{m+1}\times\mathbb{Z} \to \mathbb{R}$, which defines the probability that an agent will act in a particular way such that $\pi(\psi,\Phi,a) $gives the probability that an agent in state $S_\psi$, surrounded by agents, $\Phi$, will perform action $A_a$ (where $\Phi$ is a vector whose $i^{th}$ element is the number of agents in state $S_i$ at the start of the timestep).
+	\item An \textit{agent timestep}, $\pi : \mathbb{Z}\times\mathbb{Z}^{m+1}\times\mathbb{Z} \to \mathbb{R}$, which defines the probability that an agent will act in a particular way such that $\pi(\psi,\Phi,a)$ gives the probability that an agent in state $S_\psi$, surrounded by agents, $\Phi$, will perform action $A_a$ (where $\Phi$ is a vector whose $i^{th}$ element is the number of agents in state $S_i$ at the start of the timestep).
 	
 	\item An \textit{action function}, $F: \mathbb{Z} \times \mathbb{Z} \to \mathbb{Z}^{m+1}$, which defines the effect of an action on the world such that $F(\psi, a)$ returns a vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $S_i$ that result from an agent in state $S_\psi$ performing act $A_a$ (including the final state of the acting agent).
 \end{itemize}
 
-\todo[inline]{Mention that the more traditional way of defining ABMs (e.g. using objects and step functions) can be easily mapped to this formulation}
+As a simple illustration, consider the simple ``cat and mouse'' ABM, which consists of just two gridsquares, left and right, within which can roam cats and mice, so the vector of agent states is, $\mathcal{S} = \left<\textrm{left cat}, \textrm{right cat}, \textrm{left mouse}, \textrm{right mouse} \right>$. In any given timestep, agents can either move or stay still, so the vector of actions is $\mathcal{A} = \left<\textrm{move}, \textrm{stay still}\right>$.
 
-As a simple illustration, consider a simple ``cat and mouse'' ABM, which consists of just two gridsquares, left and right, within which roam a cat and a mouse. Using the definitions above, the model can be formulated as follows: 
-
-\begin{description}
-
-\item[Agent actions, $\mathcal{A}$.] In any given timestep, agents can either move or stay still, so $\mathcal{A} = \left<\textrm{move}, \textrm{stay still}\right> = \left<0, 1\right>$.
-
-\item[Agent states, $\mathcal{S}$.] The cat and mouse can exist on either of the two squares, so $\mathcal{S} = \left<\textrm{left cat}, \textrm{right cat}, \textrm{left mouse}, \textrm{right mouse} \right> = \left<0, 1, 2, 3 \right>$. 
-
-\item[Agent timestep, $\pi$.] As there are two possible actions ($\mathcal{A}=\left<0, 1\right>$) then there are two variants to the agent timestep. With respect to the \textit{move} action ($\mathcal{A}=0$), a cat moves with probability $0.5$, irrespective of other agents, while a mouse will move if there are one or more cats on the same gridsquare, otherwise it will stay still:
-\[
+A cat moves with probability $0.5$, irrespective of other agents, while a mouse will move if there is one or more cats on the same gridsquare, otherwise it will stay still. So, the agent timestep function is
+\begin{equation}
 \begin{aligned}
-\pi(\psi, \Phi, 0) &=   % MOVE equation
+\pi(\psi, \Phi, 0) &=
 \begin{cases}
-0.5 & \text{if } \psi \in \left\{0,1\right\}\\  % IF I'm a cat (0 and 1 are both cat) then prob move is 0.5%
-1 & \text{ if } \psi = 2, \Phi_1 > 0 \text{ or } \psi=3, \Phi_2 > 0\\ % mouse left & >0 cats in same square OR mouse right and >0 cats then move
-0 & \text{ otherwise} %otherwise stay still
-\end{cases}
-\end{aligned}
-\]
-With respect to the \textit{stay still} action  ($\mathcal{A}=1$), the probability of the cat staying still remains at 0.5, where as the mouse remains still if there are no cats on the same grid square, otherwise it will move:
-\[
-\begin{aligned}
-\pi(\psi, \Phi, 1) &= % STAY STILL equation
+0.5 & \text{if } \psi \in \left\{0,1\right\}\\
+1 & \text{ if } \psi = 2, \Phi_1 > 0 \text{ or } \psi=3, \Phi_2 > 0\\
+0 & \text{ otherwise}
+\end{cases}\\
+\pi(\psi, \Phi, 1) &=
 \begin{cases}
-0.5 & \text{if } \psi \in \left\{0, 1\right\}\\  % IF I'm a cat (0 and 1 are both cat) then prob stay still is 0.5%
-1 & \text{ if } \psi = 2, \Phi_1 = 0 \text{ or } \psi=3, \Phi_2 = 0\\ % definitely stay still if mouse and no cats in same square
+0.5 & \text{if } \psi \in \left\{0, 1\right\}\\
+1 & \text{ if } \psi = 2, \Phi_1 = 0 \text{ or } \psi=3, \Phi_2 = 0\\
 0 & \text{ otherwise}
 \end{cases}
 \end{aligned}
-\]
+\end{equation}
 
-\item[Action function, $F$.] Expresses the movement of the agents. For example, $F(\psi=1, a=0)$ states that if there is an agent in state $\psi=1$ (\textit{right cat}) and it performs the action $a=0$ (\textit{move)} then the result is one cat in state $\psi=0$ (\textit{left cat}):  $\Phi=\{1,0,0,0\}$. The full range of possible inputs and outputs from the action function is:
-\[
+The action function expresses the movement of the agents
+\begin{equation}
 \begin{aligned}
 F(0, 0) &= \{0,1,0,0\}\\
 F(1, 0) &= \{1,0,0,0\}\\
@@ -140,9 +113,7 @@ F(1, 1) &= \{0,1,0,0\}\\
 F(2, 1) &= \{0,0,1,0\}\\
 F(3, 1) &= \{0,0,0,1\}\\
 \end{aligned}
-\]
-
-\end{description}
+\end{equation}
 
 \subsection{Trajectories}
 
@@ -165,7 +136,7 @@ E = \kbordermatrix{
 	S_3 & 0 & 0 \\
 }
 \]
-where all elements are zero except those representing agent $S_1$ (\textit{right cat}) performing action $A_0$ (\textit{move}) and agent $S_2$ (\textit{left mouse}) performing action $A_1$ (\textit{stay still}).
+where all elements are zero except those representing agent $S_1$ performing action $A_0$ and agent $S_2$ performing action $A_1$.
 
 Finally, let a model trajectory be a tensor, $T$, consisting of a number of model timesteps. We use the notation $T^t$ to denote the $t^{th}$ timestep matrix, $T^t_\psi$ to denote the $\psi^{th}$ row of the $t^{th}$ timestep matrix and $T^t_{\psi a}$ to denote the $a^{th}$ element of the $\psi^{th}$ row of the $t^{th}$ timestep. By convention, we'll let indices begin at 0. Note that this tensor will generally be very large for more realistic models, but also very sparse, so it can be dealt with computationally using a sparse representation.
 
@@ -177,13 +148,13 @@ A tensor must satisfy a number of constraints in order to be a valid trajectory 
 \label{nonNegativeInt}
 \end{equation}
 
-The \textit{continuity constraint}\footnote{The continuity constraint does not mean that agents cannot leave or enter the system, only that if they do then that change must be defined as part of an action.} requires that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. We define the set of continuous tensors:
+A trajectory must also be \textit{continuous} by which we mean that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. We call this the \textit{continuity constraint} and define the set of continuous tensors:
 \begin{equation}
 \mathcal{C}^N_{SA}(F) = \left\{T\in\mathbb{R}^N_{SA}:  \forall t \in 1 ... N-1:\forall \phi: \sum_{\psi, a} F(\psi, a)_\phi T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0\right\}
 \label{continuous}
 \end{equation}
 
-So, the set of valid trajectories, $\mathcal{T}^N_{SA}(F)$, is given by the set of tensors that satisfy \eqref{nonNegativeInt} and \eqref{continuous}.
+So, the set of valid trajectories, $\mathcal{T}^N_{SA}(F)$, is given by the set of tensors that satisfy \ref{nonNegativeInt} and \ref{continuous}.
 \begin{equation}
 \mathcal{T}^N_{SA}(F) = \mathcal{I}^N_{SA} \cap \mathcal{C}^N_{SA}(F)
 \end{equation}
@@ -240,18 +211,16 @@ P(\Psi^0 = T^0\mathbf{1})
 \label{posterior}
 \end{equation}
 
-In order to conduct data assimilation, we need to estimate the posterior, $P(T|\Omega)$. To do this it is necessary to sample from this distribution. This is the problem that this paper attempts to solve.
-In many practical applications, sampling is difficult because the posterior has zero probability for the vast majority of tensors (i.e. most tensors are not trajectories, contain an impossible action or are refuted by the observations). Even though we can generate trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the observations refute the trajectory the probability falls to zero. 
-With even small numbers of observations, the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. Therefore simple techniques such as rejection sampling, for example, are not practical. Techniques based on particle filtering may have more success but, for similar reasons, will likely soon reach a state containing a set of particles, none of which can be fit to the observations.
+The problem we're interested in is how to sample from this distribution. In many practical applications, sampling is difficult because the posterior has zero probability for the vast majority of tensors (i.e. most tensors are not trajectories, contain an impossible action or are refuted by the observations). Even though we can generate trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the observations refute the trajectory the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling, for example, are not practical. Techniques based on particle filtering may have more success but, for similar reasons, will likely soon reach a state containing a set of particles, none of which can be fit to the observations.
 
-In this paper we'll show how the Metropolis-Hastings algorithm can be used to generate samples from \eqref{posterior}. The challenge will be to create a proposal function which randomly generates a proposed next sample given the current one. For example, a common strategy with Metropolis-Hastings is to generate a new sample by perturbing one or more elements of the previous sample at random. However, if we do this with an ABM trajectory it's very unlikely that the perturbed tensor will be a trajectory that contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
+In this paper we'll show how the Metropolis-Hastings algorithm can be used to generate samples from equation \ref{posterior}. The challenge will be to create a proposal function which randomly generates a proposed next sample given the current one. For example, a common strategy with Metropolis-Hastings is to generate a new sample by perturbing one or more elements of the previous sample at random. However, if we do this with an ABM trajectory it's very unlikely that the perturbed tensor will be a trajectory that contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
 
 \section{Approximating the support of the posterior}
 %##########################################
 
 We solve this problem by first approximating the support of the posterior, $\supp(P(T^t_{\psi a}|\Omega))$ (i.e. the set of trajectories that have non-zero probability).
 
-From \eqref{posterior}
+From equation \ref{posterior}
 \begin{equation}
 \begin{aligned}
 \supp (P( T |\Omega)) = & \mathcal{T}^N_{SA} \cap \\ 
@@ -261,16 +230,16 @@ From \eqref{posterior}
 \end{aligned}
 \label{support}
 \end{equation}
-i.e. in order for $T$ to have non-zero posterior probability, it must be a trajectory of the ABM, it must have a start state that has non-zero prior probability, all the observation likelihoods must be non-zero and each element of $T$ must either denote an agent action with non-zero probability or must be equal to zero (to account for the fact that $0^0=1$ in the exponent terms in \eqref{posterior}).
+i.e. in order for $T$ to have non-zero posterior probability, it must be a trajectory of the ABM, it must have a start state that has non-zero prior probability, all the observation likelihoods must be non-zero and each element of $T$ must either denote an agent action with non-zero probability or must be equal to zero (to account for the fact that $0^0=1$ in the exponent terms in \ref{posterior}).
 
 \subsection{Fermionic Trajectories}
 
-In the following we will consider only \textit{Fermionic trajectories}, which we define to be any trajectory whose elements are all either 0 or 1. i.e. a Fermionic trajectory must not only satisfy the constraints in \eqref{nonNegativeInt} and \eqref{continuous} but must also satisfy the \textit{Fermionic constraints}
+In the following we will consider only \textit{Fermionic trajectories}, which we define to be any trajectory whose elements are all either 0 or 1. i.e. a Fermionic trajectory must not only satisfy the constraints in \ref{nonNegativeInt} and \ref{continuous} but must also satisfy the \textit{Fermionic constraints}
 \begin{equation}
 \mathcal{B}^N_{SA} = \left\{T\in\mathbb{R}^N_{SA} : \forall t,\psi,a: T^t_{\psi a} \in \left\{ 0,1 \right\}\right\}
 \label{fermionic}
 \end{equation}
-This can be interpreted as meaning that no two agents in the same state at the same time can perform the same action. Notice that the Fermionic constraints imply the non-negative integer constraints, so the set of Fermionic trajectories, $\mathcal{F}^N_{SA}$, is the set of tensors that satisfy \eqref{fermionic} and \eqref{continuous}.
+This can be interpreted as meaning that no two agents in the same state at the same time can perform the same action. Notice that the Fermionic constraints imply the non-negative integer constraints, so the set of Fermionic trajectories, $\mathcal{F}^N_{SA}$, is the set of tensors that satisfy \ref{fermionic} and \ref{continuous}.
 \begin{equation}
 \mathcal{F}^N_{SA}(F) = \mathcal{B}^N_{SA} \cap \mathcal{C}^N_{SA}(F)
 \end{equation}
@@ -287,7 +256,7 @@ In practice, the number of agents in an ABM is usually much smaller than the num
 %################################################################
 \label{BPoly}
 
-In an extension to the concept of a $\mathbb{Z}$-polyhedron \cite{quinton1996manipulating} we define a $\mathcal{B}$-polyhedron to be a set of binary vectors
+We define a $\mathcal{B}$-polyhedron to be a set of binary vectors
 \[
 \mathcal{B}^N_{SA} \cap \mathcal{P}
 \]
@@ -306,7 +275,7 @@ For any set $\mathcal{X}$ there exists a convex polyhedron $P$ such that
 Let $\mathcal{Y} = \mathcal{B}^N_{SA} \cap \mathcal{X}$ and let $\mathcal{P}$ be the convex hull of $\mathcal{Y}$. Clearly if a tensor $T\in \mathcal{Y}$ then $T\in \mathcal{B}^N_{SA} \cap \mathcal{P}$. To show the converse, suppose there is a member $T' \in \mathcal{B}^N_{SA} \cap \mathcal{P}$. Since $T'\in \mathcal{P}$ then there must be a convex combination of points in $\mathcal{Y}$ that equals $T'$. Call those points $\mathcal{Z}$. However, since $T' \in \mathcal{B}^N_{SA}$ and $\mathcal{Z}\subset \mathcal{B}^N_{SA}$ and no member of $\mathcal{B}^N_{SA}$ is a convex combination of any other member then $T'$ must be a member of $\mathcal{Z}$ and so $T'\in \mathcal{Y}$. So $\mathcal{B}^N_{SA} \cap \mathcal{X} = \mathcal{B}^N_{SA} \cap \mathcal{P}$. 
 \end{proof}
 
-Under the assumption that all trajectories are Fermionic, we can rewrite \eqref{support} in the form
+Under the assumption that all trajectories are Fermionic, we can rewrite equation \ref{support} in the form
 \begin{equation}
 \begin{aligned}
 \mathcal{B}^N_{SA} \cap \supp (P( T |\Omega)) = 
@@ -373,13 +342,13 @@ and the elements of $\underline{B}\in\mathbb{R}_I$ are defined as
 \underline{B}_i = \frac{\sum_{s,\phi,b} \left( |C^{\phi b}_{si}| - C^{\phi b}_{si}\right)}{2}
 \]
 
-To see why this identity holds, consider the right hand polyhedrons in \eqref{implication}. When $T^t_{\psi a}=1$ the first is equal to $\sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U$ and the second is equal to $L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b}$ so their intersection is $\mathcal{P}^t_{\psi a}$, whereas when $T^t_{\psi a}=0$ the right hand side terms give $\underline{B} \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le \overline{B}$. But the elements $\underline{B}_i$ and $\overline{B}_i$ are an lower and upper bounds on the value of $\sum_{s,\phi,b} C^{\phi b}_{si} T^s_{\phi b}$ given that $T\in\mathcal{B}^N_{SA}$, so this is satisfied for all $\mathcal{B}^N_{SA}$ such that $T^t_{\psi a}=0$.
+To see why this identity holds, consider the right hand polyhedrons in \ref{implication}. When $T^t_{\psi a}=1$ the first is equal to $\sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U$ and the second is equal to $L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b}$ so their intersection is $\mathcal{P}^t_{\psi a}$, whereas when $T^t_{\psi a}=0$ the right hand side terms give $\underline{B} \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le \overline{B}$. But the elements $\underline{B}_i$ and $\overline{B}_i$ are an lower and upper bounds on the value of $\sum_{s,\phi,b} C^{\phi b}_{si} T^s_{\phi b}$ given that $T\in\mathcal{B}^N_{SA}$, so this is satisfied for all $\mathcal{B}^N_{SA}$ such that $T^t_{\psi a}=0$.
 
 Using this transformation the Fermionic support of the posterior can be reduced to the intersection of $\mathcal{B}$-polyhedra. Given the identity
 \[
 (\mathcal{B}^N_{SA} \cap P_1) \cap (\mathcal{B}^N_{SA} \cap P_2) = \mathcal{B}^N_{SA} \cap (P_1 \cap P_2)
 \]
-we can calculate \eqref{fermionicSupport}, and thereby represent the support of the posterior as a set of linear constraints, by calculating each term and simply concatenating their linear constraints.
+we can calculate \ref{fermionicSupport}, and thereby represent the support of the posterior as a set of linear constraints, by calculating each term and simply concatenating their linear constraints.
 
 The idea of a $\mathcal{B}$-polyhedron as the support for a probability distribution naturally leads to the idea of a $\mathcal{B}-distribution$ which is a probability distribution which is a discrete distribution defined on the points of a $\mathcal{B}-polyhedron$. From the above, it can be seen that the posterior distribution of an ABM trajectory is a $\mathcal{B}-distribution$.
 
@@ -387,7 +356,7 @@ As an illustration, consider two timesteps of the cat and mouse model. Suppose w
 \[
 \mathcal{B}^2_{4\,2} \cap \supp(P(T|\Omega)) = \mathcal{B}^2_{4\,2} \cap Q
 \]
-Working through \eqref{fermionicSupport} term by term, the $\mathcal{B}^N_{SA} \cap \mathcal{C}^N_{SA}(F)$ term is equivalent to a $\mathcal{B}$-polyhedron with the continuity constraints in \eqref{continuous}, which are already in linear form so we're done. The second term is the support of the prior. This constrains each agent state at $t=0$ to be at most 1, which can be expressed as
+Working through \ref{fermionicSupport} term by term, the $\mathcal{B}^N_{SA} \cap \mathcal{C}^N_{SA}(F)$ term is equivalent to a $\mathcal{B}$-polyhedron with the continuity constraints in \ref{continuous}, which are already in linear form so we're done. The second term is the support of the prior. This constrains each agent state at $t=0$ to be at most 1, which can be expressed as
 \[
 \bigcap_\psi \left\{T:T^0_{\psi 0} + T^0_{\psi 1} \le 1\right\}
 \]
@@ -405,7 +374,7 @@ The final term guards against impossible actions. The only impossible actions ar
 \supp(\pi(3,T^t\mathbf{1},1)) &= \left\{ T: T^t_{1 0} + T^t_{1 1} \le 0 \right\}
 \end{aligned}
 \]
-Using the identity in \eqref{implication} to take the union of each of these with $\left\{T: T^t_{\psi a} = 0\right\}$ gives the four constraints
+Using the identity in \ref{implication} to take the union of each of these with $\left\{T: T^t_{\psi a} = 0\right\}$ gives the four constraints
 \[
 \begin{aligned}
 -T^t_{0 0} - T^t_{0 1} + T^t_{2 0} & \le 0\\
@@ -416,19 +385,17 @@ T^t_{1 0} + T^t_{1 1} + 2T^t_{3 1} & \le 2
 \]
 for each timestep $t=0$ and $t=1$.
 
-Taken together, these constraints define a $\mathcal{B}$-polyhedron that is the set of Fermionic trajectories for the cat and mouse ABM, and when combined with \eqref{posterior} defines $P(T|\Omega)$ as a $\mathcal{B}-distribution$.
+Taken together, these constraints define a $\mathcal{B}$-polyhedron that is the set of Fermionic trajectories for the cat and mouse ABM, and when combined with equation \ref{posterior} defines $P(T|\Omega)$ as a $\mathcal{B}-distribution$.
 
 \section{Transforming between representations of a $\mathcal{B}$-polyhedron}
 %#####################################################
-
-\todo[inline]{Brief explanation of why representing the $\mathcal{B}$-polyhedron, and transforming between representations, is needed}
 
 Now that we can express the support of the posterior as a $\mathcal{B}$-polyhedron in the form
 \begin{equation}
 \supp(P(T|\Omega) = \mathcal{B}^N_{SA} \cap \left\{T: L \le \sum_{t,\psi,a} C^{\psi a}_t T^t_{\psi a} \le U \right\}
 \label{bPolySupport}
 \end{equation}
-we describe some different ways of representing the same $\mathcal{B}$-polyhedron and methods of transforming from one representation to another. This will be useful in the development that follows.
+we now describe some different ways of representing the same $\mathcal{B}$-polyhedron and methods of transforming from one representation to another. This will be useful in the development that follows.
 
 \subsection{The standard form of a $\mathcal{B}$-polyhedron}
 
@@ -439,7 +406,7 @@ Since there are many ways of representing a polyhedron, it will be useful to def
 \end{equation}
 where $X\in \mathbb{R}^K$, $X_N\in\mathbb{R}^J$ and $X_B\in\mathbb{R}^I$ are now vectors and $Q$ is a $K\times (I+J)$ matrix that selects $J \le K \le I+J$ elements from $(X_B|X_N)^T$ (i.e. each column of $Q$ has at most one element equal to 1, each row has exactly one element equal to 1 and all other elements are 0). We'll call the elements of $X_B$ ``basic-variables'' and the elements of $X_N$ ``non-basic variables''\footnote{The introduction of the requirement that $X_B \in \mathbb{Z}$ does not reduce expressivity as long as the elements of $N$ and $b$ can be expressed as rational numbers. In this case they can be converted to integers by multiplying each row by the product of the denominators on that row and dividing by the greatest common divisor. Once $N$ and $b$ are integer then $X_B$ is guaranteed to be integer for any $X_N\in\{0,1\}^J$.}.
 
-Equation \eqref{bPolySupport} can easily be expressed in the form \eqref{standardpolyhedron} by ``flattening'' the trajectory, $T$, into a $J$-dimensional vector (without changing the values of the elements) using a tensor $R\in\mathbb{R}^{SA}_{NJ}$ where $J=NSA$ (i.e. for every $(t, \psi, a)$ there is exactly one $j$ such that $R^{\psi a}_{t j} = 1$ and for every $j$ there is exactly one $(t,\psi,a)$ such that $R^{\psi a}_{t j} = 1$ and all other elements are zero) so that
+Equation \ref{bPolySupport} can easily be expressed in the form \ref{standardpolyhedron} by ``flattening'' the trajectory, $T$, into a $J$-dimensional vector (without changing the values of the elements) using a tensor $R\in\mathbb{R}^{SA}_{NJ}$ where $J=NSA$ (i.e. for every $(t, \psi, a)$ there is exactly one $j$ such that $R^{\psi a}_{t j} = 1$ and for every $j$ there is exactly one $(t,\psi,a)$ such that $R^{\psi a}_{t j} = 1$ and all other elements are zero) so that
 \[
 X_N = \sum_{t,\psi,a}R^{\psi a}_t T^t_{\psi a}
 \]
@@ -451,9 +418,9 @@ and finally letting Q be the matrix such that $X_N = Q(X_B|X_N)$ and $b = \mathb
 
 \subsection{The pivot transformation}
 
-The introduction of the matrix $Q$ in \eqref{standardpolyhedron} allows us to transform the representation without changing the $\mathcal{B}$-polyhedron that is represented. We now describe the ``pivot transformation'' which will be a central operation in the sampling algorithm, and should look familiar to anyone acquainted with the simplex algorithm (see e.g. \cite{vanderbei2015linear}).
+The introduction of the matrix $Q$ in \ref{standardpolyhedron} allows us to transform the representation without changing the $\mathcal{B}$-polyhedron that is represented. We now describe the ``pivot transformation'' which will be a central operation in the sampling algorithm, and should look familiar to anyone acquainted with the simplex algorithm (see e.g. \cite{vanderbei2015linear}).
 
-We begin by transforming \eqref{standardpolyhedron} to the equivalent form
+We begin by transforming \ref{standardpolyhedron} to the equivalent form
 \begin{equation}
 \mathcal{B} = \left\{X: X = Q{X_B\choose X_N}, (I|-N){X_B\choose X_N} = b, {L\choose \mathbf{0}} \le {X_B \choose X_N} \le {U\choose \mathbf{1}}, X \in \left\{ 0,1\right\}^K, {X_B\choose X_N} \in \mathbb{I}^{I+J} \right\}
 \label{joinedpolyhedron}
@@ -508,7 +475,7 @@ so that each pivot state, when applied to the reference state, gives an equivale
 
 \subsection{Removal of fixed variables}
 
-If we use the method described in section \eqref{BPoly} to create a $\mathcal{B}$-polyhedron of the support then each continuity constraint (and possibly some of the observation constraints) will result in elements of $X_B$ that have fixed values (i.e. $L_i = U_i$). Removing these will reduce the dimensionality of the problem and so make valid solutions easier to find.
+If we use the method described in section \ref{BPoly} to create a $\mathcal{B}$-polyhedron of the support then each continuity constraint (and possibly some of the observation constraints) will result in elements of $X_B$ that have fixed values (i.e. $L_i = U_i$). Removing these will reduce the dimensionality of the problem and so make valid solutions easier to find.
 
 Suppose the $i^{th}$ element of $X_B$ is fixed. We can perform a pivot on $(i,j)$, for some $j:N_{ij}\ne 0$ to swap the fixed variable with the $j^{th}$ element of $X_N$ so that the fixed variable ends up in $X_N$. This would leave the upper and lower bounds in a non-standard state since $X_N$ must have bounds $\mathbf{0} \le X_N \le \mathbf{1}$. However, the fixed variable can be removed from $X_N$ by adding the $j^{th}$ column of $N$ times the fixed variable to left and right sides of the equality constraint.
 \[
@@ -587,7 +554,7 @@ Now that we've defined the Markov states and the transitions between them, we ne
 
 The challenge here is to ensure that, during the sampling process, feasible states sometimes transition to infeasible states (in order to ensure good mixing) while ensuring that, once in an infeasible state, the sampling process quickly moves back to a (probably different) feasible state to create the next feasible sample.
 
-In order to do this we take as our inspiration the algorithm described in \cite{maros1986general}. This algorithm is intended to be used as a ``phase I'' of the simplex algorithm (see e.g. \cite{vanderbei2015linear}) where the aim is just to find a feasible state as efficiently as possible rather than to create a Markov process. Here we present a Markov process that has a high probability of making the same transition as Maros' algorithm. Given this, we should expect the Markov process to quickly move into a feasible state.
+In order to do this we take as our inspiration the algorithm described in \cite{maros1986general}. This algorithm is intended to be used as a ``phase 1'' of the simplex algorithm (see e.g. \cite{vanderbei2015linear}) where the aim is just to find a feasible state as efficiently as possible rather than to create a Markov process. Here we describe a Markov process that has a high probability of making the same transition as Maros' algorithm. Given this, we should expect the Markov process to quickly move into a feasible state.
 
 
 \subsubsection{Choosing a non-basic variable: Infeasibility and potential energy}
@@ -607,7 +574,7 @@ and let the total infeasibility be the sum of infeasibilities of all basic varia
 \[
 \iota^\mu = \sum_i \iota^\mu_i
 \]
-Note that the total infeasibility is piecewise linear, convex and all feasible points lie at the minimum. So, the problem is one of convex optimisation, complicated by the fact that we're only interested in integer solutions. Given this,  a sensible strategy would be to somehow move down the gradient of $\iota$ towards optimal values.
+Note that the total infeasibility is piecewise linear, convex, has a minimum of 0 and all feasible points lie at the minimum. So, a good strategy would be to move down the gradient of $\iota$ towards zero.
 
 The gradient of $\iota^\mu$ at any point is given by
 \[
@@ -633,10 +600,27 @@ E^\mu_j = D^\mu_j(X_{Nj} - H(-D^\mu_j))
 where $H$ is the Heaviside step function.
 
 In order to encourage the selection of columns with positive potential, the $j^{th}$ non-basic variable is chosen with probability proportional to the exponential of its potential energy times some constant $k_c$
-\begin{equation}
+\[
 P(j|\mu) = \frac{e^{k_cE^\mu_j}}{\sum_l e^{k_cE^\mu_l}}
-\label{columnChoice}
-\end{equation}
+\]
+Let
+\[
+E^\mu = \sum_j E^\mu_j
+\]
+be the total potential energy of the Markov state, and let the \textit{energy penalty} be
+\[
+P_E = \frac{\sum_j e^{k_cE_j}}{n\prod_j e^{k_cE_j}} = \frac{\sum_j e^{k_cE_j}}{n} e^{-k_cE_P} 
+\]
+where $n$ is the number of non-basic variables. Notice that the energy penalty of every feasible state is 1.
+
+So, if we multiply the probability of the Markov state by its energy penalty then
+\[
+P_EP(j) = \frac{e^{-k_c(E_P - E_j)}}{n}
+\]
+and the contribution of the column decision to the Metropolis-Hastings acceptance probability becomes
+\[
+\lambda_j = \frac{P_E'P'(j)}{P_EP(j)} = e^{k_c((E_P-E_j) - (E_P' - E'_j))} = e^{-k_c(\Delta E_P - \Delta E_j)}
+\]
 
 \subsubsection{Choosing a column perturbation and pivot row}
 
@@ -644,100 +628,74 @@ Once a non-basic variable, $X_{Nj}$, is chosen for the transition, we can choose
 
 Let $\alpha^\mu_j$ be the set of destination states reachable through transitions on $X_{Nj}$. In order to encourage transitions to lower infeasibility, while maintaining the possibility of reverse transitions to allow detailed balance, a transition, $\mu\to\mu'$, is chosen with a probability proportional to the exponential of $-k_r\iota^{\mu'}$ for some constant $k_r$. i.e.
 \begin{equation}
-P(\mu'|j,\mu) = 
-\frac{e^{-k_r\iota^{\mu'}} }
-	{\sum_{\rho \in \alpha^\mu_j}  e^{-k_r\iota^\rho}}
+P(\mu'|j,\mu) = \frac{e^{-k_r\iota^{\mu'}}}{\sum_{\rho \in \alpha^\mu_j}  e^{-k_r\iota^\rho}}
 \label{pTransitionGivenJ}
 \end{equation}
+If we let the \textit{infeasibility penalty} of a Markov state be
+\[
+P_\iota = e^{-k_r\iota}
+\]
+and multiply the probability of a Markov state by its infeasibility penalty, the contribution of the choice of pivot row and column offset to the Metropolis-Hastings acceptance is
+\[
+\frac{P_\iota' P(\iota'\to\iota|j)}{P_\iota P(\iota\to\iota'|j)} = \frac{e^{-k_r\iota'}e^{-k_r\iota}}{e^{-k_r\iota}e^{-k_r\iota'}} = 1
+\]
+Notice again that the infeasibility penalty of feasible states is 1, so again it has no effect on feasible states.
 
 \subsubsection{Proposal function summary}
 
-Given a transition from state $\mu$ to state $\mu' \ne \mu$ there is a unique non-basic variable $X_{Nj}$ that was involved in the transition \footnote{if $N$ is unchanged then the transition was a bound swap on the only non-basic that has changed, if $N$ changes to $N'$ then it was a pivot transition on the only $j$ that satisfies equation \eqref{Ntransform}} we'll use the notation $j^{\mu\to\mu'}$ to denote the index of this variable.
+If we transition from state $\mu$ to state $\mu' \ne \mu$ it is easy to identify which non-basic variable $X_{Nj}$ was involved in the transition \footnote{if $N$ is unchanged then the transition was a bound swap on the only non-basic that has changed, if $N$ changes to $N'$ then it was a pivot transition on the only $j$ that satisfies equation \ref{Ntransform}} we'll use the notation $j_{\mu\to\mu'}$ to denote the index of this variable.
 
-Starting from state $\mu$, the probability of transitioning to $\mu'$ is the probability that we choose the non-basic variable, $X_{Nj^{\mu\to\mu'}}$ then choose the state $\mu'$ from $\alpha^\mu_{j^{\mu\to\mu'}}$, so from \eqref{columnChoice} and \eqref{pTransitionGivenJ}
+Starting from state $\mu$, the probability of transitioning to $\mu'$ is the probability that we choose the non-basic variable, $X_{Nj_{\mu\to\mu'}}$ then choose the state $\mu'$ from $\alpha^\mu_{j_{\mu\to\mu'}}$
 \[
-P(\mu \rightarrow \mu') 
-= 
-P(\mu'|j^{\mu\to\mu'},\mu)P(j^{\mu\to\mu'}|\mu) 
-=
-\frac{e^{-k_r \iota^{\mu'}}}
-	{\sum_{\rho \in \alpha^\mu_{j^{\mu\to\mu'}}}e^{-k_r\iota^\rho}}
-\frac{e^{k_c E^\mu_{j^{\mu\to\mu'}}}}
-	{\sum_l e^{k_c E^\mu_l}}
+P(\mu \rightarrow \mu') = P(\mu'|j_{\mu\to\mu'},\mu)P(j_{\mu\to\mu'}|\mu) =
+\frac{e^{-k_r \iota^{\mu'}}}{\sum_{\rho \in \alpha^\mu_{j_{\mu\to\mu'}}}e^{-k_r\iota^\rho}}
+\frac{e^{k_c E^\mu_{j_{\mu\to\mu'}}}}{\sum_l e^{k_c E^\mu_l}}
 \]
 So, in the Metropolis-Hastings algorithm, the probability that a proposed transition, $\mu\to\mu'$, is accepted is given by
 \[
 \frac{P(\mu')P(\mu'\to\mu)}{P(\mu)P(\mu\to\mu')} 
 =
-\frac{P(\mu')}
-	{P(\mu)}
-\frac{e^{-k_r \iota^{\mu}}}
-	{\sum_{\rho \in \alpha^{\mu'}_{j^{\mu'\to\mu}}}e^{-k_r\iota^\rho}}
-\frac{\sum_{\rho \in \alpha^{\mu}_{j^{\mu\to\mu'}}}e^{-k_r\iota^\rho}}
-	{e^{-k_r \iota^{\mu'}}}
-\frac{e^{k_c E^{\mu'}_{j^{\mu'\to\mu}}}}
-	{\sum_l e^{k_c E^{\mu'}_l}}
-\frac{\sum_l e^{k_c E^\mu_l}}
-	{e^{k_c E^\mu_{j^{\mu\to\mu'}}}}
+\frac{P(\mu')}{P(\mu)}
+\frac{e^{-k_r \iota^{\mu}}}{\sum_{\rho \in \alpha^{\mu'}_{j_{\mu'\to\mu}}}e^{-k_r\iota^\rho}}
+\frac{\sum_{\rho \in \alpha^{\mu}_{j_{\mu\to\mu'}}}e^{-k_r\iota^\rho}}{e^{-k_r \iota^{\mu'}}}
+\frac{e^{k_c E^{\mu'}_{j_{\mu'\to\mu}}}}{\sum_l e^{k_c E^{\mu'}_l}}
+\frac{\sum_l e^{k_c E^\mu_l}}{e^{k_c E^\mu_{j_{\mu\to\mu'}}}}
 \]
-However thanks to the fact that we included the null transition,  $\alpha^{\mu'}_{j^{\mu\to\mu'}} = \alpha^\mu_{j^{\mu'\to\mu}}$\footnote{since $\alpha^\mu_{j^{\mu\to\mu'}}$ describes the set of states that lie on the straight line that passes through $\mu$ and $\mu'$} so the two sums over $\alpha$ cancel, leaving
-\begin{equation}
-\frac{P(\mu')P(\mu'\to\mu)}
-	{P(\mu)P(\mu\to\mu')} 
-=
-\frac{P(\mu')}
-	{P(\mu)}
-\frac{e^{-k_r \iota^{\mu}}}
-	{e^{-k_r \iota^{\mu'}}}
-\frac{e^{k_c E^{\mu'}_{j^{\mu'\to\mu}}}}
-	{\sum_l e^{k_c E^{\mu'}_l}}
-\frac{\sum_l e^{k_c E^\mu_l}}
-	{e^{k_c E^\mu_{j^{\mu\to\mu'}}}}
-\label{acceptance1}
-\end{equation}
-
-If we let the total energy of a state, $\mu$, be
-\begin{equation}
-E^\mu = 
-\iota^\mu
-+ \frac{k_c}{k_r}\sum_j E^\mu_j
-- k_r^{-1}\ln\left(\frac{\sum_j e^{k_c E^\mu_j}}{n}\right)
-\label{energy}
-\end{equation}
-where $n$ is the number of non-basic variables, then \eqref{acceptance1} can be written as
+However, thanks to the fact that we included the null transition, for any transition $\mu\to\mu'$,  $\alpha^{\mu'}_{j_{\mu\to\mu'}} = \alpha^\mu_{j_{\mu'\to\mu}}$\footnote{since $\alpha^\mu_{j_{\mu\to\mu'}}$ describes the set of states that lie on the straight line that passes through $\mu$ and $\mu'$} so the two sums over $\alpha$ cancel, leaving
 \begin{equation}
 \frac{P(\mu')P(\mu'\to\mu)}{P(\mu)P(\mu\to\mu')} 
 =
-\frac{P(\mu')e^{\frac{-E^{\mu}}{T}}}
-	{P(\mu)e^{\frac{-E^{\mu'}}{T}}} e^{-k_c \Delta \epsilon^{\mu\to\mu'}}
-\label{acceptance2}
+\frac{P(\mu')}{P(\mu)}
+e^{k_r (\iota^{\mu'} - \iota^{\mu})}
+\frac{e^{k_c E^{\mu'}_{j_{\mu'\to\mu}}}}{\sum_l e^{k_c E^{\mu'}_l}}
+\frac{\sum_l e^{k_c E^\mu_l}}{e^{k_c E^\mu_{j_{\mu\to\mu'}}}}
+\label{acceptance1}
 \end{equation}
-where $T = k_r^{-1}$ and 
-\[
-\Delta \epsilon^{\mu\to\mu'} = \sum_{l\ne j^{\mu\to\mu'}} E^{\mu'}_l - E^\mu_l
-\]
-However, since infeasible states are thrown away in the final algorithm, we are free to assign them any probability we wish. This gives us some freedom to ensure that the algorithm spends an appropriate time in infeasible states and allows us to engineer an acceptance probability that is convenient to calculate. If we let
+However, since infeasible states are thrown away in the final algorithm, we are free to assign them any probability we wish. This gives us some freedom to ensure that the algorithm spends an appropriate time in infeasible states and allows us to engineer an acceptance probability that is convenient to calculate. We choose
 \begin{equation}
-P(\mu) = P_e(T_\mu|\Omega)e^\frac{-E^\mu}{T}
+P(\mu) = 
+\frac{P_e(T_\mu|\Omega)}{n}
+e^{-k_r\iota^\mu}
+e^{-k_c\sum_j E^\mu_j} 
+\sum_j e^{k_c E^\mu_j}
 \label{penalty}
 \end{equation}
-where $T_\mu$ is the trajectory associated with Markov state $\mu$ and $P_e(T_\mu|\Omega)$ is an ``extended posterior'', which for feasible states is just the posterior given by equation \eqref{posterior}, while for infeasible states is calculated in the same way but the requirement that the trajectory belongs to $\mathcal{T}^N_{SA}(F)$ is dropped and if any of the individual probabilities is zero it is replaced by its expectation over all trajectories (with some convenient prior over trajectories, we used a uniform distribution). Notice that for feasible states $P(\mu) = P(T_\mu|\Omega)$ so if we apply this definition to all Markov states the feasible samples will be samples from the desired posterior.
+where $n$ is the number of non-basic variables, $T_\mu$ is the trajectory associated with Markov state $\mu$ and $P_e(T_\mu|\Omega)$ is an ``extended posterior'', which for feasible states is just the posterior given by equation \ref{posterior}, while for infeasible states is calculated in the same way but the requirement that the trajectory belongs to $\mathcal{T}^N_{SA}(F)$ is dropped and if any of the individual probabilities is zero it is replaced by its expectation over all trajectories (with some convenient prior over trajectories, we used a uniform distribution). Notice that for feasible states $P(\mu) = P(T_\mu|\Omega)$ so if we apply this definition to all Markov states the feasible samples will be samples from the desired posterior.
 
-Inserting \eqref{penalty} into \eqref{acceptance2} gives the final form for the acceptance
-\begin{equation}
+Inserting \ref{penalty} into \ref{acceptance1} gives
+\[
 \frac{P(\mu')P(\mu'\to\mu)}{P(\mu)P(\mu\to\mu')} 
 =
 \frac{P_e(T_{\mu'}|\Omega)}{P_e(T_\mu|\Omega)}
-e^{-k_c\Delta \epsilon^{\mu\to\mu'}}
-\end{equation}
+e^{-k_c\Delta E_{\mu\to\mu'}}
+\]
+where
+\[
+\Delta E_{\mu\to\mu'} = \sum_{j\ne j_{\mu\to\mu'}} E^{\mu'}_j - E^\mu_j
+\]
+is the change in total potential energy in the transition $\mu\to\mu'$, ignoring the $j_{\mu\to\mu'}^{th}$ column.
 
-Notice that states with lower infeasibility and lower potential energy have higher probability, so transitions that immediately reduce infeasibility are encouraged, but so are pivots that replace high potential energy variables with low potential variables. This has the consequence that if a high potential, non-basic variable is chosen but it can't immediately reduce infeasibility, it is more likely to be made basic where it is free to change its value in subsequent transitions. This helps the process find a basis where infeasibility-reducing transitions exist.
 
-\subsubsection{Choosing temperature}
-The exponential term $e^{\frac{-E^\mu}{T}}$ in equation \eqref{penalty} is a Boltzmann distribution so $T$ can be thought of a ``temperature'' and the sampling process will act as a thermodynamic system in equilibrium (with the posterior $P_e(T_\mu|\Omega)$ acting as an additional potential energy).  It has been shown that thermodynamic systems of this type are able to solve large integer optimisation problems \cite{kirkpatrick1983optimization}. In our case, we don't need to change the temperature during the sampling process, but we do need to choose a value of $T$ initially. Higher temperatures will increase mixing in the Markov chain, but will also increase the proportion of time spent in infeasible states so we need to find a temperature that is high enough to ensure good mixing but low enough to ensure a reasonable proportion of samples are feasible.
-
-[TODO: Effective procedure for choosing $T$ and rationale. Choose start and target states at random and make linear probability with target state as maximum, then tune T to minimum samples to first hitting target. Repeat.
- Proportion of infeasible samples against proportion of feasible->infeasible samples. Average infeasible chain length proportion of infeasible samples/proportion of feasible->infeasible transitions. We want ]
 
 \section{Results}
 
@@ -750,7 +708,7 @@ In many cases a $\mathcal{B}$-polyhedron of the set of Fermionic trajectories in
 
 
 
-The first two terms in equation \eqref{support} consists of the supports of computer programs whose inputs are ABM trajectories and whose outputs are given, i.e. the set of trajectories that, when passed to a computer program, would produce a given output.
+The first two terms in equation \ref{support} consists of the supports of computer programs whose inputs are ABM trajectories and whose outputs are given, i.e. the set of trajectories that, when passed to a computer program, would produce a given output.
 
 Calculating the support of a computer program for a given output is, in full generality, NP-complete\footnote{Consider, for example, a program that accepts an assignment of variables to truth values, and returns true if that assignment satisfies a Boolean formula. Deciding whether the support of this program, given that it returns true, is empty or not is equivalent to solving the Boolean satisfiability problem, which is known to be NP-complete\cite{cook1971complexity}} but it is possible to use a technique known as \textit{abstract interpretation}\cite{cousot1977abstract} to efficiently calculate a superset of the support. So, given a computer program $\rho$, we can calculate a set $\mathcal{P}(\rho, v)$ such that
 \[
@@ -759,7 +717,7 @@ Calculating the support of a computer program for a given output is, in full gen
 Tools to perform abstract interpretation already exist (e.g. PAGAI\cite{henry2012pagai}) and are used widely in applications such as the verification of safety critical systems\cite{blanchet2003static} and in practice $\mathcal{P}(\rho, v)$ is often reasonably tight (i.e. most members of $\mathcal{P}(\rho, v)$ are in $\supp(P(\rho(.)=y))$). For our application we choose to express $\mathcal{P}(\rho, v)$ in terms of a set of linear inequalities on $\rho$'s inputs, this corresponds to the abstract domain of convex polyhedra\cite{cousot1978automatic}\cite{becchi2018efficient}. Calls to the random number generator can be dealt with in the abstract domain by generating a new variable, $r$, that satisfies $0 \le r < 1$ for each call to \texttt{Random()}. These can either be left in as ``auxiliary'' variables in the same way as slack variables, or removed as soon as the variable goes out of scope by finding the convex hull of the projection into a lower dimensional space (this can be done using the double description method\cite{motzkin1953double}).
 
 
-Constraining our proposal function to members of the superset in equation \eqref{linearSupport} instead of the true support won't affect the stationary distribution of the Markov Chain. If the proposal function happens to return a trajectory that isn't in $\supp(P(\rho(.)=y))$ then it will just be rejected. This is fine as long as we generate acceptable proposals at a reasonable rate.
+Constraining our proposal function to members of the superset in equation \ref{linearSupport} instead of the true support won't affect the stationary distribution of the Markov Chain. If the proposal function happens to return a trajectory that isn't in $\supp(P(\rho(.)=y))$ then it will just be rejected. This is fine as long as we generate acceptable proposals at a reasonable rate.
 
 \section{Conclusion}
 
@@ -865,7 +823,7 @@ i.e. among the members of $\mathbb{S}$ that have the degenerate variable prefix 
 	\frac{1}{\prod_{q=0}^{\sigma_T-2} C(\mathbb{D}(T|V_{\le q}))}
 	\frac{\left\|\left\{V^+: V^+ \in \mathbb{D}(T), V = V^+_{\le (\sigma_T-1)}\right\}\right\|}{C(\mathbb{D}(T|V_{\le (\sigma_T-1)}))}
 	\]
-	but the final fraction here is 1 by Equation \eqref{count}, so
+	but the final fraction here is 1 by equation \ref{count}, so
 	\[
 	\sum_{S \in \mathbb{E}(T)} P(S) = 
 	P_T \sum_{V : D \in \mathbb{D}(T), V = D_{\le (\sigma_T-1)}} 
@@ -910,7 +868,7 @@ i.e. among the members of $\mathbb{S}$ that have the degenerate variable prefix 
 
 \subsubsection{Metropolis-Hastings on ordered pivot states}
 
-All this can now be assembled into a sampling algorithm based on Metropolis-Hastings. Starting with the constraints in the form of Equation \eqref{Axy}, recursively choose a non-zero element on an un-pivoted row and pivot on that element, until we reach an ordered pivot state. In general, $B$ will contain negative elements which means that the solution will not conform to the non-negative constraint. In order to find an initial positive solution let $I^- = \left\{i: B_i < 0\right\}$ be the set of rows of $B$ that are negative and pivot on the column, $j$, that minimises $\sum_{i\in I^-}A_{ij}$. Repeat until a positive solution is found (or no column has a negative sum, in which case no positive solution exists).
+All this can now be assembled into a sampling algorithm based on Metropolis-Hastings. Starting with the constraints in the form of equation \ref{Axy}, recursively choose a non-zero element on an un-pivoted row and pivot on that element, until we reach an ordered pivot state. In general, $B$ will contain negative elements which means that the solution will not conform to the non-negative constraint. In order to find an initial positive solution let $I^- = \left\{i: B_i < 0\right\}$ be the set of rows of $B$ that are negative and pivot on the column, $j$, that minimises $\sum_{i\in I^-}A_{ij}$. Repeat until a positive solution is found (or no column has a negative sum, in which case no positive solution exists).
 
 From the initial valid pivot state, $S$, generate a proposal pivot state $S'$ and a transition probability ratio $\frac{P(S\rightarrow S')}{P(S' \rightarrow S)}$ using algorithm \ref{proposal} and accept with probability
 \[
@@ -920,7 +878,9 @@ where the probability of a pivot state is given by algorithm \ref{probAlgorithm}
 
 Given this, it's clear that all the necessary properties of the proposal function are fulfilled.
 
+\subsection{An alternative proposal function}
 
+If we restrict ourselves to degenerate pivots (i.e. pivots that don't change state) and bound swaps, then we have the following algorithm:
 
 First choose column with zero probability for columns with zero reduced objective [need to have finite probability to allow swaps that reduce the objective to zero for this column], and with probability equal to the exponential of their potential energy otherwise. [instead, have a finite weight $1/N$ for low energy columns, where $N$ is the total number of columns, and exponentials for high, so prob of choosing a high-potential column is $e^{kE_j}/(\sum e^{kE_l} + w_0)$ and prob of choosing a low-potential column is $w_0/n_0(\sum e^{kE_l} + w_0)$ where $n_0$ is the number of low energy columns. So, if we make the penalty prob $(\sum e^{kE_l} + w_0)/((w_0/n_0)^n_0e^{kE_P})$ but since this needs to be 1 in the feasible case, $(w_0/n_0)^(n_0-N)e^{kE_P}$]
 
@@ -994,15 +954,15 @@ where $N^t_\psi$ is the set of indices that correspond to elements of $T^t_{\phi
 \]
 
 \begin{theorem}
-	All trajectories that satisfy equations \eqref{nonNegativeInt} and \eqref{fermionic} are at extreme points. Where an extreme point is one that can't be expressed as a linear combination of two other points that satisfy the constraints.
+	All trajectories that satisfy equations \ref{nonNegativeInt} and \ref{fermionic} are at extreme points. Where an extreme point is one that can't be expressed as a linear combination of two other points that satisfy the constraints.
 \end{theorem}
 \begin{proof}
 	
-	Inequality \eqref{fermionic} can only be satisfied by non-negative integers if, for any given $t$ and $\psi$ either all $T^t_{\psi a}$ are zero or one element of $T^t_{\psi a}$ is one and the rest zero. In the first case the solution is touching all $|a|$ of the $T^t_{\psi a} \ge 0$ constraints, in the second case the solution is touching $|a|-1$ of the $T^t_{\psi a} \ge 0$ constraints and one $\sum_a T^t_{\psi a} \le 1$ constraint to give a total of $|a|$.
+	Inequality \ref{fermionic} can only be satisfied by non-negative integers if, for any given $t$ and $\psi$ either all $T^t_{\psi a}$ are zero or one element of $T^t_{\psi a}$ is one and the rest zero. In the first case the solution is touching all $|a|$ of the $T^t_{\psi a} \ge 0$ constraints, in the second case the solution is touching $|a|-1$ of the $T^t_{\psi a} \ge 0$ constraints and one $\sum_a T^t_{\psi a} \le 1$ constraint to give a total of $|a|$.
 	
 	[Conversely, we can show that all extreme points are integer points, so we have the polytope of integer solutions]
 	
-	[In the case of the action Fermionic constraint, this can be seen immediately since equations \eqref{nonNegativeInt} and the action Fermionic constraint describe a unit hupercube, so all integer solutions are on vertices.]
+	[In the case of the action Fermionic constraint, this can be seen immediately since equations \ref{nonNegativeInt} and the action Fermionic constraint describe a unit hupercube, so all integer solutions are on vertices.]
 	
 \end{proof}
 
@@ -1029,9 +989,9 @@ but since $B$ is an $m \times m$ square matrix then
 \[
 X_B = B^{-1}b - B^{-1}NX_N
 \]
-gives a unique solution, as long as $B$ is invertable. If $B$ is invertable and $X_B$ has no negative entries then we say that the pivot state is valid. It can be shown that all valid pivot states of equations \eqref{Axy} correspond to extreme points\cite{dantzig1955generalized}.
+gives a unique solution, as long as $B$ is invertable. If $B$ is invertable and $X_B$ has no negative entries then we say that the pivot state is valid. It can be shown that all valid pivot states of equations \ref{Axy} correspond to extreme points\cite{dantzig1955generalized}.
 
-We begin by representing the constraints and the current trajectory in the form of Equation \eqref{tableau1}. If we multiply any row of $A_b$ by some constant, $c$, then the truth of Equation \eqref{tableau1} can be maintained by multiplying the same row of $A_n$ and of $B$ by $c$ as well. Similarly if we add one row of $A_b$ to another row, the equations can be maintained by performing the same row operation on $A_n$ and $B$. If the pivot state is valid, then $A_b$ is invertable so we can use Gaussian elimination, by performing a sequence of row additions and multiplications, to transform $A_b$ into a form such that each row and column is zero on all elements except one, which is 1. We'll call this the standard form. Once in this form, if we assume $X_n = 0$ the solution for $X_b$ can be read off directly from $B$.
+We begin by representing the constraints and the current trajectory in the form of equation \ref{tableau1}. If we multiply any row of $A_b$ by some constant, $c$, then the truth of equation \ref{tableau1} can be maintained by multiplying the same row of $A_n$ and of $B$ by $c$ as well. Similarly if we add one row of $A_b$ to another row, the equations can be maintained by performing the same row operation on $A_n$ and $B$. If the pivot state is valid, then $A_b$ is invertable so we can use Gaussian elimination, by performing a sequence of row additions and multiplications, to transform $A_b$ into a form such that each row and column is zero on all elements except one, which is 1. We'll call this the standard form. Once in this form, if we assume $X_n = 0$ the solution for $X_b$ can be read off directly from $B$.
 
 Given a valid pivot state in standard form, a perturbed valid solution can be generated by choosing a column, $C$, of $A_n$, with at least one positive-valued row, and choosing from among those rows the one, $C_i$, that minimises $B_i/C_i$. We then make the variable corresponding to column $C$ a basic variable and make the basic variable corresponding to row $i$ of $A_b$ non-basic by swapping column $C$ with the column on row $i$ of $A_b$ that has value 1. $A_b$ is now not in standard form as column $C$ will, in general, have more than one non-zero value so we perform Gaussian elimination (row additions and multiplications) to return it to standard form. This perturbation is known as a \textit{pivot} operation and is the same method as employed in the Simplex algorithm\cite{dantzig1955generalized}\cite{vanderbei2015linear}. This is exactly what we need for our proposal function since it efficiently generates a new valid trajectory from a current one.
 
