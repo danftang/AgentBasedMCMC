@@ -46,7 +46,7 @@ const PotentialEnergyPivot &PotentialEnergyPivot::nextProposal() {
     checkCurrentCacheIsValid();
     chooseCol();
     chooseRow();
-    calcAcceptanceContrib2();
+    calcAcceptanceContrib();
     return *this;
 }
 
@@ -100,7 +100,7 @@ void PotentialEnergyPivot::chooseRow() {
     double lastDj = transitions.begin()->first;
     double infeas = 0.0; //infeasibility(lastDj) - infeasibility(0.0);
     double infeasMin = DBL_MAX;
-    double dDf_dDj = colInfeasibilityGradient(lastDj - tol);
+    double dDf_dDj = colInfeasibilityGradient(lastDj - 2.0*tol);
     for(auto [Dj, pmfIndex] : transitions) {
         infeas += (Dj - lastDj) * dDf_dDj;
         lastDj = Dj;

@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 //    Experiments::DataflowDemo();
 //    Experiments::PredPreyConvergence();
 
-//    Experiments::BinomialAgentAssimilation();
+    Experiments::BinomialAgentAssimilation();
 //  Experiments::CatMouseSingleObservation();
 //    Experiments::CatMouseAssimilation();
 //    Experiments::CatMouseMultiObservation();
