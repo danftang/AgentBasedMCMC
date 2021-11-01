@@ -8,15 +8,6 @@
 #include "gnuplot-iostream/gnuplot-iostream.h"
 
 // template specialization to allow valarrays to be recognized
-template <typename T>
-class gnuplotio::ArrayTraits<std::valarray<T>> : public gnuplotio::ArrayTraitsDefaults<T> {
-public:
-    typedef IteratorRange<const T*, T> range_type;
-
-    static range_type get_range(const std::valarray<T> &arg) {
-        return range_type(begin(arg), end(arg));
-    }
-};
 
 
 class Plotter: public Gnuplot {

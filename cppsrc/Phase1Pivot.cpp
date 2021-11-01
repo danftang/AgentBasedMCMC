@@ -2,13 +2,16 @@
 // Created by daniel on 28/06/2021.
 //
 
-#include "Phase1Pivot.h"
-#include "Random.h"
 #include <float.h>
 #include <cassert>
 
-Phase1Pivot::Phase1Pivot(glp::Simplex &simplex): ProposalPivot(simplex), infeasibilityGradient(simplex.nBasic()+1) {
-    initInfeasibilityGradient();
+#include "Phase1Pivot.h"
+#include "Random.h"
+#include "SimplexMCMC.h"
+
+Phase1Pivot::Phase1Pivot(SimplexMCMC &simplex, int i, int j) : ProposalPivot(simplex, i, j), infeasibilityGradient(simplex.nBasic()+1) { }
+
+Phase1Pivot::Phase1Pivot(SimplexMCMC &simplex): ProposalPivot(simplex), infeasibilityGradient(infeasibilityCost()) {
     simplex.btran(infeasibilityGradient); // turn objective into pi.
     chooseCol();
     chooseRow();
@@ -207,41 +210,41 @@ void Phase1Pivot::chooseRow() {
 }
 
 
-void Phase1Pivot::setToPivotIndex(int pivotIndex) {
-    leavingVarToUpperBound = pivotIndex % 2;
-    if(pivotIndex < 2 * nonZeroRows.size()) {
-        i = nonZeroRows[pivotIndex / 2];
-        int leavingk = simplex.head[i];
-        deltaj = ((leavingVarToUpperBound ? simplex.u[leavingk] : simplex.l[leavingk]) - simplex.beta[i]) / col[i];
-        assert(fabs(col[i]) > 1e-7);
-        assert(fabs(deltaj) < 10.0);
-    } else {
-        i = -1; // column does bound swap.
-        int k = simplex.head[simplex.nBasic() + j];
-        deltaj = (leavingVarToUpperBound?simplex.u[k]:simplex.l[k]) - (simplex.isAtUpperBound(j)?simplex.u[k]:simplex.l[k]);
-    }
-}
+//void Phase1Pivot::setToPivotIndex(int pivotIndex) {
+//    leavingVarToUpperBound = pivotIndex % 2;
+//    if(pivotIndex < 2 * nonZeroRows.size()) {
+//        i = nonZeroRows[pivotIndex / 2];
+//        int leavingk = simplex.head[i];
+//        deltaj = ((leavingVarToUpperBound ? simplex.u[leavingk] : simplex.l[leavingk]) - simplex.beta[i]) / col[i];
+//        assert(fabs(col[i]) > 1e-7);
+//        assert(fabs(deltaj) < 10.0);
+//    } else {
+//        i = -1; // column does bound swap.
+//        int k = simplex.head[simplex.nBasic() + j];
+//        deltaj = (leavingVarToUpperBound?simplex.u[k]:simplex.l[k]) - (simplex.isAtUpperBound(j)?simplex.u[k]:simplex.l[k]);
+//    }
+//}
 
 
-int Phase1Pivot::initInfeasibilityGradient() {
-    // set objective to out-of-bounds rows
-
-    int infeasibilityCount = 0;
-    infeasibilityGradient[0] = 0.0;
-    for(int i=1; i<=simplex.nBasic(); ++i) {
-        int k = simplex.head[i];
-        if(simplex.beta[i] < simplex.l[k] - tol) {
-            infeasibilityGradient[i] = -1.0;
-            ++infeasibilityCount;
-        } else if(simplex.beta[i] > simplex.u[k] + tol) {
-            infeasibilityGradient[i] = 1.0;
-            ++infeasibilityCount;
-        } else {
-            infeasibilityGradient[i] = 0.0;
-        }
-    }
-    return infeasibilityCount;
-}
+//int Phase1Pivot::initInfeasibilityGradient() {
+//    // set objective to out-of-bounds rows
+//
+//    int infeasibilityCount = 0;
+//    infeasibilityGradient[0] = 0.0;
+//    for(int i=1; i<=simplex.nBasic(); ++i) {
+//        int k = simplex.head[i];
+//        if(simplex.beta[i] < simplex.l[k] - tol) {
+//            infeasibilityGradient[i] = -1.0;
+//            ++infeasibilityCount;
+//        } else if(simplex.beta[i] > simplex.u[k] + tol) {
+//            infeasibilityGradient[i] = 1.0;
+//            ++infeasibilityCount;
+//        } else {
+//            infeasibilityGradient[i] = 0.0;
+//        }
+//    }
+//    return infeasibilityCount;
+//}
 
 
 // returns gradient after perturbation of this column by deltaj
@@ -271,15 +274,15 @@ int Phase1Pivot::initInfeasibilityGradient() {
 //    return 0.0;
 //}
 
-// returns true if pmfIndex corresponds to a row that is a structural var and has a unity coefficient
-bool Phase1Pivot::isActive(int pmfIndex) {
-    if(pmfIndex >= 2*nonZeroRows.size()) return true; // bound swaps active (including null pivot)
-        // return simplex.isAtUpperBound(j) ^ (pmfIndex%2); // null pivot inactive
-    int i = nonZeroRows[pmfIndex / 2];
-    if(fabs(fabs(col[i])-1.0) > tol) return false;         // only pivot on unity elements
-    int k = simplex.head[i];
-    return !simplex.isAuxiliary(k); // don't pivot on auxiliary vars
-}
+//// returns true if pmfIndex corresponds to a row that is a structural var and has a unity coefficient
+//bool Phase1Pivot::isActive(int pmfIndex) {
+//    if(pmfIndex >= 2*nonZeroRows.size()) return true; // bound swaps active (including null pivot)
+//        // return simplex.isAtUpperBound(j) ^ (pmfIndex%2); // null pivot inactive
+//    int i = nonZeroRows[pmfIndex / 2];
+//    if(fabs(fabs(col[i])-1.0) > tol) return false;         // only pivot on unity elements
+//    int k = simplex.head[i];
+//    return !simplex.isAuxiliary(k); // don't pivot on auxiliary vars
+//}
 
 
 // returns the infeasibility of the current exactEndState perturbed by this column changing by deltaj
@@ -327,3 +330,4 @@ int Phase1Pivot::infeasibilityCount() {
     }
     return infeasibility;
 }
+

@@ -50,7 +50,7 @@ void Experiments::DataflowDemo() {
     std::vector<std::vector<double>> measureLog;
 
     sampler >>= Drop{nBurnIn} >>= Split {
-            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter<double>(nSamples/10, "Energy"),
+            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter(nSamples/10, "Energy"),
             Take(nSamples) >>= Map { synopsis } >>= Split{
                     meanVariances.consumer(),
                     pushBack(measureLog)
@@ -71,13 +71,12 @@ auto Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyA
     MeanAndVariance         meanVariances;
     auto trajectoryToEnergy = [](const Trajectory<PredPreyAgent> &trajectory) { return -trajectory.logProb(); };
     MCMCSampler sampler(posterior, startState);
-    std::vector<double> energies;
 
     sampler >>= Split {
-            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter<double>(nSamples/10, "Energy"),
+            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter(nSamples/10, "Energy"),
             Drop(nBurnIn) >>= Take(nSamples) >>= Map { Experiments::Synopsis } >>= Split {
                     meanVariances.consumer(),
-                    CollectThenEmit<std::vector<double>>(nSamples) >>= geyerAutocorrelationConsumer(40, 0.2)
+                    CollectThenEmit<std::vector<double>>(nSamples) >>= plotGeyerAutocorrelation(40, 0.2)
             }
     };
 
@@ -497,7 +496,7 @@ void Experiments::BinomialAgentAssimilation() {
     MCMCSampler<Trajectory<BinomialAgent>> sampler(window.posterior, window.priorSampler());
     std::cout << "simplex = \n" << sampler.simplex << std::endl;
     std::cout << "Starting burn-in" << std::endl;
-//    for(int s=0; s<nBurninSamples; ++s) sampler();
+    for(int s=0; s<nBurninSamples; ++s)  sampler();
     std::cout << "Done burn-in" << std::endl;
     ModelStateSampleStatistics<BinomialAgent> sampleStats(sampler, nSamplesPerWindow);
 

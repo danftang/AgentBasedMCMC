@@ -38,6 +38,17 @@ std::ostream &operator <<(std::ostream &out, const std::map<KEY,VALUE> &map) {
     return out;
 }
 
+template<typename KEY, typename VALUE>
+std::ostream &operator <<(std::ostream &out, const std::multimap<KEY,VALUE> &map) {
+    out << "{";
+    for(const auto &[key,value]: map) {
+        out << key << " -> " << value << ", ";
+    }
+    out << "\b\b}";
+    return out;
+}
+
+
 template<typename T1, typename T2>
 std::ostream &operator <<(std::ostream &out, const std::pair<T1,T2> &pair) {
     out << "(" << pair.first << ", " << pair.second << ")";

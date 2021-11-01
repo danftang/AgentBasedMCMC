@@ -5,11 +5,10 @@
 #ifndef GLPKTEST_POTENTIALENERGYPIVOT_H
 #define GLPKTEST_POTENTIALENERGYPIVOT_H
 
-
-#include "glpkpp.h"
+#include <deque>
 #include "Phase1Pivot.h"
 
-class PotentialEnergyPivot: public Phase1Pivot {
+class PotentialEnergyPivot: public ProposalPivot {
 public:
     static constexpr double kappaRow = -1.0;// 1.0;//-5.0; // exponential coefficient for probabilities of choosing row based on change in infeasibility
     static constexpr double p1 = 0.2; // Given a simplex state that has only one high energy column, p1 gives the probability that the high energy col will be proposed
@@ -17,24 +16,50 @@ public:
 //    static constexpr double p0 = 0.01; // relative probability of choosing column with zero reduced cost compared to a high potential col
 //    static constexpr double p1 = 0.1; // relative probability of choosing a column with a low potential compared to a high potential col
 
-    std::vector<double> reducedCost;
-    int infeasibilityCount;
-    double Ep; // current potential energy (minus chosen column's contribution)
+    // Cached diagnostics for current and proposed states
+//    std::vector<double> reducedCost;
+//    int infeasibilityCount;
+//    double Ep; // current potential energy (minus chosen column's contribution)
+    std::vector<double> cdf;                // cumulative distribution function of probabilities of choosing column j
+    // current and proposed cost cache. The first element is current value and the last element is proposed value
+    // if there's only one element then the current and proposed values are the same.
+    std::deque<std::vector<double>> infeasibilityCosts;   // cost by row, depending on infeasibility of each row.
+    std::deque<std::vector<double>> reducedCosts;         // reduced infeasibility cost by column
+    std::deque<std::vector<double>> potentialEnergies;    // potential energies by column
+    std::deque<double>              totalPotentials;
 
-    explicit PotentialEnergyPivot(glp::Simplex &simplex);
+    explicit PotentialEnergyPivot(SimplexMCMC &simplex);
 
+    const PotentialEnergyPivot &nextProposal();
+
+    void initCache();
+
+private:
+
+    void recalculateCDF();
     void chooseCol();
     void chooseRow();
 
     void calcAcceptanceContrib();
-    double potentialEnergy(int j, const std::vector<double> &reducedCost) {
-//        return sign(reducedCost[j]) * (simplex.isAtUpperBound(j) ? 1.0 : 0.0);
-//        return reducedCost[j] * (simplex.isAtUpperBound(j) ? 1.0 : 0.0);
-        return reducedCost[j] * ((simplex.isAtUpperBound(j) ? 1.0 : 0.0) - (reducedCost[j]<0.0? 1.0 : 0.0));
+    void calcProposedInfeasibilityCosts();
+    void calcProposedReducedCosts();
+    void calcProposedEnergies();
+
+//    double potentialEnergy(int j, const std::vector<double> &reducedCost);
+
+    static double potentialEnergy(bool isAtUpperBound, double reducedCost) {
+        return reducedCost * ((isAtUpperBound ? 1.0 : 0.0) - (reducedCost<0.0? 1.0 : 0.0));
     }
 
-    static int sign(double x);
+    // debug
+    void checkCurrentCacheIsValid();
 
+
+//    static int sign(double x);
+
+
+
+//    void calcAcceptanceContrib2();
     void calcAcceptanceContrib2();
 };
 

@@ -19,34 +19,20 @@
 
 using glp::X;
 
-//template<typename C, typename R, typename A>
-//void unwrap(R(C::*f)(A) const) {
-//}
-
-template<typename... T> decltype(auto) myFunc(T&&...t) {
-    return std::forward_as_tuple<T&&...>(std::forward<T>(t)...);
-}
-
-template<typename... T>
-class MyClass {
-public:
-        std::tuple<T...> tup;
-    MyClass(std::tuple<T...> &&tuple): tup(std::move(tuple)) {}
-    MyClass(const std::tuple<T...> &tuple): tup(tuple) {}
-    MyClass(T...vals): tup(std::move(vals)...) {}
-
-//    template<typename... R>
-//    MyClass(R&&...r): MyClass(
-//            std::forward_as_tuple<R&&...>(std::forward<R>(r)...)
-//                    ) {
-//    }
-};
-
 int main(int argc, char *argv[]) {
 
+//    using namespace dataflow;
+//    auto m = [](int x) { return x*2; };
+//    auto p = [n=0]() mutable { return ++n; };
+//    auto c = [](const auto &x) { std::cout << x << std::endl; return true; };
+//
+//    p >>= Drop(10) >>= Take(1000) >>= Split {
+//        Map(m) >>= c,
+//        Map([](int x) { return x*x; }) >>= c
+//    };
 
 //    Experiments::DataflowDemo();
-    Experiments::PredPreyConvergence();
+//    Experiments::PredPreyConvergence();
 
 //    Experiments::BinomialAgentAssimilation();
 //  Experiments::CatMouseSingleObservation();

@@ -57,7 +57,7 @@ std::valarray<std::valarray<double>> geyerAutocorrelation(const std::vector<std:
     return geyerAutocorrelation(vaData, nLags, maxLagProportion);
 }
 
-auto geyerAutocorrelationConsumer(int nLags=100, double maxLagProportion=0.9) {
+auto plotGeyerAutocorrelation(int nLags=100, double maxLagProportion=0.9) {
     return [nLags, maxLagProportion](const std::vector<std::vector<double>> &samples) {
         std::valarray<std::valarray<double>> vaData(samples.size());
         for(int i=0; i<samples.size(); ++i) {

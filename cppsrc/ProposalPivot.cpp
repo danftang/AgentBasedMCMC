@@ -56,6 +56,7 @@ std::vector<double> ProposalPivot::reverseCol() const {
 }
 
 void ProposalPivot::initNonZeroRows() {
+    nonZeroRows.clear();
     for(int i=1; i<col.size(); ++i) {
         if(fabs(col[i]) > tol) nonZeroRows.push_back(i);
     }
@@ -78,6 +79,7 @@ std::multimap<double,int> ProposalPivot::getPivotsByDeltaJ() {
         int k = simplex.head[i];
         double rowLowerBound = simplex.l[k];
         double rowUpperBound = simplex.u[k];
+        assert(col[i] != 0.0);
         if(rowLowerBound > -DBL_MAX) {
             double deltaLB = (rowLowerBound - simplex.beta[i]) / col[i];
             allPivots.emplace(deltaLB, 2 * m);
@@ -143,11 +145,46 @@ double ProposalPivot::colInfeasibilityGradient(double deltaj) {
 }
 
 
-double ProposalPivot::infeasibilityGradient(double v, double lowerBound, double upperBound) {
-    if(v > upperBound) {
-        return 1.0;
-    } else if(v < lowerBound) {
-        return -1.0;
-    }
-    return 0.0;
+void ProposalPivot::setCol(int j) {
+    this->j = j;
+    col = simplex.tableauCol(j);
+    initNonZeroRows();
 }
+
+// returns true if pmfIndex corresponds to a row that is a structural var and has a unity coefficient
+bool ProposalPivot::isActive(int pmfIndex) {
+    if(pmfIndex >= 2*nonZeroRows.size()) return true; // bound swaps active (including null pivot)
+    // return simplex.isAtUpperBound(j) ^ (pmfIndex%2); // null pivot inactive
+    int i = nonZeroRows[pmfIndex / 2];
+    if(fabs(fabs(col[i])-1.0) > tol) return false;         // only pivot on unity elements
+    int k = simplex.head[i];
+    return !simplex.isAuxiliary(k); // don't pivot on auxiliary vars
+}
+
+void ProposalPivot::setToPivotIndex(int pivotIndex) {
+    leavingVarToUpperBound = pivotIndex % 2;
+    if(pivotIndex < 2 * nonZeroRows.size()) {
+        i = nonZeroRows[pivotIndex / 2];
+        int leavingk = simplex.head[i];
+        deltaj = ((leavingVarToUpperBound ? simplex.u[leavingk] : simplex.l[leavingk]) - simplex.beta[i]) / col[i];
+        assert(fabs(col[i]) > 1e-7);
+        assert(fabs(deltaj) < 10.0);
+    } else {
+        i = -1; // column does bound swap.
+        int k = simplex.head[simplex.nBasic() + j];
+        deltaj = (leavingVarToUpperBound?simplex.u[k]:simplex.l[k]) - (simplex.isAtUpperBound(j)?simplex.u[k]:simplex.l[k]);
+    }
+}
+
+std::vector<double> ProposalPivot::infeasibilityCost() {
+    // set objective to out-of-bounds rows
+    std::vector<double> infeasibility(simplex.nBasic() + 1);
+    infeasibility[0] = 0.0;
+    for(int i=1; i<=simplex.nBasic(); ++i) {
+        int k = simplex.head[i];
+        infeasibility[i] = infeasibilityGradient(simplex.beta[i], simplex.l[k], simplex.u[k]);
+    }
+    return infeasibility;
+}
+
+
