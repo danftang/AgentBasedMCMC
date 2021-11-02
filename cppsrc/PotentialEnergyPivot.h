@@ -59,8 +59,8 @@ private:
 
 
 
-//    void calcAcceptanceContrib2();
-    void calcAcceptanceContrib2();
+//    void calcAcceptanceContribCheck();
+    void calcAcceptanceContribCheck();
 };
 
 

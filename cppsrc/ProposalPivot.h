@@ -56,9 +56,9 @@ public:
 
     double colInfeasibilityGradient(double deltaj);
     static double infeasibilityGradient(double v, double lowerBound, double upperBound) {
-        if(v > upperBound + tol) {
+        if(v > upperBound) {
             return 1.0;
-        } else if(v < lowerBound - tol) {
+        } else if(v < lowerBound) {
             return -1.0;
         }
         return 0.0;

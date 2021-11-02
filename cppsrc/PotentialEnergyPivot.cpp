@@ -43,7 +43,7 @@ const PotentialEnergyPivot &PotentialEnergyPivot::nextProposal() {
         if(potentialEnergies.size() > 1)    potentialEnergies.pop_back();
         if(totalPotentials.size() >1) totalPotentials.pop_back();
     }
-    checkCurrentCacheIsValid();
+//    checkCurrentCacheIsValid();
     chooseCol();
     chooseRow();
     calcAcceptanceContrib();
@@ -86,12 +86,6 @@ void PotentialEnergyPivot::chooseCol() {
 
 
 void PotentialEnergyPivot::chooseRow() {
-
-    ///////////////////////// debug only
-    // double infeas = infeasibility(0.0);
-    //   if(infeas > 0.0) std::cout << "Infeasibility = " << infeas << std::endl;
-    //////////////
-
     std::multimap<double, int> transitions = getPivotsByDeltaJ(); // from delta_j to LogPMF-index.
 
 
@@ -132,43 +126,6 @@ void PotentialEnergyPivot::chooseRow() {
 }
 
 
-// The acceptance contribution is given by
-// A = e^-kCol(DE - DEj)
-// where DE is the change in total potential energy and DEj is the change in potential energy of the pivot column.
-// We make use of the fact that the change in the reduced cost of column q!=j is given by
-// Ddq = Tiq (dj / Tij)
-// where Ti is the pivot row in the tableau.
-// And, since the values of the tableau columns q!=j do not change
-// DE-DEj = (dj / -Tij) sum_{q!=j} Tiq (2Xq - 1.0)
-//
-// In the case of a bound swap, the reduced cost does not change so DE-DEj = 0.
-//
-// In the case of a non-degenerate
-//void PotentialEnergyPivot::calcAcceptanceContrib() {
-////    logAcceptanceContribution = 0.0;
-//    if(i <= 0 || infeasibilityCount == 0 || reducedCost[j] == 0.0) {
-//        logAcceptanceContribution = 0.0;
-//    } else {
-//        if(deltaj != 0.0) {
-//            // TODO: Calculate contribution non-degenerate pivots
-//            logAcceptanceContribution = 0.0;
-//        } else {
-//            std::vector<double> Ti = simplex.tableauRow(i);
-//            double DEnergy = 0.0;
-//            double dj_Tij = reducedCost[j] / Ti[j];
-//            for (int q = 1; q <= simplex.nNonBasic(); ++q) {
-//                if (q != j) {
-//                    double newdq = reducedCost[q] - dj_Tij * Ti[q];
-//                    double DEq = ((newdq > tol) - (reducedCost[q] > tol)) * (simplex.isAtUpperBound(q) ? 1.0 : -1.0);
-//                    DEnergy += DEq;
-//                }
-//            }
-////        DEnergy *= -reducedCost[j] / Ti[j];
-////            std::cout << "DEnergy = " << DEnergy << std::endl;
-//            logAcceptanceContribution = -kappaCol * DEnergy;
-//        }
-//    }
-//}
 
 // Calculates log acceptance contribution which is kappaCol times
 // the proposed change in the potential energy, ignoring column j.
@@ -268,7 +225,7 @@ void PotentialEnergyPivot::calcProposedEnergies() {
 }
 
 // Sanity check for calcAcceptanceContrib()
-void PotentialEnergyPivot::calcAcceptanceContrib2() {
+void PotentialEnergyPivot::calcAcceptanceContribCheck() {
 
     bool jIsAtUpperBound = simplex.isAtUpperBound(j);
     simplex.pivot(*this); // pivot(i, j, col, leavingVarToUpperBound);

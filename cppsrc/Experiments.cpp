@@ -111,6 +111,7 @@ void Experiments::PredPreyConvergence() {
 
     std::vector<MeanAndVariance> meanvariances;
     for(int thread=0; thread<nThreads; ++thread) {
+        futureResults[thread].wait();
         meanvariances.push_back(futureResults[thread].get());
     }
     std::valarray<double> gelman = gelmanScaleReduction(meanvariances);
@@ -121,13 +122,13 @@ void Experiments::PredPreyConvergence() {
 void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
     PredPreyAgent::GRIDSIZE = 8;
-    constexpr int windowSize = 2;
+    constexpr int windowSize = 16;
     constexpr int nWindows = 1;
     constexpr double pPredator = 0.08;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
     constexpr double pMakeObservation = 0.2;//0.04;    // prob of making an observation of each gridsquare at each timestep
     constexpr double pObserveIfPresent = 0.9;
-    constexpr int nSamplesPerWindow = 1500000; //250000;
+    constexpr int nSamplesPerWindow = 100000; //250000;
     constexpr int nBurninSamples = 1000;
     constexpr int nPriorSamples = 100000;
 //    constexpr int plotTimestep = nTimesteps-1;
@@ -152,7 +153,10 @@ void Experiments::PredPreyAssimilation() {
         MCMCSampler sampler(window.posterior, window.priorSampler());
         for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
         sampleStats.clear();
+        auto startTime = std::chrono::high_resolution_clock::now();
         sampleStats.sampleFromEndState(sampler, nSamplesPerWindow);
+        auto endTime = std::chrono::high_resolution_clock::now();
+        std::cout << "Finished sampling in " << (endTime - startTime) << std::endl;
         analysis = &sampleStats;
 
         std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;

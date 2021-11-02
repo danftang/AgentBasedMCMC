@@ -21,25 +21,16 @@ using glp::X;
 
 int main(int argc, char *argv[]) {
 
-//    using namespace dataflow;
-//    auto m = [](int x) { return x*2; };
-//    auto p = [n=0]() mutable { return ++n; };
-//    auto c = [](const auto &x) { std::cout << x << std::endl; return true; };
-//
-//    p >>= Drop(10) >>= Take(1000) >>= Split {
-//        Map(m) >>= c,
-//        Map([](int x) { return x*x; }) >>= c
-//    };
 
 //    Experiments::DataflowDemo();
 //    Experiments::PredPreyConvergence();
 
-    Experiments::BinomialAgentAssimilation();
+//    Experiments::BinomialAgentAssimilation();
 //  Experiments::CatMouseSingleObservation();
 //    Experiments::CatMouseAssimilation();
 //    Experiments::CatMouseMultiObservation();
 //    Experiments::PredPreySingleObservation();
-//    Experiments::PredPreyAssimilation();
+    Experiments::PredPreyAssimilation();
 
 //    Experiments::FermionicIntegrality();
 
