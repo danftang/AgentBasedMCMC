@@ -29,10 +29,11 @@ public:
 
     static void PredPreyAssimilation();
 
-    static std::vector<double> informationIncrease(int argc, char **argv);
+//    static std::vector<double> informationIncrease(int argc, char **argv);
 
+    template<int GRIDSIZE>
     static std::vector<double>
-    informationIncrease(int gridsize, int windowSize, int nWindows, double pPredator, double pPrey,
+    informationIncrease(int windowSize, int nWindows, double pPredator, double pPrey,
                         double pMakeObservation, double pObserveIfPreset, int nSamplesPerWindow, int nBurnInSamples);
 
 //    Gnuplot &
@@ -63,10 +64,12 @@ public:
 
     static void FermionicIntegrality();
 
-    static std::vector<double> Synopsis(const Trajectory<PredPreyAgent> &trajectory);
+    template<int GRIDSIZE>
+    static std::valarray<double> Synopsis(const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory);
 
-    static auto PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyAgent>> &posterior,
-                              Trajectory<PredPreyAgent> startState);
+    template<int GRIDSIZE>
+    static auto PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> &posterior,
+                              Trajectory<PredPreyAgent<GRIDSIZE>> startState);
 
     static void PredPreyConvergence();
 

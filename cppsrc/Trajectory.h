@@ -99,7 +99,7 @@ public:
                 t0State.setToZero();
                 t0State.swap(t1State);
             }
-            if (++nAttempts > 1000)
+            if (++nAttempts > 4000)
                 throw (std::runtime_error(
                         "Can't create act-Fermionic trajectoryPrior sample of Trajectory. Too many agents for Fermionicity to be a good assumption."));
         } while (!isValid);

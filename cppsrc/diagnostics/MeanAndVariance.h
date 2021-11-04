@@ -16,15 +16,27 @@ public:
     std::valarray<double> sum;
     std::valarray<double> sumOfSquares;
 
+
     MeanAndVariance(): nSamples(0) { }
+
+
+    template<typename DATAPOINTS>
+    MeanAndVariance(const DATAPOINTS &datapoints): MeanAndVariance() {
+        for(const auto &sample : datapoints) (*this)(sample);
+    }
+
+    int dimension() const {
+        return sum.size();
+    }
 
 //    MeanAndVariance(int dimension): nSamples(0), sum(0.0, dimension), sumOfSquares(0.0, dimension) { }
 
-    bool operator()(const std::vector<double> &sample) {
-        if(nSamples == 0) initArrays(sample.size());
-        if(sample.size() != sum.size()) throw("Dimension of sample does not match this logger.");
-        for(int i=0; i<sample.size(); ++i) {
-            double xi = sample[i];
+    template<typename T, typename = std::enable_if_t<std::is_convertible_v<decltype(std::declval<T>()[0]),double>>>
+    bool operator()(const T &dataPoint) {
+        if(nSamples == 0) initArrays(dataPoint.size());
+        if(dataPoint.size() != sum.size()) throw("Dimension of dataPoint does not match this logger.");
+        for(int i=0; i < dataPoint.size(); ++i) {
+            double xi = dataPoint[i];
             sum[i] += xi;
             sumOfSquares[i] += xi*xi;
         }
@@ -32,8 +44,9 @@ public:
         return true;
     }
 
+//    template<typename T, typename = std::void_t<decltype(std::declval<MeanAndVariance>()(std::declval<T>()))>>
     auto consumer() {
-        return [this](const std::vector<double> &sample) { return (*this)(sample); };
+        return [this](const auto &sample) { return (*this)(sample); };
     }
 
     std::valarray<double> mean() const {

@@ -31,6 +31,7 @@ public:
     double occupationNumber(const std::vector<double> &trajectory) const;
 
     double occupationUpperBound() const {
+        assert(agent < incomingEventsByState.size());
         return std::min(AGENT::actDomainSize()*1.0, incomingEventsByState[agent].size()*1.0);
     }
 
@@ -81,6 +82,7 @@ public:
 };
 
 
+// TODO: this needs to be recalculated when domin size changes!
 template<typename AGENT>
 const std::vector<std::vector<Event<AGENT>>> State<AGENT>::incomingEventsByState = State<AGENT>::calculateIncomingEventsByState();
 

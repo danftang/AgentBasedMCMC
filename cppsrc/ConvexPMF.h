@@ -81,6 +81,7 @@ public:
                     AGENT agent(agentId);
                     int nObserved = Random::nextBinomial(realTrajectory(t,agent), pObserveIfPresent);
                     AgentStateObservation<AGENT> observation(State<AGENT>(t,agent), nObserved, pObserveIfPresent);
+//                    debug(std::cout << "Adding constraint " << observation.support() << std::endl);
                     observations *= likelihood(nTimesteps, observation);
                 }
             }

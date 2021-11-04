@@ -277,20 +277,30 @@ namespace dataflow {
         bool operator()(const T &item) {
             if (switchCountdown > 0) {
                 --switchCountdown;
-                return beforeSwitch(item);
+                return consumer1(item);
             }
-            return afterSwitch(item);
+            return consumer2(item);
         }
     };
 
 
     template<typename T>
-    auto pushBack(std::vector<T> &vectorLog) {
+    auto save(std::vector<T> &vectorLog) {
         return [&vectorLog](const T &item) {
             vectorLog.push_back(item);
             return true;
         };
     }
+
+    template<typename T>
+    auto save(std::valarray<T> &log) {
+        return [&log,i=0](const T &item) mutable {
+            assert(i < log.size());
+            log[i++] = item;
+            return i<log.size();
+        };
+    }
+
 
     template<typename T=double>
     auto plot1DAfter(int nSamples, std::string title = "dataflow plot") {
