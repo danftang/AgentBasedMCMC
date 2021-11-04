@@ -5,26 +5,24 @@
 #ifndef GLPKTEST_PHASE1PIVOT_H
 #define GLPKTEST_PHASE1PIVOT_H
 
-
-#include "glpkpp.h"
 #include "ProposalPivot.h"
 
 class Phase1Pivot: public ProposalPivot {
 public:
-    explicit Phase1Pivot(glp::Simplex &simplex);
-    Phase1Pivot(glp::Simplex &simplex, int i, int j): ProposalPivot(simplex, i, j), infeasibilityGradient(simplex.nBasic()+1) { }
+    explicit Phase1Pivot(SimplexMCMC &simplex);
+    Phase1Pivot(SimplexMCMC &simplex, int i, int j);
 
     std::vector<double> infeasibilityGradient;  // infeasibility objective by row [1...nBasic()]
 
     void chooseCol();
     void chooseRow();
 
-    void setToPivotIndex(int pivotIndex);
+//    void setToPivotIndex(int pivotIndex);
 
 protected:
-    int initInfeasibilityGradient();
+//    int initInfeasibilityGradient();
 
-    bool isActive(int pmfIndex);
+//    bool isActive(int pmfIndex);
 
     double infeasibility(double deltaj);
 

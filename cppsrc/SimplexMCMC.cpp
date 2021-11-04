@@ -6,7 +6,6 @@
 #include "ProposalPivot.h"
 #include "Random.h"
 #include "Phase2Pivot.h"
-#include "ProbabilisticColumnPivot.h"
 #include "PotentialEnergyPivot.h"
 #include "ConvexPMF.h"
 #include "debug.h"
@@ -21,10 +20,13 @@ SimplexMCMC::SimplexMCMC(
         const glp::Problem &prob,
         std::function<double (const std::vector<double> &)> logProb,
         const std::vector<double> &initialState)
-        : Simplex(prob), logProbFunc(std::move(logProb)) {
+        : Simplex(prob),
+        logProbFunc(std::move(logProb)),
+        proposalFunction(*this) {
     setObjective(glp::SparseVec());
     if(initialState.size() != 0) setLPState(initialState);
     findFeasibleStartPoint();
+    proposalFunction.initCache();
 }
 
 
@@ -33,7 +35,8 @@ SimplexMCMC::SimplexMCMC(
 void SimplexMCMC::findFeasibleStartPoint() {
     int iterations = 0;
     while(!solutionIsPrimaryFeasible()) {
-        ProposalPivot proposal = Phase1Pivot(*this);
+        Phase1Pivot proposal(*this);
+        ProposalPivot & p = proposal;
         pivot(proposal);
 //        std::cout << iterations << " Pivoted on " << proposal.i << ", " << proposal.j << " " << proposal.deltaj << " " << proposal.leavingVarToUpperBound
 //                  << " " << isAtUpperBound(proposal.j)
@@ -110,13 +113,13 @@ const std::vector<double> & SimplexMCMC::nextSample() {
     int infeasibleCount = 0;
     bool sampleIsFeasible;
     do {
-        ProposalPivot proposalPivot = proposePivot();
-        bool accepted = processProposal(proposalPivot);
+        const ProposalPivot &proposalPivot = proposePivot();
+        lastSampleWasAccepted = processProposal(proposalPivot);
         sampleIsFeasible = solutionIsPrimaryFeasible();
         if(sampleIsFeasible) {
-            feasibleStatistics.update(accepted, proposalPivot);
+            feasibleStatistics.update(lastSampleWasAccepted, proposalPivot);
         } else {
-            infeasibleStatistics.update(accepted, proposalPivot);
+            infeasibleStatistics.update(lastSampleWasAccepted, proposalPivot);
             debug(if(infeasibleCount%1000 == 100) std::cout << infeasibleCount << " Infeasibility = " << infeasibility() << std::endl);
             ++infeasibleCount;
         }
@@ -143,7 +146,6 @@ bool SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
     updateLPSolution(proposalPivot);
     double destinationProb = logProbFunc(lpSolution);
 //    std::cout << "Destination LP state is: " << glp::SparseVec(lpSolution) << std::endl;
-    revertLPSolution(proposalPivot); // TODO: change logic so we don't revert if we end up accepting
     double logAcceptance = destinationProb - sourceProb + proposalPivot.logAcceptanceContribution;
 //    debug(
 //            if(std::isnan(logAcceptance)) std::cout << "Log acceptance is " << logAcceptance << std::endl
@@ -169,9 +171,10 @@ bool SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
 //            }
 //        }
         pivot(proposalPivot);
-        return true;
+        return true; // accept
     }
 //    debug(std::cout << "Rejecting" << std::endl);
+    revertLPSolution(proposalPivot);
     return false; // reject
 }
 
@@ -204,18 +207,16 @@ void SimplexMCMC::randomWalk() {
     pivot(Phase2Pivot(*this, Random::nextInt(1, nNonBasic()+1)));
 }
 
-ProposalPivot SimplexMCMC::proposePivot() {
-//    return ProbabilisticColumnPivot(*this, proposeColumn());
-//    return ProbabilisticColumnPivot(*this);
-    return PotentialEnergyPivot(*this);
+const ProposalPivot &SimplexMCMC::proposePivot() {
+    return proposalFunction.nextProposal();
 }
 
 // To be based on rate of change of L1-norm infeasibility objective?
 // uniform prob for now
-int SimplexMCMC::proposeColumn() {
-    // nextIntFromDiscrete a pivot column
-    return Random::nextInt(1,n - m + 1);
-}
+//int SimplexMCMC::proposeColumn() {
+//    // nextIntFromDiscrete a pivot column
+//    return Random::nextInt(1,n - m + 1);
+//}
 
 
 // Moved to ProbabilisticColumnPivot
@@ -297,6 +298,7 @@ void SimplexMCMC::updateLPSolution(const ProposalPivot &pivot) {
     }
     int kCol = kSimTokProb[head[nBasic() + pivot.j]];
     if(kCol > nConstraints) lpSolution[kCol - nConstraints] += pivot.deltaj;
+    lpSolutionIsValid(false);
 }
 
 
@@ -308,6 +310,7 @@ void SimplexMCMC::revertLPSolution(const ProposalPivot &pivot) {
         int kProb = kSimTokProb[head[i]];
         if(kProb > nConstraints) lpSolution[kProb - nConstraints] -= pivot.col[i] * pivot.deltaj;
     }
+    lpSolutionIsValid(true);
 }
 
 

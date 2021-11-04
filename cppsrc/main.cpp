@@ -15,16 +15,14 @@
 #include "AssimilationProblem.h"
 #include "diagnostics/Dataflow.h"
 #include "diagnostics/MeanAndVariance.h"
+#include "Plotter.h"
 
 using glp::X;
 
-//template<typename C, typename R, typename A>
-//void unwrap(R(C::*f)(A) const) {
-//}
-
 int main(int argc, char *argv[]) {
 
-    Experiments::DataflowDemo();
+
+//    Experiments::DataflowDemo();
 //    Experiments::PredPreyConvergence();
 
 //    Experiments::BinomialAgentAssimilation();
@@ -32,7 +30,7 @@ int main(int argc, char *argv[]) {
 //    Experiments::CatMouseAssimilation();
 //    Experiments::CatMouseMultiObservation();
 //    Experiments::PredPreySingleObservation();
-//    Experiments::PredPreyAssimilation();
+    Experiments::PredPreyAssimilation();
 
 //    Experiments::FermionicIntegrality();
 

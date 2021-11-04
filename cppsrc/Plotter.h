@@ -5,6 +5,11 @@
 #ifndef GLPKTEST_PLOTTER_H
 #define GLPKTEST_PLOTTER_H
 
+#include "gnuplot-iostream/gnuplot-iostream.h"
+
+// template specialization to allow valarrays to be recognized
+
+
 class Plotter: public Gnuplot {
 public:
 
@@ -46,17 +51,11 @@ public:
     }
 
     template<typename T>
-    void heatmap(const T &matrixData) {
-        std::vector<std::vector<double>> stlData(matrixData.size());
-        for(int i=0; i < matrixData.size(); ++i) {
-            stlData[i].reserve(matrixData[i].size());
-            for(int j=0; j < matrixData[i].size(); ++j) {
-                stlData[i].push_back(matrixData[i][j]);
-            }
-        }
-//    gp << "plot [-0.5:" << matrixData[0].size() << "][-0.5:" << matrixData.size() << "] ";
-        (*this) << "plot '-' matrix with image notitle\n";
-        send1d(stlData);
+    void heatmap(const T &matrixData, double xBegin = 0.0, double xEnd = 0.0, double yBegin = 0.0, double yEnd = 0.0) {
+        double xScale = (xEnd == xBegin)?1.0:(xEnd-xBegin)/(matrixData[0].size()-1.0);
+        double yScale = (yEnd == yBegin)?1.0:(yEnd-yBegin)/(matrixData.size()-1.0);
+        (*this) << "plot '-' using ($1*" <<xScale<< "+" <<xBegin<< "):($2*" <<yScale<< "+"<<yBegin<< "):3 matrix with image notitle\n";
+        send1d(matrixData);
     }
 };
 

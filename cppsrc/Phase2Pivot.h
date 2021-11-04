@@ -9,7 +9,6 @@
 
 #include <vector>
 #include "ProposalPivot.h"
-#include "SimplexMCMC.h"
 
 class Phase2Pivot: public ProposalPivot {
 public:
@@ -18,15 +17,15 @@ public:
     std::vector<int>    pivotRows;  // rows on which this column can be pivoted while maintaining infeasibility (structural vars precede auxiliary)
     int                 nStructuralPivotRows; // Number of entries in pivotRows that correspond to structural pivots (i.e. not auxiliary)
 
-    Phase2Pivot(glp::Simplex &simplex, int j): Phase2Pivot(simplex, j, simplex.tableauCol(j)) { }
-    Phase2Pivot(glp::Simplex &simplex, int j, std::vector<double> column); // j = column to pivot on
+    Phase2Pivot(SimplexMCMC &simplex, int j);
+    Phase2Pivot(SimplexMCMC &simplex, int j, std::vector<double> column); // j = column to pivot on
 
 
-    Phase2Pivot reverse(glp::Simplex &lp) const;
+    Phase2Pivot reverse(SimplexMCMC &lp) const;
     bool isDegenerate() const { return fabs(deltaj) < tol; }
 
 protected:
-    void orderPivotRows(glp::Simplex &lp);
+    void orderPivotRows(SimplexMCMC &lp);
 };
 
 

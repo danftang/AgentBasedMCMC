@@ -40,8 +40,8 @@ void Experiments::DataflowDemo() {
     using namespace dataflow;
     int nBurnIn = 100;
     int nSamples = 200;
-    auto sampler = [n = 0]() mutable { return ++n; };
-    auto cint = [](int x) { std::cout << x << std::endl; return true; };
+    auto sampler = [n = 0]() mutable { return n++; };
+    std::function<bool(int)> cint = [](int x) { std::cout << x << std::endl; return true; };
     auto cany = [](auto x) { std::cout << x << std::endl; return true; };
 
     auto trajectoryToEnergy = [](int i) { return -i*i; };
@@ -49,11 +49,11 @@ void Experiments::DataflowDemo() {
     MeanAndVariance  meanVariances;
     std::vector<std::vector<double>> measureLog;
 
-    sampler >>= Drop(nBurnIn) >>= Split {
-            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter<double>(nSamples/10, "Energy"),
-            Take(nSamples) >>= Map { synopsis } >>= Split {
-                meanVariances.consumer(),
-                pushBack(measureLog)
+    sampler >>= Drop{nBurnIn} >>= Split {
+            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter(nSamples/10, "Energy"),
+            Take(nSamples) >>= Map { synopsis } >>= Split{
+                    meanVariances.consumer(),
+                    pushBack(measureLog)
             }
     };
 
@@ -72,11 +72,11 @@ auto Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyA
     auto trajectoryToEnergy = [](const Trajectory<PredPreyAgent> &trajectory) { return -trajectory.logProb(); };
     MCMCSampler sampler(posterior, startState);
 
-    sampler >>= Drop(nBurnIn) >>= Split {
-            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter<double>(nSamples/10, "Energy"),
-            Take(nSamples) >>= Map { Experiments::Synopsis } >>= Split {
+    sampler >>= Split {
+            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter(nSamples/10, "Energy"),
+            Drop(nBurnIn) >>= Take(nSamples) >>= Map { Experiments::Synopsis } >>= Split {
                     meanVariances.consumer(),
-                    CollectThenEmit<std::vector<double>>(nSamples) >>= geyerAutocorrelationConsumer(40, 0.2)
+                    CollectThenEmit<std::vector<double>>(nSamples) >>= plotGeyerAutocorrelation(40, 0.2)
             }
     };
 
@@ -111,6 +111,7 @@ void Experiments::PredPreyConvergence() {
 
     std::vector<MeanAndVariance> meanvariances;
     for(int thread=0; thread<nThreads; ++thread) {
+        futureResults[thread].wait();
         meanvariances.push_back(futureResults[thread].get());
     }
     std::valarray<double> gelman = gelmanScaleReduction(meanvariances);
@@ -121,13 +122,13 @@ void Experiments::PredPreyConvergence() {
 void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
     PredPreyAgent::GRIDSIZE = 8;
-    constexpr int windowSize = 2;
+    constexpr int windowSize = 16;
     constexpr int nWindows = 1;
     constexpr double pPredator = 0.08;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
     constexpr double pMakeObservation = 0.2;//0.04;    // prob of making an observation of each gridsquare at each timestep
     constexpr double pObserveIfPresent = 0.9;
-    constexpr int nSamplesPerWindow = 1500000; //250000;
+    constexpr int nSamplesPerWindow = 100000; //250000;
     constexpr int nBurninSamples = 1000;
     constexpr int nPriorSamples = 100000;
 //    constexpr int plotTimestep = nTimesteps-1;
@@ -152,7 +153,10 @@ void Experiments::PredPreyAssimilation() {
         MCMCSampler sampler(window.posterior, window.priorSampler());
         for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
         sampleStats.clear();
+        auto startTime = std::chrono::high_resolution_clock::now();
         sampleStats.sampleFromEndState(sampler, nSamplesPerWindow);
+        auto endTime = std::chrono::high_resolution_clock::now();
+        std::cout << "Finished sampling in " << (endTime - startTime) << std::endl;
         analysis = &sampleStats;
 
         std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
@@ -496,7 +500,7 @@ void Experiments::BinomialAgentAssimilation() {
     MCMCSampler<Trajectory<BinomialAgent>> sampler(window.posterior, window.priorSampler());
     std::cout << "simplex = \n" << sampler.simplex << std::endl;
     std::cout << "Starting burn-in" << std::endl;
-//    for(int s=0; s<nBurninSamples; ++s) sampler();
+    for(int s=0; s<nBurninSamples; ++s)  sampler();
     std::cout << "Done burn-in" << std::endl;
     ModelStateSampleStatistics<BinomialAgent> sampleStats(sampler, nSamplesPerWindow);
 

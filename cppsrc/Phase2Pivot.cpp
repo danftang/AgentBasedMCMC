@@ -6,8 +6,11 @@
 #include <cassert>
 #include "Phase2Pivot.h"
 #include "StlStream.h"
+#include "SimplexMCMC.h"
 
-Phase2Pivot::Phase2Pivot(glp::Simplex &lp, int j, std::vector<double> column): ProposalPivot(lp, -1, j, std::move(column)) {
+Phase2Pivot::Phase2Pivot(SimplexMCMC &simplex, int j) : Phase2Pivot(simplex, j, simplex.tableauCol(j)) { }
+
+Phase2Pivot::Phase2Pivot(SimplexMCMC &lp, int j, std::vector<double> column): ProposalPivot(lp, -1, j, std::move(column)) {
     int kIncoming = lp.head[lp.m + j];
     deltaj = lp.u[kIncoming] - lp.l[kIncoming];
     double DXi;
@@ -42,7 +45,7 @@ Phase2Pivot::Phase2Pivot(glp::Simplex &lp, int j, std::vector<double> column): P
 }
 
 
-Phase2Pivot Phase2Pivot::reverse(glp::Simplex &lp) const {
+Phase2Pivot Phase2Pivot::reverse(SimplexMCMC &lp) const {
     Phase2Pivot revCol(lp, j, reverseCol());
     revCol.i = i;
     return revCol;
@@ -50,7 +53,7 @@ Phase2Pivot Phase2Pivot::reverse(glp::Simplex &lp) const {
 
 
 // orders pivot rows so that all structural vars in the original LP come before auxiliary vars
-void Phase2Pivot::orderPivotRows(glp::Simplex &lp) {
+void Phase2Pivot::orderPivotRows(SimplexMCMC &lp) {
     nStructuralPivotRows = 0;
     while(nStructuralPivotRows < pivotRows.size() && lp.isStructural(lp.head[pivotRows[nStructuralPivotRows]])) {
         ++nStructuralPivotRows;
@@ -64,4 +67,5 @@ void Phase2Pivot::orderPivotRows(glp::Simplex &lp) {
         }
     }
 }
+
 

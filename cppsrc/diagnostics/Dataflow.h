@@ -111,11 +111,12 @@ namespace dataflow {
 
 
     // requires that TRANSFORM(DOWNSTREAMCONSUMER) is valid
-    template<typename TRANSFORM, typename DOWNSTREAMCONSUMER, typename CONDITIONS = std::void_t<
-            decltype(std::declval<TRANSFORM>()(std::declval<DOWNSTREAMCONSUMER>()))>
-            >
-    auto operator >>=(TRANSFORM &&transform, DOWNSTREAMCONSUMER &&downStreamConsumer) {
-        return transform(std::forward<DOWNSTREAMCONSUMER>(downStreamConsumer));
+    template<typename TRANSFORM, typename DOWNSTREAMCONSUMER, typename = std::void_t<typename TRANSFORM::transform_tag>>
+    auto operator >>=(TRANSFORM &&transform, DOWNSTREAMCONSUMER &&downstreamConsumer) {
+        return [downstreamConsumer = std::forward<DOWNSTREAMCONSUMER>(downstreamConsumer),
+                transform = std::forward<TRANSFORM>(transform)](const auto &item) mutable {
+            return transform(downstreamConsumer, item);
+        };
     }
 
     // requires that CONSUMER(PRODUCER) returns bool
@@ -143,14 +144,19 @@ namespace dataflow {
 //                }) {}
 //    };
 
+    class Transform {
+    public:
+        typedef void transform_tag;
+    };
+
     template<typename... CONSUMERS>
     class Split {
     public:
         std::tuple<CONSUMERS...> consumers;
         std::vector<bool> isOpen;
 
-        Split(CONSUMERS &&... consumers):
-        consumers(std::forward_as_tuple(consumers...)),
+        Split(CONSUMERS... consumers):
+        consumers(std::move(consumers)...),
         isOpen(sizeof...(consumers), true) {}
 
         template<typename T>
@@ -167,99 +173,90 @@ namespace dataflow {
     };
 
 
-    class Take {
+    class Take: public Transform {
     public:
-        const int countDown;
+        int countDown;
         Take(int n) : countDown(n) { }
 
-        template<typename T>
-        auto operator()(T &&downstreamConsumer) {
-            return [c = std::forward<T>(downstreamConsumer), n=countDown](const auto &item) mutable {
-                bool downstreamOpen = c(item);
-                --n;
-                return (downstreamOpen && n != 0);
-            };
+        template<typename CONSUMER, typename T>
+        bool operator()(CONSUMER &downstreamConsumer, const T &item) {
+            bool downstreamOpen = downstreamConsumer(item);
+            --countDown;
+            return (downstreamOpen && countDown != 0);
         }
     };
 
     template<typename FUNC, typename = typename unary_function_traits<FUNC>::is_valid_tag>
-//    template<typename FUNC>
-    class Map {
+    class Map: public Transform {
     public:
         FUNC mapFunc;
 
         typedef typename unary_function_traits<FUNC>::argument_type upstream_type;
-//        typedef typename unary_function_traits<FUNC>::result_type   downstream_type;
 
         Map(FUNC mapFunction): mapFunc(mapFunction) { }
 
         // requires that
         template<typename CONSUMER>
-        auto operator()(CONSUMER &&downstreamConsumer) {
-            return [downstreamConsumer = std::forward<CONSUMER>(downstreamConsumer), mapFunc=std::move(this->mapFunc)](const upstream_type &item) mutable {
-                return downstreamConsumer(mapFunc(item));
-            };
+        bool operator()(CONSUMER &downstreamConsumer, const upstream_type &item) {
+            return downstreamConsumer(mapFunc(item));
         }
     };
 
 
-    class Drop {
+    class Drop: public Transform {
     public:
-        const int n;
+        int n;
         Drop(int n): n(n) {}
 
-        template<typename T>
-        auto operator()(T &&downstreamConsumer) {
-            return [n=this->n, downstreamConsumer = std::forward<T>(downstreamConsumer)](const auto &item) mutable {
-                if(n>0) {
-                    --n;
-                    return true;
-                }
-                return downstreamConsumer(item);
-            };
+        template<typename CONSUMER, typename T>
+        bool operator()(CONSUMER &downstreamConsumer, const T &item) {
+            if(n>0) {
+                --n;
+                return true;
+            }
+            return downstreamConsumer(item);
         }
     };
 
     // passes 1 then drops n-1 then repeats
-    class Thin {
+    class Thin: public Transform {
     public:
         const int n;
+        int count=0;
+
         Thin(int n): n(n) {}
 
-        template<typename T>
-        auto operator()(T &&downstreamConsumer) {
-            return [n=this->n, count = 0, downstreamConsumer = std::forward<T>(downstreamConsumer)](const auto &item) mutable {
-                if(count%n == 0) {
-                    count = 1;
-                    return downstreamConsumer(item);
-                }
-                ++count;
-                return true;
-            };
+        template<typename CONSUMER, typename T>
+        bool operator()(CONSUMER &downstreamConsumer, const T &item) {
+            if(count%n == 0) {
+                count = 1;
+                return downstreamConsumer(item);
+            }
+            ++count;
+            return true;
         }
     };
 
     // TODO: can we get type inference here?
     //  Would it require a separation of connection and data processing steps, or could we use template templates?
     template<typename DATA>
-    class CollectThenEmit {
+    class CollectThenEmit: public Transform {
     public:
         const int n;
-        CollectThenEmit(int n): n(n) {}
+        std::vector<DATA> data;
+        CollectThenEmit(int n): n(n) {
+            data.reserve(n);
+        }
 
-        template<typename T>
-        auto operator()(T &&downstreamConsumer) {
-            std::vector<DATA> store;
-            store.reserve(n);
-            return [n=this->n, data = std::move(store), downstreamConsumer = std::forward<T>(downstreamConsumer)](const auto &item) mutable {
-                data.push_back(item);
-                if(data.size() == n) {
-                    bool wantMore = downstreamConsumer(data);
-                    data.clear();
-                    return wantMore;
-                }
-                return true;
-            };
+        template<typename CONSUMER>
+        bool operator()(CONSUMER &downstreamConsumer, const DATA &item) {
+            data.push_back(item);
+            if(data.size() == n) {
+                bool wantMore = downstreamConsumer(data);
+                data.clear();
+                return wantMore;
+            }
+            return true;
         }
 
     };
@@ -271,9 +268,9 @@ namespace dataflow {
         LASTCONSUMER  consumer2;
         int switchCountdown;
 
-        SwitchAfter(int nSwitchAfter, FIRSTCONSUMER &&beforeSwitch, LASTCONSUMER &&afterSwitch):
-        consumer1(std::forward<FIRSTCONSUMER>(beforeSwitch)),
-        consumer2(std::forward<LASTCONSUMER>(afterSwitch)),
+        SwitchAfter(int nSwitchAfter, FIRSTCONSUMER beforeSwitch, LASTCONSUMER afterSwitch):
+        consumer1(std::move(beforeSwitch)),
+        consumer2(std::move(afterSwitch)),
         switchCountdown(nSwitchAfter) {}
 
         template<typename T>
@@ -295,9 +292,9 @@ namespace dataflow {
         };
     }
 
-    template<typename CONSUMERTYPE>
+    template<typename T=double>
     auto plot1DAfter(int nSamples, std::string title = "dataflow plot") {
-        return [dataLog = std::vector<double>(nSamples), title, index = 0](const CONSUMERTYPE &item) mutable {
+        return [dataLog = std::vector<double>(nSamples), title, index = 0](const T &item) mutable {
             if(index < dataLog.size()) {
                 dataLog[index] = item;
             }
