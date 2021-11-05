@@ -78,23 +78,37 @@ public:
                     for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
                         (*this)[Event(t, agent, actId)] = 0.0;
                     }
-                    // now choose acts for each of nAgents
+                    // now choose acts for each of nAgents from act Fermionic distribution
+
                     std::vector<double> actPMF = agent.timestep(t0State);
-                    std::discrete_distribution<int> actDistribution(actPMF.begin(), actPMF.end());
-                    for(int m=0; m <nAgents; ++m) {
-                        int chosenAct = actDistribution(Random::gen);
-                        int event = Event(t, agent, chosenAct);
-                        if((*this)[event] == 0.0) {
+                    ActFermionicDistribution actDistribution(actPMF);
+                    assert(nAgents <= actPMF.size());
+                    std::vector<bool> chosenActs = actDistribution.sampleUnordered(nAgents);
+                    for(int act=0; act < chosenActs.size(); ++act) {
+                        if(chosenActs[act]) {
+                            int event = Event(t, agent, act);
                             (*this)[event] = 1.0;
-                            assert(event < size());
-                            t1State += agent.consequences(chosenAct);
-                        } else { // reject
-                            isValid = false;
-                            m = nAgents;
-                            agentId = AGENT::domainSize();
-                            t = nTimesteps;
+                            t1State += agent.consequences(act);
                         }
                     }
+
+//                    std::vector<double> actPMF = agent.timestep(t0State);
+//                    std::discrete_distribution<int> actDistribution(actPMF.begin(), actPMF.end());
+//                    for(int m=0; m <nAgents; ++m) { // TODO: replace with ActFermionicDistribution
+//                        int chosenAct = actDistribution(Random::gen);
+//                        int event = Event(t, agent, chosenAct);
+//                        if((*this)[event] == 0.0) {
+//                            (*this)[event] = 1.0;
+//                            assert(event < size());
+//                            t1State += agent.consequences(chosenAct);
+//                        } else { // reject
+//                            isValid = false;
+//                            m = nAgents;
+//                            agentId = AGENT::domainSize();
+//                            t = nTimesteps;
+//                        }
+//                    }
+
                 }
                 t0State.setToZero();
                 t0State.swap(t1State);

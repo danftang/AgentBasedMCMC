@@ -67,7 +67,7 @@ void Experiments::DataflowDemo() {
 template<int GRIDSIZE>
 auto Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> &posterior, Trajectory<PredPreyAgent<GRIDSIZE>> startState) {
     using namespace dataflow;
-    constexpr int nSamples = 500000; //250000;
+    constexpr int nSamples = 400000; //250000;
     const double maxLagProportion = 0.4;
     const int nLags = 40;
     constexpr int nBurnIn = nSamples*0.25;
@@ -157,7 +157,7 @@ void Experiments::PredPreyConvergence() {
 void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
     constexpr int GRIDSIZE = 8;
-    constexpr int windowSize = 2;
+    constexpr int windowSize = 4;
     constexpr int nWindows = 1;
     constexpr double pPredator = 0.08;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
