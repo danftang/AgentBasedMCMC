@@ -61,7 +61,10 @@ public:
             while (nextS > 0.0) {
                 sumt += nextS;
                 t += 1;
-                nextS =(t < V.size())?(1.0 - V[t][d]/(2.0*vp)):-1.0;
+                nextS = std::min(
+                        nextS,
+                        (t < V.size())?(1.0 - V[t][d]/(2.0*vp)):-1.0
+                        );
             }
             neff[d] = nSamples()*nChains()/(1.0 + 2.0*front().varioStride*sumt);
         }
@@ -155,6 +158,17 @@ public:
         }
         mu /= nChains();
         return mu;
+    }
+
+    friend std::ostream &operator <<(std::ostream &out, const MultiChainStats &multiChainStats) {
+        out << "MultiChainStats of " << multiChainStats.nChains() << " chains with " << multiChainStats.nSamples() << " samples" << std::endl;
+        out << "W = " << multiChainStats.W() << std::endl;
+        out << "B = " << multiChainStats.B() << std::endl;
+        out << "Samples   Sums    SumOfSquares    VarioStride     Vario" << std::endl;
+        for(const ChainStats &chain: multiChainStats) {
+            out << chain.meanVariance.nSamples << " " << chain.meanVariance.sum << " " << chain.meanVariance.sumOfSquares << " " << chain.varioStride << " " << chain.vario << std::endl;
+        }
+        return out;
     }
 };
 

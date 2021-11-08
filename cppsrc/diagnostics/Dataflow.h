@@ -267,17 +267,42 @@ namespace dataflow {
         FIRSTCONSUMER consumer1;
         LASTCONSUMER  consumer2;
         int switchCountdown;
+        bool consumer1IsOpen;
 
         SwitchAfter(int nSwitchAfter, FIRSTCONSUMER beforeSwitch, LASTCONSUMER afterSwitch):
         consumer1(std::move(beforeSwitch)),
         consumer2(std::move(afterSwitch)),
-        switchCountdown(nSwitchAfter) {}
+        switchCountdown(nSwitchAfter),
+        consumer1IsOpen(true) {}
 
         template<typename T>
         bool operator()(const T &item) {
             if (switchCountdown > 0) {
                 --switchCountdown;
-                return consumer1(item);
+                if(consumer1IsOpen) consumer1IsOpen = consumer1(item);
+                return true;
+            }
+            return consumer2(item);
+        }
+    };
+
+    template<typename FIRSTCONSUMER,typename LASTCONSUMER>
+    class SwitchOnClose {
+    public:
+        FIRSTCONSUMER consumer1;
+        LASTCONSUMER  consumer2;
+        bool consumer1IsOpen;
+
+        SwitchOnClose(FIRSTCONSUMER beforeSwitch, LASTCONSUMER afterSwitch):
+                consumer1(std::move(beforeSwitch)),
+                consumer2(std::move(afterSwitch)),
+                consumer1IsOpen(true) {}
+
+        template<typename T>
+        bool operator()(const T &item) {
+            if (consumer1IsOpen) {
+                consumer1IsOpen = consumer1(item);
+                return true;
             }
             return consumer2(item);
         }
@@ -301,6 +326,25 @@ namespace dataflow {
         };
     }
 
+    template<typename T=double>
+    class Plot1D {
+    public:
+        std::vector<T> data;
+        std::string title;
+
+        Plot1D(std::string title = "dataflow Plot1D"): title(title) { }
+
+        ~Plot1D() {
+            Gnuplot gp;
+            gp << "plot '-' title '" << title << "'with lines\n";
+            gp.send1d(data);
+        }
+
+        bool operator()(const T &item) {
+            data.push_back(item);
+            return true;
+        }
+    };
 
     template<typename T=double>
     auto plot1DAfter(int nSamples, std::string title = "dataflow plot") {

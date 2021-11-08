@@ -12,7 +12,8 @@
 PotentialEnergyPivot::PotentialEnergyPivot(SimplexMCMC &simplex)
 :
 ProposalPivot(simplex,0,0),
-kappaCol(std::max(std::log(p1*simplex.nNonBasic()),1.0)),  // kappaCol(3.5) {
+//kappaCol(std::max(std::log(p1*simplex.nNonBasic()),1.0)),  // kappaCol(3.5) {
+//kappaCol(std::max(std::log((simplex.nNonBasic()-1.0)/(1.0/p1 - 1.0)),1.0)),  // kappaCol(3.5) {
 cdf(simplex.nNonBasic() + 1)
 {
     // setup initial cached values

@@ -67,10 +67,10 @@ void Experiments::DataflowDemo() {
 template<int GRIDSIZE>
 auto Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> &posterior, Trajectory<PredPreyAgent<GRIDSIZE>> startState) {
     using namespace dataflow;
-    constexpr int nSamples = 400000; //250000;
+    constexpr int nSamples = 500000; //250000;
     const double maxLagProportion = 0.4;
-    const int nLags = 40;
-    constexpr int nBurnIn = nSamples*0.25;
+    const int nLags = 80;
+    constexpr int nBurnIn = nSamples*0.5;
     auto trajectoryToEnergy = [](const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory) { return -trajectory.logProb(); };
     MCMCSampler sampler(posterior, startState);
 
@@ -88,19 +88,26 @@ auto Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyA
     sampler >>= Drop(nBurnIn)
             >>= Take((nSamples/2)*2)
             >>= Map { Experiments::Synopsis<GRIDSIZE> }
-            >>= SwitchAfter {nSamples / 2,
-                             save(firstSynopsisSamples),
-                             save(lastSynopsisSamples)
-    };
+//            >>= Split{
+//                Thin(1000) >>= Map{[](const std::valarray<double> &synopsis) { return synopsis[0]; }} >>= Plot1D("synopsis[0]"),
+            >>= SwitchOnClose {
+                    save(firstSynopsisSamples),
+                    save(lastSynopsisSamples)
+//                }
+            };
 
     std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
     std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
     std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl;
 
+//    std::cout << firstSynopsisSamples << std::endl;
+//    std::cout << lastSynopsisSamples << std::endl;
+
     MultiChainStats stats;
     stats.reserve(2);
     stats.emplace_back(firstSynopsisSamples, nLags, maxLagProportion);
     stats.emplace_back(lastSynopsisSamples, nLags, maxLagProportion);
+//    std::cout << stats << std::endl;
     return stats;
 }
 
@@ -138,16 +145,32 @@ void Experiments::PredPreyConvergence() {
         multiChainStats += futureResults[thread].get();
     }
 
+    for(const ChainStats &chain: multiChainStats) {
+        assert(chain.nSamples() == multiChainStats.nSamples());
+    }
+
     Plotter gp;
     std::valarray<std::valarray<double>> autocorrelation = multiChainStats.autocorrelation();
     gp.heatmap(autocorrelation, 0.5, autocorrelation[0].size()-0.5, 0.5*multiChainStats.front().varioStride, (autocorrelation.size()+0.5)*multiChainStats.front().varioStride);
+
+    Plotter gp2;
+    gp2 << "plot '-' using 0:1 with lines\n";
+    gp2.send1d(autocorrelation);
+
+    Plotter gp3;
+    gp3 << "plot '-' using 0:2 with lines\n";
+    gp3.send1d(autocorrelation);
+
+
     std::valarray<double> neff = multiChainStats.effectiveSamples();
     std::valarray<double> ineff = (multiChainStats.nSamples()*1.0)/neff;
 
+    std::cout << multiChainStats << std::endl;
     std::cout << "Potential scale reduction: " << multiChainStats.potentialScaleReduction() << std::endl;
     std::cout << "Actual number of samples per chain: " << multiChainStats.nSamples() << std::endl;
     std::cout << "Effective number of samples: " << neff << std::endl;
     std::cout << "Sample inefficiency factor: " << ineff << std::endl;
+
 
 //    std::valarray<double> gelman = gelmanScaleReduction(meanvariances);
 //    std::cout << std::endl << "Gelman scale reduction factors: " << gelman << std::endl;
@@ -341,7 +364,7 @@ void Experiments::CatMouseAssimilation() {
 void Experiments::CatMouseMultiObservation() {
     constexpr int nTimesteps = 2;
 //    constexpr int nBurninSamples = 1000;
-    constexpr int nSamples = 1000000;
+    constexpr int nSamples = 100000;
 
     Random::gen.seed(530673);
 
@@ -379,6 +402,7 @@ void Experiments::CatMouseMultiObservation() {
 //            {0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1} // cat stay,stay
     {0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0} // cat move,stay
     ));
+    std::cout << "Simplex geometry = " << sampler.simplex.nBasic() << " x " << sampler.simplex.nNonBasic() << std::endl;
     //    for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
 
     std::multiset<Trajectory<CatMouseAgent>> trajHistogram;
@@ -393,14 +417,18 @@ void Experiments::CatMouseMultiObservation() {
     std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl;
 
     //    std::cout << "Analysis means = " << sampleStats.means() << std::endl;
+    double mse = 0.0;
+    double exact[] = {0.5625, 0.1875, 0.1875, 0.0625};
+    int i=0;
     for(auto Tp = trajHistogram.begin(); Tp != trajHistogram.end(); Tp = trajHistogram.upper_bound(*Tp)) {
-        std::cout << trajHistogram.count(*Tp)*1.0/nSamples << " " << *Tp << std::endl;
+        double pState = trajHistogram.count(*Tp)*1.0/nSamples;
+        mse += pow(pState - exact[i],2.0);
+        std::cout << pState << " " << *Tp << std::endl;
+        ++i;
     }
 
     std::cout << "Exact values (calculated by hand) should be: 0.5625, 0.1875, 0.1875, 0.0625" << std::endl;
-//    ExactSolver<CatMouseAgent> exact(posterior);
-//    std::cout << "Exact means = " << exact.exactEndState << std::endl;
-
+    std::cout << "Mean square error = " << mse << std::endl;
 }
 
 
@@ -542,12 +570,18 @@ void Experiments::BinomialAgentAssimilation() {
     std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
     std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
     std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl;
-    std::cout << "Analysis means = " << sampleStats.means() << std::endl;
+    std::vector<double> analysis = sampleStats.means();
+    std::cout << "Analysis means = " << analysis << std::endl;
 
 //    std::cout << "Starting exact solve" << std::endl;
     ExactSolver<BinomialAgent> exactSolver(window.posterior);
     std::cout << "Exact means = " << exactSolver.exactEndState << std::endl;
-
+    double mse = 0.0;
+    for(int i=0; i<analysis.size(); ++i) {
+        mse += pow(analysis[i] - exactSolver.exactEndState[i],2.0);
+    }
+    mse /= analysis.size();
+    std::cout << "Mean square error = " << mse << std::endl;
 }
 
 
@@ -626,7 +660,7 @@ void Experiments::FermionicIntegrality() {
 /////////////////////////////////////////////////////////////////////////////////////////
 template<int GRIDSIZE>
 std::valarray<double> Experiments::Synopsis(const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory) {
-    std::valarray<double> synopsis(2*(floor(log2(GRIDSIZE)) -1));
+    std::valarray<double> synopsis(floor(log2(GRIDSIZE)) -1);
     ModelState<PredPreyAgent<GRIDSIZE>> endState = trajectory.endState();
     int origin = 0;
     int varid = 0;
@@ -640,8 +674,8 @@ std::valarray<double> Experiments::Synopsis(const Trajectory<PredPreyAgent<GRIDS
             }
         }
         assert(varid + 1 < synopsis.size());
-        synopsis[varid++] = predOccupation;
-        synopsis[varid++] = preyOccupation;
+        synopsis[varid++] = predOccupation + preyOccupation;
+//        synopsis[varid++] = preyOccupation;
         origin += partitionSize;
     }
     return synopsis;

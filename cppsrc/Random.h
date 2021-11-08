@@ -11,7 +11,7 @@
 
 class Random {
 public:
-    static std::mt19937 gen;
+    thread_local static std::mt19937 gen;
 
     static double nextDouble(double start = 0.0, double end=1.0) {
         return std::uniform_real_distribution<double>(start,end)(gen);

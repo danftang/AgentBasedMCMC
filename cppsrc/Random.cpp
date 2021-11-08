@@ -4,4 +4,4 @@
 
 #include "Random.h"
 
-std::mt19937 Random::gen;
+thread_local std::mt19937 Random::gen;
