@@ -65,17 +65,21 @@ void Experiments::DataflowDemo() {
 }
 
 template<int GRIDSIZE>
-auto Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> &posterior, Trajectory<PredPreyAgent<GRIDSIZE>> startState) {
+MultiChainStats Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> &posterior, Trajectory<PredPreyAgent<GRIDSIZE>> startState) {
     using namespace dataflow;
-    constexpr int nSamples = 500000; //250000;
+    constexpr int nSamples = 50000; // must be an even number
+    assert((nSamples&1) == 0);
     const double maxLagProportion = 0.4;
     const int nLags = 80;
     constexpr int nBurnIn = nSamples*0.5;
     auto trajectoryToEnergy = [](const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory) { return -trajectory.logProb(); };
+    auto trajectoryToEndState = [](const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory) { return trajectory.endState(); };
     MCMCSampler sampler(posterior, startState);
 
     std::valarray<std::valarray<double>> firstSynopsisSamples(nSamples/2);
     std::valarray<std::valarray<double>> lastSynopsisSamples(nSamples/2);
+    ModelState<PredPreyAgent<GRIDSIZE>> firstMeanEndState;
+    ModelState<PredPreyAgent<GRIDSIZE>> lastMeanEndState;
 
 //    sampler >>= Split {
 //            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter(nSamples/10, "Energy"),
@@ -86,14 +90,17 @@ auto Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyA
 //    };
 
     sampler >>= Drop(nBurnIn)
-            >>= Take((nSamples/2)*2)
-            >>= Map { Experiments::Synopsis<GRIDSIZE> }
-//            >>= Split{
-//                Thin(1000) >>= Map{[](const std::valarray<double> &synopsis) { return synopsis[0]; }} >>= Plot1D("synopsis[0]"),
-            >>= SwitchOnClose {
+            >>= Take(nSamples)
+            >>= Split {
+                Map { Experiments::Synopsis<GRIDSIZE> } >>= SwitchOnClose {
                     save(firstSynopsisSamples),
                     save(lastSynopsisSamples)
-//                }
+                },
+                Map { trajectoryToEndState } >>= SwitchAfter {
+                    nSamples/2,
+                    Sum(firstMeanEndState),
+                    Sum(lastMeanEndState)
+                }
             };
 
     std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
@@ -103,23 +110,29 @@ auto Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyA
 //    std::cout << firstSynopsisSamples << std::endl;
 //    std::cout << lastSynopsisSamples << std::endl;
 
+    firstMeanEndState /= nSamples/2;
+    lastMeanEndState /= nSamples/2;
+
     MultiChainStats stats;
     stats.reserve(2);
-    stats.emplace_back(firstSynopsisSamples, nLags, maxLagProportion);
-    stats.emplace_back(lastSynopsisSamples, nLags, maxLagProportion);
+    stats.emplace_back(std::move(firstSynopsisSamples), nLags, maxLagProportion, std::move(firstMeanEndState));
+    stats.emplace_back(std::move(lastSynopsisSamples), nLags, maxLagProportion, std::move(lastMeanEndState));
 //    std::cout << stats << std::endl;
-    return stats;
+    return std::move(stats);
 }
 
 
 void Experiments::PredPreyConvergence() {
     constexpr int GRIDSIZE = 8;
     constexpr int windowSize = 2;
-    constexpr double pPredator = 0.08;//0.08;          // Poisson prob of predator in each gridsquare at t=0
+    constexpr double pPredator = 0.05;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
     constexpr double pMakeObservation = 0.1;//0.04;    // prob of making an observation of each gridsquare at each timestep
     constexpr double pObserveIfPresent = 0.9;
     constexpr int nThreads = 4;
+
+    std::stringstream strstr;
+    boost::archive::binary_oarchive boostout(strstr);
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
 
@@ -132,7 +145,7 @@ void Experiments::PredPreyConvergence() {
     ModelStateSampleStatistics<PredPreyAgent<GRIDSIZE>> sampleStats;
     AssimilationWindow<PredPreyAgent<GRIDSIZE>> window(startStateDist,realTrajectory, pMakeObservation, pObserveIfPresent);
 
-    std::future<decltype(PredPreyConvergenceThread(window.posterior,window.priorSampler()))> futureResults[nThreads];
+    std::future<MultiChainStats> futureResults[nThreads];
     for(int thread = 0; thread < nThreads; ++thread) {
         futureResults[thread] = std::async(&PredPreyConvergenceThread<GRIDSIZE>, window.posterior, window.priorSampler());
     }
@@ -145,22 +158,21 @@ void Experiments::PredPreyConvergence() {
         multiChainStats += futureResults[thread].get();
     }
 
-    for(const ChainStats &chain: multiChainStats) {
-        assert(chain.nSamples() == multiChainStats.nSamples());
-    }
+    boostout << multiChainStats;
+    MultiChainStats statsReloaded;
+    boost::archive::binary_iarchive boostin(strstr);
+    boostin >> statsReloaded;
+
+    std::cout << statsReloaded;
 
     Plotter gp;
     std::valarray<std::valarray<double>> autocorrelation = multiChainStats.autocorrelation();
     gp.heatmap(autocorrelation, 0.5, autocorrelation[0].size()-0.5, 0.5*multiChainStats.front().varioStride, (autocorrelation.size()+0.5)*multiChainStats.front().varioStride);
 
     Plotter gp2;
-    gp2 << "plot '-' using 0:1 with lines\n";
+    gp2 << "plot '-' using 0:1 with lines, '-' using 0:2 with lines, 0 with lines\n";
     gp2.send1d(autocorrelation);
-
-    Plotter gp3;
-    gp3 << "plot '-' using 0:2 with lines\n";
-    gp3.send1d(autocorrelation);
-
+    gp2.send1d(autocorrelation);
 
     std::valarray<double> neff = multiChainStats.effectiveSamples();
     std::valarray<double> ineff = (multiChainStats.nSamples()*1.0)/neff;
@@ -171,6 +183,8 @@ void Experiments::PredPreyConvergence() {
     std::cout << "Effective number of samples: " << neff << std::endl;
     std::cout << "Sample inefficiency factor: " << ineff << std::endl;
 
+    Plotter gp3;
+    gp3.plot(realTrajectory.endState(), multiChainStats.meanEndState());
 
 //    std::valarray<double> gelman = gelmanScaleReduction(meanvariances);
 //    std::cout << std::endl << "Gelman scale reduction factors: " << gelman << std::endl;
@@ -673,7 +687,7 @@ std::valarray<double> Experiments::Synopsis(const Trajectory<PredPreyAgent<GRIDS
                 preyOccupation += endState[PredPreyAgent<GRIDSIZE>(origin + x,origin + y,PredPreyAgent<GRIDSIZE>::PREY)];
             }
         }
-        assert(varid + 1 < synopsis.size());
+        assert(varid < synopsis.size());
         synopsis[varid++] = predOccupation + preyOccupation;
 //        synopsis[varid++] = preyOccupation;
         origin += partitionSize;

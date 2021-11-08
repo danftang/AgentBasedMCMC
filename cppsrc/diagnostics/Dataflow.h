@@ -309,6 +309,20 @@ namespace dataflow {
     };
 
 
+    template<typename DATA>
+    class Sum {
+    public:
+        DATA &sum;
+
+        Sum(DATA &result): sum(result) {}
+
+        bool operator()(const DATA &item) {
+            sum += item;
+            return true;
+        }
+    };
+
+
     template<typename T>
     auto save(std::vector<T> &vectorLog) {
         return [&vectorLog](const T &item) {

@@ -40,7 +40,7 @@ public:
 
 
     // Agent Domain stuff
-    static int domainSize() { return GRIDSIZE*GRIDSIZE*2; }
+    static constexpr int domainSize() { return GRIDSIZE*GRIDSIZE*2; }
     static constexpr int actDomainSize() { return 6; }
 
     int stateId;

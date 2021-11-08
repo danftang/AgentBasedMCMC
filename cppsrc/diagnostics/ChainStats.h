@@ -6,19 +6,28 @@
 #define GLPKTEST_CHAINSTATS_H
 
 #include <valarray>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/serialization/valarray.hpp>
+#include <boost/serialization/vector.hpp>
+
 #include "MeanAndVariance.h"
 
 class ChainStats {
 public:
     MeanAndVariance meanVariance;
     std::valarray<std::valarray<double>> vario;
-    const int varioStride;
+    int varioStride;
+    std::vector<double> meanEndState;
 
-    template<typename SAMPLE>
-    ChainStats(const std::valarray<SAMPLE> &synopsisSamples, int nLags, double maxLagProportion) :
-            meanVariance(synopsisSamples),
+    ChainStats() {}
+
+    template<typename SYNOPSIS>
+    ChainStats(std::valarray<SYNOPSIS> synopsisSamples, int nLags, double maxLagProportion, std::vector<double> meanEndState) :
+            meanVariance(std::move(synopsisSamples)),
             vario(variogram(synopsisSamples, nLags, maxLagProportion)),
-            varioStride((maxLagProportion * synopsisSamples.size()) / (nLags - 1.0)) {
+            varioStride((maxLagProportion * synopsisSamples.size()) / (nLags - 1.0)),
+            meanEndState(std::move(meanEndState)) {
     }
 
     int nSamples() const { return meanVariance.nSamples; }
@@ -62,6 +71,13 @@ public:
         return vario;
     }
 
+private:
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void serialize(Archive &ar, const unsigned int version) {
+        ar & meanVariance & vario & varioStride & meanEndState;
+    }
 };
 
 

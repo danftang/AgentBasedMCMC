@@ -12,6 +12,7 @@
 #include "PoissonState.h"
 #include "BinomialDistribution.h"
 #include "IntSampleStatistics.h"
+#include "diagnostics/MultiChainStats.h"
 
 class Experiments {
 public:
@@ -68,7 +69,7 @@ public:
     static std::valarray<double> Synopsis(const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory);
 
     template<int GRIDSIZE>
-    static auto PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> &posterior,
+    static MultiChainStats PredPreyConvergenceThread(const ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> &posterior,
                               Trajectory<PredPreyAgent<GRIDSIZE>> startState);
 
     static void PredPreyConvergence();

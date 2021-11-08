@@ -71,6 +71,13 @@ private:
         sum.resize(size, 0.0);
         sumOfSquares.resize(size, 0.0);
     }
+
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void serialize(Archive &ar, const unsigned int version) {
+        ar & nSamples & sum & sumOfSquares;
+    }
 };
 
 

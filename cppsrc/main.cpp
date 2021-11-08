@@ -17,13 +17,33 @@
 #include "diagnostics/MeanAndVariance.h"
 #include "Plotter.h"
 
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/serialization/vector.hpp>
+
 using glp::X;
 
 
 int main(int argc, char *argv[]) {
-//    Experiments::DataflowDemo();
+//    std::stringstream strstr;
+//    boost::archive::binary_oarchive boostout(strstr);
+//
+//
+//    boostout << m;
+//    std::cout << strstr.str() << std::endl;
+//
+//    boost::archive::binary_iarchive boostin(strstr);
+//
+//    ChainStats mm;
+//    boostin >> mm;
+//
+//    std::cout << mm << std::endl;
+
     Experiments::PredPreyConvergence();
 
+    //    Experiments::DataflowDemo();
 // Experiments::BinomialAgentAssimilation();
 //  Experiments::CatMouseSingleObservation();
 //    Experiments::CatMouseAssimilation();

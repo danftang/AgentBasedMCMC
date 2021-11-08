@@ -5,6 +5,10 @@
 #ifndef GLPKTEST_MULTICHAINSTATS_H
 #define GLPKTEST_MULTICHAINSTATS_H
 
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/serialization/vector.hpp>
+
 #include "ChainStats.h"
 
 class MultiChainStats: public std::vector<ChainStats> {
@@ -27,6 +31,17 @@ public:
 
     int dimension() const {
         return size()==0?0:front().dimension();
+    }
+
+    std::vector<double> meanEndState() {
+        std::vector<double> mean = (*this)[0].meanEndState;
+        for(int j=1; j<size(); ++j) {
+            for(int i=0; i<mean.size(); ++i) {
+                mean[i] += (*this)[j].meanEndState[i];
+            }
+        }
+        for(int i=0; i<mean.size(); ++i) mean[i] /= size();
+        return mean;
     }
 
     // Calculates the effective number of samples as defined in
@@ -169,6 +184,14 @@ public:
             out << chain.meanVariance.nSamples << " " << chain.meanVariance.sum << " " << chain.meanVariance.sumOfSquares << " " << chain.varioStride << " " << chain.vario << std::endl;
         }
         return out;
+    }
+
+private:
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void serialize(Archive &ar, const unsigned int version) {
+        ar & static_cast<std::vector<ChainStats> &>(*this);
     }
 };
 
