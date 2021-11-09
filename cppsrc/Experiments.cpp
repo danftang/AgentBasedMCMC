@@ -8,14 +8,13 @@
 #include "compose.h"
 #include "Experiments.h"
 #include "agents/CatMouseAgent.h"
-#include "ABMProblem.h"
+#include "PredPreyProblem.h"
 #include "SimplexMCMC.h"
 #include "agents/PredPreyAgent.h"
 #include "PoissonState.h"
 #include "DataAssimilation.h"
 #include "debug.h"
 #include "BinomialDistribution.h"
-#include "TrajectoryPriorDistribution.h"
 #include "SampleStatistics.h"
 #include "TrajectorySampler.h"
 #include "TrajectoryLikelihoodPMF.h"
@@ -178,6 +177,7 @@ void Experiments::PredPreyConvergence() {
     }
 
     boostout << multiChainStats;
+
     MultiChainStats statsReloaded;
     boost::archive::binary_iarchive boostin(strstr);
     boostin >> statsReloaded;

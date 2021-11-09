@@ -155,7 +155,7 @@ public:
 
 
 //    void doAnalysis(const PoissonState<AGENT> &priorStartState, int nSamples, int burnInSamples) {
-//        ABMProblem<AGENT> abm(realTrajectory.nTimesteps(), observations, [&](const Trajectory<AGENT> &trajectory) {
+//        PredPreyProblem<AGENT> abm(realTrajectory.nTimesteps(), observations, [&](const Trajectory<AGENT> &trajectory) {
 //            return priorStartState.extendedLogProb(trajectory(0));
 //        });
 //        abm.advBasis();

@@ -92,7 +92,7 @@
 ////////            const Trajectory<AGENT> &initialTrajectory,
 //////            int nSamples) {
 //////
-//////        ABMProblem<AGENT> abm(nTimeseps, observations, [&](const Trajectory<AGENT> &exactEndState) {
+//////        PredPreyProblem<AGENT> abm(nTimeseps, observations, [&](const Trajectory<AGENT> &exactEndState) {
 //////            return startStatePrior.extendedLogProb(exactEndState(0));
 //////        });
 //////        SimplexMCMC mcmc(abm, abm.logProbFunc());

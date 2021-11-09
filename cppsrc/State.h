@@ -6,6 +6,9 @@
 #define GLPKTEST_STATE_H
 
 #include <utility>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/split_member.hpp>
+#include <assert.h>
 #include "LinearSum.h"
 #include "Event.h"
 
@@ -18,6 +21,8 @@ public:
 
     int       time;
     AGENT     agent;
+
+    State(): time(-1), agent(-1) { }
 
     State(int time, const AGENT &agent):
     time(time),
@@ -78,6 +83,25 @@ public:
         }
         return endStateToEvents;
     }
+
+private:
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void load(Archive &ar, const unsigned int version) {
+        int agentId;
+        ar & time & agentId;
+        agent = AGENT(agentId);
+    }
+
+    template <typename Archive>
+    void save(Archive &ar, const unsigned int version) const {
+        int agentId = agent;
+        ar & time & agentId;
+    }
+
+    BOOST_SERIALIZATION_SPLIT_MEMBER();
+
 
 };
 

@@ -6,8 +6,7 @@
 #define GLPKTEST_AGENTSTATEOBSERVATION_H
 
 #include "boost/math/distributions/binomial.hpp"
-#include "ConvexPMFProduct.h"
-#include "TrajectoryPriorDistribution.h"
+#include "ConvexPolyhedron.h"
 #include "debug.h"
 #include "constants.h"
 
@@ -20,6 +19,7 @@ public:
     double logPExpectation;
     double normalisation;
 
+    AgentStateObservation() {};
 
     AgentStateObservation(const State<AGENT> &state, int nObserved, double pObserveIfPresent):
     state(state),
@@ -41,7 +41,7 @@ public:
         logPExpectation = log(infeasibleExpectationFraction*sumPsq/(sumP*sumP));
         normalisation = 1.0/sumP;
 //        logPExpectation = log(P(nObserved+1.0));
-        debug(std::cout << "Generating observation " << state << " " << nObserved << " " << pObserveIfPresent << " " << exp(logPExpectation) << std::endl);
+        debug(std::cout << "Generating observation " << *this << std::endl);
     }
 
 
@@ -66,6 +66,38 @@ public:
         }
         return ConvexPolyhedron();
     }
+
+    static std::vector<AgentStateObservation<AGENT>>
+    generateObservations(const Trajectory<AGENT> &realTrajectory, double pMakeObservation, double pObserveIfPresent) {
+        int nTimesteps = realTrajectory.nTimesteps();
+        std::vector<AgentStateObservation<AGENT>> observations;
+        for (int t=0; t<nTimesteps;++t) {
+            for (int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+                if (Random::nextDouble() < pMakeObservation) {
+                    AGENT agent(agentId);
+                    int nObserved = Random::nextBinomial(realTrajectory(t,agent), pObserveIfPresent);
+                    observations.emplace_back(State<AGENT>(t,agent), nObserved, pObserveIfPresent);
+                    assert(observations.back().support().isValidSolution(realTrajectory));
+                }
+            }
+        }
+        return observations;
+    }
+
+    friend std::ostream &operator <<(std::ostream &out, const AgentStateObservation<AGENT> & observation) {
+        out << observation.state << " " << observation.lowerBound << " " << observation.pObserveIfPresent << " " << exp(observation.logPExpectation);
+        return out;
+    }
+
+private:
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void serialize(Archive &ar, const unsigned int version) {
+        ar & state & lowerBound & pObserveIfPresent & logPExpectation & normalisation;
+    }
+
+
 };
 
 

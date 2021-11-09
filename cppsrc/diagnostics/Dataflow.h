@@ -27,6 +27,8 @@
 //  much easier (since a function with no arguments must have a well defined return type)!
 //
 ////////////////////////////////////////////////////////////////////////////////////////
+#include "../gnuplot-iostream/gnuplot-iostream.h"
+
 namespace dataflow {
 //    template<typename T> using Consumer = std::function<bool(T)>;
 //

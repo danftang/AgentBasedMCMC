@@ -6,6 +6,8 @@
 #define GLPKTEST_TRAJECTORY_H
 
 #include <cfloat>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/vector.hpp>
 #include "glpkpp.h"
 #include "ModelState.h"
 #include "StateTrajectory.h"
@@ -255,6 +257,15 @@ public:
             return Trajectory<AGENT>(nTimesteps, startStateSampler);
         };
     }
+
+private:
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void serialize(Archive &ar, const unsigned int version) {
+        ar & static_cast<std::vector<double> &>(*this);
+    }
+
 
 };
 
