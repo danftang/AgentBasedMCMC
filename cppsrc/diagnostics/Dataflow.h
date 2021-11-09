@@ -286,25 +286,52 @@ namespace dataflow {
         }
     };
 
-    template<typename FIRSTCONSUMER,typename LASTCONSUMER>
+//    template<typename FIRSTCONSUMER,typename LASTCONSUMER>
+//    class SwitchOnClose {
+//    public:
+//        FIRSTCONSUMER consumer1;
+//        LASTCONSUMER  consumer2;
+//        bool consumer1IsOpen;
+//
+//        SwitchOnClose(FIRSTCONSUMER beforeSwitch, LASTCONSUMER afterSwitch):
+//                consumer1(std::move(beforeSwitch)),
+//                consumer2(std::move(afterSwitch)),
+//                consumer1IsOpen(true) {}
+//
+//        template<typename T>
+//        bool operator()(const T &item) {
+//            if (consumer1IsOpen) {
+//                consumer1IsOpen = consumer1(item);
+//                return true;
+//            }
+//            return consumer2(item);
+//        }
+//    };
+
+
+    template<typename... CONSUMERS>
     class SwitchOnClose {
     public:
-        FIRSTCONSUMER consumer1;
-        LASTCONSUMER  consumer2;
-        bool consumer1IsOpen;
+        std::tuple<CONSUMERS...> consumers;
+        int activeConsumer;
 
-        SwitchOnClose(FIRSTCONSUMER beforeSwitch, LASTCONSUMER afterSwitch):
-                consumer1(std::move(beforeSwitch)),
-                consumer2(std::move(afterSwitch)),
-                consumer1IsOpen(true) {}
+        SwitchOnClose(CONSUMERS... consumers):
+                consumers(std::move(consumers)...),
+                activeConsumer(0) {
+        }
 
         template<typename T>
         bool operator()(const T &item) {
-            if (consumer1IsOpen) {
-                consumer1IsOpen = consumer1(item);
-                return true;
-            }
-            return consumer2(item);
+            feedConsumers(item, std::index_sequence_for<CONSUMERS...>());
+            return activeConsumer < sizeof...(CONSUMERS);
+        }
+
+    private:
+        template<typename T, size_t...INDEXES>
+        void feedConsumers(const T &item, std::index_sequence<INDEXES...> idx) {
+            bool isStillOpen = false;
+            (((activeConsumer == INDEXES)?(isStillOpen = std::get<INDEXES>(consumers)(item)):false),...);
+            activeConsumer += 1 - isStillOpen;
         }
     };
 

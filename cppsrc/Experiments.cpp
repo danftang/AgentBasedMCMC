@@ -49,17 +49,32 @@ void Experiments::DataflowDemo() {
     MeanAndVariance  meanVariances;
     std::vector<std::vector<double>> measureLog;
 
-    sampler >>= Drop{nBurnIn} >>= Split {
-            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter(nSamples/10, "Energy"),
-            Take(nSamples) >>= Map { synopsis } >>= Split{
-                    meanVariances.consumer(),
-                    save(measureLog)
-            }
+//    sampler >>= Drop{nBurnIn} >>= Split {
+//            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter(nSamples/10, "Energy"),
+//            Take(nSamples) >>= Map { synopsis } >>= Split{
+//                    meanVariances.consumer(),
+//                    save(measureLog)
+//            }
+//    };
+
+    std::valarray<int> log1(5);
+    std::valarray<int> log2(4);
+    std::valarray<int> log3(1);
+
+
+    sampler >>= SwitchOnClose {
+        save(log1),
+        save(log2),
+        save(log3)
     };
 
-    std::cout << meanVariances.mean() << std::endl;
-    std::cout << meanVariances.sampleVariance() << std::endl;
-    std::cout << measureLog << std::endl;
+    std::cout << log1 << std::endl;
+    std::cout << log2 << std::endl;
+    std::cout << log3 << std::endl;
+
+//    std::cout << meanVariances.mean() << std::endl;
+//    std::cout << meanVariances.sampleVariance() << std::endl;
+//    std::cout << measureLog << std::endl;
 
 
 }
@@ -80,6 +95,9 @@ MultiChainStats Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajector
     std::valarray<std::valarray<double>> lastSynopsisSamples(nSamples/2);
     ModelState<PredPreyAgent<GRIDSIZE>> firstMeanEndState;
     ModelState<PredPreyAgent<GRIDSIZE>> lastMeanEndState;
+    std::valarray<Trajectory<PredPreyAgent<GRIDSIZE>>> firstNextSample(Trajectory<PredPreyAgent<GRIDSIZE>>(0),1);
+    std::valarray<Trajectory<PredPreyAgent<GRIDSIZE>>> lastNextSample(Trajectory<PredPreyAgent<GRIDSIZE>>(0),1);
+
 
 //    sampler >>= Split {
 //            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter(nSamples/10, "Energy"),
@@ -90,18 +108,19 @@ MultiChainStats Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajector
 //    };
 
     sampler >>= Drop(nBurnIn)
-            >>= Take(nSamples)
-            >>= Split {
-                Map { Experiments::Synopsis<GRIDSIZE> } >>= SwitchOnClose {
-                    save(firstSynopsisSamples),
-                    save(lastSynopsisSamples)
-                },
-                Map { trajectoryToEndState } >>= SwitchAfter {
-                    nSamples/2,
-                    Sum(firstMeanEndState),
-                    Sum(lastMeanEndState)
-                }
-            };
+            >>= SwitchOnClose {
+                    Split {
+                        Map{ Experiments::Synopsis<GRIDSIZE> } >>= save(firstSynopsisSamples),
+                        Take(nSamples/2) >>= Map{ trajectoryToEndState } >>= Sum(firstMeanEndState)
+                    },
+                    save(firstNextSample),
+                    Split{
+                        Map{ Experiments::Synopsis<GRIDSIZE> } >>= save(lastSynopsisSamples),
+                        Take(nSamples/2) >>= Map{ trajectoryToEndState } >>= Sum(firstMeanEndState)
+                    },
+                    save(lastNextSample)
+                };
+
 
     std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
     std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
@@ -115,8 +134,8 @@ MultiChainStats Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajector
 
     MultiChainStats stats;
     stats.reserve(2);
-    stats.emplace_back(std::move(firstSynopsisSamples), nLags, maxLagProportion, std::move(firstMeanEndState));
-    stats.emplace_back(std::move(lastSynopsisSamples), nLags, maxLagProportion, std::move(lastMeanEndState));
+    stats.emplace_back(std::move(firstSynopsisSamples), nLags, maxLagProportion, std::move(firstMeanEndState), std::move(firstNextSample[0]));
+    stats.emplace_back(std::move(lastSynopsisSamples), nLags, maxLagProportion, std::move(lastMeanEndState), std::move(lastNextSample[0]));
 //    std::cout << stats << std::endl;
     return std::move(stats);
 }

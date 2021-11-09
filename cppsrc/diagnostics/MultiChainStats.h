@@ -182,6 +182,7 @@ public:
         out << "Samples   Sums    SumOfSquares    VarioStride     Vario" << std::endl;
         for(const ChainStats &chain: multiChainStats) {
             out << chain.meanVariance.nSamples << " " << chain.meanVariance.sum << " " << chain.meanVariance.sumOfSquares << " " << chain.varioStride << " " << chain.vario << std::endl;
+            out << chain.nextSample << std::endl;
         }
         return out;
     }

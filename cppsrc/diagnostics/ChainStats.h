@@ -19,15 +19,17 @@ public:
     std::valarray<std::valarray<double>> vario;
     int varioStride;
     std::vector<double> meanEndState;
+    std::vector<double> nextSample;
 
     ChainStats() {}
 
     template<typename SYNOPSIS>
-    ChainStats(std::valarray<SYNOPSIS> synopsisSamples, int nLags, double maxLagProportion, std::vector<double> meanEndState) :
+    ChainStats(std::valarray<SYNOPSIS> synopsisSamples, int nLags, double maxLagProportion, std::vector<double> meanEndState, std::vector<double> nextSample) :
             meanVariance(std::move(synopsisSamples)),
             vario(variogram(synopsisSamples, nLags, maxLagProportion)),
             varioStride((maxLagProportion * synopsisSamples.size()) / (nLags - 1.0)),
-            meanEndState(std::move(meanEndState)) {
+            meanEndState(std::move(meanEndState)),
+            nextSample(std::move(nextSample)) {
     }
 
     int nSamples() const { return meanVariance.nSamples; }
@@ -76,7 +78,7 @@ private:
 
     template <typename Archive>
     void serialize(Archive &ar, const unsigned int version) {
-        ar & meanVariance & vario & varioStride & meanEndState;
+        ar & meanVariance & vario & varioStride & meanEndState & nextSample;
     }
 };
 
