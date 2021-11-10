@@ -8,10 +8,15 @@
 #include <random>
 #include <iostream>
 #include <cassert>
+#include <chrono>
 
 class Random {
 public:
     thread_local static std::mt19937 gen;
+
+    static void seedFromTimeNow() {
+        gen.seed(std::chrono::steady_clock::now().time_since_epoch().count());
+    }
 
     static double nextDouble(double start = 0.0, double end=1.0) {
         return std::uniform_real_distribution<double>(start,end)(gen);

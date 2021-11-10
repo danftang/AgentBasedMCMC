@@ -15,16 +15,43 @@
 
 class FiguresForPaper {
 public:
-    static void generateProblemFile();
+
+    static void generateAllProblemFiles() {
+        for (int nTimesteps = 2; nTimesteps <= 16; nTimesteps *= 2) {
+            generateStandardProblemFile<8>(nTimesteps);
+            generateStandardProblemFile<16>(nTimesteps);
+            generateStandardProblemFile<32>(nTimesteps);
+        }
+    }
 
     template<int GRIDSIZE>
-    static void generateStats(const char *problemFile, const char *outputFile) {
+    static void generateStandardProblemFile(int nTimesteps)  {
+        constexpr double pPredator = 0.05; // (0.08 + 10.24/(GRIDSIZE*GRIDSIZE))/3.0;
+        constexpr double pPrey = 0.05; // 2.0*pPredator;
+        constexpr double pMakeObservation = 0.02;
+        constexpr double pObserveIfPresent = 0.9;
+        std::string probFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".prob";
+        std::ofstream probFile(probFilename);
+        boost::archive::binary_oarchive probArchive(probFile);
+
+        Random::gen.seed(1234);
+        PredPreyProblem<GRIDSIZE> problem(nTimesteps, pPredator, pPrey, pMakeObservation, pObserveIfPresent);
+        std::cout << problem << std::endl;
+        probArchive << problem;
+    }
+
+
+    template<int GRIDSIZE>
+    static void generateStats(int nTimesteps) {
+        std::string problemFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".prob";
+        std::string statFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".stat";
         constexpr int nThreads = 4;
 
-        std::ifstream file(problemFile);
-        boost::archive::binary_iarchive boostArchive(file);
+        std::ifstream probFile(problemFilename);
+        if(!probFile.good()) throw("Can't open problem probFile for this geometry. Run generateStandardProblemFile first.");
+        boost::archive::binary_iarchive probArchive(probFile);
         PredPreyProblem<GRIDSIZE> problem;
-        boostArchive >> problem;
+        probArchive >> problem;
 
         std::cout << "Loaded problem" << std::endl;
         std::cout << problem;
@@ -42,20 +69,21 @@ public:
             multiChainStats += futureResults[thread].get();
         }
 
-        std::ofstream outFile(outputFile);
-        boost::archive::binary_oarchive boostout(outFile);
-
-        boostout << multiChainStats;
+        std::ofstream statFile(statFilename);
+        if(!statFile.good()) throw("Can't open stats probFile to save results.");
+        boost::archive::binary_oarchive statArchive(statFile);
+        statArchive << multiChainStats;
+        std::cout << "Saved stats" << std::endl;
         std::cout << multiChainStats;
     }
 
     template<int GRIDSIZE>
     static MultiChainStats startStatsThread(ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> posterior, Trajectory<PredPreyAgent<GRIDSIZE>> startState) {
         using namespace dataflow;
-        constexpr int nSamples = 50000; // must be an even number
+        constexpr int nSamples = 1000000; // must be an even number
         assert((nSamples&1) == 0);
-        const double maxLagProportion = 0.4;
-        const int nLags = 80;
+        const double maxLagProportion = 0.5;
+        const int nLags = 100;
         constexpr int nBurnIn = nSamples*0.5;
         auto trajectoryToEnergy = [](const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory) { return -trajectory.logProb(); };
         auto trajectoryToEndState = [](const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory) { return trajectory.endState(); };
@@ -99,41 +127,41 @@ public:
     }
 
     template<int GRIDSIZE>
-    static void plotStats(const char *statsFile, const char *problemFile) {
+    static void plotStats(int nTimesteps) {
+        std::string statFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".stat";
+        std::ifstream statFile(statFilename);
+        if(!statFile.good()) throw("Can't open stats probFile. Maybe you haven't run the analysis for this geometry yet.");
+        boost::archive::binary_iarchive statArchive(statFile);
         MultiChainStats stats;
-        std::ifstream inFile(statsFile);
-        boost::archive::binary_iarchive boostin(inFile);
-        boostin >> stats;
+        statArchive >> stats;
 
-        std::ifstream file(problemFile);
-        boost::archive::binary_iarchive boostArchive(file);
+        std::string probFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".prob";
+        std::ifstream probFile(probFilename);
+        if(!probFile.good()) throw("Can't open problem probFile for this geometry. Odd because the stats probFile exists!");
+        boost::archive::binary_iarchive probArchive(probFile);
         PredPreyProblem<GRIDSIZE> problem;
-        boostArchive >> problem;
+        probArchive >> problem;
 
-        std::cout << stats;
-
-        Plotter gp;
+        // plot autocorrelations
+        Plotter acPlotter;
         std::valarray<std::valarray<double>> autocorrelation = stats.autocorrelation();
-        gp.heatmap(autocorrelation, 0.5, autocorrelation[0].size()-0.5, 0.5*stats.front().varioStride, (autocorrelation.size()+0.5)*stats.front().varioStride);
+        int nDimensions = autocorrelation[0].size();
+        double xStride = stats.front().varioStride;
+        acPlotter << "plot ";
+        for(int d=1; d<=nDimensions; ++d) acPlotter << "'-' using (" << xStride <<  "*$0):" << d << " with lines title 'synopsis " << d << "', ";
+        acPlotter << "0 with lines notitle\n";
+        for(int d=1; d<=nDimensions; ++d) acPlotter.send1d(autocorrelation);
 
-        Plotter gp2;
-        gp2 << "plot '-' using 0:1 with lines, '-' using 0:2 with lines, 0 with lines\n";
-        gp2.send1d(autocorrelation);
-        gp2.send1d(autocorrelation);
-
+        // Print scale reduction and effective samples
         std::valarray<double> neff = stats.effectiveSamples();
         std::valarray<double> ineff = (stats.nSamples()*1.0)/neff;
-
-        std::cout << stats << std::endl;
         std::cout << "Potential scale reduction: " << stats.potentialScaleReduction() << std::endl;
         std::cout << "Actual number of samples per chain: " << stats.nSamples() << std::endl;
         std::cout << "Effective number of samples: " << neff << std::endl;
         std::cout << "Sample inefficiency factor: " << ineff << std::endl;
 
-        Plotter gp3;
-        gp3.plot(problem.realTrajectory.endState(), stats.meanEndState());
-
-
+        // plot end state
+        Plotter().plot(problem.realTrajectory.endState(), stats.meanEndState());
     }
 
     template<int GRIDSIZE>
@@ -157,6 +185,10 @@ public:
             origin += partitionSize;
         }
         return synopsis;
+    }
+
+    static std::string filenamePrefix(int gridsize, int timesteps) {
+        return "PredPrey" + std::to_string(gridsize) + "-" + std::to_string(timesteps);
     }
 
 };

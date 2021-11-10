@@ -50,12 +50,46 @@ public:
         send1d(pointData);
     }
 
+
+    template<int GRIDSIZE>
+    void plot(const ModelState<PredPreyAgent<GRIDSIZE>> &realState) {
+        std::vector <std::tuple<double, double, double>> pointData;
+
+        for (int x = 0; x < GRIDSIZE; ++x) {
+            for (int y = 0; y < GRIDSIZE; ++y) {
+                int colour = 2 * (realState[PredPreyAgent<GRIDSIZE>(x, y, PredPreyAgent<GRIDSIZE>::PREDATOR)] > 0.0)
+                             + (realState[PredPreyAgent<GRIDSIZE>(x, y, PredPreyAgent<GRIDSIZE>::PREY)] > 0.0);
+                if (colour != 0)
+                    pointData.emplace_back(x, y, colour);
+            }
+        }
+
+        *this << "set linetype 1 lc 'red'\n";
+        *this << "set linetype 2 lc 'blue'\n";
+        *this << "set linetype 3 lc 'magenta'\n";
+        *this << "plot [-0.5:" << GRIDSIZE - 0.5 << "][-0.5:" << GRIDSIZE - 0.5 << "] ";
+        *this << "'-' with points pointtype 5 pointsize 0.5 lc variable notitle\n";
+        send1d(pointData);
+    }
+
+
     template<typename T>
     void heatmap(const T &matrixData, double xBegin = 0.0, double xEnd = 0.0, double yBegin = 0.0, double yEnd = 0.0) {
         double xScale = (xEnd == xBegin)?1.0:(xEnd-xBegin)/(matrixData[0].size()-1.0);
         double yScale = (yEnd == yBegin)?1.0:(yEnd-yBegin)/(matrixData.size()-1.0);
         (*this) << "plot '-' using ($1*" <<xScale<< "+" <<xBegin<< "):($2*" <<yScale<< "+"<<yBegin<< "):3 matrix with image notitle\n";
         send1d(matrixData);
+    }
+
+    template<int GRIDSIZE>
+    void animate(Trajectory<PredPreyAgent<GRIDSIZE>> &predPreyTrajectory, double frameRate) {
+
+        long frameDelay = 1000/frameRate;
+        for(int t=0; t <= predPreyTrajectory.nTimesteps(); ++t) {
+            auto clockTime = std::chrono::steady_clock::now();
+            plot(predPreyTrajectory(t));
+            std::this_thread::sleep_until(clockTime + std::chrono::milliseconds(frameDelay));
+        }
     }
 };
 

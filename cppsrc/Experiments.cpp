@@ -35,6 +35,26 @@
 #include "diagnostics/Dataflow.h"
 #include "diagnostics/MultiChainStats.h"
 
+
+void Experiments::animatedPredPreyDemo() {
+    std::cout << PredPreyAgent<32>::pPredBirthGivenPrey
+              << " " << PredPreyAgent<32>::pPredDie
+              << " " << PredPreyAgent<32>::pPreyEatenGivenPred
+              << " " << PredPreyAgent<32>::pPreyDie
+              << " " << PredPreyAgent<32>::pPreyBirth
+              << " " << std::endl;
+
+    constexpr int GRIDSIZE=16;
+    auto startStatePMF = BernoulliModelState<PredPreyAgent<GRIDSIZE>>([](PredPreyAgent<GRIDSIZE> agent) {
+        return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?0.05:0.05;
+    });
+
+    Random::seedFromTimeNow();
+    Trajectory<PredPreyAgent<GRIDSIZE>> traj(16, startStatePMF.sampler());
+    Plotter().animate(traj, 10);
+}
+
+
 void Experiments::DataflowDemo() {
     using namespace dataflow;
     int nBurnIn = 100;

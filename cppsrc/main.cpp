@@ -23,11 +23,14 @@ using glp::X;
 
 int main(int argc, char *argv[]) {
 
-//    FiguresForPaper::generateProblemFile();
+    FiguresForPaper::generateAllProblemFiles();
+//    FiguresForPaper::generateStandardProblemFile();
 
-    FiguresForPaper::generateStats<8>("PredPrey8.2.prob","PredPrey8.2.stats");
+//    FiguresForPaper::generateStats<8>(2);
+//    FiguresForPaper::plotStats<8>(2);
 //    Experiments::PredPreyConvergence();
 
+//    Experiments::animatedPredPreyDemo();
 //        Experiments::DataflowDemo();
 // Experiments::BinomialAgentAssimilation();
 //  Experiments::CatMouseSingleObservation();

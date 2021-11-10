@@ -32,12 +32,18 @@ public:
         PREY
     };
 
-    static constexpr double pPredBirthGivenPrey = 0.1; // 0.5; // birth prob given prey
-    static constexpr double pPredDie = 0.07; // death prob
-    static constexpr double pPreyBirth = 0.06; // birth prob
-    static constexpr double pPreyDie = 0.02;//0.03; // death prob
-    static constexpr double pPreyEatenGivenPred = 0.15; // 0.55; // death prob given pred
+    static constexpr double pNoPred = 0.95; // steady state probability that there are no predators on a square
+    static constexpr double pNoPrey = 0.95; // steady state probability that there are no prey on a square
+    static constexpr double clustering = 0.3; // tendency to cluster / instability
+    static constexpr double pNoPred4 = pNoPred*pNoPred*pNoPred*pNoPred; // no pow function for constexpr :-(
+    static constexpr double pNoPrey4 = pNoPrey*pNoPrey*pNoPrey*pNoPrey;
 
+    // values for which there is a steady state prior of uniform, uncorrelated Poisson distribution
+    static constexpr double pPredBirthGivenPrey = clustering;
+    static constexpr double pPredDie = (1.0-pNoPrey4)*pPredBirthGivenPrey;
+    static constexpr double pPreyEatenGivenPred = clustering;
+    static constexpr double pPreyDie = 0.1; // stability/mixing?
+    static constexpr double pPreyBirth = pPreyDie + (1.0-pNoPred4)*pPreyEatenGivenPred;
 
     // Agent Domain stuff
     static constexpr int domainSize() { return GRIDSIZE*GRIDSIZE*2; }
@@ -71,12 +77,14 @@ public:
     }
 
 
+    // Count of agents of given type north, south, east and west of this agent.
     double surroundingCountOf(Type type, const ModelState<PredPreyAgent<GRIDSIZE>> &others) const {
         return others[PredPreyAgent(xRight(),yPosition(),type)] +
         others[PredPreyAgent(xLeft(),yPosition(),type)] +
         others[PredPreyAgent(xPosition(),yUp(),type)] +
         others[PredPreyAgent(xPosition(),yDown(),type)];
     }
+
 
 //
 //

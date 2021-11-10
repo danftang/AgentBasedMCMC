@@ -75,6 +75,8 @@ public:
     static void PredPreyConvergence();
 
     static void DataflowDemo();
+
+    static void animatedPredPreyDemo();
 };
 
 

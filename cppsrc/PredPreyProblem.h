@@ -34,7 +34,7 @@ public:
 
 
     BernoulliModelState<PredPreyAgent<GRIDSIZE>> startStatePrior() const {
-        return BernoulliModelState<PredPreyAgent<GRIDSIZE>>([this](PredPreyAgent<GRIDSIZE> agent) {
+        return BernoulliModelState<PredPreyAgent<GRIDSIZE>>([pPredator = pPredator, pPrey = pPrey](PredPreyAgent<GRIDSIZE> agent) {
             return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
         });
     }
