@@ -37,21 +37,24 @@
 
 
 void Experiments::animatedPredPreyDemo() {
-    std::cout << PredPreyAgent<32>::pPredBirthGivenPrey
-              << " " << PredPreyAgent<32>::pPredDie
-              << " " << PredPreyAgent<32>::pPreyEatenGivenPred
-              << " " << PredPreyAgent<32>::pPreyDie
-              << " " << PredPreyAgent<32>::pPreyBirth
+    constexpr int GRIDSIZE=64;
+    int nTimesteps = 128;
+    int framerate = 15;
+
+    std::cout << PredPreyAgent<GRIDSIZE>::pPredBirthGivenPrey
+              << " " << PredPreyAgent<GRIDSIZE>::pPredDie
+              << " " << PredPreyAgent<GRIDSIZE>::pPreyEatenGivenPred
+              << " " << PredPreyAgent<GRIDSIZE>::pPreyDie
+              << " " << PredPreyAgent<GRIDSIZE>::pPreyBirth
               << " " << std::endl;
 
-    constexpr int GRIDSIZE=16;
     auto startStatePMF = BernoulliModelState<PredPreyAgent<GRIDSIZE>>([](PredPreyAgent<GRIDSIZE> agent) {
         return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?0.05:0.05;
     });
 
     Random::seedFromTimeNow();
-    Trajectory<PredPreyAgent<GRIDSIZE>> traj(16, startStatePMF.sampler());
-    Plotter().animate(traj, 10);
+    Trajectory<PredPreyAgent<GRIDSIZE>> traj(nTimesteps, startStatePMF.sampler());
+    Plotter().animate(traj, framerate);
 }
 
 

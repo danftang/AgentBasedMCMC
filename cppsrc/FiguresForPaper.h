@@ -80,11 +80,11 @@ public:
     template<int GRIDSIZE>
     static MultiChainStats startStatsThread(ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> posterior, Trajectory<PredPreyAgent<GRIDSIZE>> startState) {
         using namespace dataflow;
-        constexpr int nSamples = 1000000; // must be an even number
+        constexpr int nSamples = 5000000; // must be an even number
         assert((nSamples&1) == 0);
         const double maxLagProportion = 0.5;
         const int nLags = 100;
-        constexpr int nBurnIn = nSamples*0.5;
+        constexpr int nBurnIn = nSamples*0.25;
         auto trajectoryToEnergy = [](const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory) { return -trajectory.logProb(); };
         auto trajectoryToEndState = [](const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory) { return trajectory.endState(); };
         MCMCSampler sampler(posterior, startState);
@@ -147,6 +147,7 @@ public:
         std::valarray<std::valarray<double>> autocorrelation = stats.autocorrelation();
         int nDimensions = autocorrelation[0].size();
         double xStride = stats.front().varioStride;
+        acPlotter << "set title 'Autocorrelations " << GRIDSIZE << " x " << nTimesteps << "'\n";
         acPlotter << "plot ";
         for(int d=1; d<=nDimensions; ++d) acPlotter << "'-' using (" << xStride <<  "*$0):" << d << " with lines title 'synopsis " << d << "', ";
         acPlotter << "0 with lines notitle\n";
@@ -155,13 +156,15 @@ public:
         // Print scale reduction and effective samples
         std::valarray<double> neff = stats.effectiveSamples();
         std::valarray<double> ineff = (stats.nSamples()*1.0)/neff;
+        std::cout << "Summary statistics for " << GRIDSIZE << " x " << nTimesteps << std::endl;
         std::cout << "Potential scale reduction: " << stats.potentialScaleReduction() << std::endl;
         std::cout << "Actual number of samples per chain: " << stats.nSamples() << std::endl;
         std::cout << "Effective number of samples: " << neff << std::endl;
-        std::cout << "Sample inefficiency factor: " << ineff << std::endl;
+        std::cout << "Sample inefficiency factor: " << ineff << std::endl << std::endl;
 
         // plot end state
-        Plotter().plot(problem.realTrajectory.endState(), stats.meanEndState());
+
+        Plotter().plot(problem.realTrajectory.endState(), stats.meanEndState(),"End state " + std::to_string(GRIDSIZE) + " x " + std::to_string(nTimesteps));
     }
 
     template<int GRIDSIZE>

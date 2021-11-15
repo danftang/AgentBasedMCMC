@@ -14,7 +14,7 @@ class Plotter: public Gnuplot {
 public:
 
     template<int GRIDSIZE>
-    void plot(const ModelState<PredPreyAgent<GRIDSIZE>> &realState, const std::vector<double> &analysis) {
+    void plot(const ModelState<PredPreyAgent<GRIDSIZE>> &realState, const std::vector<double> &analysis, std::string title="Model state") {
         typedef std::tuple<double, double, double, double, double> HeatRecord;
         std::vector <std::vector<HeatRecord>> heatData;
         std::vector <std::tuple<double, double, double>> pointData;
@@ -30,16 +30,20 @@ public:
             }
         }
 
-        double maxP = 0.5;
+        double maxP = 0.0;
+        for(double p : analysis) maxP = std::max(maxP, p);
+//        std::cout << "maxP = " << maxP << std::endl;
+
         for (int x = 0; x < GRIDSIZE; ++x) {
             std::vector <HeatRecord> &record = heatData.emplace_back();
             for (int y = 0; y < GRIDSIZE; ++y) {
                 double lPrey = analysis[PredPreyAgent<GRIDSIZE>(x, y, PredPreyAgent<GRIDSIZE>::PREY)];
                 double lPred = analysis[PredPreyAgent<GRIDSIZE>(x, y, PredPreyAgent<GRIDSIZE>::PREDATOR)];
-                record.emplace_back(x, y, std::min(lPrey, maxP) * 240.0/maxP, 0.0, std::min(lPred, maxP) * 240.0/maxP);
+                record.emplace_back(x, y, lPrey * 240.0/maxP, 0.0, lPred * 240.0/maxP);
             }
         }
 
+        *this << "set title '" << title << "'\n";
         *this << "set linetype 1 lc 'red'\n";
         *this << "set linetype 2 lc 'blue'\n";
         *this << "set linetype 3 lc 'magenta'\n";

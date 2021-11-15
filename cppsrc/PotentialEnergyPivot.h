@@ -10,9 +10,9 @@
 
 class PotentialEnergyPivot: public ProposalPivot {
 public:
-    static constexpr double kappaRow = -0.5;// 1.0;//-5.0; // exponential coefficient for probabilities of choosing row based on change in infeasibility
+    static constexpr double kappaRow = -0.1;//-1.125; // exponential coefficient for probabilities of choosing row based on change in infeasibility
 //    static constexpr double p1 = 0.25; // Given a simplex state that has only one high energy column, p1 gives the probability that the high energy col will be proposed
-    double kappaCol = 3.0;        // exponential coefficient for relative probability of proposing a col based on potential energy set to max(1,log(p1*nNonBasic))
+    double kappaCol = 1.2;//1.125;       // exponential coefficient for relative probability of proposing a col based on potential energy set to max(1,log(p1*nNonBasic))
 //    static constexpr double p0 = 0.01; // relative probability of choosing column with zero reduced cost compared to a high potential col
 //    static constexpr double p1 = 0.1; // relative probability of choosing a column with a low potential compared to a high potential col
 

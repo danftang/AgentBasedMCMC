@@ -49,7 +49,7 @@
 \maketitle
 
 \begin{abstract}
-The discipline of data assimilation (DA), sometimes known as data fusion, addresses the problem of how to make use of noisy, imcomplete experimental observations to provide information about the time evolution of unobserved properties of a dynamical system. DA has developed rapidly in applications such as weather forecasting but relatively little progress has been made in developing techniques that are applicable when the dynamical system is an agent based model. ABMs consist of `agents' which often make discrete choices from a number of possible actions, meaning the space of model trajectories is not continuous and we cannot use techniques based on gradient ascent, such as 4D-VAR, that require the gradient of the posterior in this space. In addition, a set of observations will typically refute the vast majority of model trajectories, making it difficult to even identify trajectories that could have given rise to the observations, and so making it challenging to use algorithms that rely on perturbing the current solution such as non-gradient optimisation or most sampling algorithms.
+The discipline of data assimilation (DA), sometimes known as data fusion, addresses the problem of how to make use of noisy, imcomplete experimental observations to provide information about unobserved properties of a dynamical system. DA has developed rapidly in some areas of research, notably weather forecasting, but relatively little progress has been made in DA techniques applicable to agent based modelling. Agent Based Models (ABMs) consist of `agents' which often make discrete choices from a number of possible actions, meaning the space of model trajectories is not continuous and we cannot use techniques based on gradient ascent, such as 4D-VAR, that require the gradient of the posterior in this space. In addition, a set of observations will typically refute the vast majority of model trajectories, making it difficult to even identify trajectories that could have given rise to the observations, and so making it challenging to use algorithms that rely on perturbing the current solution such as non-gradient optimisation or most sampling algorithms.
 
 Here we present an algorithm that generates samples of the time evolution of an agent based model, given a set of noisy, incomplete experimental observations of the system. The algorithm approximates the set of possible trajectories as a linear program and uses an extension of the simplex algorithm to provide a proposal function for Markov-Chain-Monte-Carlo sampling.
 
@@ -72,18 +72,18 @@ Other work on sampling from discrete sets: Discrete hit-and-run (Baumert et.al. 
 %##########################################
 
 
-Suppose we have a timestepping ABM where agents have a finite number of possible internal states and a finite number of ways of acting on their world. Given this, we can define an ABM as:
+Suppose we have a timestepping ABM that consists of agents with a finite number of possible internal states and a finite number of ways of acting on their world. Given this, we can define an ABM as:
 \begin{itemize}
-	\item A vector of agent actions $\mathcal{A} =\left< A_0 ... A_n \right>$
+	\item An ordered list of agent actions $\mathcal{A} =\left< A_0 ... A_n \right>$
 	
-	\item A vector of agent states $\mathcal{S} = \left<S_0 ... S_m\right>$
+	\item An ordered list of agent states $\mathcal{S} = \left<S_0 ... S_m\right>$
 	
 	\item An \textit{agent timestep}, $\pi : \mathbb{Z}\times\mathbb{Z}^{m+1}\times\mathbb{Z} \to \mathbb{R}$, which defines the probability that an agent will act in a particular way such that $\pi(\psi,\Phi,a)$ gives the probability that an agent in state $S_\psi$, surrounded by agents, $\Phi$, will perform action $A_a$ (where $\Phi$ is a vector whose $i^{th}$ element is the number of agents in state $S_i$ at the start of the timestep).
 	
 	\item An \textit{action function}, $F: \mathbb{Z} \times \mathbb{Z} \to \mathbb{Z}^{m+1}$, which defines the effect of an action on the world such that $F(\psi, a)$ returns a vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $S_i$ that result from an agent in state $S_\psi$ performing act $A_a$ (including the final state of the acting agent).
 \end{itemize}
 
-As a simple illustration, consider the simple ``cat and mouse'' ABM, which consists of just two gridsquares, left and right, within which can roam cats and mice, so the vector of agent states is, $\mathcal{S} = \left<\textrm{left cat}, \textrm{right cat}, \textrm{left mouse}, \textrm{right mouse} \right>$. In any given timestep, agents can either move or stay still, so the vector of actions is $\mathcal{A} = \left<\textrm{move}, \textrm{stay still}\right>$.
+As a simple illustration, we define the ``cat and mouse'' ABM, which consists of just two gridsquares, left and right, within which can roam cats and mice, so the list of agent states is, $\mathcal{S} = \left<\textrm{left cat}, \textrm{right cat}, \textrm{left mouse}, \textrm{right mouse} \right>$. In any given timestep, agents can either move or stay still, so the list of actions is $\mathcal{A} = \left<\textrm{move}, \textrm{stay still}\right>$.
 
 A cat moves with probability $0.5$, irrespective of other agents, while a mouse will move if there is one or more cats on the same gridsquare, otherwise it will stay still. So, the agent timestep function is
 \begin{equation}
@@ -140,17 +140,17 @@ E = \kbordermatrix{
 \]
 where all elements are zero except those representing agent $S_1$ performing action $A_0$ and agent $S_2$ performing action $A_1$.
 
-Finally, let a model trajectory be a tensor, $T$, consisting of a number of model timesteps. We use the notation $T^t$ to denote the $t^{th}$ timestep matrix, $T^t_\psi$ to denote the $\psi^{th}$ row of the $t^{th}$ timestep matrix and $T^t_{\psi a}$ to denote the $a^{th}$ element of the $\psi^{th}$ row of the $t^{th}$ timestep. By convention, we'll let indices begin at 0. Note that this tensor will generally be very large for more realistic models, but also very sparse, so it can be dealt with computationally using a sparse representation.
+Finally, let a model trajectory, $T$, be an $(m\times n\times t)$ tensor consisting of $t$ model timesteps. We use the notation $T^t$ to denote the $t^{th}$ timestep matrix, $T^t_\psi$ to denote the $\psi^{th}$ row of the $t^{th}$ timestep matrix and $T^t_{\psi a}$ to denote the $a^{th}$ element of the $\psi^{th}$ row of the $t^{th}$ timestep. By convention, indices begin at 0. Note that this tensor will generally be very large for more realistic models, but also very sparse, so it can be dealt with computationally using a sparse representation.
 
 It will occasionally be useful to refer to the set of all tensors of a given shape. For this we'll use $\mathbb{R}$ adorned with the number of elements in each index position. For example, a trajectory representing $N$ timesteps of a model with $S$ agent states and $A$ actions must be a member of the set of tensors $\mathbb{R}^N_{SA}$.
 
-A tensor must satisfy a number of constraints in order to be a valid trajectory of an ABM. Since the elements of a trajectory are counts, they must all be non-negative integers, we'll call this the \textit{non-negative integer constraint} and define the set of all non-negative integer tensors
+A tensor must satisfy a number of constraints in order to be a valid trajectory of an ABM. Since the elements of a trajectory are counts of agents, they must be non-negative integers. We'll call this the \textit{non-negative integer constraint} and define the set of all non-negative integer tensors
 \begin{equation}
 \mathcal{I}^N_{SA} = \left\{ T \in \mathbb{R^N_{SA}}: \forall t,\psi, a: T^t_{\psi a} \ge 0, T^t_{\psi a} \in \mathbb{Z}\right\}
 \label{nonNegativeInt}
 \end{equation}
 
-A trajectory must also be \textit{continuous} by which we mean that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. We call this the \textit{continuity constraint} and define the set of continuous tensors:
+A trajectory must also be \textit{continuous} by which we mean that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. We call this the \textit{continuity constraint} and define the set of continuous tensors, with respect to an action function $F$:
 \begin{equation}
 \mathcal{C}^N_{SA}(F) = \left\{T\in\mathbb{R}^N_{SA}:  \forall t \in 1 ... N-1:\forall \phi: \sum_{\psi, a} F(\psi, a)_\phi T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0\right\}
 \label{continuous}
@@ -172,7 +172,7 @@ P\left(\Psi^0 = T^0 \mathbf{1} \right) \prod_{\psi, t} P\left(T^t_{\psi} \mid \P
 0 & \text{otherwise}
 \end{cases}
 \]
-where $P(\Psi^0)$ is our prior beliefs about the state at time $t=0$, and we use $\mathbf{1}$ to denote a vector whose elements are all 1.
+where $P(\Psi^0)$ is our prior belief about the model state at time $t=0$, and we use $\mathbf{1}$ to denote a vector whose elements are all 1.
 
 
 The probability that a single agent in a given state will perform an action, given the state of the other agents, $\Psi^t$, is given by the agent timestep function, $\pi(\psi,\Psi^t,a)$, so the joint probability that $\Psi^t_\psi$ agents will perform actions $T^t_{\psi}$ in an environment of other agents $\Psi^t$, is given by the multinomial distribution
@@ -215,7 +215,7 @@ P(\Psi^0 = T^0\mathbf{1})
 
 The problem we're interested in is how to sample from this distribution. In many practical applications, sampling is difficult because the posterior has zero probability for the vast majority of tensors (i.e. most tensors are not trajectories, contain an impossible action or are refuted by the observations). Even though we can generate trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the observations refute the trajectory the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling, for example, are not practical. Techniques based on particle filtering may have more success but, for similar reasons, will likely soon reach a state containing a set of particles, none of which can be fit to the observations.
 
-In this paper we'll show how the Metropolis-Hastings algorithm can be used to generate samples from equation \eqref{posterior}. The challenge will be to create a proposal function which randomly generates a proposed next sample given the current one. For example, a common strategy with Metropolis-Hastings is to generate a new sample by perturbing one or more elements of the previous sample at random. However, if we do this with an ABM trajectory it's very unlikely that the perturbed tensor will be a trajectory that contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
+In the rest of this paper we'll show how to use the Metropolis-Hastings algorithm to generate samples from equation \eqref{posterior}. The challenge will be to create a proposal function which randomly generates a proposed next sample given the current one. A common strategy with Metropolis-Hastings is to generate a new sample by perturbing one or more elements of the previous sample at random. However, if we do this with an ABM trajectory it's very unlikely that the perturbed tensor will be a trajectory that contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
 
 \section{Approximating the support of the posterior}
 %##########################################
@@ -352,7 +352,7 @@ Using this transformation the Fermionic support of the posterior can be reduced 
 \]
 we can calculate \eqref{fermionicSupport}, and thereby represent the support of the posterior as a set of linear constraints, by calculating each term and simply concatenating their linear constraints.
 
-The idea of a $\mathcal{B}$-polyhedron as the support for a probability distribution naturally leads to the idea of a $\mathcal{B}-distribution$ which is a probability distribution which is a discrete distribution defined on the points of a $\mathcal{B}-polyhedron$. From the above, it can be seen that the posterior distribution of an ABM trajectory is a $\mathcal{B}-distribution$.
+The idea of a $\mathcal{B}$-polyhedron as the support for a probability distribution naturally leads to the idea of a $\mathcal{B}$-distribution which is a probability distribution which is a discrete distribution defined on the points of a $\mathcal{B}$-polyhedron. From the above, it can be seen that the posterior distribution of an ABM trajectory is a $\mathcal{B}$-distribution.
 
 As an illustration, consider two timesteps of the cat and mouse model. Suppose we flip a fair coin to decide whether each agent state is occupied or empty at $t=0$ and that we observe a cat in the left grid-square at time $t=1$. Our aim is to construct a set of linear constraints, $Q$, such that
 \[
@@ -703,10 +703,14 @@ e^{-k_c\Delta \epsilon^{\mu\to\mu'}}
 Notice that states with lower infeasibility and lower potential energy have higher probability, so transitions that immediately reduce infeasibility are encouraged, but so are pivots that replace high potential energy variables with low potential variables. This has the consequence that if a high potential, non-basic variable is chosen but it can't immediately reduce infeasibility, it is more likely to be made basic where it is free to change its value in subsequent transitions. This helps the process find a basis where infeasibility-reducing transitions exist.
 
 \subsubsection{Choosing temperature}
-The exponential term $e^{\frac{-E^\mu}{T}}$ in equation \eqref{penalty} is a Boltzmann distribution so $T$ can be thought of a ``temperature'' and the sampling process will act as a thermodynamic system in equilibrium (with the posterior $P_e(T_\mu|\Omega)$ acting as an additional potential energy).  It has been shown that thermodynamic systems of this type are able to solve large integer optimisation problems \cite{kirkpatrick1983optimization}. In our case, we don't need to change the temperature during the sampling process, but we do need to choose a value of $T$ initially. Higher temperatures will increase mixing in the Markov chain, but will also increase the proportion of time spent in infeasible states so we need to find a temperature that is high enough to ensure good mixing but low enough to ensure a reasonable proportion of samples are feasible.
+The exponential term $e^{\frac{-E^\mu}{T}}$ in equation \eqref{penalty} is a Boltzmann distribution so $T$ can be thought of as a ``temperature'' and the sampling process will act as a thermodynamic system in equilibrium (with the posterior $P_e(T_\mu|\Omega)$ acting as an additional potential energy).  It has been shown that thermodynamic systems of this type are able to solve large integer optimisation problems \cite{kirkpatrick1983optimization}. In our case, we don't need to change the temperature during the sampling process, but we do need to choose a value of $T$ initially. Higher temperatures will increase mixing in the Markov chain, but will also increase the proportion of time spent in infeasible states so we need to find a temperature that is high enough to ensure good mixing but low enough to ensure a reasonable proportion of samples are feasible.
 
 [TODO: Effective procedure for choosing $T$ and rationale. Choose start and target states at random and make linear probability with target state as maximum, then tune T to minimum samples to first hitting target. Repeat.
- Proportion of infeasible samples against proportion of feasible->infeasible samples. Average infeasible chain length proportion of infeasible samples/proportion of feasible->infeasible transitions. We want ]
+ Proportion of infeasible samples against proportion of feasible->infeasible samples. Average infeasible chain length proportion of infeasible samples/proportion of feasible->infeasible transitions.]
+ 
+ If we first sample uniformly from the set of all states, we can get an idea of the number of states at each energy level...or, during burn-in we reduce temperature until we hit the desired proportion of (increase temp while feasible, reduce while infeasible, gradually reducing the size of the step).
+ 
+ The ratio of $\kappa_r$ and $\kappa_c$: If $\kappa_c$ is too low, we will tend to have long infeasible runs as high potential columns will not be pivoted-in, if it is too high, then many potential transitions into infeasibility will be rejected due to the increase in potential energy. If $\kappa_r$ is to high (absolute value) then transitions into infeasibility will not be proposed often enough, if too low then potential transitions back into feasibility may be ignored even when available. The ratio is the ratio of the energy in an infeasible variable and a high-potential column....how important is reducing infeasibility against reducing potential energy?...
 
 \section{Results}
 
@@ -731,6 +735,10 @@ Tools to perform abstract interpretation already exist (e.g. PAGAI\cite{henry201
 Constraining our proposal function to members of the superset in equation \eqref{linearSupport} instead of the true support won't affect the stationary distribution of the Markov Chain. If the proposal function happens to return a trajectory that isn't in $\supp(P(\rho(.)=y))$ then it will just be rejected. This is fine as long as we generate acceptable proposals at a reasonable rate.
 
 \section{Conclusion}
+
+\section{Notes}
+
+Why does convergence scale so badly with number of timesteps? Probably because as the number of non-zero elements per col/row increases, so does the average energy change in a feasible to infeasible transition, so we must increase the temperature to get the same amount of mixing. This results in a lot more time spent in infeasible space. 
 
 %\bibliographystyle{unsrtnat}
 %\bibliographystyle{apalike} 

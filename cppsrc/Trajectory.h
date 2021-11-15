@@ -194,7 +194,8 @@ public:
                     agentStateLogP = 0.0;
                     for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
 //                        double occupation = fabs((*this)[Event<AGENT>(t, agentId, actId)]);
-                        double occupation = std::max(0.0,(*this)[Event<AGENT>(t, agentId, actId)]);
+                        double occupation = (*this)[Event<AGENT>(t, agentId, actId)];
+                        if(occupation < 0.0) occupation = 0.0; else if(occupation > 1.0) occupation = 1.0; // Clamp to Fermionic limits
                         if (occupation > tol) {
                             agentStateLogP += occupation * log(actPMF[actId]);
                             // - CombinatoricsUtils.factorialLog(occupation) // add this for non-act-fermionic trajectories

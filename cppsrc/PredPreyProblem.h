@@ -13,6 +13,7 @@
 #include "StateTrajectory.h"
 #include "AgentStateObservation.h"
 #include "BernoulliModelState.h"
+#include "PoissonModelState.h"
 #include "agents/PredPreyAgent.h"
 
 template<int GRIDSIZE>
@@ -33,10 +34,13 @@ public:
     }
 
 
-    BernoulliModelState<PredPreyAgent<GRIDSIZE>> startStatePrior() const {
-        return BernoulliModelState<PredPreyAgent<GRIDSIZE>>([pPredator = pPredator, pPrey = pPrey](PredPreyAgent<GRIDSIZE> agent) {
+    auto startStatePrior() const {
+        return PoissonModelState<PredPreyAgent<GRIDSIZE>>([pPredator = pPredator, pPrey = pPrey](PredPreyAgent<GRIDSIZE> agent) {
             return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
         });
+//        return BernoulliModelState<PredPreyAgent<GRIDSIZE>>([pPredator = pPredator, pPrey = pPrey](PredPreyAgent<GRIDSIZE> agent) {
+//            return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
+//        });
     }
 
     ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> prior() const {
