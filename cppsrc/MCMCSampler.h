@@ -19,7 +19,8 @@ public:
         [logP = pmf.extendedLogProb](const std::vector<double> &X) { return logP(reinterpret_cast<const DOMAIN &>(X)); },
         initialState
     ),
-    thread(NULL) { }
+    thread(NULL) {
+    }
 
     MCMCSampler(MCMCSampler &&other): simplex(std::move(other.simplex)), thread(other.thread) {
         other.thread = NULL;

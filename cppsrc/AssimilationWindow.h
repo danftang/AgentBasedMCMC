@@ -113,7 +113,7 @@ public:
 
 //////////// Use TrajectorySampler instead!
 //    BinomialDistribution priorEndState(int nSamples) const {
-//        SampleStatistics endStats(AGENT::domainSize());
+//        MCMCStatistics endStats(AGENT::domainSize());
 //        for(int s=0; s<nSamples; ++s) {
 //            Trajectory<AGENT> sample(priorSampler());
 //            endStats += sample.endState();

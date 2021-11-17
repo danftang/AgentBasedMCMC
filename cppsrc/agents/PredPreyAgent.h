@@ -10,12 +10,9 @@
 #include "glpkpp.h"
 #include "../ModelState.h"
 
-template<int GRIDSIZE>
-class PredPreyAgent {
+class PredPreyAgentBase {
 public:
-
     typedef int Act;
-
 
     enum ActNames {
         DIE,
@@ -46,8 +43,14 @@ public:
     static constexpr double pPreyBirth = pPreyDie + (1.0-pNoPred4)*pPreyEatenGivenPred;
 
     // Agent Domain stuff
-    static constexpr int domainSize() { return GRIDSIZE*GRIDSIZE*2; }
     static constexpr int actDomainSize() { return 6; }
+};
+
+template<int GRIDSIZE>
+class PredPreyAgent: public PredPreyAgentBase {
+public:
+    // Agent Domain stuff
+    static constexpr int domainSize() { return GRIDSIZE*GRIDSIZE*2; }
 
     int stateId;
 
@@ -84,13 +87,6 @@ public:
         others[PredPreyAgent(xPosition(),yUp(),type)] +
         others[PredPreyAgent(xPosition(),yDown(),type)];
     }
-
-
-//
-//
-//    // returns a constraint in terms of state occupation numbers
-//    // Manually generated for now...
-
 
 };
 

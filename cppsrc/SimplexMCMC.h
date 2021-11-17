@@ -18,33 +18,38 @@
 
 class SimplexMCMC: public glp::Simplex {
 public:
-
 //    static constexpr double fractionalK = 0.1;
 //    static constexpr double tol = 1e-8;
 
-    class SampleStatistics {
+    class MCMCStatistics {
     public:
         int nSamples = 0;
         int nAccepted = 0;
         int nNonDegenerate = 0;
         int nSwaps = 0;
         int nNulls = 0;
+        int nFeasibilityTransitions = 0;
 
-        void update(bool accepted, const ProposalPivot &proposal);
-        friend std::ostream &operator <<(std::ostream &out, const SampleStatistics &stats);
+        void update(bool accepted, const ProposalPivot &proposal, bool isSameFeasibilityAsLastLog);
+        friend std::ostream &operator <<(std::ostream &out, const MCMCStatistics &stats);
+    private:
+        friend class boost::serialization::access;
+
+        template <typename Archive>
+        void serialize(Archive &ar, const unsigned int version) {
+            ar & nSamples & nAccepted & nNonDegenerate & nSwaps & nNulls & nFeasibilityTransitions;
+        }
+
     };
 
-    SampleStatistics feasibleStatistics;
-    SampleStatistics infeasibleStatistics;
+    MCMCStatistics feasibleStatistics;
+    MCMCStatistics infeasibleStatistics;
 
     std::function<double (const std::vector<double> &)> logProbFunc;
     PotentialEnergyPivot proposalFunction;
     bool lastSampleWasAccepted = true;
 //    BasisProbability probability;
 
-protected:
-
-public:
 
     SimplexMCMC(const glp::Problem &prob,
                 std::function<double(const std::vector<double> &)> logProb,

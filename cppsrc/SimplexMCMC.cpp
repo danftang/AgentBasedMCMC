@@ -112,14 +112,17 @@ double SimplexMCMC::lnDegeneracyProb() {
 const std::vector<double> & SimplexMCMC::nextSample() {
     int infeasibleCount = 0;
     bool sampleIsFeasible;
+    bool lastStatWasFeasible=true;
     do {
         const ProposalPivot &proposalPivot = proposePivot();
         lastSampleWasAccepted = processProposal(proposalPivot);
         sampleIsFeasible = solutionIsPrimaryFeasible();
         if(sampleIsFeasible) {
-            feasibleStatistics.update(lastSampleWasAccepted, proposalPivot);
+            feasibleStatistics.update(lastSampleWasAccepted, proposalPivot, lastStatWasFeasible);
+            lastStatWasFeasible = true;
         } else {
-            infeasibleStatistics.update(lastSampleWasAccepted, proposalPivot);
+            infeasibleStatistics.update(lastSampleWasAccepted, proposalPivot, !lastStatWasFeasible);
+            lastStatWasFeasible = false;
             debug(if(infeasibleCount%1000 == 100) std::cout << infeasibleCount << " Infeasibility = " << infeasibility() << std::endl);
             ++infeasibleCount;
         }
@@ -336,8 +339,9 @@ glp::Problem &SimplexMCMC::initialiseProblem(glp::Problem &lp) {
 }
 
 
-void SimplexMCMC::SampleStatistics::update(bool accepted, const ProposalPivot &proposal) {
+void SimplexMCMC::MCMCStatistics::update(bool accepted, const ProposalPivot &proposal, bool sameFeasibilityAsLastLog) {
     ++nSamples;
+    if(sameFeasibilityAsLastLog == false) ++nFeasibilityTransitions;
     if(accepted) {
         ++nAccepted;
         if(fabs(proposal.deltaj) < tol) {
@@ -378,10 +382,11 @@ bool SimplexMCMC::abmSanityChecks() {
 }
 
 
-std::ostream &operator <<(std::ostream &out, const SimplexMCMC::SampleStatistics &stats) {
+std::ostream &operator <<(std::ostream &out, const SimplexMCMC::MCMCStatistics &stats) {
     out << "Total samples           " << stats.nSamples << std::endl;
     out << "accepted/total          " << stats.nAccepted*100.0/stats.nSamples << "%" << std::endl;
     out << "non-degenerate/accepted " << stats.nNonDegenerate*100.0/stats.nAccepted << "%" << std::endl;
+    out << "feasibility-trans/non-degenerate " << stats.nFeasibilityTransitions*100.0/stats.nNonDegenerate << "%" << std::endl;
     out << "pivots/non-degenerate   " << (stats.nNonDegenerate-stats.nSwaps)*100.0/stats.nNonDegenerate << "%" << std::endl;
     out << "swaps/non-degenerate    " << stats.nSwaps*100.0/stats.nNonDegenerate << "%" << std::endl;
     out << "nulls/degenerate        " << stats.nNulls*100.0/(stats.nAccepted-stats.nNonDegenerate) << "%" << std::endl;

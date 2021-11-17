@@ -156,8 +156,22 @@ MultiChainStats Experiments::PredPreyConvergenceThread(const ConvexPMF<Trajector
 
     MultiChainStats stats;
     stats.reserve(2);
-    stats.emplace_back(std::move(firstSynopsisSamples), nLags, maxLagProportion, std::move(firstMeanEndState), std::move(firstNextSample[0]));
-    stats.emplace_back(std::move(lastSynopsisSamples), nLags, maxLagProportion, std::move(lastMeanEndState), std::move(lastNextSample[0]));
+    stats.emplace_back(
+            std::move(firstSynopsisSamples),
+            nLags,
+            maxLagProportion,
+            std::move(firstMeanEndState),
+            std::move(firstNextSample[0]),
+            sampler.simplex.feasibleStatistics,
+            sampler.simplex.infeasibleStatistics);
+    stats.emplace_back(
+            std::move(lastSynopsisSamples),
+            nLags,
+            maxLagProportion,
+            std::move(lastMeanEndState),
+            std::move(lastNextSample[0]),
+            sampler.simplex.feasibleStatistics,
+            sampler.simplex.infeasibleStatistics);
 //    std::cout << stats << std::endl;
     return std::move(stats);
 }
@@ -238,20 +252,25 @@ void Experiments::PredPreyAssimilation() {
     constexpr int GRIDSIZE = 8;
     constexpr int windowSize = 4;
     constexpr int nWindows = 1;
-    constexpr double pPredator = 0.08;//0.08;          // Poisson prob of predator in each gridsquare at t=0
-    constexpr double pPrey = 2.0*pPredator;    // Poisson prob of prey in each gridsquare at t=0
-    constexpr double pMakeObservation = 0.2;//0.04;    // prob of making an observation of each gridsquare at each timestep
+    constexpr double pPredator = 0.05;//0.08;          // Poisson prob of predator in each gridsquare at t=0
+    constexpr double pPrey = 0.05;    // Poisson prob of prey in each gridsquare at t=0
+    constexpr double pMakeObservation = 0.02;//0.04;    // prob of making an observation of each gridsquare at each timestep
     constexpr double pObserveIfPresent = 0.9;
-    constexpr int nSamplesPerWindow = 100000; //250000;
-    constexpr int nBurninSamples = 1000;
+    constexpr int nSamplesPerWindow = 50000; //250000;
+    constexpr int nBurninSamples = 5000;
     constexpr int nPriorSamples = 100000;
 //    constexpr int plotTimestep = nTimesteps-1;
 
     ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
 
-    BernoulliModelState<PredPreyAgent<GRIDSIZE>> startStateDist([pPredator,pPrey](PredPreyAgent<GRIDSIZE> agent) {
+    PoissonModelState<PredPreyAgent<GRIDSIZE>> startStateDist([](PredPreyAgent<GRIDSIZE> agent) {
         return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
     });
+
+//    BernoulliModelState<PredPreyAgent<GRIDSIZE>> startStateDist([](PredPreyAgent<GRIDSIZE> agent) {
+//        return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
+//    });
+
     std::cout << "Initial state distribution = " << startStateDist << std::endl;
     Trajectory<PredPreyAgent<GRIDSIZE>> realTrajectory(nWindows*windowSize, startStateDist.sampler());
 

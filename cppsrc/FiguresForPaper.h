@@ -113,16 +113,30 @@ public:
 
         std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
         std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
-        std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl;
+        std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl << std::endl;
 
         firstMeanEndState /= nSamples/2;
         lastMeanEndState /= nSamples/2;
 
         MultiChainStats stats;
         stats.reserve(2);
-        stats.emplace_back(std::move(firstSynopsisSamples), nLags, maxLagProportion, std::move(firstMeanEndState), std::move(firstNextSample[0]));
-        stats.emplace_back(std::move(lastSynopsisSamples), nLags, maxLagProportion, std::move(lastMeanEndState), std::move(lastNextSample[0]));
-//    std::cout << stats << std::endl;
+        stats.emplace_back(
+                std::move(firstSynopsisSamples),
+                nLags,
+                maxLagProportion,
+                std::move(firstMeanEndState),
+                std::move(firstNextSample[0]),
+                sampler.simplex.feasibleStatistics,
+                sampler.simplex.infeasibleStatistics);
+        stats.emplace_back(
+                std::move(lastSynopsisSamples),
+                nLags,
+                maxLagProportion,
+                std::move(lastMeanEndState),
+                std::move(lastNextSample[0]),
+                sampler.simplex.feasibleStatistics,
+                sampler.simplex.infeasibleStatistics);
+        //    std::cout << stats << std::endl;
         return std::move(stats);
     }
 
@@ -152,6 +166,17 @@ public:
         for(int d=1; d<=nDimensions; ++d) acPlotter << "'-' using (" << xStride <<  "*$0):" << d << " with lines title 'synopsis " << d << "', ";
         acPlotter << "0 with lines notitle\n";
         for(int d=1; d<=nDimensions; ++d) acPlotter.send1d(autocorrelation);
+
+        // Print MCMC stats
+        for(const ChainStats &chain: stats) {
+            std::cout << "Feasible MCMC stats:" << std::endl;
+            std::cout << chain.feasibleStats << std::endl;
+            std::cout << "Infeasible MCMC stats:" << std::endl;
+            std::cout << chain.feasibleStats << std::endl;
+            std::cout << "Infeasible proportion = "
+            << chain.infeasibleStats.nSamples*100.0/chain.feasibleStats.nSamples
+            << "%" << std::endl << std::endl;
+        }
 
         // Print scale reduction and effective samples
         std::valarray<double> neff = stats.effectiveSamples();

@@ -12,6 +12,7 @@
 #include <boost/serialization/vector.hpp>
 
 #include "MeanAndVariance.h"
+#include "../SimplexMCMC.h"
 
 class ChainStats {
 public:
@@ -20,16 +21,26 @@ public:
     int varioStride;
     std::vector<double> meanEndState;
     std::vector<double> nextSample;
+    SimplexMCMC::MCMCStatistics feasibleStats;
+    SimplexMCMC::MCMCStatistics infeasibleStats;
 
     ChainStats() {}
 
     template<typename SYNOPSIS>
-    ChainStats(std::valarray<SYNOPSIS> synopsisSamples, int nLags, double maxLagProportion, std::vector<double> meanEndState, std::vector<double> nextSample) :
+    ChainStats(std::valarray<SYNOPSIS> synopsisSamples,
+               int nLags,
+               double maxLagProportion,
+               std::vector<double> meanEndState,
+               std::vector<double> nextSample,
+               SimplexMCMC::MCMCStatistics feasibleStats,
+               SimplexMCMC::MCMCStatistics infeasibleStats) :
             meanVariance(std::move(synopsisSamples)),
             vario(variogram(synopsisSamples, nLags, maxLagProportion)),
             varioStride((maxLagProportion * synopsisSamples.size()) / (nLags - 1.0)),
             meanEndState(std::move(meanEndState)),
-            nextSample(std::move(nextSample)) {
+            nextSample(std::move(nextSample)),
+            feasibleStats(std::move(feasibleStats)),
+            infeasibleStats(std::move(infeasibleStats)) {
     }
 
     int nSamples() const { return meanVariance.nSamples; }
@@ -78,7 +89,7 @@ private:
 
     template <typename Archive>
     void serialize(Archive &ar, const unsigned int version) {
-        ar & meanVariance & vario & varioStride & meanEndState & nextSample;
+        ar & meanVariance & vario & varioStride & meanEndState & nextSample & feasibleStats & infeasibleStats;
     }
 };
 

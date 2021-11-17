@@ -8,6 +8,7 @@
 #include "StlStream.h"
 #include "PotentialEnergyPivot.h"
 #include "SimplexMCMC.h"
+#include "agents/PredPreyAgent.h"
 
 PotentialEnergyPivot::PotentialEnergyPivot(SimplexMCMC &simplex)
 :
@@ -29,8 +30,9 @@ void PotentialEnergyPivot::initCache() {
 }
 
 const PotentialEnergyPivot &PotentialEnergyPivot::nextProposal() {
-    // reset cache
+    // update cache
     if(simplex.lastSampleWasAccepted) {
+        // remove last state's cache
         if(infeasibilityCosts.size() > 1)   infeasibilityCosts.pop_front();
         if(reducedCosts.size() > 1) reducedCosts.pop_front();
         if(potentialEnergies.size() > 1) {
@@ -39,6 +41,7 @@ const PotentialEnergyPivot &PotentialEnergyPivot::nextProposal() {
         }
         if(totalPotentials.size() >1) totalPotentials.pop_front();
     } else {
+        // remove cache for last proposal
         if(infeasibilityCosts.size() > 1)   infeasibilityCosts.pop_back();
         if(reducedCosts.size() > 1) reducedCosts.pop_back();
         if(potentialEnergies.size() > 1)    potentialEnergies.pop_back();
@@ -55,13 +58,22 @@ const PotentialEnergyPivot &PotentialEnergyPivot::nextProposal() {
 void PotentialEnergyPivot::recalculateCDF() {
     double cumulativeP = 0.0;
     const std::vector<double> &currentPotentials = potentialEnergies.front();
+//    int basisEnergy = 0;
     for(int q=1; q <= simplex.nNonBasic(); ++q) {
 //        double colPotential = potentialEnergy(q, currentReducedCost);
 //        Ep += colPotential;
+//        int isBasis = isInPredPreyPreferredBasis(q);
+//        if(isBasis) ++basisEnergy;
         cumulativeP += exp(kappaCol* currentPotentials[q]);
         cdf[q] = cumulativeP;
     }
+//    std::cout << "Basis energy = " << basisEnergy << std::endl;
 //    assert(cumulativeP > simplex.nNonBasic()); // there should be at least one high energy column
+}
+
+bool PotentialEnergyPivot::isInPredPreyPreferredBasis(int j) {
+    int kProb = simplex.kSimTokProb[j+simplex.nNonBasic()];
+    return kProb>simplex.nBasic() && kProb%PredPreyAgentBase::actDomainSize() == PredPreyAgentBase::DIE;
 }
 
 
@@ -87,8 +99,7 @@ void PotentialEnergyPivot::chooseCol() {
 
 
 void PotentialEnergyPivot::chooseRow() {
-    std::multimap<double, int> transitions = getPivotsByDeltaJ(); // from delta_j to LogPMF-index.
-
+    std::multimap<double, int> transitions = getPivotsByDeltaJ(); // maps from delta_j to LogPMF-index.
 
     // now populate pivotPMF by going from lowest to highest delta_j in order
     std::vector<double> pivotPMF(nonZeroRows.size() * 2 + 2, DBL_MAX); // index is (2*nonZeroRowIndex + toUpperBound), final two are lower and upper bound swap, value is probability mass
@@ -160,6 +171,10 @@ void PotentialEnergyPivot::calcAcceptanceContrib() {
     } else {
         logAcceptanceContribution = 0.0;
     }
+
+    // Add bias to pivot-in preferred basis
+//    if(isInPredPreyPreferredBasis(j) && i>0) logAcceptanceContribution += kappaBasis;
+
 //    std::cout << "Log acceptance contribution = " << logAcceptanceContribution << std::endl;
 }
 
