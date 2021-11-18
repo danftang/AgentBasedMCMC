@@ -588,12 +588,12 @@ The gradient of $\iota^\mu$ at any point is given by
 \end{cases}
 \]
 
-Since $X_B = NX_N + b$, the gradient of $\iota^\mu$ with respect to $X_N$, which we'll call it $D^\mu$ for convenience, is given by
+Since $X_B = b - NX_N$, the gradient of $\iota^\mu$ with respect to $X_N$, which we'll call $D^\mu$, is given by
 \[
-D^\mu = \frac{d\iota^\mu}{dX_N} = \frac{d\iota^\mu}{dX_B}\frac{dX_B}{dX_N} =  \frac{d\iota^\mu}{dX_B}N
+D^\mu = \frac{d\iota^\mu}{dX_N} = \frac{d\iota^\mu}{dX_B}\frac{dX_B}{dX_N} = - \frac{d\iota^\mu}{dX_B}N
 \]
 
-So, given $D^\mu$, we can tell which direction each non-basic variable, $X_{Nj}$, needs to be perturbed in order to potentially reduce infeasibility. More precisely, $D^\mu_j$ gives the infeasibility gradient with respect to $X_{Nj}$ at the current value of $X_N$, but any perturbation may cross a piecewise linear boundary so the gradient may change as $X_N$ changes. However, because of the convexity of $\iota$ we know that heading up the gradient will definitely increase infeasibility, for any size of perturbation, whereas heading down the gradient will reduce infeasibility unless we're already at a minimum with respect to $X_{Nj}$ (note that in a piecewise linear function the minimum may lie at the junction between linear segments that have non-zero gradient). So, variables for which a bound-swap would move down the gradient are good potential candidates for perturbation compared to those that don't.
+So, given $D^\mu$, we can tell which direction each non-basic variable, $X_{Nj}$, needs to be perturbed in order to potentially reduce infeasibility. More precisely, $D^\mu_j$ gives the infeasibility gradient with respect to $X_{Nj}$ at the current value of $X_N$. However, any perturbation may cross a piecewise linear boundary so the gradient may change as $X_N$ changes. However, because of the convexity of $\iota$ we know that heading up the gradient will definitely increase infeasibility, for any size of perturbation, whereas heading down the gradient will reduce infeasibility unless we're already at a minimum with respect to $X_{Nj}$ (note that in a piecewise linear function the minimum may lie at the junction between linear segments that have non-zero gradient). So, variables for which a bound-swap would move down the gradient are good potential candidates for perturbation compared to those that don't.
 
 Given this, we define the potential energy of the $j^{th}$ non-basic variable to be equal to $|D^\mu_j|$ if a bound-swap would move down the gradient, and 0 otherwise. This can be expressed mathematically as
 \[
@@ -623,7 +623,7 @@ P(\mu'|j,\mu) =
 
 Given a transition from state $\mu$ to state $\mu' \ne \mu$ there is a unique non-basic variable $X_{Nj}$ that was involved in the transition \footnote{if $N$ is unchanged then the transition was a bound swap on the only non-basic that has changed, if $N$ changes to $N'$ then it was a pivot transition on the only $j$ that satisfies equation \eqref{Ntransform}} we'll use the notation $j^{\mu\to\mu'}$ to denote the index of this variable.
 
-Starting from state $\mu$, the probability of transitioning to $\mu'$ is the probability that we choose the non-basic variable, $X_{Nj^{\mu\to\mu'}}$ then choose the state $\mu'$ from $\alpha^\mu_{j^{\mu\to\mu'}}$, so from \eqref{columnChoice} and \eqref{pTransitionGivenJ}
+Starting from state $\mu$, the probability of proposing a transition to $\mu'$ is the probability that we choose the non-basic variable, $X_{Nj^{\mu\to\mu'}}$ then choose the state $\mu'$ from $\alpha^\mu_{j^{\mu\to\mu'}}$, so from \eqref{columnChoice} and \eqref{pTransitionGivenJ}
 \[
 P(\mu \rightarrow \mu') 
 = 
@@ -649,7 +649,7 @@ So, in the Metropolis-Hastings algorithm, the probability that a proposed transi
 \frac{\sum_l e^{k_c E^\mu_l}}
 	{e^{k_c E^\mu_{j^{\mu\to\mu'}}}}
 \]
-However thanks to the fact that we included the null transition,  $\alpha^{\mu'}_{j^{\mu\to\mu'}} = \alpha^\mu_{j^{\mu'\to\mu}}$\footnote{since $\alpha^\mu_{j^{\mu\to\mu'}}$ describes the set of states that lie on the straight line that passes through $\mu$ and $\mu'$} so the two sums over $\alpha$ cancel, leaving
+However thanks to the fact that we included the null transition,  $\alpha^{\mu'}_{j^{\mu\to\mu'}} = \alpha^\mu_{j^{\mu'\to\mu}}$\footnote{since $\alpha^\mu_{j^{\mu\to\mu'}}$ describes the set of states that lie on the straight line that passes through $\mu$ and $\mu'$} the two sums over $\alpha$ cancel, leaving
 \begin{equation}
 \frac{P(\mu')P(\mu'\to\mu)}
 	{P(\mu)P(\mu\to\mu')} 

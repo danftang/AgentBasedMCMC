@@ -22,7 +22,11 @@ cdf(simplex.nNonBasic() + 1)
 }
 
 void PotentialEnergyPivot::initCache() {
-    infeasibilityCosts.push_back(infeasibilityCost());
+    col.resize(simplex.nBasic()+1);
+    deltaj = 0.0;
+    infeasibilityCosts.emplace_front(simplex.nBasic()+1);
+    calcProposedInfeasibilityCosts();
+    if(infeasibilityCosts.size() > 1) infeasibilityCosts.pop_front();
     calcProposedReducedCosts();
     calcProposedEnergies();
     cdf[0] = 0.0;
@@ -39,13 +43,15 @@ const PotentialEnergyPivot &PotentialEnergyPivot::nextProposal() {
             potentialEnergies.pop_front();
             recalculateCDF();
         }
-        if(totalPotentials.size() >1) totalPotentials.pop_front();
+//        if(totalPotentials.size() >1) totalPotentials.pop_front();
+        if(energyNormalisation.size() >1) energyNormalisation.pop_front();
     } else {
         // remove cache for last proposal
         if(infeasibilityCosts.size() > 1)   infeasibilityCosts.pop_back();
         if(reducedCosts.size() > 1) reducedCosts.pop_back();
         if(potentialEnergies.size() > 1)    potentialEnergies.pop_back();
-        if(totalPotentials.size() >1) totalPotentials.pop_back();
+//        if(totalPotentials.size() >1) totalPotentials.pop_back();
+        if(energyNormalisation.size() >1) energyNormalisation.pop_back();
     }
 //    checkCurrentCacheIsValid();
     chooseCol();
@@ -141,13 +147,6 @@ void PotentialEnergyPivot::chooseRow() {
 
 // Calculates log acceptance contribution which is kappaCol times
 // the proposed change in the potential energy, ignoring column j.
-//
-// To calculate the post-pivot potential, we need to multiply the post-pivot
-// cost C' by the post-pivot basis inverse, B'^-1, then multiply by N.
-// We can express C'B'^-1 as (C'E)B^-1 where B^-1 is the pre-pivot basis inverse
-// and E is the elementary transform matrix EB^-1 = B'^-1.
-//
-//
 void PotentialEnergyPivot::calcAcceptanceContrib() {
 
     // if deltaj != 0.0, then the infeasibility of the variables may change so recalculate
@@ -162,23 +161,27 @@ void PotentialEnergyPivot::calcAcceptanceContrib() {
         calcProposedEnergies();
     }
 
-    // logAcceptanceContribution is now -k times the change in total potential energy in all cols q!=j
-    if(totalPotentials.size() > 1) {
-        logAcceptanceContribution = kappaCol * (
-                (totalPotentials.front() - potentialEnergies.front()[j]) -
-                (totalPotentials.back()  - potentialEnergies.back()[j])
-                );
+    // logAcceptanceContribution is defined as -k times the change in total potential energy in all cols q!=j
+    if(potentialEnergies.size() > 1) {
+//        logAcceptanceContribution = kappaCol * (
+//                (totalPotentials.front() - potentialEnergies.front()[j]) -
+//                (totalPotentials.back()  - potentialEnergies.back()[j])
+//                );
+
+        logAcceptanceContribution = kappaCol * (potentialEnergies.back()[j] - potentialEnergies.front()[j])
+               + log(energyNormalisation.front()/energyNormalisation.back());
+
+//        std::cout << "normalisation ratio = " << energyNormalisation.front()/energyNormalisation.back() << std::endl;
+
     } else {
         logAcceptanceContribution = 0.0;
     }
 
-    // Add bias to pivot-in preferred basis
-//    if(isInPredPreyPreferredBasis(j) && i>0) logAcceptanceContribution += kappaBasis;
-
-//    std::cout << "Log acceptance contribution = " << logAcceptanceContribution << std::endl;
 }
 
 
+// Calculates the post-pivot infeasibility costs for each row and pushes to
+// the cache.
 void PotentialEnergyPivot::calcProposedInfeasibilityCosts() {
     bool hasChanged = false;
     const std::vector<double> &currentInfeasibilityCost = infeasibilityCosts.front();
@@ -194,18 +197,28 @@ void PotentialEnergyPivot::calcProposedInfeasibilityCosts() {
             k = simplex.head[simplex.nBasic() + j];
             postPivotBetap = (simplex.isAtUpperBound(j) ? simplex.u[k] : simplex.l[k]) + deltaj;
         }
-        proposedInfeasibilityCost[p] = infeasibilityGradient(postPivotBetap, simplex.l[k], simplex.u[k]);
+//        proposedInfeasibilityCost[p] = infeasibilityGradient(postPivotBetap, simplex.l[k], simplex.u[k]);
+        proposedInfeasibilityCost[p] = infeasibilityCostFn(postPivotBetap, simplex.l[k], simplex.u[k]);
         if(currentInfeasibilityCost[p] != proposedInfeasibilityCost[p]) hasChanged = true;
     }
     if(hasChanged) infeasibilityCosts.push_back(std::move(proposedInfeasibilityCost));
 }
 
 
+// Post-pivot reduced costs are defined as
+// R' = -C'B'^-1N,
+// where
+// C' is the post-pivot infeasibility cost,
+// B'^-1 is the inverse of the post-pivot basis matrix
+// and N is the non-basic coefficient matrix
+// We can express C'B'^-1 as (C'E)B^-1 where B^-1 is the pre-pivot basis inverse
+// and E is the elementary transform matrix EB^-1 = B'^-1, which is the identity
+// matrix in all but the i'th column.
 void PotentialEnergyPivot::calcProposedReducedCosts() {
     std::vector<double> proposedCBI(infeasibilityCosts.back()); // will eventually be proposed C'B'^-1
-    // if we're actually pivoting (i>0) update infeasibilityCost:
-    // proposedCBI = proposedCBI * E, where E is the elementary transform matrix (see above).
     if (i > 0) {
+        // if we're actually pivoting,
+        // proposedCBI = proposedCBI * E, where E is the elementary transform matrix (see above).
         double CEi = 0.0;
         for (int p = 1; p <= simplex.nBasic(); ++p) {
             if (p != i) {
@@ -226,18 +239,26 @@ void PotentialEnergyPivot::calcProposedReducedCosts() {
         std::vector<double> proposedReducedCost = simplex.piTimesMinusN(proposedCBI);
         reducedCosts.push_back(std::move(proposedReducedCost));
     }
+//    std::cout << "Proposed reduced costs : " << reducedCosts.back() << std::endl;
 }
 
+
+// Given that proposed reduced costs have been calculated, calculate the
+// proposed potential energies and total energy and push to the cache
 void PotentialEnergyPivot::calcProposedEnergies() {
-    double proposedEp = 0.0;
+//    double proposedEp = 0.0;
+    double proposedEnergyNorm = 0.0;
     std::vector<double> proposedPotential(simplex.nNonBasic()+1);
     std::vector<double> &proposedReducedCost = reducedCosts.back();
     for (int q = 1; q <= simplex.nNonBasic(); ++q) {
         bool proposedQIsAtUpperBound = (q == j)?leavingVarToUpperBound:simplex.isAtUpperBound(q);
-        proposedEp += proposedPotential[q] = potentialEnergy(proposedQIsAtUpperBound, proposedReducedCost[q]);
+        double E = proposedPotential[q] = potentialEnergy(proposedQIsAtUpperBound, proposedReducedCost[q]);
+//        proposedEp += E;
+        proposedEnergyNorm += exp(kappaCol*E);
     }
     potentialEnergies.push_back(std::move(proposedPotential));
-    totalPotentials.push_back(proposedEp);
+//    totalPotentials.push_back(proposedEp);
+    energyNormalisation.push_back(proposedEnergyNorm);
 }
 
 // Sanity check for calcAcceptanceContrib()
@@ -258,13 +279,14 @@ void PotentialEnergyPivot::calcAcceptanceContribCheck() {
     }
     reducedCosts.push_back(std::move(proposedReducedCost));
     potentialEnergies.push_back(std::move(proposedPotentialEnergy));
-    totalPotentials.push_back(postPivotEp);
+//    totalPotentials.push_back(postPivotEp);
     std::vector<double> revCol = simplex.tableauCol(j);
     simplex.pivot(i, j, revCol, jIsAtUpperBound);
 
-    logAcceptanceContribution = kappaCol*(
-            (totalPotentials.front() - potentialEnergies.front()[j]) -
-            (totalPotentials.back() - potentialEnergies.back()[j]));
+    // TODO: update this for energyNormalisation
+//    logAcceptanceContribution = kappaCol*(
+//            (totalPotentials.front() - potentialEnergies.front()[j]) -
+//            (totalPotentials.back() - potentialEnergies.back()[j]));
 }
 
 void PotentialEnergyPivot::checkCurrentCacheIsValid() {
@@ -273,15 +295,15 @@ void PotentialEnergyPivot::checkCurrentCacheIsValid() {
     simplex.btran(currentCost);
     std::vector<double> currentReducedCost = simplex.piTimesMinusN(currentCost);
     assert(currentReducedCost == reducedCosts.front());
-    double Ep = 0.0;
+    double Enorm = 0.0;
     std::vector<double> currentPotentialEnergy(simplex.nNonBasic()+1);
     currentPotentialEnergy[0] = 0.0;
     for(int q=1; q <= simplex.nNonBasic(); ++q) {
         currentPotentialEnergy[q] = potentialEnergy(simplex.isAtUpperBound(q),currentReducedCost[q]);
-        Ep += currentPotentialEnergy[q];
+        Enorm += exp(kappaCol*currentPotentialEnergy[q]);
     }
     assert(currentPotentialEnergy == potentialEnergies.front());
-    assert(Ep == totalPotentials.front());
+    assert(Enorm == energyNormalisation.front());
     double cumulativeP = 0.0;
     std::vector<double> cdist(simplex.nNonBasic() + 1);
     cdist[0] = 0.0;

@@ -16,6 +16,12 @@
 class FiguresForPaper {
 public:
 
+    template<int GRIDSIZE>
+    static void generateAndPlot(int nTimesteps) {
+        generateStats<GRIDSIZE>(nTimesteps);
+        plotStats<GRIDSIZE>(nTimesteps);
+    }
+
     static void generateAllProblemFiles() {
         for (int nTimesteps = 2; nTimesteps <= 16; nTimesteps *= 2) {
             generateStandardProblemFile<8>(nTimesteps);
@@ -80,7 +86,7 @@ public:
     template<int GRIDSIZE>
     static MultiChainStats startStatsThread(ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> posterior, Trajectory<PredPreyAgent<GRIDSIZE>> startState) {
         using namespace dataflow;
-        constexpr int nSamples = 5000000; // must be an even number
+        constexpr int nSamples = 3000000; // must be an even number
         assert((nSamples&1) == 0);
         const double maxLagProportion = 0.5;
         const int nLags = 100;
@@ -172,9 +178,9 @@ public:
             std::cout << "Feasible MCMC stats:" << std::endl;
             std::cout << chain.feasibleStats << std::endl;
             std::cout << "Infeasible MCMC stats:" << std::endl;
-            std::cout << chain.feasibleStats << std::endl;
+            std::cout << chain.infeasibleStats << std::endl;
             std::cout << "Infeasible proportion = "
-            << chain.infeasibleStats.nSamples*100.0/chain.feasibleStats.nSamples
+            << chain.infeasibleStats.nSamples*100.0/(chain.feasibleStats.nSamples + chain.infeasibleStats.nSamples)
             << "%" << std::endl << std::endl;
         }
 

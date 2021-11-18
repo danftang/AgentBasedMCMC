@@ -27,9 +27,9 @@ int main(int argc, char *argv[]) {
 
 //    FiguresForPaper::generateAllProblemFiles();
 
-//    FiguresForPaper::generateStats<8>(4);
+    FiguresForPaper::generateStats<8>(2);
 
-//    FiguresForPaper::plotStats<8>(2);
+    FiguresForPaper::plotStats<8>(2);
 //    FiguresForPaper::plotStats<16>(2);
 //    FiguresForPaper::plotStats<8>(4);
 
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
 //    Experiments::CatMouseAssimilation();
 //    Experiments::CatMouseMultiObservation();
 //    Experiments::PredPreySingleObservation();
-    Experiments::PredPreyAssimilation();
+//    Experiments::PredPreyAssimilation();
 
 //    Experiments::FermionicIntegrality();
 

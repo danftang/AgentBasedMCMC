@@ -250,7 +250,7 @@ void Experiments::PredPreyConvergence() {
 void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
     constexpr int GRIDSIZE = 8;
-    constexpr int windowSize = 4;
+    constexpr int windowSize = 2;
     constexpr int nWindows = 1;
     constexpr double pPredator = 0.05;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 0.05;    // Poisson prob of prey in each gridsquare at t=0
@@ -294,7 +294,7 @@ void Experiments::PredPreyAssimilation() {
 
         std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
         std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
-        std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl;
+        std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/(sampler.simplex.feasibleStatistics.nSamples + sampler.simplex.infeasibleStatistics.nSamples) << "%" << std::endl;
         std::cout << "Analysis means = " << sampleStats.means() << std::endl;
 
         Plotter gp;
