@@ -250,7 +250,7 @@ void Experiments::PredPreyConvergence() {
 void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
     constexpr int GRIDSIZE = 8;
-    constexpr int windowSize = 2;
+    constexpr int windowSize = 4;
     constexpr int nWindows = 1;
     constexpr double pPredator = 0.05;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 0.05;    // Poisson prob of prey in each gridsquare at t=0

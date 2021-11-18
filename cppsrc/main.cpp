@@ -27,9 +27,11 @@ int main(int argc, char *argv[]) {
 
 //    FiguresForPaper::generateAllProblemFiles();
 
-    FiguresForPaper::generateStats<8>(2);
+    FiguresForPaper::generateAndPlot<8>(2);
 
-    FiguresForPaper::plotStats<8>(2);
+//    FiguresForPaper::generateStats<8>(2);
+
+//    FiguresForPaper::plotStats<8>(2);
 //    FiguresForPaper::plotStats<16>(2);
 //    FiguresForPaper::plotStats<8>(4);
 
