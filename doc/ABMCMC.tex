@@ -552,16 +552,15 @@ With this modification the sampling algorithm will sometimes return infeasible s
 
 \subsection{Choosing a transition}
 
-Now that we've defined the Markov states and the transitions between them, we next provide an algorithm to choose a proposal transition given the current Markov state. The algorithm should be able to make the choice, and work out the ratio of the probability of choosing that transition and the probability of choosing the reverse transition from the destination state.
+Now that we've defined the Markov states and the transitions between them, we next provide an algorithm to choose a proposal transition given the current Markov state. The algorithm should be able to draw a proposal from the transition-distribution and work out the ratio of probabilities of choosing a transition and its reverse transition.
 
-The challenge here is to ensure that, during the sampling process, feasible states sometimes transition to infeasible states (in order to ensure good mixing) while ensuring that, once in an infeasible state, the sampling process quickly moves back to a (probably different) feasible state to create the next feasible sample.
+The challenge here is to ensure that, during the sampling process, feasible states sometimes transition to infeasible states (in order to ensure good mixing) while ensuring that, once in an infeasible state, the sampling process quickly moves back into a (probably different) feasible state to create the next feasible sample.
 
 In order to do this we take as our inspiration the algorithm described in \cite{maros1986general}. This algorithm is intended to be used as a ``phase I'' of the simplex algorithm (see e.g. \cite{vanderbei2015linear}) where the aim is just to find a feasible state as efficiently as possible rather than to create a Markov process. Here we present a Markov process that has a high probability of making the same transition as Maros' algorithm. Given this, we should expect the Markov process to quickly move into a feasible state.
 
-
 \subsubsection{Choosing a non-basic variable: Infeasibility and potential energy}
 
-The first step in the algorithm to propose a transition is to choose a non-basic variable to modify. To understand how this is done we'll first introduce a few concepts.
+The first step towards generating a proposal transition is to choose a non-basic variable to modify. To understand how this is done we'll first introduce a few concepts.
 
 Given a Markov state, $\mu$, let the infeasibility of the $i^{th}$ basic variable, $\iota^\mu_i$, be defined to be equal to 0 if the variable is within its bounds or equal to the distance to the nearest bound otherwise
 \[
@@ -576,7 +575,7 @@ and let the total infeasibility be the sum of infeasibilities of all basic varia
 \[
 \iota^\mu = \sum_i \iota^\mu_i
 \]
-Note that the total infeasibility is piecewise linear, convex and all feasible points lie at the minimum. So, the problem is one of convex optimisation, complicated by the fact that we're only interested in integer solutions. Given this,  a sensible strategy would be to somehow move down the gradient of $\iota$ towards optimal values.
+Note that the total infeasibility is piecewise linear, convex and all feasible points lie at the minimum. So, the problem is one of convex optimisation, complicated by the fact that we're only interested in integer feasible solutions. Given this,  a sensible strategy would be to somehow move down the gradient of $\iota$ towards optimal values.
 
 The gradient of $\iota^\mu$ at any point is given by
 \[
@@ -593,13 +592,9 @@ Since $X_B = b - NX_N$, the gradient of $\iota^\mu$ with respect to $X_N$, which
 D^\mu = \frac{d\iota^\mu}{dX_N} = \frac{d\iota^\mu}{dX_B}\frac{dX_B}{dX_N} = - \frac{d\iota^\mu}{dX_B}N
 \]
 
-So, given $D^\mu$, we can tell which direction each non-basic variable, $X_{Nj}$, needs to be perturbed in order to potentially reduce infeasibility. More precisely, $D^\mu_j$ gives the infeasibility gradient with respect to $X_{Nj}$ at the current value of $X_N$. However, any perturbation may cross a piecewise linear boundary so the gradient may change as $X_N$ changes. However, because of the convexity of $\iota$ we know that heading up the gradient will definitely increase infeasibility, for any size of perturbation, whereas heading down the gradient will reduce infeasibility unless we're already at a minimum with respect to $X_{Nj}$ (note that in a piecewise linear function the minimum may lie at the junction between linear segments that have non-zero gradient). So, variables for which a bound-swap would move down the gradient are good potential candidates for perturbation compared to those that don't.
+Since the total infeasibility is convex, if $D^\mu_j$ is non zero we can tell which direction the $j^{th}$ non-basic variable, $X_{Nj}$, needs to be perturbed in order to potentially reduce infeasibility (or more precisely, which direction will definitely increase infeasibility). So, variables for which a bound-swap would move down the gradient $D^\mu$ are good potential candidates for perturbation compared to those that don't.
 
-Given this, we define the potential energy of the $j^{th}$ non-basic variable to be equal to $|D^\mu_j|$ if a bound-swap would move down the gradient, and 0 otherwise. This can be expressed mathematically as
-\[
-E^\mu_j = D^\mu_j(X_{Nj} - H(-D^\mu_j))
-\]
-where $H$ is the Heaviside step function.
+Given this, we define the potential energy of the $j^{th}$ non-basic variable to be equal to 1 if a perturbation to $X_{Nj}$ is (potentially) able to move down the gradient, and 0 otherwise.
 
 In order to encourage the selection of columns with positive potential, the $j^{th}$ non-basic variable is chosen with probability proportional to the exponential of its potential energy times some constant $k_c$
 \begin{equation}
@@ -614,7 +609,7 @@ Once a non-basic variable, $X_{Nj}$, is chosen for the transition, we can choose
 Let $\alpha^\mu_j$ be the set of destination states reachable through transitions on $X_{Nj}$. In order to encourage transitions to lower infeasibility, while maintaining the possibility of reverse transitions to allow detailed balance, a transition, $\mu\to\mu'$, is chosen with a probability proportional to the exponential of $-k_r\iota^{\mu'}$ for some constant $k_r$. i.e.
 \begin{equation}
 P(\mu'|j,\mu) = 
-\frac{e^{-k_r\iota^{\mu'}} }
+\frac{e^{-k_r\iota^{\mu'}}e^{k_cE^{\mu'}_j} }
 	{\sum_{\rho \in \alpha^\mu_j}  e^{-k_r\iota^\rho}}
 \label{pTransitionGivenJ}
 \end{equation}
@@ -629,7 +624,7 @@ P(\mu \rightarrow \mu')
 = 
 P(\mu'|j^{\mu\to\mu'},\mu)P(j^{\mu\to\mu'}|\mu) 
 =
-\frac{e^{-k_r \iota^{\mu'}}}
+\frac{e^{-k_r \iota^{\mu'}} e^{k_cE^{\mu'}_{j^{\mu'\to\mu}}}}
 	{\sum_{\rho \in \alpha^\mu_{j^{\mu\to\mu'}}}e^{-k_r\iota^\rho}}
 \frac{e^{k_c E^\mu_{j^{\mu\to\mu'}}}}
 	{\sum_l e^{k_c E^\mu_l}}
@@ -640,10 +635,10 @@ So, in the Metropolis-Hastings algorithm, the probability that a proposed transi
 =
 \frac{P(\mu')}
 	{P(\mu)}
-\frac{e^{-k_r \iota^{\mu}}}
+\frac{e^{-k_r \iota^{\mu}}e^{k_cE^{\mu}_{j^{\mu\to\mu'}}}}
 	{\sum_{\rho \in \alpha^{\mu'}_{j^{\mu'\to\mu}}}e^{-k_r\iota^\rho}}
 \frac{\sum_{\rho \in \alpha^{\mu}_{j^{\mu\to\mu'}}}e^{-k_r\iota^\rho}}
-	{e^{-k_r \iota^{\mu'}}}
+	{e^{-k_r \iota^{\mu'}}e^{k_cE^{\mu'}_{j^{\mu'\to\mu}}}}
 \frac{e^{k_c E^{\mu'}_{j^{\mu'\to\mu}}}}
 	{\sum_l e^{k_c E^{\mu'}_l}}
 \frac{\sum_l e^{k_c E^\mu_l}}
@@ -658,36 +653,14 @@ However thanks to the fact that we included the null transition,  $\alpha^{\mu'}
 	{P(\mu)}
 \frac{e^{-k_r \iota^{\mu}}}
 	{e^{-k_r \iota^{\mu'}}}
-\frac{e^{k_c E^{\mu'}_{j^{\mu'\to\mu}}}}
-	{\sum_l e^{k_c E^{\mu'}_l}}
 \frac{\sum_l e^{k_c E^\mu_l}}
-	{e^{k_c E^\mu_{j^{\mu\to\mu'}}}}
+	{\sum_l e^{k_c E^{\mu'}_l}}
 \label{acceptance1}
 \end{equation}
 
-If we let the total energy of a state, $\mu$, be
-\begin{equation}
-E^\mu = 
-\iota^\mu
-+ \frac{k_c}{k_r}\sum_j E^\mu_j
-- k_r^{-1}\ln\left(\frac{\sum_j e^{k_c E^\mu_j}}{n}\right)
-\label{energy}
-\end{equation}
-where $n$ is the number of non-basic variables, then \eqref{acceptance1} can be written as
-\begin{equation}
-\frac{P(\mu')P(\mu'\to\mu)}{P(\mu)P(\mu\to\mu')} 
-=
-\frac{P(\mu')e^{\frac{-E^{\mu}}{T}}}
-	{P(\mu)e^{\frac{-E^{\mu'}}{T}}} e^{-k_c \Delta \epsilon^{\mu\to\mu'}}
-\label{acceptance2}
-\end{equation}
-where $T = k_r^{-1}$ and 
-\[
-\Delta \epsilon^{\mu\to\mu'} = \sum_{l\ne j^{\mu\to\mu'}} E^{\mu'}_l - E^\mu_l
-\]
 However, since infeasible states are thrown away in the final algorithm, we are free to assign them any probability we wish. This gives us some freedom to ensure that the algorithm spends an appropriate time in infeasible states and allows us to engineer an acceptance probability that is convenient to calculate. If we let
 \begin{equation}
-P(\mu) = P_e(T_\mu|\Omega)e^\frac{-E^\mu}{T}
+P(\mu) = P_e(T_\mu|\Omega)e^{-k_r \iota^{\mu}} \frac{1}{n}  \sum_l e^{k_c E^\mu_l}
 \label{penalty}
 \end{equation}
 where $T_\mu$ is the trajectory associated with Markov state $\mu$ and $P_e(T_\mu|\Omega)$ is an ``extended posterior'', which for feasible states is just the posterior given by equation \eqref{posterior}, while for infeasible states is calculated in the same way but the requirement that the trajectory belongs to $\mathcal{T}^N_{SA}(F)$ is dropped and if any of the individual probabilities is zero it is replaced by its expectation over all trajectories (with some convenient prior over trajectories, we used a uniform distribution). Notice that for feasible states $P(\mu) = P(T_\mu|\Omega)$ so if we apply this definition to all Markov states the feasible samples will be samples from the desired posterior.
@@ -697,7 +670,6 @@ Inserting \eqref{penalty} into \eqref{acceptance2} gives the final form for the 
 \frac{P(\mu')P(\mu'\to\mu)}{P(\mu)P(\mu\to\mu')} 
 =
 \frac{P_e(T_{\mu'}|\Omega)}{P_e(T_\mu|\Omega)}
-e^{-k_c\Delta \epsilon^{\mu\to\mu'}}
 \end{equation}
 
 Notice that states with lower infeasibility and lower potential energy have higher probability, so transitions that immediately reduce infeasibility are encouraged, but so are pivots that replace high potential energy variables with low potential variables. This has the consequence that if a high potential, non-basic variable is chosen but it can't immediately reduce infeasibility, it is more likely to be made basic where it is free to change its value in subsequent transitions. This helps the process find a basis where infeasibility-reducing transitions exist.
