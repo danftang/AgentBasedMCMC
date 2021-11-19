@@ -126,40 +126,92 @@ void PotentialEnergyPivot::chooseCol() {
 void PotentialEnergyPivot::chooseRow() {
     std::multimap<double, int> transitions = getPivotsByDeltaJ(); // maps from delta_j to LogPMF-index.
 
+//    std::cout << "Transition range = " << transitions.begin()->first << " to " << transitions.rbegin()->first << std::endl;
+
+    int lowestDeltaJ = transitions.begin()->first;
+//    int highestDeltaJ = transitions.rbegin()->first;
+
     // now populate pivotPMF by going from lowest to highest delta_j in order
     std::vector<double> pivotPMF(nonZeroRows.size() * 2 + 2, DBL_MAX); // index is (2*nonZeroRowIndex + toUpperBound), final two are lower and upper bound swap, value is probability mass
-    double lastDj = transitions.begin()->first;
+    std::map<double,double> reducedCostByDj;//( highestDeltaJ - lowestDeltaJ + 1, 0.0);
+    double lastDj = lowestDeltaJ;
     double infeas = 0.0;
     double infeasMin = DBL_MAX;
-    double dDf_dDj = colInfeasibilityGradient(lastDj - 2.0*tol);
+//    double dDf_dDj = colInfeasibilityGradient(lastDj - 2.0*tol);
+    double DdDf_dDj;
+    double upperRateOfChange = 0.0;
+    reducedCostByDj[lowestDeltaJ] = colInfeasibilityGradient(lastDj - 2.0*tol);
     for(auto [Dj, pmfIndex] : transitions) {
-        infeas += (Dj - lastDj) * dDf_dDj;
-        lastDj = Dj;
+        double pivotPointVal = 1.0;
+        if(pmfIndex < nonZeroRows.size()*2) {
+            pivotPointVal = col[nonZeroRows[pmfIndex / 2]];
+            DdDf_dDj = fabs(pivotPointVal);
+        } else {
+            // null pivot or bound swap
+            DdDf_dDj = 1.0;
+        }
+        if(Dj != lastDj) {
+            reducedCostByDj[Dj] = reducedCostByDj[lastDj] + upperRateOfChange;
+            infeas += (Dj - lastDj) * reducedCostByDj[Dj];
+            lastDj = Dj;
+            upperRateOfChange = 0.0;
+        }
+        bool varAtUpperBound = pmfIndex%2;
+        if((pivotPointVal < 0.0) xor varAtUpperBound) {
+            // is an upper var
+            upperRateOfChange += DdDf_dDj;
+        } else {
+            //is a lower var
+            reducedCostByDj[Dj] += DdDf_dDj;
+        }
+
         if(isActive(pmfIndex)) {
             pivotPMF[pmfIndex] = infeas;
             if(infeas < infeasMin) infeasMin = infeas;
         }
-//        std::cout << "deltaj = " << Dj << " pivotProb = " << pivotPMF[pmfIndex] << " infeas = " << infeas << " dDf_dDj = " << dDf_dDj << " Feasibility = " << infeasibility(Dj) << std::endl;
-        // update rate of change and multiply pivot prob by destination potential energy
-        if(pmfIndex < nonZeroRows.size()*2) {
-            double pivotPointVal = col[nonZeroRows[pmfIndex / 2]];
-            bool leavingVarToUpperBound = pmfIndex % 2;
-            dDf_dDj += fabs(pivotPointVal);
-        } else {
-            // null pivot or bound swap
-            bool colToUpperBound = pmfIndex % 2;
-            dDf_dDj += 1.0;
-        }
+//        std::cout << "deltaj = " << Dj << " pivotProb = " << pivotPMF[pmfIndex] << " infeas = " << infeas << " dDf_dDj = " << reducedCostByDj[Dj] << std::endl;
     }
     assert(infeasMin != DBL_MAX);
 
-    // rescale and take exponential
-    for(int i=0; i<pivotPMF.size(); ++i) {
-        pivotPMF[i] = exp(kappaRow*(pivotPMF[i] - infeasMin)); // TODO: might as well calculate cumulative distribution here
+    // now add proposed j^th col potential to active row probabilities
+    for(auto [Dj, pmfIndex] : transitions) {
+        if(pivotPMF[pmfIndex] < DBL_MAX) {
+            double pivotPointVal = (pmfIndex < nonZeroRows.size()*2)?col[nonZeroRows[pmfIndex / 2]]:1.0;
+            double proposedReducedCost = reducedCostByDj[Dj] * pivotPointVal;
+            double proposedPotential = potentialEnergy(pmfIndex%2, proposedReducedCost);
+//            std::cout << "proposedPotential " << pivotPMF[pmfIndex] << " " << currentReducedCosts[j] << " " << proposedReducedCost << " " << pivotPointVal << " " << proposedPotential << std::endl;
+//            if(proposedPotential >= 40.0) {
+//                std::cout << col << std::endl;
+//                std::cout << Dj << std::endl;
+//                double reducedCost = colInfeasibilityGradient(Dj) * pivotPointVal;
+//                double potential = potentialEnergy(pmfIndex%2, reducedCost);
+//                std::cout << "real potential " << potential << std::endl;
+//            }
+//            assert(proposedPotential < 40.0);
+            pivotPMF[pmfIndex] += (kappaCol/kappaRow)*proposedPotential;
+        }
     }
 
-    setToPivotIndex(Random::nextIntFromDiscrete(pivotPMF.begin(), pivotPMF.end()));
+        // rescale, take exponential and turn pivotPMF into a cumulative distribution
+    double cumulativeMass = 0.0;
+    for(int i=0; i<pivotPMF.size(); ++i) {
+        cumulativeMass += exp(kappaRow*(pivotPMF[i] - infeasMin));
+        pivotPMF[i] = cumulativeMass;
+    }
 
+    int chosenRowIndex = std::lower_bound(
+            pivotPMF.begin(),
+            pivotPMF.end(),
+            Random::nextDouble(0.0, pivotPMF.back())) - pivotPMF.begin();
+    setToPivotIndex(chosenRowIndex);
+
+
+//    std::cout << "Final reduced cost map = " << reducedCostByDj << std::endl;
+
+    // check proposed potential is correct
+//    double correctReducedCost = colInfeasibilityGradient(deltaj);
+//    std::cout << deltaj << " " << correctReducedCost << " " << reducedCostByDj[deltaj] << std::endl;
+//    assert(fabs(correctReducedCost - reducedCostByDj[deltaj]) < 1e-6);
 //      std::cout << "Chose pivot with prob " << pivotPMF[pivotChoice] << " Delta = " << deltaj << std::endl;
 //      std::cout << "Proposing pivot from " << !sourceObjectiveIsZero << " to " << destinationObjective << std::endl;
 }
@@ -170,15 +222,16 @@ void PotentialEnergyPivot::chooseRow() {
 // the proposed change in the potential energy, ignoring column j.
 void PotentialEnergyPivot::calcAcceptanceContrib() {
     // logAcceptanceContribution is defined as -k times the change in total potential energy in all cols q!=j
-    double proposedReducedCost;
-    if(deltaj == 0){
-        proposedReducedCost = currentReducedCosts[j]*(i>0?col[i]:1.0);
-    } else {
-        proposedReducedCost = colInfeasibilityGradient(deltaj) * (i>0?col[i]:1.0);
-    }
-    double proposedPotential = potentialEnergy(leavingVarToUpperBound, proposedReducedCost);
-    logAcceptanceContribution = kappaCol * (proposedPotential - currentPotentialEnergies[j]);
-//               + log(energyNormalisation.front()/energyNormalisation.back());
+
+    logAcceptanceContribution = 0.0;
+//    double proposedReducedCost;
+//    if(deltaj == 0) {
+//        proposedReducedCost = currentReducedCosts[j]*(i>0?col[i]:1.0);
+//    } else {
+//        proposedReducedCost = colInfeasibilityGradient(deltaj) * (i>0?col[i]:1.0);
+//    }
+//    double proposedPotential = potentialEnergy(leavingVarToUpperBound, proposedReducedCost);
+//    logAcceptanceContribution = kappaCol * (proposedPotential - currentPotentialEnergies[j]);
 
 //    if(deltaj != 0.0 || i>0) std::cout << "acceptance contribution = " << exp(logAcceptanceContribution) << std::endl;
 //        std::cout << "normalisation ratio = " << energyNormalisation.front()/energyNormalisation.back() << std::endl;

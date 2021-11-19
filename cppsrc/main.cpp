@@ -24,16 +24,15 @@ using glp::X;
 int main(int argc, char *argv[]) {
 
 //    Experiments::animatedPredPreyDemo();
-
 //    FiguresForPaper::generateAllProblemFiles();
 
-    FiguresForPaper::generateAndPlot<8>(2);
+//    FiguresForPaper::generateStatsAndPlot<8>(6);
 
 //    FiguresForPaper::generateStats<8>(2);
-
-//    FiguresForPaper::plotStats<8>(2);
+    FiguresForPaper::plotStats<8>(2);
+    FiguresForPaper::plotStats<8>(4);
+    FiguresForPaper::plotStats<8>(6);
 //    FiguresForPaper::plotStats<16>(2);
-//    FiguresForPaper::plotStats<8>(4);
 
 
 
