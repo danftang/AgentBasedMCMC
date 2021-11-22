@@ -62,31 +62,37 @@ public:
         std::cout << "Loaded problem" << std::endl;
         std::cout << problem;
 
+        auto startTime = std::chrono::steady_clock::now();
 
         std::future<MultiChainStats> futureResults[nThreads];
         for(int thread = 0; thread < nThreads; ++thread) {
             futureResults[thread] = std::async(&startStatsThread<GRIDSIZE>, problem.posterior(), problem.priorSampler()());
         }
 
-        MultiChainStats multiChainStats;
+
+        MultiChainStats multiChainStats(problemFilename);
         multiChainStats.reserve(2*nThreads);
         for(int thread=0; thread<nThreads; ++thread) {
             futureResults[thread].wait();
             multiChainStats += futureResults[thread].get();
         }
 
+        auto endTime = std::chrono::steady_clock::now();
+
+        multiChainStats.execTimeMilliSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+
         std::ofstream statFile(statFilename);
         if(!statFile.good()) throw("Can't open stats probFile to save results.");
         boost::archive::binary_oarchive statArchive(statFile);
         statArchive << multiChainStats;
-        std::cout << "Saved stats" << std::endl;
-        std::cout << multiChainStats;
+//        std::cout << std::endl << "Saved stats" << std::endl;
+//        std::cout << multiChainStats;
     }
 
     template<int GRIDSIZE>
     static MultiChainStats startStatsThread(ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> posterior, Trajectory<PredPreyAgent<GRIDSIZE>> startState) {
         using namespace dataflow;
-        constexpr int nSamples = 3000000; // must be an even number
+        constexpr int nSamples = 4000000; // must be an even number
         assert((nSamples&1) == 0);
         const double maxLagProportion = 0.5;
         const int nLags = 100;
@@ -115,7 +121,6 @@ public:
                         },
                         save(lastNextSample)
                 };
-
 
         std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
         std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
@@ -174,25 +179,28 @@ public:
         for(int d=1; d<=nDimensions; ++d) acPlotter.send1d(autocorrelation);
 
         // Print MCMC stats
-        for(const ChainStats &chain: stats) {
-            std::cout << "Feasible MCMC stats:" << std::endl;
-            std::cout << chain.feasibleStats << std::endl;
-            std::cout << "Infeasible MCMC stats:" << std::endl;
-            std::cout << chain.infeasibleStats << std::endl;
-            std::cout << "Infeasible proportion = "
-            << chain.infeasibleStats.nSamples*100.0/(chain.feasibleStats.nSamples + chain.infeasibleStats.nSamples)
-            << "%" << std::endl << std::endl;
-        }
+        std::cout << stats;
+//        for(const ChainStats &chain: stats) {
+//            std::cout << "Feasible MCMC stats:" << std::endl;
+//            std::cout << chain.feasibleStats << std::endl;
+//            std::cout << "Infeasible MCMC stats:" << std::endl;
+//            std::cout << chain.infeasibleStats << std::endl;
+//            std::cout << "Infeasible proportion = "
+//            << chain.infeasibleStats.nSamples*100.0/(chain.feasibleStats.nSamples + chain.infeasibleStats.nSamples)
+//            << "%" << std::endl << std::endl;
+//        }
 
         // Print scale reduction and effective samples
         std::valarray<double> neff = stats.effectiveSamples();
         std::valarray<double> ineff = (stats.nSamples()*1.0)/neff;
+        double execTimePerSample = stats.execTimeMilliSeconds * 2.0 / (stats.front().feasibleStats.nSamples*stats.size());
         std::cout << "Summary statistics for " << GRIDSIZE << " x " << nTimesteps << std::endl;
         std::cout << "Potential scale reduction: " << stats.potentialScaleReduction() << std::endl;
         std::cout << "Actual number of samples per chain: " << stats.nSamples() << std::endl;
         std::cout << "Effective number of samples: " << neff << std::endl;
         std::cout << "Sample inefficiency factor: " << ineff << std::endl << std::endl;
-
+        std::cout << "Execution time per sample: " << execTimePerSample << "ms" << std::endl;
+        std::cout << "Mean execution time per effective sample: " << ineff.sum()*execTimePerSample/ineff.size() << "ms" << std::endl;
         // plot end state
 
         Plotter().plot(problem.realTrajectory.endState(), stats.meanEndState(),"End state " + std::to_string(GRIDSIZE) + " x " + std::to_string(nTimesteps));

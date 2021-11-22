@@ -13,6 +13,18 @@
 
 class MultiChainStats: public std::vector<ChainStats> {
 public:
+    std::string cpuinfo;
+    double kappaRow;
+    double kappaCol;
+    std::string problemDescription;
+    long execTimeMilliSeconds;
+
+    MultiChainStats(std::string description=""):
+        kappaCol(PotentialEnergyPivot::kappaCol),
+        kappaRow(PotentialEnergyPivot::kappaRow),
+        problemDescription(std::move(description)) {
+
+    }
 
     MultiChainStats &operator +=(MultiChainStats &&other) {
         reserve(size()+other.size());
@@ -175,14 +187,33 @@ public:
         return mu;
     }
 
+    static std::string getCpuInfo() {
+        FILE *pipe = popen("lscpu","r");
+        std::stringstream strstr;
+        while(!feof(pipe)) strstr << static_cast<char>(fgetc(pipe));
+        fclose(pipe);
+        return strstr.str();
+    }
+
     friend std::ostream &operator <<(std::ostream &out, const MultiChainStats &multiChainStats) {
-        out << "MultiChainStats of " << multiChainStats.nChains() << " chains with " << multiChainStats.nSamples() << " samples" << std::endl;
+        out << "MultiChainStats for " << multiChainStats.problemDescription << " " <<  multiChainStats.nChains() << " chains with " << multiChainStats.nSamples() << " samples" << std::endl;
+        out << multiChainStats.cpuinfo << std::endl;
+        out << "kappaCol = " << multiChainStats.kappaCol << " kappaRow = " << multiChainStats.kappaRow << std::endl;
+        out << "Exec time = " << multiChainStats.execTimeMilliSeconds/1000.0 << "s" << std::endl;
         out << "W = " << multiChainStats.W() << std::endl;
         out << "B = " << multiChainStats.B() << std::endl;
         out << "Samples   Sums    SumOfSquares    VarioStride     Vario" << std::endl;
         for(const ChainStats &chain: multiChainStats) {
-            out << chain.meanVariance.nSamples << " " << chain.meanVariance.sum << " " << chain.meanVariance.sumOfSquares << " " << chain.varioStride << " " << chain.vario << std::endl;
-            out << chain.nextSample << std::endl;
+            out << " " << chain.meanVariance.nSamples << " " << chain.meanVariance.sum << " " << chain.meanVariance.sumOfSquares << " " << chain.varioStride << " " << chain.vario << std::endl;
+//            out << chain.nextSample << std::endl;
+            std::cout << "Feasible MCMC stats:" << std::endl;
+            std::cout << chain.feasibleStats << std::endl;
+            std::cout << "Infeasible MCMC stats:" << std::endl;
+            std::cout << chain.infeasibleStats << std::endl;
+            std::cout << "Infeasible proportion = "
+                      << chain.infeasibleStats.nSamples*100.0/(chain.feasibleStats.nSamples + chain.infeasibleStats.nSamples)
+                      << "%" << std::endl << std::endl;
+
         }
         return out;
     }
@@ -192,7 +223,8 @@ private:
 
     template <typename Archive>
     void serialize(Archive &ar, const unsigned int version) {
-        ar & static_cast<std::vector<ChainStats> &>(*this);
+        cpuinfo = getCpuInfo();
+        ar & cpuinfo & kappaCol & kappaRow & problemDescription & execTimeMilliSeconds & static_cast<std::vector<ChainStats> &>(*this);
     }
 };
 
