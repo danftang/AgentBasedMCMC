@@ -159,6 +159,7 @@ A trajectory must also be \textit{continuous} by which we mean that the number o
 So, the set of valid trajectories, $\mathcal{T}^N_{SA}(F)$, is given by the set of tensors that satisfy \eqref{nonNegativeInt} and \eqref{continuous}.
 \begin{equation}
 \mathcal{T}^N_{SA}(F) = \mathcal{I}^N_{SA} \cap \mathcal{C}^N_{SA}(F)
+\label{SetOfTrajectories}
 \end{equation}
 
 
@@ -232,133 +233,84 @@ From equation \eqref{posterior}
 \end{aligned}
 \label{support}
 \end{equation}
-i.e. in order for $T$ to have non-zero posterior probability, it must be a trajectory of the ABM, it must have a start state that has non-zero prior probability, all the observation likelihoods must be non-zero and each element of $T$ must either denote an agent action with non-zero probability or must be equal to zero (to account for the fact that $0^0=1$ in the exponent terms in \eqref{posterior}).
+i.e. in order for $T$ to have non-zero posterior probability, it must be a trajectory of the ABM, it must have a start state that has non-zero prior probability, all the observation likelihoods must be non-zero and each element of $T$ must denote an agent action with non-zero probability.
 
-\subsection{Fermionic Trajectories}
 
-In the following we will consider only \textit{Fermionic trajectories}, which we define to be any trajectory whose elements are all either 0 or 1. i.e. a Fermionic trajectory must not only satisfy the constraints in \eqref{nonNegativeInt} and \eqref{continuous} but must also satisfy the \textit{Fermionic constraints}
-\begin{equation}
-\mathcal{B}^N_{SA} = \left\{T\in\mathbb{R}^N_{SA} : \forall t,\psi,a: T^t_{\psi a} \in \left\{ 0,1 \right\}\right\}
-\label{fermionic}
-\end{equation}
-This can be interpreted as meaning that no two agents in the same state at the same time can perform the same action. Notice that the Fermionic constraints imply the non-negative integer constraints, so the set of Fermionic trajectories, $\mathcal{F}^N_{SA}$, is the set of tensors that satisfy \eqref{fermionic} and \eqref{continuous}.
-\begin{equation}
-\mathcal{F}^N_{SA}(F) = \mathcal{B}^N_{SA} \cap \mathcal{C}^N_{SA}(F)
-\end{equation}
-
-If we now condition the posterior on $T \in \mathcal{B}^N_{SA}$ then the support of the posterior becomes
-\begin{equation}
-supp(P(T|\Omega, T\in\mathcal{B}^N_{SA})) = \mathcal{B}^N_{SA} \cap supp(P(T|\Omega))
-\label{fermionicSupport1}
-\end{equation}
-
-In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so it is overwhelmingly likely that a sample from the posterior will be Fermionic, and so intersection with $\mathcal{B}^N_{SA}$ will often have very little effect on the posterior. However, section ** describes how to extend the algorithm to apply to non-Fermionic trajectories when the Fermionic constraints are not acceptable.
-
-\subsection{Convex $\mathcal{B}$-polyhedra and $\mathcal{B}$-distributions}
+\subsection{Convex $\mathbb{Z}$-polyhedra and $\mathbb{Z}$-distributions}
 %################################################################
 \label{BPoly}
 
-In an extension to the concept of a $\mathbb{Z}$-polyhedron \cite{quinton1996manipulating} we define a $\mathcal{B}$-polyhedron to be a set of binary vectors
+Let a $\mathbb{Z}$-polyhedron be a set of tensors with integer elements that can be described as a set of linear constraints on the elements: 
 \[
-\mathcal{B}^N_{SA} \cap \mathcal{P}
+\mathcal{P^N_{SA}} = \left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : L \le \sum_{t,\psi,a} C^{\psi a}_{t} T^t_{\psi a} \le U \right\}
 \]
-where $\mathcal{P} \subset \mathcal{R}^N_{SA}$ is a convex polyhedron in the sense that it can be expressed as a set of tensors that satisfy some number of linear constraints on their elements. More formally, there exists a tensor $C \in \mathbb{R}^{SA}_{NJ}$ and vectors $L \in \mathbb{R}_J$ and $U \in \mathbb{R}_J$ such that:
-\[
-\mathcal{P} = \left\{ T\in\mathbb{R}^N_{SA} : L \le \sum_{t,\psi,a} C^{\psi a}_{t} T^t_{\psi a} \le U \right\}
-\]
+where $L$,  $U$ and $C^{\psi a}_t$ are vectors (this is similar to the $\mathbb{Z}$-polyhedron described in \cite{quinton1996manipulating}).
 
-\begin{theorem}
-For any set $\mathcal{X}$ there exists a convex polyhedron $P$ such that
-\[
-\mathcal{B}^N_{SA} \cap \mathcal{X} = \mathcal{B}^N_{SA} \cap \mathcal{P}
-\]
-\end{theorem}
-\begin{proof}
-Let $\mathcal{Y} = \mathcal{B}^N_{SA} \cap \mathcal{X}$ and let $\mathcal{P}$ be the convex hull of $\mathcal{Y}$. Clearly if a tensor $T\in \mathcal{Y}$ then $T\in \mathcal{B}^N_{SA} \cap \mathcal{P}$. To show the converse, suppose there is a member $T' \in \mathcal{B}^N_{SA} \cap \mathcal{P}$. Since $T'\in \mathcal{P}$ then there must be a convex combination of points in $\mathcal{Y}$ that equals $T'$. Call those points $\mathcal{Z}$. However, since $T' \in \mathcal{B}^N_{SA}$ and $\mathcal{Z}\subset \mathcal{B}^N_{SA}$ and no member of $\mathcal{B}^N_{SA}$ is a convex combination of any other member then $T'$ must be a member of $\mathcal{Z}$ and so $T'\in \mathcal{Y}$. So $\mathcal{B}^N_{SA} \cap \mathcal{X} = \mathcal{B}^N_{SA} \cap \mathcal{P}$. 
-\end{proof}
+From equation \ref{SetOfTrajectories} we can see immediately that $\mathcal{T}^N_{SA}$ is a  $\mathbb{Z}$-polyhedron. The supports of the prior, $P(\Psi^0)$, the observations, $P(\omega(T)=v)$, and the agent actions, $\pi(\psi,T^t\mathbf{1},a)$, can often be easily expressed as $\mathbb{Z}$-polyhedra. If this is not the case, each of the probability distributions can be expressed as computer programs. Once in this form, abstract interpretation tools\cite{cousot1977abstract} using the domain of convex polyhedra  \cite{cousot1978automatic}\cite{becchi2018efficient}\cite{fukuda2020polyhedral} can be used to construct a convex polyhedron that contains the support (note that it's fine to overestimate the support, i.e. include points that aren't in the support, but not to exclude points that are in the support. Abstract interpretation tools\cite{henry2012pagai}\cite{GN2021} are perfectly suited to this purpose). In addition, if the number of agents is very much smaller than the number of agent states (which is often the case with agent based models) then we may be willing to make the assumption that at any timestep there is at most one agent performing a given action from a given start state (i.e. $\forall \psi, a, t: T^{\psi a}_t \in \{0,1\}$). Under this assumption, which we'll call the \textit{Fermionic assumption} , the set of trajectories is a subset of the corners of the unit hypercube. Any such subset is a $\mathbb{Z}$-polyhedron.
 
-Under the assumption that all trajectories are Fermionic, we can rewrite equation \eqref{support} in the form
+If we write the $\mathbb{Z}$-polyhedral over-approximation of the support of a function, $f$ as  $\mathcal{P}^N_{SA}(f)  \supseteq \supp(f)$
+then we can rewrite equation \eqref{support} in the form
 \begin{equation}
 \begin{aligned}
-\mathcal{B}^N_{SA} \cap \supp (P( T |\Omega)) = 
-& \mathcal{B}^N_{SA} \cap \mathcal{C}^N_{SA}(F) \cap \\
-& \mathcal{B}^N_{SA} \cap  \supp(P(\Psi^0 = T^0\mathbf{1})) \cap\\
-& \bigcap_{(\omega,v) \in \Omega}   \mathcal{B}^N_{SA} \cap \supp\left(P\left(\omega(T)=v\right)\right) \cap \\
+\supp(P( T |\Omega)) \subseteq 
+& \mathcal{T}^N_{SA} \cap \\
+& \mathcal{P}^N_{SA}(P(\Psi^0 = T^0\mathbf{1})) \cap\\
+& \bigcap_{(\omega,v) \in \Omega}   \mathcal{P}^N_{SA}\left(P\left(\omega(T)=v\right)\right) \cap \\
 & \bigcap_{t,\psi, a}
-\mathcal{B}^N_{SA} \cap \left(\supp\left(\pi(\psi,T^t\mathbf{1},a)\right)
+\left(\mathcal{P}^N_{SA}\left(\pi(\psi,T^t\mathbf{1},a)\right)
 \cup
 \left\{T: T^t_{\psi a} = 0\right\}\right)
 \\
 \end{aligned}
-\label{fermionicSupport}
+\label{polyhedralSupport}
 \end{equation}
-which is an intersection of terms in the form $\mathcal{B}^N_{SA} \cap \mathcal{X}$, so each term can equivalently be expressed as a $\mathcal{B}$-polyhedron.
 
-The union in the last line would be inconvenient to deal with computationally so we transform it away in the following way. Let $\mathcal{P}^t_{\psi a}$ be a convex polyhedron such that
-\[
-\mathcal{B}^N_{SA} \cap \mathcal{P}^t_{\psi a} = \mathcal{B}^N_{SA} \cap \supp\left(\pi(\psi,T^t\mathbf{1},a)\right)
-\]
-so
-\[
-\mathcal{B}^N_{SA} \cap \left(\supp\left(\pi(\psi,T^t\mathbf{1},a)\right) \cup
-\left\{T: T^t_{\psi a} = 0\right\}\right)
-=
-\mathcal{B}^N_{SA} \cap \left(\mathcal{P}^t_{\psi a} \cup \left\{T: T^t_{\psi a} = 0\right\}\right)
-\]
-If we let
-\[
-\mathcal{P}^t_{\psi a} = \left\{ T\in\mathbb{R}^N_{SA} : L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U \right\}
-\]
-for some $C \in \mathbb{R}^{SA}_{NI}$ and $L\in\mathbb{R}_I$ and $U\in\mathbb{R}_I$ then we can remove the union using the identity
+The intersection of two $\mathcal{Z}$-polyhedra is easy to construct by just concatenating the constraints
 \begin{multline}
-\mathcal{B}^N_{SA} \cap
-\left(
-\left\{ T\in\mathbb{R}^N_{SA} : L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U \right\}
+\left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : L \le \sum_{t,\psi,a} C^{\psi a}_{t} T^t_{\psi a} \le U \right\}
+\cap \left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : L' \le \sum_{t,\psi,a} D^{\psi a}_{t} T^t_{\psi a} \le U' \right\} \\
+= \left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : {L \choose L'}  \le \sum_{t,\psi,a} {C^{\psi a}_t\choose D^{\psi a}_t} T^t_{\psi a} \le {U\choose U'} \right\}
+\end{multline}
+so the only difficulty is the union in the final term of \eqref{polyhedralSupport}. To transform this into an intersection we introduce an auxiliary variable $I^t_{\psi a}$ and use the identity
+\begin{multline}
+\left\{ T\in\mathbb{Z}^N_{SA} : L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U \right\}
 \cup
-\left\{T: T^t_{\psi a} = 0\right\}\right)
+\left\{T: T^t_{\psi a} = 0\right\}
 =\\
-\mathcal{B}^N_{SA} \cap
 \left\{
-T\in\mathbb{R}^N_{SA}:
+T\in\mathbb{Z}^N_{SA}, I^t_{\psi a}\in\{0,1\}:\right.\\
 -\infty \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b}
 +
-(\overline{B}-U)T^{t}_{\psi a}
-\le \overline{B}
-\right\}
-\cap\\
-\mathcal{B}^N_{SA} \cap
-\left\{
-T\in\mathbb{R}^N_{SA}:
+(\overline{B}-U)I^{t}_{\psi a}
+\le \overline{B},\\
 \underline{B} \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b}
 +
-(\underline{B}-L)T^{t}_{\psi a} \le \infty
+(\underline{B}-L)I^{t}_{\psi a} \le \infty,\\
+0 \le mI^t_{\psi a} - T^t_{\psi a},\\
+\left. I^t_{\psi a} - T^t_{\psi a} \le 0
 \right\}
 \label{implication}
 \end{multline}
-where the elements of $\overline{B}\in\mathbb{R}_I$ are defined as
+where $m$ is the maximum value that any element of $T$ can take, the elements of $\overline{B}\in\mathbb{R}_I$ are defined as
 \[
-\overline{B}_i = \frac{\sum_{s,\phi,b} \left( |C^{\phi b}_{si}| + C^{\phi b}_{si}\right)}{2}
+\overline{B}_i = \frac{m\sum_{s,\phi,b} \left( C^{\phi b}_{si} + \left|C^{\phi b}_{si}\right|\right)}{2}
 \]
 and the elements of $\underline{B}\in\mathbb{R}_I$ are defined as
 \[
-\underline{B}_i = \frac{\sum_{s,\phi,b} \left( |C^{\phi b}_{si}| - C^{\phi b}_{si}\right)}{2}
+\underline{B}_i = \frac{m\sum_{s,\phi,b} \left(C^{\phi b}_{si} - \left|C^{\phi b}_{si}\right|\right)}{2}
 \]
 
-To see why this identity holds, consider the right hand polyhedrons in \eqref{implication}. When $T^t_{\psi a}=1$ the first is equal to $\sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U$ and the second is equal to $L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b}$ so their intersection is $\mathcal{P}^t_{\psi a}$, whereas when $T^t_{\psi a}=0$ the right hand side terms give $\underline{B} \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le \overline{B}$. But the elements $\underline{B}_i$ and $\overline{B}_i$ are an lower and upper bounds on the value of $\sum_{s,\phi,b} C^{\phi b}_{si} T^s_{\phi b}$ given that $T\in\mathcal{B}^N_{SA}$, so this is satisfied for all $\mathcal{B}^N_{SA}$ such that $T^t_{\psi a}=0$.
+To see why this identity holds, note first that the constraints on $I^t_{\psi a}$ make it into an indicator variable that is 0 if $T^t_{\psi a}=0$ or 1 otherwise. When $I^t_{\psi a}=1$ the first set of constraints is equal to $\sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U$ and the second is equal to $L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b}$ so their intersection is $L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U$ as required, whereas when $I^t_{\psi a}=0$ we have the constraints $\underline{B} \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le \overline{B}$. But $\underline{B}$ and $\overline{B}$ are lower and upper bounds on the value of $\sum_{s,\phi,b} C^{\phi b}_{si} T^s_{\phi b}$ so this is satisfied for all trajectories, as required.
 
-Using this transformation the Fermionic support of the posterior can be reduced to the intersection of $\mathcal{B}$-polyhedra. Given the identity
-\[
-(\mathcal{B}^N_{SA} \cap P_1) \cap (\mathcal{B}^N_{SA} \cap P_2) = \mathcal{B}^N_{SA} \cap (P_1 \cap P_2)
-\]
-we can calculate \eqref{fermionicSupport}, and thereby represent the support of the posterior as a set of linear constraints, by calculating each term and simply concatenating their linear constraints.
+There are two things worth noting here. Firstly if we make the Fermionic assumption then $I^t_{\psi a} = T^t_{\psi a}$ and the auxiliary indicator variable becomes unnecessary. Secondly, we must impose a finite value for $m$, the maximum value that elements of the trajectory can take. In practice, this is not a problem as we can give $m$ a value such that the probability of any trajectory of interest having any element larger than $m$ is vanishingly small.
 
-The idea of a $\mathcal{B}$-polyhedron as the support for a probability distribution naturally leads to the idea of a $\mathcal{B}$-distribution which is a probability distribution which is a discrete distribution defined on the points of a $\mathcal{B}$-polyhedron. From the above, it can be seen that the posterior distribution of an ABM trajectory is a $\mathcal{B}$-distribution.
+Using this transformation the support of the posterior can be reduced to a $\mathbb{Z}$-polyhedron
 
-As an illustration, consider two timesteps of the cat and mouse model. Suppose we flip a fair coin to decide whether each agent state is occupied or empty at $t=0$ and that we observe a cat in the left grid-square at time $t=1$. Our aim is to construct a set of linear constraints, $Q$, such that
-\[
-\mathcal{B}^2_{4\,2} \cap \supp(P(T|\Omega)) = \mathcal{B}^2_{4\,2} \cap Q
-\]
-Working through \eqref{fermionicSupport} term by term, the $\mathcal{B}^N_{SA} \cap \mathcal{C}^N_{SA}(F)$ term is equivalent to a $\mathcal{B}$-polyhedron with the continuity constraints in \eqref{continuous}, which are already in linear form so we're done. The second term is the support of the prior. This constrains each agent state at $t=0$ to be at most 1, which can be expressed as
+The idea of a $\mathbb{Z}$-polyhedron as the support for a probability distribution naturally leads to the idea of a $\mathbb{Z}$-distribution which is a discrete probability distribution defined over the members of a $\mathbb{Z}$-polyhedron. From the above, it can be seen that the posterior distribution of an ABM trajectory is a $\mathbb{Z}$-distribution.
+
+As an illustration, consider a two-timestep trajectory of the cat and mouse model. Suppose we flip a fair coin to decide whether each agent state is occupied or empty at $t=0$ and that we observe a cat in the left grid-square at time $t=1$. Our aim is to construct a $\mathbb{Z}$-polyhedron, $\mathcal{P}^2_{4\,2}(P(T|\Omega))$, that describes the support of the posterior.
+
+Working through \eqref{polyhedralSupport} term by term, the $\mathcal{T}^2_{4\,2}$ term is just the continuity constraints in \eqref{continuous}, which are already in linear form so we're done. The second term is the support of the prior. This constrains each agent state at $t=0$ to be at most 1, which can be expressed as
 \[
 \bigcap_\psi \left\{T:T^0_{\psi 0} + T^0_{\psi 1} \le 1\right\}
 \]
@@ -368,15 +320,20 @@ The third term is the support of the observation. Since we observe a cat in the 
 T^1_{0 0} + T^1_{0 1} = 1
 \]
 The final term guards against impossible actions. The only impossible actions are a mouse staying put when there is a cat on the same gridsquare or moving when there are no cats, which translates to the four cases
-\[
+\begin{equation}
 \begin{aligned}
 \supp(\pi(2,T^t\mathbf{1},0)) &= \left\{ T: -T^t_{0 0} - T^t_{0 1} \le -1 \right\}\\
 \supp(\pi(3,T^t\mathbf{1},0)) &= \left\{ T: -T^t_{1 0} - T^t_{1 1} \le -1 \right\}\\
 \supp(\pi(2,T^t\mathbf{1},1)) &= \left\{ T: T^t_{0 0} + T^t_{0 1} \le 0 \right\}\\
 \supp(\pi(3,T^t\mathbf{1},1)) &= \left\{ T: T^t_{1 0} + T^t_{1 1} \le 0 \right\}
 \end{aligned}
+\label{actionConstraints}
+\end{equation}
+If, for simplicity, we make the Fermionic assumption by adding the constraints
+\[
+\forall t,\psi,a: T^t_{\psi a} \le 1
 \]
-Using the identity in \eqref{implication} to take the union of each of these with $\left\{T: T^t_{\psi a} = 0\right\}$ gives the four constraints
+then using the identity in \eqref{implication} to take the union of each constraint in \eqref{actionConstraints} with $\left\{T: T^t_{\psi a} = 0\right\}$ gives the four constraints
 \[
 \begin{aligned}
 -T^t_{0 0} - T^t_{0 1} + T^t_{2 0} & \le 0\\
@@ -387,26 +344,28 @@ T^t_{1 0} + T^t_{1 1} + 2T^t_{3 1} & \le 2
 \]
 for each timestep $t=0$ and $t=1$.
 
-Taken together, these constraints define a $\mathcal{B}$-polyhedron that is the set of Fermionic trajectories for the cat and mouse ABM, and when combined with equation \eqref{posterior} defines $P(T|\Omega)$ as a $\mathcal{B}-distribution$.
+Taken together, these constraints define a $\mathbb{Z}$-polyhedron that is the set of (Fermionic) trajectories for the cat and mouse ABM, and when combined with equation \eqref{posterior} defines $P(T|\Omega)$ as a $\mathbb{Z}$-distribution.
 
-\section{Transforming between representations of a $\mathcal{B}$-polyhedron}
+\section{Transforming between representations of a $\mathbb{Z}$-polyhedron}
 %#####################################################
 
-Now that we can express the support of the posterior as a $\mathcal{B}$-polyhedron in the form
+TODO: Make this specific for Markov state: selection of J variables (permutation matrix Q) with their values at feasible levels ($X_N$). Holding J-1 feasible variables fixed defines a perturbation direction. Points where at least one additional variable is at feasible, integer level defines perturbation distance.
+
+Now that we can express the support of the posterior as a $\mathbb{Z}$-polyhedron in the form
 \begin{equation}
-\supp(P(T|\Omega) = \mathcal{B}^N_{SA} \cap \left\{T: L \le \sum_{t,\psi,a} C^{\psi a}_t T^t_{\psi a} \le U \right\}
+\supp(P(T|\Omega) \subseteq \left\{T \in \mathbb{Z}^N_{SA}: L \le \sum_{t,\psi,a} C^{\psi a}_t T^t_{\psi a} \le U \right\}
 \label{bPolySupport}
 \end{equation}
-we now describe some different ways of representing the same $\mathcal{B}$-polyhedron and methods of transforming from one representation to another. This will be useful in the development that follows.
+we now describe some different ways of representing the same $\mathbb{Z}$-polyhedron and methods of transforming from one representation to another. This will be useful in the development that follows.
 
-\subsection{The standard form of a $\mathcal{B}$-polyhedron}
+\subsection{The standard form of a $\mathbb{Z}$-polyhedron}
 
-Since there are many ways of representing a polyhedron, it will be useful to define a standard form when representing $\mathcal{B}$-polyhedra. We'll use the form
+Since there are many ways of representing a polyhedron, it will be useful to define a standard form when representing $\mathbb{Z}$-polyhedra. We'll use the form
 \begin{equation}
-\mathcal{B}(Q,N,b,L,U) = \left\{X: X = Q{X_B\choose X_N}, X_B = NX_N + b, X_B\in\mathbb{Z}^I, L \le X_B \le U, X \in \left\{ 0,1\right\}^K, X_N \in \left\{0,1\right\}^J \right\}
+\mathcal{P}(Q,N,b,L,U) = \left\{X \in \mathbb{Z}^K: X = Q{X_B\choose X_N}, X_B = b - NX_N, L \le {X_B\choose X_N} \le U, X_B\in\mathbb{Z}^I, X_N \in \mathbb{Z}^J \right\}
 \label{standardpolyhedron}
 \end{equation}
-where $X\in \mathbb{R}^K$, $X_N\in\mathbb{R}^J$ and $X_B\in\mathbb{R}^I$ are now vectors and $Q$ is a $K\times (I+J)$ matrix that selects $J \le K \le I+J$ elements from $(X_B|X_N)^T$ (i.e. each column of $Q$ has at most one element equal to 1, each row has exactly one element equal to 1 and all other elements are 0). We'll call the elements of $X_B$ ``basic-variables'' and the elements of $X_N$ ``non-basic variables''\footnote{The introduction of the requirement that $X_B \in \mathbb{Z}$ does not reduce expressivity as long as the elements of $N$ and $b$ can be expressed as rational numbers. In this case they can be converted to integers by multiplying each row by the product of the denominators on that row and dividing by the greatest common divisor. Once $N$ and $b$ are integer then $X_B$ is guaranteed to be integer for any $X_N\in\{0,1\}^J$.}.
+where $Q$ is a $K\times (I+J)$ matrix that selects $J \le K \le I+J$ elements from $(X_B|X_N)^T$ (i.e. each column of $Q$ has at most one element equal to 1, each row has exactly one element equal to 1 and all other elements are 0). We'll call the elements of $X_B$ ``basic-variables'' and the elements of $X_N$ ``non-basic variables''\footnote{The introduction of the requirement that $X_B \in \mathbb{Z}$ does not reduce expressivity as long as the elements of $N$ and $b$ can be expressed as rational numbers. In this case they can be converted to integers by multiplying each row by the product of the denominators on that row and dividing by the greatest common divisor. Once $N$ and $b$ are integer then $X_B$ is guaranteed to be integer for any $X_N\in\{0,1\}^J$.}.
 
 Equation \eqref{bPolySupport} can easily be expressed in the form \eqref{standardpolyhedron} by ``flattening'' the trajectory, $T$, into a $J$-dimensional vector (without changing the values of the elements) using a tensor $R\in\mathbb{R}^{SA}_{NJ}$ where $J=NSA$ (i.e. for every $(t, \psi, a)$ there is exactly one $j$ such that $R^{\psi a}_{t j} = 1$ and for every $j$ there is exactly one $(t,\psi,a)$ such that $R^{\psi a}_{t j} = 1$ and all other elements are zero) so that
 \[
@@ -420,79 +379,67 @@ and finally letting Q be the matrix such that $X_N = Q(X_B|X_N)$ and $b = \mathb
 
 \subsection{The pivot transformation}
 
-The introduction of the matrix $Q$ in \eqref{standardpolyhedron} allows us to transform the representation without changing the $\mathcal{B}$-polyhedron that is represented. We now describe the ``pivot transformation'' which will be a central operation in the sampling algorithm, and should look familiar to anyone acquainted with the simplex algorithm (see e.g. \cite{vanderbei2015linear}).
+The introduction of the matrix $Q$ in \eqref{standardpolyhedron} allows us to transform the representation without changing the $\mathbb{Z}$-polyhedron that is represented. We now describe the ``pivot transformation'' which will be a central operation in the sampling algorithm, and should look familiar to anyone acquainted with the simplex algorithm (see e.g. \cite{vanderbei2015linear}).
 
-We begin by transforming \eqref{standardpolyhedron} to the equivalent form
-\begin{equation}
-\mathcal{B} = \left\{X: X = Q{X_B\choose X_N}, (I|-N){X_B\choose X_N} = b, {L\choose \mathbf{0}} \le {X_B \choose X_N} \le {U\choose \mathbf{1}}, X \in \left\{ 0,1\right\}^K, {X_B\choose X_N} \in \mathbb{I}^{I+J} \right\}
-\label{joinedpolyhedron}
-\end{equation}
+We begin by expressing the linear constraint in the form
+\[
+(I|N){X_B \choose X_N} = b
+\]
+where $I$ is the identity matrix.
 
 If we let $S_{ij}$ be the permutation matrix such that
 \[
 {X'_B\choose X'_N} = S_{ij}{X_B\choose X_N}
 \]
-has the effect of swapping the $i^{th}$ element of $X_B$ with the $j^{th}$ element of $X_N$ then we can change variables in the equality constraint so that
+has the effect of swapping the $i^{th}$ element of $X_B$ with the $j^{th}$ element of $X_N$ then we have
 \[
-(I|-N)S^{-1}_{ij}{X'_B \choose X'_N} = b
+(I|N)S^{-1}_{ij}{X'_B \choose X'_N} = b
 \]
 (note that $S^{-1}_{ij} = S_{ij}$).
 
-However, the matrix $(I|-N)S^{-1}_{ij}$ is no longer in the standard form since $S^{-1}_{ij}$ has the effect of replacing a column in the identity with a column in the $-N$ matrix, leaving the first $I$ columns of $(I|-N)S^{-1}_{ij}$ equal to
-\[
-B_{ij} = (I|-N)S^{-1}_{ij}{I \choose \mathbf{0}}
-\]
-which is not, in general, the identity. However, as long as $N_{ij} \ne 0$ then $B$ is invertible and takes the simple form of the identity matrix whose $i^{th}$ column is replaced by a function of the $j^{th}$ column of $N$
+If we now pre-multiply this with the matrix 
 \[
 B_{ij}^{-1} =  
 \begin{pmatrix}
 1 &  & -\frac{N_{0j}}{N_{ij}} & & \\
   & \ddots & \vdots & &\\
- & & \frac{1}{-N_{ij}} & &\\
+ & & \frac{1}{N_{ij}} & &\\
   & & \vdots & \ddots &\\
   & & -\frac{N_{nj}}{N_{ij}} & &1\\
 \end{pmatrix}
 \]
-We can now recover the standard form by pre-multiplying by $B^{-1}$
+it can be shown \cite{maros2002computational} that
 \begin{equation}
-B_{ij}^{-1}(I|-N)S^{-1}_{ij} = (B_{ij}^{-1}|-B_{ij}^{-1}N)S^{-1}_{ij} = (I|-N') = B_{ij}^{-1}b  = b'
+B_{ij}^{-1}(I|N)S^{-1}_{ij} = (B_{ij}^{-1}|B_{ij}^{-1}N)S^{-1}_{ij} = (I|N')
 \label{Ntransform}
 \end{equation}
-Since $B^{-1}$ is invertible the transformed constraint is equivalent to the original, so if we let
+and so
+\begin{equation}
+B_{ij}^{-1}(I|N)S^{-1}_{ij}{X'_B \choose X'_N} = B_{ij}^{-1}b  = (I|N'){X'_B \choose X'_N} = b'
+\end{equation}
+Now, if we choose an $i$ and $j$ such that $N_{ij} = \pm 1$, then all elements of $B^{-1}_{ij}$ are integer and so all elements of $N'$ are also integer, as are the elements of $b'$. This ensures that if $X_N\in\mathbb{Z}^J$ then $X_B\in\mathbb{Z}^I$ and $X\in\mathbb{Z}^K$ as required.
+
+So if we let
 \[
 Q' = QS^{-1}_{ij}
 \]
-we can express $\mathcal{B}$ in the form
+we can express the original $\mathbb{Z}$-polyhedron in the equivalent form
 \begin{equation}
-\mathcal{B} = \left\{X: X = Q'{X'_B\choose X'_N}, (I|-N'){X'_B\choose X'_N} = b', S_{ij}{L\choose \mathbf{0}} \le {X'_B \choose X'_N} \le S_{ij}{U\choose \mathbf{1}}, X \in \left\{ 0,1\right\}^K, {X'_B\choose X'_N} \in \mathbb{I}^{I+J} \right\}
+\mathcal{P} = \left\{X\in\mathbb{Z}^K: X = Q'{X'_B\choose X'_N}, X'_B = b'-N'X'_N, S_{ij}L \le {X'_B \choose X'_N} \le S_{ij}U, X'_B \in \mathbb{Z}^I, X'_N \in \mathbb{Z}^J \right\}
 \end{equation}
 
-This is almost in the standard form, apart from the lower and upper bounds on $X'_N$ which may have an element with bounds other than 0 and 1. However, if we add the constraint that a pivot transformation can only be performed for $i: L_i = 0, U_i=1$ then $S_{ij}$ makes no change and the transformed representation is standard.
-
-It is easy to see that this transformation can be extended to any permutation matrix $S$ such that $B = (I|-N)S^{-1}(I|\mathbf{0})^T$ is invertible. So, given a reference representation of a $\mathcal{B}$-polyhedron, $\mathcal{B}(Q,N,b,L,U)$, we can define the set of all equivalent ``pivot states'' with respect to $(N,L,U)$ to be
-\[
-\mathcal{S}(N,L,U) = \left\{S : S \text{ is a permutation matrix }, (I|-N)S^{-1}{I\choose \mathbf{0}} \text{ is invertible}, S{L|U \choose \mathbf{0}|\mathbf{1}} = {L|U \choose \mathbf{0}|\mathbf{1}} \right\}
-\]
-so that each pivot state, when applied to the reference state, gives an equivalent standard form representation.
+It is easy to see that this transformation defines an equivalence set so that, given a reference representation of a $\mathbb{Z}$-polyhedron, $\mathbb{Z}(Q,N,b,L,U)$, we can define the set of all equivalent ``pivot states'' $\mathcal{S}(Q,N,b,L,U)$.
 
 \subsection{Removal of fixed variables}
 
-If we use the method described in section \eqref{BPoly} to create a $\mathcal{B}$-polyhedron of the support then each continuity constraint (and possibly some of the observation constraints) will result in elements of $X_B$ that have fixed values (i.e. $L_i = U_i$). Removing these will reduce the dimensionality of the problem and so make valid solutions easier to find.
+If we use the method described in section \eqref{BPoly} to create a $\mathbb{Z}$-polyhedron of the support then each continuity constraint (and possibly some of the observation constraints) will result in elements of $X_B$ that have fixed values (i.e. $L_i = U_i$). Removing these will reduce the dimensionality of the problem and so make valid solutions easier to find.
 
-Suppose the $i^{th}$ element of $X_B$ is fixed. We can perform a pivot on $(i,j)$, for some $j:N_{ij}\ne 0$ to swap the fixed variable with the $j^{th}$ element of $X_N$ so that the fixed variable ends up in $X_N$. This would leave the upper and lower bounds in a non-standard state since $X_N$ must have bounds $\mathbf{0} \le X_N \le \mathbf{1}$. However, the fixed variable can be removed from $X_N$ by adding the $j^{th}$ column of $N$ times the fixed variable to left and right sides of the equality constraint.
-\[
-(I|-N){X_B \choose X_N} + N^jX_{Nj} = b + N^jX_{Nj} = (I|-N'){X_B \choose X'_N} = b'
-\]
-where $N^j$ denotes the $j^{th}$ column of $N$, $X'_N$ is $X_N$ with the $j^{th}$ element removed and $N'$ is $N$ with the $j^{th}$ column removed. Since $X_{Nj}$ is fixed, then $b'$ is also fixed and we have recovered the standard form, but now with $X'_N$ having one less dimension than $X_N$.
+Suppose the $i^{th}$ element of $X_B$ is fixed. If there exists some $j:N_{ij} = \pm 1$ we can perform a pivot on $(i,j)$, to swap the fixed variable with the $j^{th}$ element of $X_N$ so that the fixed variable ends up in $X_N$. The fixed variable can be removed from $X_N$ by adding the $j^{th}$ column of $N$ times the variable's fixed value to b.
 
-With the variable change, we also need to update $Q$ and the upper and lower bounds by pre-multiplying by $S_{ij}$ then removing the $j^{th}$ column (since the fixed variable is not part of $X$, the $j^{th}$ column in $Q$ will be $\mathbf{0}$ so will not change $X$, and the $j^{th}$ column in the bounds will be the offending fixed variable bounds, which, when removed will return them to the standard form).
-
-In the following, we'll assume that all fixed variables have been removed from any representation of a $\mathcal{B}$-polyhedron.
-
-\section{Sampling from a $\mathcal{B}$-distribution}
+\section{Sampling from a $\mathbb{Z}$-distribution}
 %#################################################
 
-Armed with the ability to express $P(T|\Omega)$ as a $\mathcal{B}$-distribution and some tools to manipulate representations of $\mathcal{B}$-polyhedra, we can now go about defining a Markov process which will allow us to sample from a $\mathcal{B}$-distribution.
+Armed with the ability to express $P(T|\Omega)$ as a $\mathbb{Z}$-distribution and some tools to manipulate representations of $\mathbb{Z}$-polyhedra, we can now go about defining a Markov process which will allow us to sample from a $\mathbb{Z}$-distribution.
 
 To do this we need to define
 \begin{itemize}
@@ -518,17 +465,7 @@ In order to be useable in the Metropolis-Hastings algorithm, the proposal functi
 \subsection{The Markov states}
 %#############################################
 
-Given a $\mathcal{B}$-polyhedron and a reference representation in standard form, $\mathcal{B}(Q,N,b,U,L)$, we define a Markov state to be a pair $(X,S)$ where $X \in \mathcal{B}(Q,N,b,U,L)$ is a member of the $\mathcal{B}$-polyhedron and $S$ is a pivot state which defines a variable permutation
-\[
-{X'_B \choose X'_N} = S{X_B \choose X_N}
-\]
-which, when applied to the reference representation gives a transformed representation $(Q',N',b',U,L)$.
-
-Given a solution $X$, there is clearly a unique $X_N$ for the representation where all elements of $X$ are in $X_N$ (such a representation must exist as it's the representation we begin with when we first construct the polyhedron from the ABM). So for any transformed representation there is also a unique $X'_N$ which can be found by transforming to a representation with all $X$ in $X_N$, calculating $(X_B|X_N)$ and transforming back to get $(X'_B|X'_N)$. Clearly the converse also holds, given an $X_N$ in any representation there is a unique $X$ given by
-\[
-X = Q{N X_N + b \choose X_N}
-\]
-so we can talk interchangeably of the $X$ or $X'_N$ of the Markov state.
+Given a $\mathbb{Z}$-polyhedron, we define a Markov state to be a pair $(X,S)$ where $X$ is a member of the $\mathbb{Z}$-polyhedron and $S$ is a pivot state that defines a standard form representation of that polyhedron.
 
 \subsection{The probability of a Markov state}
 
@@ -711,6 +648,38 @@ Constraining our proposal function to members of the superset in equation \eqref
 \section{Notes}
 
 Why does convergence scale so badly with number of timesteps? Probably because as the number of non-zero elements per col/row increases, so does the average energy change in a feasible to infeasible transition, so we must increase the temperature to get the same amount of mixing. This results in a lot more time spent in infeasible space. 
+
+\subsection{Fermionic Trajectories}
+
+In the following we will consider only \textit{Fermionic trajectories}, which we define to be any trajectory whose elements are all either 0 or 1. i.e. a Fermionic trajectory must not only satisfy the constraints in \eqref{nonNegativeInt} and \eqref{continuous} but must also satisfy the \textit{Fermionic constraints}
+\begin{equation}
+\mathcal{B}^N_{SA} = \left\{T\in\mathbb{R}^N_{SA} : \forall t,\psi,a: T^t_{\psi a} \in \left\{ 0,1 \right\}\right\}
+\label{fermionic}
+\end{equation}
+This can be interpreted as meaning that no two agents in the same state at the same time can perform the same action. Notice that the Fermionic constraints imply the non-negative integer constraints, so the set of Fermionic trajectories, $\mathcal{F}^N_{SA}$, is the set of tensors that satisfy \eqref{fermionic} and \eqref{continuous}.
+\begin{equation}
+\mathcal{F}^N_{SA}(F) = \mathcal{B}^N_{SA} \cap \mathcal{C}^N_{SA}(F)
+\end{equation}
+
+If we now condition the posterior on $T \in \mathcal{B}^N_{SA}$ then the support of the posterior becomes
+\begin{equation}
+supp(P(T|\Omega, T\in\mathcal{B}^N_{SA})) = \mathcal{B}^N_{SA} \cap supp(P(T|\Omega))
+\label{fermionicSupport1}
+\end{equation}
+
+In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so it is overwhelmingly likely that a sample from the posterior will be Fermionic, and so intersection with $\mathcal{B}^N_{SA}$ will often have very little effect on the posterior. However, section ** describes how to extend the algorithm to apply to non-Fermionic trajectories when the Fermionic constraints are not acceptable.
+
+\begin{theorem}
+	For any set $\mathcal{X}$ there exists a convex polyhedron $P$ such that
+	\[
+	\mathcal{B}^N_{SA} \cap \mathcal{X} = \mathcal{B}^N_{SA} \cap \mathcal{P}
+	\]
+\end{theorem}
+\begin{proof}
+	Let $\mathcal{Y} = \mathcal{B}^N_{SA} \cap \mathcal{X}$ and let $\mathcal{P}$ be the convex hull of $\mathcal{Y}$. Clearly if a tensor $T\in \mathcal{Y}$ then $T\in \mathcal{B}^N_{SA} \cap \mathcal{P}$. To show the converse, suppose there is a member $T' \in \mathcal{B}^N_{SA} \cap \mathcal{P}$. Since $T'\in \mathcal{P}$ then there must be a convex combination of points in $\mathcal{Y}$ that equals $T'$. Call those points $\mathcal{Z}$. However, since $T' \in \mathcal{B}^N_{SA}$ and $\mathcal{Z}\subset \mathcal{B}^N_{SA}$ and no member of $\mathcal{B}^N_{SA}$ is a convex combination of any other member then $T'$ must be a member of $\mathcal{Z}$ and so $T'\in \mathcal{Y}$. So $\mathcal{B}^N_{SA} \cap \mathcal{X} = \mathcal{B}^N_{SA} \cap \mathcal{P}$. 
+\end{proof}
+
+
 
 %\bibliographystyle{unsrtnat}
 %\bibliographystyle{apalike} 
