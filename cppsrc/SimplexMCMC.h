@@ -13,13 +13,15 @@
 #include "glpkpp.h"
 #include "ProposalPivot.h"
 #include "ConvexPMF.h"
-#include "PotentialEnergyPivot.h"
+#include "NormalisedPotentialEnergyPivot.h"
 //class ConvexPMF;
 
 class SimplexMCMC: public glp::Simplex {
 public:
 //    static constexpr double fractionalK = 0.1;
 //    static constexpr double tol = 1e-8;
+
+    using glp::Simplex::nNonBasic;
 
     class MCMCStatistics {
     public:
@@ -46,7 +48,7 @@ public:
     MCMCStatistics infeasibleStatistics;
 
     std::function<double (const std::vector<double> &)> logProbFunc;
-    PotentialEnergyPivot proposalFunction;
+    NormalisedPotentialEnergyPivot proposalFunction;
     bool lastSampleWasAccepted = true;
 //    BasisProbability probability;
 

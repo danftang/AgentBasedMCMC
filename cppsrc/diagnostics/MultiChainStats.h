@@ -10,6 +10,7 @@
 #include <boost/serialization/vector.hpp>
 
 #include "ChainStats.h"
+#include "../PotentialEnergyPivot.h"
 
 class MultiChainStats: public std::vector<ChainStats> {
 public:

@@ -27,8 +27,8 @@ int main(int argc, char *argv[]) {
 //    FiguresForPaper::generateAllProblemFiles();
 
 
-    FiguresForPaper::generateStatsAndPlot<8>(4);
-//    Experiments::PredPreyAssimilation();
+//    FiguresForPaper::generateStatsAndPlot<8>(4);
+    Experiments::PredPreyAssimilation();
 
 //    FiguresForPaper::generateStats<8>(2);
 //    FiguresForPaper::plotStats<8>(2);
