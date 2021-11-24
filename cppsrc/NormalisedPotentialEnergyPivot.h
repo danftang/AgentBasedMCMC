@@ -16,7 +16,7 @@ public:
 //    double kappaBasis = 3.0; // exponential coefficient for bias towards a particular basis;
 //    static constexpr double p0 = 0.01; // relative probability of choosing column with zero reduced cost compared to a high potential col
 //    static constexpr double p1 = 0.1; // relative probability of choosing a column with a low potential compared to a high potential col
-//    static constexpr double feasibleEnergy = -1.5/kappaRow;
+    std::vector<double> feasibleEnergy;
     // Cached diagnostics for current and proposed states
 //    std::vector<double> reducedCost;
 //    int infeasibilityCount;
@@ -50,6 +50,7 @@ private:
     void calcProposedInfeasibilityCosts();
     void calcProposedReducedCosts();
     void calcProposedEnergies();
+    double calcLogChangeInFeasibleEnergy();
 
 //    double potentialEnergy(int j, const std::vector<double> &reducedCost);
 
@@ -60,14 +61,7 @@ private:
         return 0.0;
     }
 
-    static double infeasibilityCostFn(double b, double lowerBound, double upperBound) {
-        if(b < lowerBound - tol) return -1.0;
-        if(b > upperBound + tol) return 1.0;
-//        if(b < lowerBound + tol) return -0.5;
-//        if(b > upperBound - tol) return 0.5;
-  //      return feasibleEnergy;
-        return 0.0;
-    }
+    double infeasibilityCostFn(double b, int k);
 
     // debug
     void checkCurrentCacheIsValid();

@@ -21,7 +21,7 @@ public:
 //    static constexpr double fractionalK = 0.1;
 //    static constexpr double tol = 1e-8;
 
-    using glp::Simplex::nNonBasic;
+//    using glp::Simplex::nNonBasic;
 
     class MCMCStatistics {
     public:

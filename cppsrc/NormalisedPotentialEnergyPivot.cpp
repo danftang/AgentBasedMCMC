@@ -15,10 +15,15 @@ NormalisedPotentialEnergyPivot::NormalisedPotentialEnergyPivot(SimplexMCMC &simp
 ProposalPivot(simplex,0,0),
 //kappaCol(std::max(std::log(p1*simplex.nNonBasic()),1.0)),  // kappaCol(3.5) {
 //kappaCol(std::max(std::log((simplex.nNonBasic()-1.0)/(1.0/p1 - 1.0)),1.0)),  // kappaCol(3.5) {
-cdf(simplex.nNonBasic() + 1)
+cdf(simplex.nNonBasic() + 1),
+feasibleEnergy(simplex.nVars() + 1)
 {
     // setup initial cached values
     initCache();
+    feasibleEnergy[0] = 0.0;
+    for(int k=1; k < simplex.nVars(); ++k) {
+        if(simplex.isAuxiliary(k)) feasibleEnergy[k] = 0.0; else feasibleEnergy[k] = -1.5/kappaRow;
+    }
 }
 
 void NormalisedPotentialEnergyPivot::initCache() {
@@ -121,28 +126,31 @@ void NormalisedPotentialEnergyPivot::chooseRow() {
     double DdDf_dDj;
     double upperRateOfChange = 0.0; // rate of change stored in transitions from feasible to infeasible (as opposed to infeasible to feasible)
     reducedCostByDj[lowestDeltaJ] = colInfeasibilityGradient(lastDj - 2.0 * tol);
-    for (auto[Dj, pmfIndex]: transitions) {
-        double pivotPointVal = 1.0;
-        if (pmfIndex < nonZeroRows.size() * 2) {
-            pivotPointVal = col[nonZeroRows[pmfIndex / 2]];
-            DdDf_dDj = fabs(pivotPointVal);
+    for (const auto[Dj, pmfIndex]: transitions) {
+        bool varAtUpperBound = pmfIndex % 2;
+        int k;
+        double pivotPointVal;
+        if(pmfIndex < nonZeroRows.size() * 2) {
+            int row = nonZeroRows[pmfIndex / 2];
+            pivotPointVal = col[row];
+            k = simplex.head[row];
         } else {
-            // null pivot or bound swap
-            DdDf_dDj = 1.0;
+            pivotPointVal = 1.0;
+            k = simplex.head[simplex.nBasic() + j];
         }
+        bool isFeasibleToInfeasibleTransition = (pivotPointVal < 0.0) xor varAtUpperBound;
         if (Dj != lastDj) {
             reducedCostByDj[Dj] = reducedCostByDj[lastDj] + upperRateOfChange;
             infeas += (Dj - lastDj) * reducedCostByDj[Dj];
             lastDj = Dj;
             upperRateOfChange = 0.0;
         }
-        bool varAtUpperBound = pmfIndex % 2;
-        if ((pivotPointVal < 0.0) xor varAtUpperBound) {
-            // is an upper var
-            upperRateOfChange += DdDf_dDj;
+        if (isFeasibleToInfeasibleTransition) {
+            // is a feasible to infeasible transition so add to upper rate of change, not to reduced cost
+            upperRateOfChange += fabs(pivotPointVal)*(1.0 - feasibleEnergy[k]);
         } else {
-            //is a lower var
-            reducedCostByDj[Dj] += DdDf_dDj;
+            //is an infeasible to feasible transition so add directly to reduced cost
+            reducedCostByDj[Dj] += fabs(pivotPointVal)*(1.0 + feasibleEnergy[k]);
         }
 
         if (isActive(pmfIndex)) {
@@ -236,13 +244,13 @@ void NormalisedPotentialEnergyPivot::calcAcceptanceContrib() {
     }
 
     // logAcceptanceContribution is defined as -k times the change in total potential energy in all cols q!=j
-    if(potentialEnergies.size() > 1) {
+    if(energyNormalisation.size() > 1) {
 //        logAcceptanceContribution = kappaCol * (
 //                (totalPotentials.front() - potentialEnergies.front()[j]) -
 //                (totalPotentials.back()  - potentialEnergies.back()[j])
 //                );
-
-        logAcceptanceContribution = log(energyNormalisation.front()/energyNormalisation.back());
+//        std::cout << "Change in feasible energy = " << -kappaRow*calcLogChangeInFeasibleEnergy() << std::endl;
+        logAcceptanceContribution = -kappaRow*calcLogChangeInFeasibleEnergy() + log(energyNormalisation.front()/energyNormalisation.back());
 
 //        std::cout << "normalisation ratio = " << energyNormalisation.front()/energyNormalisation.back() << std::endl;
 
@@ -271,7 +279,7 @@ void NormalisedPotentialEnergyPivot::calcProposedInfeasibilityCosts() {
             postPivotBetap = (simplex.isAtUpperBound(j) ? simplex.u[k] : simplex.l[k]) + deltaj;
         }
 //        proposedInfeasibilityCost[p] = infeasibilityGradient(postPivotBetap, simplex.l[k], simplex.u[k]);
-        proposedInfeasibilityCost[p] = infeasibilityCostFn(postPivotBetap, simplex.l[k], simplex.u[k]);
+        proposedInfeasibilityCost[p] = infeasibilityCostFn(postPivotBetap,k);// simplex.l[k], simplex.u[k]);
         if(currentInfeasibilityCost[p] != proposedInfeasibilityCost[p]) hasChanged = true;
     }
     if(hasChanged) infeasibilityCosts.push_back(std::move(proposedInfeasibilityCost));
@@ -307,7 +315,7 @@ void NormalisedPotentialEnergyPivot::calcProposedReducedCosts() {
         std::vector<double> proposedReducedCost = simplex.piTimesMinusN(proposedCBI);
         std::swap(simplex.head[i], simplex.head[simplex.m+j]);
         // now add feasible energy cost of each non-basic
-//        for(int j=1; j<proposedReducedCost.size(); ++j) proposedReducedCost[j] += feasibleEnergy;
+        for(int j=1; j<proposedReducedCost.size(); ++j) proposedReducedCost[j] += feasibleEnergy[simplex.head[simplex.nBasic()+j]];
         reducedCosts.push_back(std::move(proposedReducedCost));
     } else {
         simplex.btran(proposedCBI); // in-place post-multiplication by B^-1
@@ -334,6 +342,24 @@ void NormalisedPotentialEnergyPivot::calcProposedEnergies() {
     potentialEnergies.push_back(std::move(proposedPotential));
 //    totalPotentials.push_back(proposedEp);
     energyNormalisation.push_back(proposedEnergyNorm);
+}
+
+
+double NormalisedPotentialEnergyPivot::calcLogChangeInFeasibleEnergy() {
+    double dE = 0.0;
+    for(int i=1; i <= simplex.nBasic(); ++i) {
+        int k = simplex.head[i];
+        double EOld = std::min(std::max(0.0,simplex.beta[i]),1.0);
+        double ENew = std::min(std::max(0.0,simplex.beta[i] + col[i]*deltaj),1.0);
+        dE += (ENew-EOld)*feasibleEnergy[k];
+    }
+
+    int k = simplex.head[simplex.nBasic() + j];
+    double Xj = simplex.isAtUpperBound(j)?simplex.u[k]:simplex.l[k];
+    double EOldj = std::min(std::max(0.0,Xj),1.0);
+    double ENewj = std::min(std::max(0.0,Xj + deltaj),1.0);
+    dE += (ENewj - EOldj)*feasibleEnergy[k];
+    return dE;
 }
 
 // Sanity check for calcAcceptanceContrib()
@@ -389,6 +415,12 @@ void NormalisedPotentialEnergyPivot::checkCurrentCacheIsValid() {
 //    std::cout << "cdf = " << cdf << std::endl;
 //    std::cout << "cdist = " << cdist << std::endl;
     assert(cdist == cdf);
+}
+
+double NormalisedPotentialEnergyPivot::infeasibilityCostFn(double b, int k) {
+    if(b < simplex.l[k] - tol) return -1.0;
+    if(b > simplex.u[k] + tol) return 1.0;
+    return feasibleEnergy[k];
 }
 
 // returns -1, 0 or +1

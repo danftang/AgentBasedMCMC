@@ -126,6 +126,7 @@ const std::vector<double> & SimplexMCMC::nextSample() {
             debug(if(infeasibleCount%1000 == 100) std::cout << infeasibleCount << " Infeasibility = " << infeasibility() << std::endl);
             ++infeasibleCount;
         }
+//        if(lastSampleWasAccepted) std::cout << "last sample accepted" << std::endl; else std::cout << "last sample rejected" << std::endl;
     } while(!sampleIsFeasible);
     return X();
 }
