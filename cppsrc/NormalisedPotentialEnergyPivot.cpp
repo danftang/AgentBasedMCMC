@@ -22,7 +22,12 @@ feasibleEnergy(simplex.nVars() + 1)
     initCache();
     feasibleEnergy[0] = 0.0;
     for(int k=1; k < simplex.nVars(); ++k) {
-        if(simplex.isAuxiliary(k)) feasibleEnergy[k] = 0.0; else feasibleEnergy[k] = -1.5/kappaRow;
+        int eventId = simplex.kSimTokProb[k] - simplex.nBasic();
+        if(eventId <1) feasibleEnergy[k] = 0.0; else {
+            Event<PredPreyAgent<8>> event(eventId);
+            auto marginal = event.agent().marginalTimestep();
+            feasibleEnergy[k] = log(marginal[event.act()])/kappaRow;
+        }
     }
 }
 
@@ -138,19 +143,29 @@ void NormalisedPotentialEnergyPivot::chooseRow() {
             pivotPointVal = 1.0;
             k = simplex.head[simplex.nBasic() + j];
         }
-        bool isFeasibleToInfeasibleTransition = (pivotPointVal < 0.0) xor varAtUpperBound;
+//        bool isFeasibleToInfeasibleTransition = (pivotPointVal < 0.0) xor varAtUpperBound;
         if (Dj != lastDj) {
             reducedCostByDj[Dj] = reducedCostByDj[lastDj] + upperRateOfChange;
             infeas += (Dj - lastDj) * reducedCostByDj[Dj];
             lastDj = Dj;
             upperRateOfChange = 0.0;
         }
-        if (isFeasibleToInfeasibleTransition) {
-            // is a feasible to infeasible transition so add to upper rate of change, not to reduced cost
-            upperRateOfChange += fabs(pivotPointVal)*(1.0 - feasibleEnergy[k]);
+        if(varAtUpperBound) {
+            if(pivotPointVal < 0.0) {
+                // Transition into feasibility from above
+                reducedCostByDj[Dj] += -pivotPointVal*(1.0 - feasibleEnergy[k]);
+            } else {
+                // Transition out of feasibility to +ve infeasibility
+                upperRateOfChange += pivotPointVal*(1.0 - feasibleEnergy[k]);
+            }
         } else {
-            //is an infeasible to feasible transition so add directly to reduced cost
-            reducedCostByDj[Dj] += fabs(pivotPointVal)*(1.0 + feasibleEnergy[k]);
+            if(pivotPointVal < 0.0) {
+                // Transisiton out of feasibility to -ve infeasibility
+                upperRateOfChange += -pivotPointVal*(1.0 + feasibleEnergy[k]);
+            } else {
+                // Transition into feasibility from below
+                reducedCostByDj[Dj] += pivotPointVal*(1.0 + feasibleEnergy[k]);
+            }
         }
 
         if (isActive(pmfIndex)) {

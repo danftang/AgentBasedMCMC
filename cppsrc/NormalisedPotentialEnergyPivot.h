@@ -10,7 +10,7 @@
 
 class NormalisedPotentialEnergyPivot: public ProposalPivot {
 public:
-    static constexpr double kappaRow = -6.0;//-6.0;//-3.8;//-1.125; // exponential coefficient for probabilities of choosing row based on change in infeasibility
+    static constexpr double kappaRow = -8.0;//-6.0;//-3.8;//-1.125; // exponential coefficient for probabilities of choosing row based on change in infeasibility
 //    static constexpr double p1 = 0.25; // Given a simplex state that has only one high energy column, p1 gives the probability that the high energy col will be proposed
     static constexpr double kappaCol = 4.5;//1.5;//1.125;       // exponential coefficient for relative probability of proposing a col based on potential energy set to max(1,log(p1*nNonBasic))
 //    double kappaBasis = 3.0; // exponential coefficient for bias towards a particular basis;
