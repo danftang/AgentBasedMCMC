@@ -16,12 +16,10 @@ ProposalPivot(simplex,0,0),
 //kappaCol(std::max(std::log(p1*simplex.nNonBasic()),1.0)),  // kappaCol(3.5) {
 //kappaCol(std::max(std::log((simplex.nNonBasic()-1.0)/(1.0/p1 - 1.0)),1.0)),  // kappaCol(3.5) {
 cdf(simplex.nNonBasic() + 1)
-{
-    // setup initial cached values
-    initCache();
-}
+{ }
 
-void PotentialEnergyPivot::initCache() {
+// called from SimplexMCMC
+void PotentialEnergyPivot::init() {
     col.resize(simplex.nBasic()+1);
     deltaj = 0.0;
     currentInfeasibilityCosts.resize(simplex.nBasic()+1, 0.0);
@@ -165,7 +163,9 @@ void PotentialEnergyPivot::chooseRow() {
             reducedCostByDj[Dj] += DdDf_dDj;
         }
 
-        if(isActive(pmfIndex)) {
+//        if(isActive(pmfIndex) && ((Dj != 0.0 && Dj != 1.0) || pmfIndex >= nonZeroRows.size()*2)) { // only bound swaps for delta 0 and 1
+        if(pmfIndex >= nonZeroRows.size()*2) { // bound swaps only
+//        if(isActive(pmfIndex)) {
             pivotPMF[pmfIndex] = infeas;
             if(infeas < infeasMin) infeasMin = infeas;
         }
@@ -176,9 +176,12 @@ void PotentialEnergyPivot::chooseRow() {
     // now add proposed j^th col potential to active row probabilities
     for(auto [Dj, pmfIndex] : transitions) {
         if(pivotPMF[pmfIndex] < DBL_MAX) {
-            double pivotPointVal = (pmfIndex < nonZeroRows.size()*2)?col[nonZeroRows[pmfIndex / 2]]:1.0;
-            double proposedReducedCost = reducedCostByDj[Dj] * pivotPointVal;
-            double proposedPotential = potentialEnergy(pmfIndex%2, proposedReducedCost);
+//            double pivotPointVal = (pmfIndex < nonZeroRows.size()*2)?col[nonZeroRows[pmfIndex / 2]]:1.0;
+//            double proposedReducedCost = reducedCostByDj[Dj] * pivotPointVal;
+//            double proposedPotential = potentialEnergy(pmfIndex%2, proposedReducedCost);
+
+            double proposedPotential = potentialEnergy(pmfIndex%2, reducedCostByDj[Dj]);
+//            assert(reducedCostByDj[Dj] == colInfeasibilityGradient(Dj));
 //            std::cout << "proposedPotential " << pivotPMF[pmfIndex] << " " << currentReducedCosts[j] << " " << proposedReducedCost << " " << pivotPointVal << " " << proposedPotential << std::endl;
 //            if(proposedPotential >= 40.0) {
 //                std::cout << col << std::endl;

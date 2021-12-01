@@ -10,9 +10,9 @@
 
 class PotentialEnergyPivot: public ProposalPivot {
 public:
-    static constexpr double kappaRow = -6.0;//-6.0;//-3.8;//-1.125; // exponential coefficient for probabilities of choosing row based on change in infeasibility
+    static constexpr double kappaRow = -7.0;//-6.5;//-6.0;//-3.8;//-1.125; // exponential coefficient for probabilities of choosing row based on change in infeasibility
 //    static constexpr double p1 = 0.25; // Given a simplex state that has only one high energy column, p1 gives the probability that the high energy col will be proposed
-    static constexpr double kappaCol = 4.5;//1.5;//1.125;       // exponential coefficient for relative probability of proposing a col based on potential energy set to max(1,log(p1*nNonBasic))
+    static constexpr double kappaCol = -0.75*kappaRow;//1.5;//1.125;       // exponential coefficient for relative probability of proposing a col based on potential energy set to max(1,log(p1*nNonBasic))
 //    static constexpr double maxPotential = 2.0;
 //    double kappaBasis = 3.0; // exponential coefficient for bias towards a particular basis;
 //    static constexpr double p0 = 0.01; // relative probability of choosing column with zero reduced cost compared to a high potential col
@@ -37,7 +37,7 @@ public:
 
     const PotentialEnergyPivot &nextProposal();
 
-    void initCache();
+    void init();
 
 private:
 
@@ -66,7 +66,7 @@ private:
 //        return r;
 
 // binary potential: either high or low.
-        if(fabs(reducedCost) > 1.5) return 1.0; // can always move down the gradient (perhaps by going out of bounds)
+//        if(fabs(reducedCost) > 1.5) return 1.0; // can always move down the gradient (perhaps by going out of bounds)
         if(reducedCost < -0.001) return isAtUpperBound ? 0.0 : 1.0;
         if(reducedCost > 0.001) return isAtUpperBound ? 1.0 : 0.0;
         return 0.0;

@@ -34,7 +34,7 @@ public:
         if(thread != NULL) delete(thread);
     }
 
-    DOMAIN nextSample() const { return DOMAIN(const_cast<SimplexMCMC &>(simplex).nextSample()); }
+    const DOMAIN &nextSample() const { return static_cast<const DOMAIN &>(const_cast<SimplexMCMC &>(simplex).nextSample()); }
 
     const DOMAIN &operator()() const {
         return static_cast<const DOMAIN &>(const_cast<SimplexMCMC &>(simplex).nextSample());

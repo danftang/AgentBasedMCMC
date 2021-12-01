@@ -50,6 +50,7 @@ public:
 
     void setCol(int j);
     void initNonZeroRows();
+    void clearCol();
 
     std::multimap<double,int> getPivotsByDeltaJ();
     std::multimap<double, int> getPivotsByInfeasibility();

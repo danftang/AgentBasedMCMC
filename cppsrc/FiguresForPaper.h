@@ -96,7 +96,7 @@ public:
         assert((nSamples&1) == 0);
         const double maxLagProportion = 0.5;
         const int nLags = 100;
-        constexpr int nBurnIn = nSamples*0.25;
+        constexpr int nBurnIn = 200000;//nSamples*0.25;
         auto trajectoryToEnergy = [](const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory) { return -trajectory.logProb(); };
         auto trajectoryToEndState = [](const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory) { return trajectory.endState(); };
         MCMCSampler sampler(posterior, startState);
@@ -124,7 +124,7 @@ public:
 
         std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
         std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
-        std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl << std::endl;
+        std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/(sampler.simplex.feasibleStatistics.nSamples + sampler.simplex.infeasibleStatistics.nSamples) << "%" << std::endl << std::endl;
 
         firstMeanEndState /= nSamples/2;
         lastMeanEndState /= nSamples/2;

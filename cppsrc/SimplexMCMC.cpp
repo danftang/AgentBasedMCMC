@@ -26,7 +26,8 @@ SimplexMCMC::SimplexMCMC(
     setObjective(glp::SparseVec());
     if(initialState.size() != 0) setLPState(initialState);
     findFeasibleStartPoint();
-    proposalFunction.initCache();
+    proposalFunction.init();
+    currentLogProb = logProbFunc(X());
 }
 
 
@@ -142,14 +143,20 @@ bool SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
 //    }
 //    std::cout << std::endl;
 
-    if(proposalPivot.i > 0  && kSimTokProb[head[proposalPivot.i]] <= nBasic()) std::cout << "Warning: Proposing auxiliary var to leave basis" << std::endl;
 
-    double sourceProb = logProbFunc(X());
-//    std::cout << "Source LP state is: " << glp::SparseVec(lpSolution) << std::endl;
-    updateLPSolution(proposalPivot);
-    double destinationProb = logProbFunc(lpSolution);
-//    std::cout << "Destination LP state is: " << glp::SparseVec(lpSolution) << std::endl;
-    double logAcceptance = destinationProb - sourceProb + proposalPivot.logAcceptanceContribution;
+    assert((proposalPivot.i <= 0 || kSimTokProb[head[proposalPivot.i]] > nBasic())); // Shouldn't propose auxiliary var to leave basis;
+
+    double proposalLogProb;
+    double logAcceptance = proposalPivot.logAcceptanceContribution;
+    if(proposalPivot.deltaj != 0.0) {
+//        double sourceProb = logProbFunc(X());
+        X();
+        updateLPSolution(proposalPivot);
+        proposalLogProb = logProbFunc(lpSolution);
+        logAcceptance += proposalLogProb - currentLogProb;
+    } else {
+        proposalLogProb = currentLogProb;
+    }
 //    debug(
 //            if(std::isnan(logAcceptance)) std::cout << "Log acceptance is " << logAcceptance << std::endl
 //            );
@@ -174,10 +181,11 @@ bool SimplexMCMC::processProposal(const ProposalPivot &proposalPivot) {
 //            }
 //        }
         pivot(proposalPivot);
+        currentLogProb = proposalLogProb;
         return true; // accept
     }
 //    debug(std::cout << "Rejecting" << std::endl);
-    revertLPSolution(proposalPivot);
+    if(proposalPivot.deltaj != 0.0) revertLPSolution(proposalPivot);
     return false; // reject
 }
 
@@ -295,9 +303,10 @@ double SimplexMCMC::infeasibility() {
 
 void SimplexMCMC::updateLPSolution(const ProposalPivot &pivot) {
     int nConstraints = nBasic();
-    for(int i=1; i<=nBasic(); ++i) {
-        int kProb = kSimTokProb[head[i]];
-        if(kProb > nConstraints) lpSolution[kProb - nConstraints] += pivot.col[i] * pivot.deltaj;
+    for(int nzz = 0; nzz < pivot.nonZeroRows.size(); ++nzz) {
+        int nzi = pivot.nonZeroRows[nzz];
+        int kProb = kSimTokProb[head[nzi]];
+        if(kProb > nConstraints) lpSolution[kProb - nConstraints] += pivot.col[nzi] * pivot.deltaj;
     }
     int kCol = kSimTokProb[head[nBasic() + pivot.j]];
     if(kCol > nConstraints) lpSolution[kCol - nConstraints] += pivot.deltaj;
@@ -309,9 +318,10 @@ void SimplexMCMC::revertLPSolution(const ProposalPivot &pivot) {
     int nConstraints = nBasic();
     int kCol = kSimTokProb[head[nBasic() + pivot.j]];
     if(kCol > nConstraints) lpSolution[kCol - nConstraints] -= pivot.deltaj;
-    for(int i=1; i<=nBasic(); ++i) {
-        int kProb = kSimTokProb[head[i]];
-        if(kProb > nConstraints) lpSolution[kProb - nConstraints] -= pivot.col[i] * pivot.deltaj;
+    for(int nzz = 0; nzz < pivot.nonZeroRows.size(); ++nzz) {
+        int nzi = pivot.nonZeroRows[nzz];
+        int kProb = kSimTokProb[head[nzi]];
+        if(kProb > nConstraints) lpSolution[kProb - nConstraints] -= pivot.col[nzi] * pivot.deltaj;
     }
     lpSolutionIsValid(true);
 }

@@ -151,6 +151,11 @@ void ProposalPivot::setCol(int j) {
     initNonZeroRows();
 }
 
+void ProposalPivot::clearCol() {
+    for(int i: nonZeroRows) col[i] = 0.0;
+    nonZeroRows.clear();
+}
+
 // returns true if pmfIndex corresponds to a row that is a structural var and has a unity coefficient
 bool ProposalPivot::isActive(int pmfIndex) {
     if(pmfIndex >= 2*nonZeroRows.size()) return true; // bound swaps active (including null pivot)

@@ -249,14 +249,15 @@ void Experiments::PredPreyConvergence() {
 
 void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
+    // 8 x 8 x 8 45% infeasible, 400 iterations per transtition, 20ms per transition
     constexpr int GRIDSIZE = 8;
-    constexpr int windowSize = 4;
+    constexpr int windowSize = 8;
     constexpr int nWindows = 1;
     constexpr double pPredator = 0.05;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 0.05;    // Poisson prob of prey in each gridsquare at t=0
     constexpr double pMakeObservation = 0.02;//0.04;    // prob of making an observation of each gridsquare at each timestep
     constexpr double pObserveIfPresent = 0.9;
-    constexpr int nSamplesPerWindow = 50000; //250000;
+    constexpr int nSamplesPerWindow = 100000; //250000;
     constexpr int nBurninSamples = 5000;
     constexpr int nPriorSamples = 100000;
 //    constexpr int plotTimestep = nTimesteps-1;
@@ -289,13 +290,17 @@ void Experiments::PredPreyAssimilation() {
         auto startTime = std::chrono::high_resolution_clock::now();
         sampleStats.sampleFromEndState(sampler, nSamplesPerWindow);
         auto endTime = std::chrono::high_resolution_clock::now();
-        std::cout << "Finished sampling in " << (endTime - startTime) << std::endl;
+        auto execTime = endTime - startTime;
+        std::cout << "Finished sampling in " << execTime << std::endl;
         analysis = &sampleStats;
 
         std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
         std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
         std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/(sampler.simplex.feasibleStatistics.nSamples + sampler.simplex.infeasibleStatistics.nSamples) << "%" << std::endl;
+        std::cout << "Iterations per feasible transition = " << (sampler.simplex.feasibleStatistics.nSamples + sampler.simplex.infeasibleStatistics.nSamples) * 1.0/sampler.simplex.feasibleStatistics.nNonDegenerate << std::endl;
+        std::cout << "Milliseconds per feasible transition = " << execTime.count() * 1e-6/sampler.simplex.feasibleStatistics.nNonDegenerate << std::endl;
         std::cout << "Analysis means = " << sampleStats.means() << std::endl;
+
 
         Plotter gp;
         gp.plot(window.realTrajectory.endState(), sampleStats.means());

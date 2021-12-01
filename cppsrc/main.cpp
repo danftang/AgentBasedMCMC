@@ -26,14 +26,14 @@ int main(int argc, char *argv[]) {
 //    Experiments::animatedPredPreyDemo();
 //    FiguresForPaper::generateAllProblemFiles();
 
+//    FiguresForPaper::generateStatsAndPlot<8>(8);
+    Experiments::PredPreyAssimilation();
 
-    FiguresForPaper::generateStatsAndPlot<8>(4);
-//    Experiments::PredPreyAssimilation();
-
-//    FiguresForPaper::generateStats<8>(2);
+//    FiguresForPaper::generateStats<8>(8);
 //    FiguresForPaper::plotStats<8>(2);
 //    FiguresForPaper::plotStats<8>(4);
 //    FiguresForPaper::plotStats<8>(6);
+//    FiguresForPaper::plotStats<8>(8);
 //    FiguresForPaper::plotStats<16>(2);
 
 

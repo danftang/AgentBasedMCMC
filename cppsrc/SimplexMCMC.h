@@ -14,6 +14,7 @@
 #include "ProposalPivot.h"
 #include "ConvexPMF.h"
 #include "PotentialEnergyPivot.h"
+#include "BoundSwapPivot.h"
 //class ConvexPMF;
 
 class SimplexMCMC: public glp::Simplex {
@@ -46,7 +47,8 @@ public:
     MCMCStatistics infeasibleStatistics;
 
     std::function<double (const std::vector<double> &)> logProbFunc;
-    PotentialEnergyPivot proposalFunction;
+    double currentLogProb;
+    BoundSwapPivot proposalFunction;
     bool lastSampleWasAccepted = true;
 //    BasisProbability probability;
 
@@ -72,7 +74,7 @@ public:
 //    double reverseTransitionProb(ProposalPivot proposal);
     using glp::Simplex::pivot;
     void pivot(const ProposalPivot &piv) {
-        this->glp::Simplex::pivot(piv.i, piv.j, piv.col, piv.leavingVarToUpperBound);
+        glp::Simplex::pivot(piv.i, piv.j, piv.col, piv.leavingVarToUpperBound);
     }
 
 
