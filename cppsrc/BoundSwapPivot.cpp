@@ -17,6 +17,7 @@ BoundSwapPivot::BoundSwapPivot(SimplexMCMC &simplex)
 // called from SimplexMCMC
 void BoundSwapPivot::init() {
     initBasis();
+    randomiseBounds();
     calculateTableau();
     col.resize(simplex.nBasic()+1);
     deltaj = 0.0;
@@ -56,6 +57,15 @@ void BoundSwapPivot::initBasis() {
             }
         }
     }
+}
+
+
+// For debug only: set bounds of nonBasics to random vals
+void BoundSwapPivot::randomiseBounds() {
+    for(int j=1; j<simplex.nNonBasic(); ++j) {
+        simplex.flag[j] = Random::nextBool();
+    }
+    simplex.evalBeta();
 }
 
 void BoundSwapPivot::calculateTableau() {

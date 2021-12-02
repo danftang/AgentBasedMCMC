@@ -11,7 +11,7 @@
 
 class BoundSwapPivot: public ProposalPivot {
 public:
-    static constexpr double kappaRow = -7.5;//-6.5;//-6.0;//-3.8;//-1.125; // exponential coefficient for probabilities of choosing row based on change in infeasibility
+    static constexpr double kappaRow = -7.0;//-6.5;//-6.0;//-3.8;//-1.125; // exponential coefficient for probabilities of choosing row based on change in infeasibility
     static constexpr double kappaCol = -0.75*kappaRow;//1.5;//1.125;       // exponential coefficient for relative probability of proposing a col based on potential energy set to max(1,log(p1*nNonBasic))
 
     std::vector<double> currentReducedCosts;         // reduced infeasibility cost by column
@@ -42,6 +42,8 @@ private:
     bool recalculateInfeasibilityCost();
     void recalculateReducedCosts();
     void recalculatePotentials();
+
+    void randomiseBounds();
 
 
     static double potentialEnergy(bool isAtUpperBound, double reducedCost) {

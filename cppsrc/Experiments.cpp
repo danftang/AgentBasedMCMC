@@ -257,7 +257,7 @@ void Experiments::PredPreyAssimilation() {
     constexpr double pPrey = 0.05;    // Poisson prob of prey in each gridsquare at t=0
     constexpr double pMakeObservation = 0.02;//0.04;    // prob of making an observation of each gridsquare at each timestep
     constexpr double pObserveIfPresent = 0.9;
-    constexpr int nSamplesPerWindow = 100000; //250000;
+    constexpr int nSamplesPerWindow = 250000; //250000;
     constexpr int nBurninSamples = 5000;
     constexpr int nPriorSamples = 100000;
 //    constexpr int plotTimestep = nTimesteps-1;
