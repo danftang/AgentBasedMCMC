@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 //    Experiments::animatedPredPreyDemo();
 //    FiguresForPaper::generateAllProblemFiles();
 
-//    FiguresForPaper::generateStatsAndPlot<8>(8);
+    FiguresForPaper::generateStatsAndPlot<8>(8);
 //    Experiments::PredPreyAssimilation();
 
 //    FiguresForPaper::generateStats<8>(8);

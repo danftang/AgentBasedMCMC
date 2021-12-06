@@ -13,6 +13,7 @@
 #include <map>
 #include <iostream>
 
+#include "glpkpp.h"
 #include "constants.h"
 class SimplexMCMC;
 
@@ -26,8 +27,8 @@ public:
 
     SimplexMCMC &simplex;
     double logAcceptanceContribution;   // the log probability of this transition minus log-prob of the reverse transition
-    std::vector<double> col;            // the j'th column of the tableau
-    std::vector<int>    nonZeroRows;    // indices of 'col' that are non-zero
+    glp::FVSVector col;            // the j'th column of the tableau
+    // std::vector<int>    nonZeroRows;    // indices of 'col' that are non-zero
 
 
     ProposalPivot(SimplexMCMC &simplex): simplex(simplex) { }
@@ -43,30 +44,19 @@ public:
     i(i), j(j),
     simplex(simplex),
     col(std::move(column)),
-    logAcceptanceContribution(0.0),
-    nonZeroRows() {
-        initNonZeroRows();
-    }
+    logAcceptanceContribution(0.0) { }
+
+    void applyPivot();
 
     void setCol(int j);
-    void initNonZeroRows();
-    void clearCol();
 
     std::multimap<double,int> getPivotsByDeltaJ();
     std::multimap<double, int> getPivotsByInfeasibility();
 
     double colInfeasibilityGradient(double deltaj);
-    static double infeasibilityGradient(double v, double lowerBound, double upperBound) {
-        if(v > upperBound) {
-            return 1.0;
-        } else if(v < lowerBound) {
-            return -1.0;
-        }
-        return 0.0;
-    }
 
     //    operator std::tuple<int &,int &>() { return std::tie(i,j); }
-    std::vector<double> reverseCol() const;
+//    std::vector<double> reverseCol() const;
 //    ProposalPivot reverse() const { return ProposalPivot(i, j, reverseCol()); }
 
 protected:
@@ -75,6 +65,10 @@ protected:
     void setToPivotIndex(int pivotIndex);
 
     std::vector<double> infeasibilityCost();
+
+    void updateLPSolution();
+
+    void revertLPSolution();
 };
 
 

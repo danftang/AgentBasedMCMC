@@ -15,7 +15,7 @@ Phase2Pivot::Phase2Pivot(SimplexMCMC &lp, int j, std::vector<double> column): Pr
     deltaj = lp.u[kIncoming] - lp.l[kIncoming];
     double DXi;
     double DXj;
-    for(int i=1; i<col.size();++i) {
+    for(int i=1; i<col.vec.size();++i) {
         if(fabs(col[i]) > tol) {
             int kOutgoing = lp.head[i];
             bool outgoingToUpperBound = (col[i] > 0.0) ^ lp.isAtUpperBound(j);
@@ -45,11 +45,11 @@ Phase2Pivot::Phase2Pivot(SimplexMCMC &lp, int j, std::vector<double> column): Pr
 }
 
 
-Phase2Pivot Phase2Pivot::reverse(SimplexMCMC &lp) const {
-    Phase2Pivot revCol(lp, j, reverseCol());
-    revCol.i = i;
-    return revCol;
-}
+//Phase2Pivot Phase2Pivot::reverse(SimplexMCMC &lp) const {
+//    Phase2Pivot revCol(lp, j, reverseCol());
+//    revCol.i = i;
+//    return revCol;
+//}
 
 
 // orders pivot rows so that all structural vars in the original LP come before auxiliary vars

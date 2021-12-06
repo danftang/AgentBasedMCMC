@@ -20,8 +20,8 @@ public:
     long execTimeMilliSeconds;
 
     MultiChainStats(std::string description=""):
-        kappaCol(PotentialEnergyPivot::kappaCol),
-        kappaRow(PotentialEnergyPivot::kappaRow),
+        kappaCol(decltype(SimplexMCMC::proposalFunction)::kappaCol),
+        kappaRow(decltype(SimplexMCMC::proposalFunction)::kappaRow),
         problemDescription(std::move(description)) {
 
     }

@@ -21,7 +21,7 @@ public:
     Phase2Pivot(SimplexMCMC &simplex, int j, std::vector<double> column); // j = column to pivot on
 
 
-    Phase2Pivot reverse(SimplexMCMC &lp) const;
+//    Phase2Pivot reverse(SimplexMCMC &lp) const;
     bool isDegenerate() const { return fabs(deltaj) < tol; }
 
 protected:

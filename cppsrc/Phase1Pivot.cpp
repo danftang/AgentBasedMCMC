@@ -134,8 +134,8 @@ void Phase1Pivot::chooseRow() {
         lastDj = Dj;
 //        double score = infeas;
 //        bool highPotential;
-        if(pivotIndex < 2*nonZeroRows.size()) {
-            double Tij = col[nonZeroRows[pivotIndex/2]];
+        if(pivotIndex < 2*col.sparseSize()) {
+            double Tij = col.vec[col.indices[pivotIndex/2]];
 //            highPotential = djNegative ^ (pivotIndex % 2) ^ (Mij < 0);
             dDf_dDj += fabs(Tij);
         } else {

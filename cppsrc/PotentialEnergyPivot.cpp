@@ -20,7 +20,7 @@ cdf(simplex.nNonBasic() + 1)
 
 // called from SimplexMCMC
 void PotentialEnergyPivot::init() {
-    col.resize(simplex.nBasic()+1);
+    col.vec.resize(simplex.nBasic()+1);
     deltaj = 0.0;
     currentInfeasibilityCosts.resize(simplex.nBasic()+1, 0.0);
     currentInfeasibilityCosts[0] = 0.0;
@@ -61,8 +61,7 @@ const PotentialEnergyPivot &PotentialEnergyPivot::nextProposal() {
 bool PotentialEnergyPivot::recalculateInfeasibilityCost() {
     bool hasChanged = false;
     for(int i=1; i<=simplex.nBasic(); ++i) {
-        int k = simplex.head[i];
-        double infeasibility = infeasibilityGradient(simplex.beta[i], simplex.l[k], simplex.u[k]);
+        double infeasibility = simplex.infeasibilityGradient(i);
         if(infeasibility != currentInfeasibilityCosts[i]) {
             currentInfeasibilityCosts[i] = infeasibility;
             hasChanged = true;
@@ -130,7 +129,7 @@ void PotentialEnergyPivot::chooseRow() {
 //    int highestDeltaJ = transitions.rbegin()->first;
 
     // now populate pivotPMF by going from lowest to highest delta_j in order
-    std::vector<double> pivotPMF(nonZeroRows.size() * 2 + 2, DBL_MAX); // index is (2*nonZeroRowIndex + toUpperBound), final two are lower and upper bound swap, value is probability mass
+    std::vector<double> pivotPMF(col.sparseSize() * 2 + 2, DBL_MAX); // index is (2*nonZeroRowIndex + toUpperBound), final two are lower and upper bound swap, value is probability mass
     std::map<double,double> reducedCostByDj;//( highestDeltaJ - lowestDeltaJ + 1, 0.0);
     double lastDj = lowestDeltaJ;
     double infeas = 0.0;
@@ -141,8 +140,8 @@ void PotentialEnergyPivot::chooseRow() {
     reducedCostByDj[lowestDeltaJ] = colInfeasibilityGradient(lastDj - 2.0*tol);
     for(auto [Dj, pmfIndex] : transitions) {
         double pivotPointVal = 1.0;
-        if(pmfIndex < nonZeroRows.size()*2) {
-            pivotPointVal = col[nonZeroRows[pmfIndex / 2]];
+        if(pmfIndex < col.sparseSize()*2) {
+            pivotPointVal = col.vec[col.indices[pmfIndex / 2]];
             DdDf_dDj = fabs(pivotPointVal);
         } else {
             // null pivot or bound swap
@@ -164,7 +163,7 @@ void PotentialEnergyPivot::chooseRow() {
         }
 
 //        if(isActive(pmfIndex) && ((Dj != 0.0 && Dj != 1.0) || pmfIndex >= nonZeroRows.size()*2)) { // only bound swaps for delta 0 and 1
-        if(pmfIndex >= nonZeroRows.size()*2) { // bound swaps only
+        if(pmfIndex >= col.sparseSize()*2) { // bound swaps only
 //        if(isActive(pmfIndex)) {
             pivotPMF[pmfIndex] = infeas;
             if(infeas < infeasMin) infeasMin = infeas;
