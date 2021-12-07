@@ -180,7 +180,7 @@ public:
     static int dimension(int nTimesteps) { return AGENT::domainSize()*AGENT::actDomainSize()*nTimesteps + 1; }
 
     // Log probability given fixed start state, as defined by this trajectory
-    double logProb() const {
+    double logProbOld() const {
 //        const double infeasibilityPenalty = 0.5;
 
         StateTrajectory<AGENT> stateTrajectory(*this);
@@ -220,6 +220,40 @@ public:
 //        std::cout << "Trajectory trajectoryPrior = " << logP << std::endl;
         return logP;
     }
+
+
+    double logProb() const {
+        StateTrajectory<AGENT> stateTrajectory(*this);
+        double logP = 0.0;
+
+        int tEnd = nTimesteps();
+        for (int t = 0; t < tEnd; ++t) {
+            for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
+                double agentOccupation = stateTrajectory[t][agentId];
+                if(agentOccupation > tol) {
+                    double agentStateLogP = 0.0;
+                    std::vector<double> actPMF = AGENT(agentId).timestep(stateTrajectory[t]);
+                    do {
+                        agentStateLogP = 0.0;
+                        for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+                            double actOccupation = (*this)[Event<AGENT>(t, agentId, actId)];
+                            if (actOccupation < tol) actOccupation = 0.0;
+                            else if (actOccupation > 1.0 - tol)actOccupation = 1.0; // Clamp to Fermionic limits
+                            if (actOccupation > 0.0) {
+                                agentStateLogP += actOccupation * log(actPMF[actId]);
+                            }
+                        }
+                        if (agentStateLogP <= -DBL_MAX) actPMF = AGENT(agentId).marginalTimestep();
+                    } while(agentStateLogP <= -DBL_MAX);
+                    logP += agentStateLogP;
+                    if(agentOccupation > 1.0) logP += lgamma(fabs(agentOccupation) + 1.0); // multiply by multinomial
+                }
+            }
+        }
+//        assert(fabs(logP - logProbOld()) < 1e-8);
+        return logP;
+    }
+
 
     Trajectory<AGENT> slice(int fromTimestep, int nTimesteps) const {
         Trajectory<AGENT> slice(nTimesteps);
