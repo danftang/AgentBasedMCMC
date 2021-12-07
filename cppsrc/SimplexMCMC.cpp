@@ -387,6 +387,7 @@ std::ostream &operator <<(std::ostream &out, const SimplexMCMC::MCMCStatistics &
     out << "pivots/non-degenerate   " << (stats.nNonDegenerate-stats.nSwaps)*100.0/stats.nNonDegenerate << "%" << std::endl;
     out << "swaps/non-degenerate    " << stats.nSwaps*100.0/stats.nNonDegenerate << "%" << std::endl;
     out << "nulls/degenerate        " << stats.nNulls*100.0/(stats.nAccepted-stats.nNonDegenerate) << "%" << std::endl;
+//    out << "non-degenerate-rejected " << stats.nNonDegenerateRejected*100.0/stats.nSamples << "%" << std::endl;
     return out;
 }
 

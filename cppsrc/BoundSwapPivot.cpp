@@ -48,9 +48,10 @@ void BoundSwapPivot::initBasis() {
         if(isInPredPreyPreferredBasis(simplex.head[j+simplex.nBasic()])) {
             std::vector<double> col = simplex.tableauCol(j);
             int i=0;
-            while(i <= simplex.nBasic() && (col[i]==0.0 || simplex.isAuxiliary(simplex.head[i]))) ++i;
+            while(i <= simplex.nBasic() && (col[i]==0.0 || simplex.isAuxiliary(simplex.head[i]) ||
+                    isInPredPreyPreferredBasis(simplex.head[i]))) ++i;
             if(i <= simplex.nBasic()) {
-//                std::cout << "Pivoting in " << i << " " << j << std::endl;
+//                std::cout << "Pivoting in preferred basis " << i << " " << j << std::endl;
                 simplex.pivot(i, j, col, simplex.beta[i] == 1.0);
             }
         }
@@ -87,7 +88,7 @@ BoundSwapPivot &BoundSwapPivot::nextProposal() {
 bool BoundSwapPivot::recalculateInfeasibilityCost() {
     bool hasChanged = false;
     for(int i=1; i<=simplex.nBasic(); ++i) {
-        double infeasibility = simplex.infeasibilityGradient(i);
+        double infeasibility = infeasibilityCostFn(i);
         if(infeasibility != currentInfeasibilityCosts[i]) {
             currentInfeasibilityCosts[i] = infeasibility;
             hasChanged = true;
@@ -186,8 +187,8 @@ void BoundSwapPivot::chooseRow() {
     double swapPotential = potentialEnergy(!simplex.isAtUpperBound(j), swapReducedCost);
     double swapChooseColScore = exp(kappaCol*swapPotential);
     double currentChooseColScore = cdf[j];
-//    double pChooseColRatio = swapChooseColScore*cdf.sum()/(currentChooseColScore*(cdf.sum() + swapChooseColScore - currentChooseColScore));
-    double pChooseColRatio = swapChooseColScore/currentChooseColScore;
+    double pChooseColRatio = swapChooseColScore*cdf.sum()/(currentChooseColScore*(cdf.sum() + swapChooseColScore - currentChooseColScore));
+//    double pChooseColRatio = swapChooseColScore/currentChooseColScore;
     double deltaProb = exp(kappaRow*deltaInfeasibility)*pChooseColRatio;
 
     bool doSwap = (Random::nextDouble()*(1.0 + deltaProb) < deltaProb);

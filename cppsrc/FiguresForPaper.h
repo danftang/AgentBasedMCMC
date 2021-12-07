@@ -92,7 +92,7 @@ public:
     template<int GRIDSIZE>
     static MultiChainStats startStatsThread(ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> posterior, Trajectory<PredPreyAgent<GRIDSIZE>> startState) {
         using namespace dataflow;
-        constexpr int nSamples = 4000000; // must be an even number
+        constexpr int nSamples = 3000000; // must be an even number
         assert((nSamples&1) == 0);
         const double maxLagProportion = 0.5;
         const int nLags = 100;

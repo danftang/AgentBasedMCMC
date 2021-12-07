@@ -12,7 +12,7 @@
 
 class BoundSwapPivot {
 public:
-    static constexpr double kappaRow = -7.0;//-6.5;//-6.0;//-3.8;//-1.125; // exponential coefficient for probabilities of choosing row based on change in infeasibility
+    static constexpr double kappaRow = -7.25;//-6.5;//-6.0;//-3.8;//-1.125; // exponential coefficient for probabilities of choosing row based on change in infeasibility
     static constexpr double kappaCol = -0.75*kappaRow;//1.5;//1.125;       // exponential coefficient for relative probability of proposing a col based on potential energy set to max(1,log(p1*nNonBasic))
 
     const int i;
@@ -27,6 +27,7 @@ public:
 //    std::vector<double> cdf;                // cumulative distribution function of probabilities of choosing column j
     MutableCategoricalArray cdf;
     std::vector<double> currentInfeasibilityCosts;   // cost by row, depending on infeasibility of each row.
+    std::vector<double> currentFeasibleCosts;   // cost by row, depending on infeasibility of each row.
 
     std::vector<glp::SparseVec> tableauCols;        // The simplex tableau coefficients for this basis
     std::vector<glp::SparseVec> tableauRows;
@@ -70,6 +71,7 @@ private:
     static double infeasibilityCostFn(double b, double lowerBound, double upperBound) {
         if(b < lowerBound - tol) return -1.0;
         if(b > upperBound + tol) return 1.0;
+//        if(b > upperBound - tol) return 0.25; // TODO: test!!!
         return 0.0;
     }
 

@@ -180,52 +180,51 @@ public:
     static int dimension(int nTimesteps) { return AGENT::domainSize()*AGENT::actDomainSize()*nTimesteps + 1; }
 
     // Log probability given fixed start state, as defined by this trajectory
-    double logProbOld() const {
-//        const double infeasibilityPenalty = 0.5;
-
-        StateTrajectory<AGENT> stateTrajectory(*this);
-        double logP = 0.0;
-        int tEnd = nTimesteps();
-        for (int t = 0; t < tEnd; ++t) {
-            for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
-                std::vector<double> actPMF = AGENT(agentId).timestep(stateTrajectory[t]);
-                double agentStateLogP;
-                do {
-                    agentStateLogP = 0.0;
-                    for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
-//                        double occupation = fabs((*this)[Event<AGENT>(t, agentId, actId)]);
-                        double occupation = (*this)[Event<AGENT>(t, agentId, actId)];
-                        if(occupation < 0.0) occupation = 0.0; else if(occupation > 1.0) occupation = 1.0; // Clamp to Fermionic limits
-                        if (occupation > tol) {
-                            agentStateLogP += occupation * log(actPMF[actId]);
-                            // - CombinatoricsUtils.factorialLog(occupation) // add this for non-act-fermionic trajectories
-                        }
-                    }
-                    if(agentStateLogP <= -DBL_MAX) actPMF = AGENT(agentId).marginalTimestep();
-                } while(agentStateLogP <= -DBL_MAX);
-                logP += agentStateLogP;
-            }
-        }
-
-        // If any state occupation number, m, is greater than 1 then we need to
-        // multiply the prob by !m since the m agents can be assigned to m acts in
-        // !m ways.
-        for(const ModelState<AGENT> &step: stateTrajectory) {
-            for(double occupation: step) {
-                if(fabs(occupation) > 1.0 + tol) {
-                    logP += lgamma(fabs(occupation) + 1.0);
-                }
-            }
-        }
-//        std::cout << "Trajectory trajectoryPrior = " << logP << std::endl;
-        return logP;
-    }
+//    double logProbOld() const {
+////        const double infeasibilityPenalty = 0.5;
+//
+//        StateTrajectory<AGENT> stateTrajectory(*this);
+//        double logP = 0.0;
+//        int tEnd = nTimesteps();
+//        for (int t = 0; t < tEnd; ++t) {
+//            for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+//                std::vector<double> actPMF = AGENT(agentId).timestep(stateTrajectory[t]);
+//                double agentStateLogP;
+//                do {
+//                    agentStateLogP = 0.0;
+//                    for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+////                        double occupation = fabs((*this)[Event<AGENT>(t, agentId, actId)]);
+//                        double occupation = (*this)[Event<AGENT>(t, agentId, actId)];
+//                        if(occupation < 0.0) occupation = 0.0; else if(occupation > 1.0) occupation = 1.0; // Clamp to Fermionic limits
+//                        if (occupation > tol) {
+//                            agentStateLogP += occupation * log(actPMF[actId]);
+//                            // - CombinatoricsUtils.factorialLog(occupation) // add this for non-act-fermionic trajectories
+//                        }
+//                    }
+//                    if(agentStateLogP <= -DBL_MAX) actPMF = AGENT(agentId).marginalTimestep();
+//                } while(agentStateLogP <= -DBL_MAX);
+//                logP += agentStateLogP;
+//            }
+//        }
+//
+//        // If any state occupation number, m, is greater than 1 then we need to
+//        // multiply the prob by !m since the m agents can be assigned to m acts in
+//        // !m ways.
+//        for(const ModelState<AGENT> &step: stateTrajectory) {
+//            for(double occupation: step) {
+//                if(fabs(occupation) > 1.0 + tol) {
+//                    logP += lgamma(fabs(occupation) + 1.0);
+//                }
+//            }
+//        }
+////        std::cout << "Trajectory trajectoryPrior = " << logP << std::endl;
+//        return logP;
+//    }
 
 
     double logProb() const {
         StateTrajectory<AGENT> stateTrajectory(*this);
         double logP = 0.0;
-
         int tEnd = nTimesteps();
         for (int t = 0; t < tEnd; ++t) {
             for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
