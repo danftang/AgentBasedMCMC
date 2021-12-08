@@ -299,7 +299,7 @@ void PotentialEnergyPivot::calcAcceptanceContrib() {
 //        std::vector<double> proposedReducedCost = simplex.piTimesMinusN(proposedCBI);
 //        reducedCosts.push_back(std::move(proposedReducedCost));
 //    }
-////    std::cout << "Proposed reduced costs : " << reducedCosts.back() << std::endl;
+////    std::cout << "Proposed reduced costs : " << calcDeltaE.back() << std::endl;
 //}
 
 

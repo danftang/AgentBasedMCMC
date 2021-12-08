@@ -12,8 +12,7 @@
 
 class BoundSwapPivot {
 public:
-    static constexpr double kappaRow = -7.25;//-6.5;//-6.0;//-3.8;//-1.125; // exponential coefficient for probabilities of choosing row based on change in infeasibility
-    static constexpr double kappaCol = -0.75*kappaRow;//1.5;//1.125;       // exponential coefficient for relative probability of proposing a col based on potential energy set to max(1,log(p1*nNonBasic))
+    static constexpr double kappa = -7.5; // exponential coefficient for probabilities of choosing row based on change in infeasibility
 
     const int i;
     int j;
@@ -22,12 +21,16 @@ public:
     SimplexMCMC &simplex;
     const double logAcceptanceContribution;
 
-    std::vector<double> currentReducedCosts;         // reduced infeasibility cost by column
-//    std::vector<double> currentPotentialEnergies;    // potential energies by column
-//    std::vector<double> cdf;                // cumulative distribution function of probabilities of choosing column j
-    MutableCategoricalArray cdf;
-    std::vector<double> currentInfeasibilityCosts;   // cost by row, depending on infeasibility of each row.
-    std::vector<double> currentFeasibleCosts;   // cost by row, depending on infeasibility of each row.
+
+    std::vector<double> currentDeltaE;              // change of energy on bound swap by column
+    std::vector<double> currentE;                   // energy by row
+    std::map<int,double> changedDeltaE;             // new values of deltaE by col, where changed by the current proposal
+    MutableCategoricalArray colPMF;
+
+
+//    std::vector<double> currentReducedCosts;         // reduced infeasibility cost by column
+//    std::vector<double> currentInfeasibilityCosts;   // cost by row, depending on infeasibility of each row.
+//    std::vector<double> currentFeasibleCosts;   // cost by row, depending on infeasibility of each row.
 
     std::vector<glp::SparseVec> tableauCols;        // The simplex tableau coefficients for this basis
     std::vector<glp::SparseVec> tableauRows;
@@ -45,22 +48,19 @@ private:
     void calculateTableau();
     bool isInPredPreyPreferredBasis(int k);
 
+    void calcDeltaEChanges();
+
     void chooseCol();
-    void chooseRow();
+    void chooseBound();
 
-//    void calcAcceptanceContrib();
-
-    bool recalculateInfeasibilityCost();
-    std::vector<double> reducedCosts();
-    void recalculateCDF();
+    std::vector<double> calcDeltaE();
     void updateAllCosts();
-
     void randomiseBounds();
 
     // debug
     void checkCosts();
 
-    double infeasibilityCostFn(int i);
+//    double infeasibilityCostFn(int i);
 
     static double potentialEnergy(bool isAtUpperBound, double reducedCost) {
         if(reducedCost < -0.001) return isAtUpperBound ? 0.0 : 1.0;

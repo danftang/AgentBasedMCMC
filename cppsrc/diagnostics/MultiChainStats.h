@@ -14,14 +14,14 @@
 class MultiChainStats: public std::vector<ChainStats> {
 public:
     std::string cpuinfo;
-    double kappaRow;
-    double kappaCol;
+    double kappa;
+//    double kappaCol;
     std::string problemDescription;
     long execTimeMilliSeconds;
 
     MultiChainStats(std::string description=""):
-        kappaCol(decltype(SimplexMCMC::proposalFunction)::kappaCol),
-        kappaRow(decltype(SimplexMCMC::proposalFunction)::kappaRow),
+//        kappaCol(decltype(SimplexMCMC::proposalFunction)::kappaCol),
+        kappa(decltype(SimplexMCMC::proposalFunction)::kappa),
         problemDescription(std::move(description)) {
 
     }
@@ -198,7 +198,7 @@ public:
     friend std::ostream &operator <<(std::ostream &out, const MultiChainStats &multiChainStats) {
         out << "MultiChainStats for " << multiChainStats.problemDescription << " " <<  multiChainStats.nChains() << " chains with " << multiChainStats.nSamples() << " samples" << std::endl;
         out << multiChainStats.cpuinfo << std::endl;
-        out << "kappaCol = " << multiChainStats.kappaCol << " kappaRow = " << multiChainStats.kappaRow << std::endl;
+        out << " kappa = " << multiChainStats.kappa << std::endl;
         out << "Exec time = " << multiChainStats.execTimeMilliSeconds/1000.0 << "s" << std::endl;
         out << "W = " << multiChainStats.W() << std::endl;
         out << "B = " << multiChainStats.B() << std::endl;
@@ -224,7 +224,7 @@ private:
     template <typename Archive>
     void serialize(Archive &ar, const unsigned int version) {
         cpuinfo = getCpuInfo();
-        ar & cpuinfo & kappaCol & kappaRow & problemDescription & execTimeMilliSeconds & static_cast<std::vector<ChainStats> &>(*this);
+        ar & cpuinfo & kappa & problemDescription & execTimeMilliSeconds & static_cast<std::vector<ChainStats> &>(*this);
     }
 };
 

@@ -12,7 +12,9 @@ BoundSwapPivot::BoundSwapPivot(SimplexMCMC &simplex)
         j(0),
         logAcceptanceContribution(0.0),
         tableauRows(simplex.nBasic()+1,glp::SparseVec()),
-        cdf(simplex.nNonBasic() + 1)
+        currentE(simplex.nBasic()+1),
+        currentDeltaE(simplex.nNonBasic()+1),
+        colPMF(simplex.nNonBasic() + 1)
 { }
 
 
@@ -22,12 +24,22 @@ void BoundSwapPivot::init() {
 //    randomiseBounds();
     calculateTableau();
     deltaj = 0.0;
-    currentInfeasibilityCosts.resize(simplex.nBasic()+1, 0.0);
-    currentInfeasibilityCosts[0] = 0.0;
-    recalculateInfeasibilityCost();
-    currentReducedCosts = reducedCosts();
-    cdf[0] = 0.0;
-    recalculateCDF();
+
+    // calculate row energies
+    for(int i=1; i<=simplex.nBasic(); ++i) {
+        int k = simplex.head[i];
+        currentE[i] = infeasibility(simplex.beta[i], simplex.l[k], simplex.u[k]);
+    }
+
+    currentDeltaE = calcDeltaE();
+
+    // calculate column PMF
+    std::vector<double> colDistribution(simplex.nNonBasic()+1);
+    colDistribution[0] = 0.0;
+    for(int j=1; j<=simplex.nNonBasic(); ++j) {
+        colDistribution[j] = currentDeltaE[j]>0.0?exp(kappa*currentDeltaE[j]):1.0;
+    }
+    colPMF.setAll(colDistribution);
 }
 
 
@@ -81,64 +93,99 @@ BoundSwapPivot &BoundSwapPivot::nextProposal() {
     if(simplex.lastSampleWasAccepted && deltaj != 0.0) updateAllCosts();
 //    checkCosts();
     chooseCol();
-    chooseRow();
+    chooseBound();
+//    std::cout << "Proposing " << j << " " << deltaj << " " << leavingVarToUpperBound << std::endl;
     return *this;
 }
 
-bool BoundSwapPivot::recalculateInfeasibilityCost() {
-    bool hasChanged = false;
-    for(int i=1; i<=simplex.nBasic(); ++i) {
-        double infeasibility = infeasibilityCostFn(i);
-        if(infeasibility != currentInfeasibilityCosts[i]) {
-            currentInfeasibilityCosts[i] = infeasibility;
-            hasChanged = true;
-        }
-    }
-    return hasChanged;
-}
+//bool BoundSwapPivot::recalculateInfeasibilityCost() {
+//    bool hasChanged = false;
+//    for(int i=1; i<=simplex.nBasic(); ++i) {
+//        double infeasibility = infeasibilityCostFn(i);
+//        if(infeasibility != currentInfeasibilityCosts[i]) {
+//            currentInfeasibilityCosts[i] = infeasibility;
+//            hasChanged = true;
+//        }
+//    }
+//    return hasChanged;
+//}
 
-
+// assuming the last proposal was accepted, beta has been
+// updated accordingly and changedDeltaE constains the changes
+// to deltaE caused by the pivot.
 void BoundSwapPivot::updateAllCosts() {
-    const glp::SparseVec &col = tableauCol();
-    std::set<int> changedCols;
-    changedCols.insert(j);
+    const glp::SparseVec &col = tableauCols[j];
     for(int nzi=0; nzi<col.sparseSize(); ++nzi) {
         int i = col.indices[nzi];
-        double infeasibility = infeasibilityCostFn(i);
-        if(infeasibility != currentInfeasibilityCosts[i]) {
-            // update reduced costs
-            double deltaInfi = infeasibility - currentInfeasibilityCosts[i];
-            const glp::SparseVec &row = tableauRows[i];
-            for(int nzi=0; nzi < row.sparseSize(); ++nzi) {
-                int j = row.indices[nzi];
-                currentReducedCosts[j] += deltaInfi * row.values[nzi]; // not worried about loss of precision as always dealing with integers
-                changedCols.insert(j);
+        int k = simplex.head[i];
+        currentE[i] = infeasibility(simplex.beta[i], simplex.l[k], simplex.u[k]);
+    }
+    for(const auto [changedj, newDeltaj]: changedDeltaE) {
+        currentDeltaE[changedj] = newDeltaj;
+        colPMF[changedj] = newDeltaj>0.0?exp(kappa*newDeltaj):1.0;
+    }
+}
+
+
+// calculates the changes to deltaE by col if we were to pivot on column j;
+void BoundSwapPivot::calcDeltaEChanges() {
+    changedDeltaE.clear();
+    const glp::SparseVec &col = tableauCols[j];
+    changedDeltaE[j] = -currentDeltaE[j];
+    double dj = simplex.isAtUpperBound(j)?-1.0:1.0;
+    for(int nzi=0; nzi<col.sparseSize(); ++nzi) {
+        int i = col.indices[nzi]; // row that is affected by the change
+        int k = simplex.head[i];
+        double oldbetai = simplex.beta[i];
+        double newbetai = oldbetai + col.values[nzi]*dj; // the value of beta_i after swapping col j;
+        double newEi = infeasibility(newbetai, simplex.l[k], simplex.u[k]); // new Energy of row i
+        const glp::SparseVec &row = tableauRows[i];
+        double deltaEi = newEi - currentE[i];
+        for (int nzi = 0; nzi < row.sparseSize(); ++nzi) {
+            int updatej = row.indices[nzi];
+            if(updatej != j) {
+                changedDeltaE.try_emplace(updatej, currentDeltaE[updatej]);
+                double deltabetaiswapj = row.values[nzi] * (simplex.isAtUpperBound(updatej) ? -1.0
+                                                                                            : 1.0); // the change in beta_i on swapping col updatej
+                changedDeltaE[updatej] +=
+                        (infeasibility(newbetai + deltabetaiswapj, simplex.l[k], simplex.u[k]) - newEi)
+                        -(infeasibility(oldbetai + deltabetaiswapj, simplex.l[k], simplex.u[k]) - currentE[i]);
             }
-            currentInfeasibilityCosts[i] = infeasibility;
         }
     }
-    for(int j : changedCols) {
-        cdf[j] = exp(kappaCol*potentialEnergy(simplex.isAtUpperBound(j), currentReducedCosts[j]));
+}
+
+// Calculates changes in energy by row, assumes currentE is valid.
+std::vector<double> BoundSwapPivot::calcDeltaE() {
+    std::vector<double> deltaE(simplex.nNonBasic()+1);
+    deltaE[0] = 0.0;
+    for(int j=1; j<=simplex.nNonBasic(); ++j) {
+        deltaE[j] = 0.0;
+        const glp::SparseVec &col = tableauCols[j];
+        double dj = simplex.isAtUpperBound(j)?-1.0:1.0;
+        for(int nzi = 0; nzi<col.sparseSize(); ++nzi) {
+            int i = col.indices[nzi];
+            int k = simplex.head[i];
+            double Mij = col.values[nzi];
+            double oldbetai = simplex.beta[i];
+            double newbetai = oldbetai + col.values[nzi]*dj; // the value of beta_i after swapping col j;
+            double newEi = infeasibility(newbetai, simplex.l[k], simplex.u[k]); // new Energy of row i
+            deltaE[j] += newEi - currentE[i];
+        }
     }
+    return deltaE;
 }
 
 
-std::vector<double> BoundSwapPivot::reducedCosts() {
-    std::vector<double> CBI(currentInfeasibilityCosts); // will eventually be proposed C'B'^-1
-    simplex.btran(CBI); // in-place post-multiplication by B^-1
-    return simplex.piTimesMinusN(CBI);
-};
-
-
-void BoundSwapPivot::recalculateCDF() {
-    double cumulativeP = 0.0;
-    std::vector<double> P(simplex.nNonBasic()+1);
-    P[0] = 0.0;
-    for(int q=1; q <= simplex.nNonBasic(); ++q) {
-        P[q] = exp(kappaCol* potentialEnergy(simplex.isAtUpperBound(q), currentReducedCosts[q]));
-    }
-    cdf.setAll(P);
-}
+//void BoundSwapPivot::recalculateCDF() {
+//    double cumulativeP = 0.0;
+//    std::vector<double> P(simplex.nNonBasic()+1);
+//    P[0] = 0.0;
+//    for(int q=1; q <= simplex.nNonBasic(); ++q) {
+//        P[q] = exp(kappaCol* potentialEnergy(simplex.isAtUpperBound(q), currentReducedCosts[q]));
+//    }
+//    colPMF.setAll(P);
+//}
 
 
 
@@ -159,7 +206,7 @@ bool BoundSwapPivot::isInPredPreyPreferredBasis(int k) {
 // As a consequence, the contribution of the column choice to the acceptance probability is
 // e^-k(DE - DEj) where DE and DEj are the change in total and column energy respectively, during the pivot.
 void BoundSwapPivot::chooseCol() {
-    j = cdf(Random::gen);
+    j = colPMF(Random::gen);
 }
 
 
@@ -168,55 +215,53 @@ void BoundSwapPivot::chooseCol() {
 // (exp(kappaRow*cuurentInfeasibility)P(chooseCol|currentState) + exp(kappaRow*destinationInfeasibility)P(chooseCol|destination))
 // =
 // exp(kappaCol*DeltaPotential + kappaRow*DeltaInfeasibility)/(1 + exp(kappaCol*DeltaPotential + kappaRow*DeltaInfeasibility))
-void BoundSwapPivot::chooseRow() {
-    double dj = simplex.isAtUpperBound(j)?-1.0:1.0; // Assumes Fermionic
-    double deltaInfeasibility = 0.0;
-    double swapReducedCost = 0.0;
-    for(int nzz = 0; nzz < tableauCols[j].sparseSize(); ++nzz) {
-        int nzi = tableauCols[j].indices[nzz];
-        double Mij = tableauCols[j].values[nzz];
-        int rowk = simplex.head[nzi];
-        double bi = simplex.beta[nzi];
-        double upperBound = simplex.u[rowk];
-        double lowerBound = simplex.l[rowk];
-        double swapbi = bi + Mij * dj;
-        deltaInfeasibility += infeasibility(swapbi,lowerBound, upperBound) - infeasibility(bi, lowerBound, upperBound);
-        swapReducedCost += Mij*infeasibilityCostFn(swapbi,lowerBound, upperBound);
+void BoundSwapPivot::chooseBound() {
+    calcDeltaEChanges();
+
+    double changeInSum = 0.0;
+    for(const auto [changedj, newDeltaj]: changedDeltaE) {
+        double oldPj = colPMF[changedj];
+        changeInSum += (newDeltaj>0.0?exp(kappa*newDeltaj):1.0) - oldPj;
     }
-//    assert(swapReducedCost == colInfeasibilityGradient(dj));
-    double swapPotential = potentialEnergy(!simplex.isAtUpperBound(j), swapReducedCost);
-    double swapChooseColScore = exp(kappaCol*swapPotential);
-    double currentChooseColScore = cdf[j];
-    double pChooseColRatio = swapChooseColScore*cdf.sum()/(currentChooseColScore*(cdf.sum() + swapChooseColScore - currentChooseColScore));
-//    double pChooseColRatio = swapChooseColScore/currentChooseColScore;
-    double deltaProb = exp(kappaRow*deltaInfeasibility)*pChooseColRatio;
-
-    bool doSwap = (Random::nextDouble()*(1.0 + deltaProb) < deltaProb);
-
-//    std::cout << doSwap << " ChooseColRatio = " << pChooseColRatio << " " << deltaProb/(1.0 + deltaProb) << std::endl;
-
-    leavingVarToUpperBound = simplex.isAtUpperBound(j) xor doSwap;
-//    i = -1; // column does bound swap.
-    deltaj = doSwap?dj:0.0;
+    double ratioOfSums = colPMF.sum()/(colPMF.sum() + changeInSum);
+    bool doSwap;
+    if(ratioOfSums >= 1.0) {
+        doSwap = true;
+    } else {
+        doSwap = (Random::nextDouble() < ratioOfSums);
+    }
+    if(doSwap) {
+        leavingVarToUpperBound = !simplex.isAtUpperBound(j);
+        deltaj = simplex.isAtUpperBound(j)?-1.0:1.0;
+    } else {
+        leavingVarToUpperBound = simplex.isAtUpperBound(j);
+        deltaj = 0.0;
+    }
 }
 
 
 
-double BoundSwapPivot::infeasibilityCostFn(int i) {
-    int k = simplex.head[i];
-    return infeasibilityCostFn(simplex.beta[i], simplex.l[k], simplex.u[k]);
-}
+//double BoundSwapPivot::infeasibilityCostFn(int i) {
+//    int k = simplex.head[i];
+//    return infeasibilityCostFn(simplex.beta[i], simplex.l[k], simplex.u[k]);
+//}
+
 
 void BoundSwapPivot::checkCosts() {
     for(int i=1; i<=simplex.nBasic();++i) {
-        assert(fabs(currentInfeasibilityCosts[i] - infeasibilityCostFn(i)) < 1e-8);
+        int k = simplex.head[i];
+        assert(fabs(currentE[i] - infeasibility(simplex.beta[i], simplex.l[k], simplex.u[k])) < 1e-8);
     }
 
-    std::vector<double> rc = reducedCosts();
+    std::vector<double> deltaE = calcDeltaE();
     for(int j=1; j<=simplex.nNonBasic(); ++j) {
-        assert(fabs(rc[j] - currentReducedCosts[j]) < 1e-8);
-        if(fabs(cdf[j] - exp(kappaCol*potentialEnergy(simplex.isAtUpperBound(j), rc[j]))) > 1e-8) {
-            std::cout << j << " " << simplex.nNonBasic() << " " << (double)cdf[j] << " " << exp(kappaCol*potentialEnergy(simplex.isAtUpperBound(j), rc[j])) << " " << fabs(cdf[j] - exp(kappaCol*potentialEnergy(simplex.isAtUpperBound(j), rc[j]))) << std::endl;
+        if(fabs(deltaE[j] - currentDeltaE[j]) > 1e-8) {
+            std::cout << j << " " << simplex.nNonBasic() << " " << deltaE[j] << " " << currentE[j] << std::endl;
+            assert(false);
+        }
+        double Pj = deltaE[j]>0.0?exp(kappa*deltaE[j]):1.0;
+        if(fabs(colPMF[j] - Pj) > 1e-8) {
+            std::cout << j << " " << simplex.nNonBasic() << " " << (double)colPMF[j] << " " << Pj << std::endl;
             assert(false);
         }
     }
