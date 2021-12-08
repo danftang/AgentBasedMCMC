@@ -41,7 +41,7 @@ void SimplexMCMC::findFeasibleStartPoint() {
 //        std::cout << iterations << " Pivoted on " << proposal.i << ", " << proposal.j << " " << proposal.deltaj << " " << proposal.leavingVarToUpperBound
 //                  << " " << isAtUpperBound(proposal.j)
 //                  << "  Infeasibility = " << infeasibility() << std::endl;
-        debug(if(iterations%256 == 0) std::cout << "phase1 iteration:" << iterations << " infeasibility = " << infeasibility() << std::endl);
+        debug(if(iterations%256 == 0) std::cout << "phase1 iteration:" << iterations << " energy = " << infeasibility() << std::endl);
         iterations++;
 
     };

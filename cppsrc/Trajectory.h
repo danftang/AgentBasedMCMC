@@ -232,20 +232,22 @@ public:
                 if(agentOccupation > tol) {
                     double agentStateLogP = 0.0;
                     std::vector<double> actPMF = AGENT(agentId).timestep(stateTrajectory[t]);
+                    double clampedAgentOccupation = 0.0;
                     do {
                         agentStateLogP = 0.0;
                         for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
                             double actOccupation = (*this)[Event<AGENT>(t, agentId, actId)];
                             if (actOccupation < tol) actOccupation = 0.0;
-                            else if (actOccupation > 1.0 - tol)actOccupation = 1.0; // Clamp to Fermionic limits
+                            else if (actOccupation > 1.0 - tol) actOccupation = 1.0; // Clamp to Fermionic limits
                             if (actOccupation > 0.0) {
+                                clampedAgentOccupation += actOccupation;
                                 agentStateLogP += actOccupation * log(actPMF[actId]);
                             }
                         }
                         if (agentStateLogP <= -DBL_MAX) actPMF = AGENT(agentId).marginalTimestep();
                     } while(agentStateLogP <= -DBL_MAX);
                     logP += agentStateLogP;
-                    if(agentOccupation > 1.0) logP += lgamma(fabs(agentOccupation) + 1.0); // multiply by multinomial
+                    if(clampedAgentOccupation > 1.0) logP += lgamma(clampedAgentOccupation + 1.0); // multiply by multinomial
                 }
             }
         }
