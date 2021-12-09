@@ -250,13 +250,13 @@ void Experiments::PredPreyConvergence() {
 void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
     // 8 x 8 x 8 45% infeasible, 400 iterations per transtition, 20ms per transition
-    constexpr int GRIDSIZE = 16;
+    constexpr int GRIDSIZE = 32;
     constexpr int windowSize = 8;
     constexpr double pPredator = 0.05;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 0.05;    // Poisson prob of prey in each gridsquare at t=0
     constexpr double pMakeObservation = 0.02;//0.04;    // prob of making an observation of each gridsquare at each timestep
     constexpr double pObserveIfPresent = 0.9;
-    constexpr int nSamplesPerWindow = 50000; //250000;
+    constexpr int nSamplesPerWindow = 25000; //250000;
     constexpr int nBurninSamples = 5000;
     constexpr int nPriorSamples = 100000;
 //    constexpr int plotTimestep = nTimesteps-1;

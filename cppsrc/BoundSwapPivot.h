@@ -12,7 +12,7 @@
 
 class BoundSwapPivot {
 public:
-    static constexpr double kappa = -8.0; // exponential coefficient for probabilities of choosing row based on change in infeasibility
+    static constexpr double kappa = -9.0; // exponential coefficient for probabilities of choosing row based on change in infeasibility
 
     const int   i;
     int         j;

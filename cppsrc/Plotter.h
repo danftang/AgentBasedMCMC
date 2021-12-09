@@ -30,16 +30,22 @@ public:
             }
         }
 
-        double maxP = 0.0;
-        for(double p : analysis) maxP = std::max(maxP, p);
-//        std::cout << "maxP = " << maxP << std::endl;
+        double maxP = -DBL_MAX;
+        double minP = DBL_MAX;
+        for(double p : analysis) {
+            maxP = std::max(maxP, p);
+            minP = std::min(minP, p);
+        }
+//        minP = std::min(minP,1e-4);
+        std::cout << "P range = " << minP << ":" << maxP << std::endl;
 
         for (int x = 0; x < GRIDSIZE; ++x) {
             std::vector <HeatRecord> &record = heatData.emplace_back();
             for (int y = 0; y < GRIDSIZE; ++y) {
                 double lPrey = analysis[PredPreyAgent<GRIDSIZE>(x, y, PredPreyAgent<GRIDSIZE>::PREY)];
                 double lPred = analysis[PredPreyAgent<GRIDSIZE>(x, y, PredPreyAgent<GRIDSIZE>::PREDATOR)];
-                record.emplace_back(x, y, lPrey * 240.0/maxP, 0.0, lPred * 240.0/maxP);
+//                record.emplace_back(x, y, lPrey * 240.0/maxP, 0.0, lPred * 240.0/maxP);
+                record.emplace_back(x, y, (log(lPrey) - log(minP))* 240.0/(log(maxP)-log(minP)), 0.0, (log(lPred) - log(minP)) * 240.0/(log(maxP)-log(minP)));
             }
         }
 
