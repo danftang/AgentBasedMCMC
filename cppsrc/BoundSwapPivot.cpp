@@ -30,7 +30,7 @@ void BoundSwapPivot::init() {
 //    for(int kSim=1; kSim<=simplex.nVars(); ++kSim) {
 //        int kProb = simplex.kSimTokProb[kSim];
 //        if(kProb > simplex.nBasic()) {
-//            auto event = Event<PredPreyAgent<16>>(kProb-simplex.nBasic()); // TODO: make this generic
+//            auto event = Event<PredPreyAgent<16>>(kProb-simplex.nBasic());
 //            assert(simplex.c[kSim] == log(event.agent().marginalTimestep()[event.act()]));
 //        } else {
 //            assert(simplex.c[kSim] == 0.0);

@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.17)
 project(glpkTest)
 
 set(CMAKE_CXX_STANDARD 17)
+#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3")
+#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 link_directories(lib)
 link_libraries(glpkpp boost_system boost_iostreams boost_filesystem boost_serialization pthread)
 
