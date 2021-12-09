@@ -92,14 +92,14 @@ public:
     template<int GRIDSIZE>
     static MultiChainStats startStatsThread(ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> posterior, Trajectory<PredPreyAgent<GRIDSIZE>> startState) {
         using namespace dataflow;
-        constexpr int nSamples = 1000000; // must be an even number
+        constexpr int nSamples = 1500000; // must be an even number
         assert((nSamples&1) == 0);
         const double maxLagProportion = 0.5;
         const int nLags = 100;
         constexpr int nBurnIn = 200000;//nSamples*0.25;
         auto trajectoryToEnergy = [](const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory) { return -trajectory.logProb(); };
         auto trajectoryToEndState = [](const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory) { return trajectory.endState(); };
-        MCMCSampler sampler(posterior, startState);
+        MCMCSampler sampler(posterior, startState, Trajectory<PredPreyAgent<GRIDSIZE>>::marginalLogProbsByEvent(startState.nTimesteps()));
 
         std::valarray<std::valarray<double>> firstSynopsisSamples(nSamples/2);
         std::valarray<std::valarray<double>> lastSynopsisSamples(nSamples/2);

@@ -28,15 +28,18 @@ public:
 
     }
 
-    glp::Problem toLPProblem() const {
+
+    glp::Problem toLPProblem(const std::vector<double> &objective = std::vector<double>()) const {
 //        std::cout << "Constraints are:\n" << *this << std::endl;
         glp::Problem lp(*this);
-//        lp.advBasis();
-        predPreyBasis(lp);
+        lp.advBasis();
+//        predPreyBasis(lp);
         lp.warmUp();
+        lp.setObjective(objective);
 //        std::cout << "Problem is:\n" << lp << std::endl;
         return lp;
     }
+
 
     static void predPreyBasis(glp::Problem &lp) {
         // remove all fixed vars from basis
@@ -55,17 +58,6 @@ public:
             --nFixed;
             eventId -= PredPreyAgentBase::actDomainSize();
         }
-        // count basic vars
-//        int nBasic = 0;
-//        for(int i = 1; i <= lp.nConstraints(); i++) {
-//            if(lp.getRowStat(i) == GLP_BS) ++nBasic;
-//        }
-//        // add death as basic
-//        for(int j=1; j <= lp.nVars(); ++j) {
-//            if(lp.getColStat(j) == GLP_BS) ++nBasic;
-//        }
-//        std::cout << "nBasic = " << nBasic << " nConstraints = " << lp.nConstraints() << std::endl;
-//        assert(nBasic == lp.nConstraints());
     }
 
 

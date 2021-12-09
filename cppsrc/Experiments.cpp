@@ -250,9 +250,8 @@ void Experiments::PredPreyConvergence() {
 void Experiments::PredPreyAssimilation() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
     // 8 x 8 x 8 45% infeasible, 400 iterations per transtition, 20ms per transition
-    constexpr int GRIDSIZE = 8;
+    constexpr int GRIDSIZE = 16;
     constexpr int windowSize = 8;
-    constexpr int nWindows = 1;
     constexpr double pPredator = 0.05;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 0.05;    // Poisson prob of prey in each gridsquare at t=0
     constexpr double pMakeObservation = 0.02;//0.04;    // prob of making an observation of each gridsquare at each timestep
@@ -273,42 +272,37 @@ void Experiments::PredPreyAssimilation() {
 //    });
 
     std::cout << "Initial state distribution = " << startStateDist << std::endl;
-    Trajectory<PredPreyAgent<GRIDSIZE>> realTrajectory(nWindows*windowSize, startStateDist.sampler());
+    Trajectory<PredPreyAgent<GRIDSIZE>> realTrajectory(windowSize, startStateDist.sampler());
 
-    const Distribution<ModelState<PredPreyAgent<GRIDSIZE>>> *analysis = &startStateDist;
+//    const Distribution<ModelState<PredPreyAgent<GRIDSIZE>>> *analysis = &startStateDist;
     ModelStateSampleStatistics<PredPreyAgent<GRIDSIZE>> sampleStats;
-    for(int w=0; w<nWindows; ++w) {
-        AssimilationWindow<PredPreyAgent<GRIDSIZE>> window(
-                *analysis,
-                realTrajectory.slice(w*windowSize, windowSize),
-                pMakeObservation,
-                pObserveIfPresent
-        );
-        MCMCSampler sampler(window.posterior, window.priorSampler());
-        for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
-        sampleStats.clear();
-        auto startTime = std::chrono::high_resolution_clock::now();
-        sampleStats.sampleFromEndState(sampler, nSamplesPerWindow);
-        auto endTime = std::chrono::high_resolution_clock::now();
-        auto execTime = endTime - startTime;
-        std::cout << "Finished sampling in " << execTime << std::endl;
-        analysis = &sampleStats;
+    AssimilationWindow<PredPreyAgent<GRIDSIZE>> window(
+            startStateDist,
+            realTrajectory,
+            pMakeObservation,
+            pObserveIfPresent);
+    MCMCSampler sampler(window.posterior, window.priorSampler(), Trajectory<PredPreyAgent<GRIDSIZE>>::marginalLogProbsByEvent(windowSize));
+    for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
+    sampleStats.clear();
+    auto startTime = std::chrono::high_resolution_clock::now();
+    sampleStats.sampleFromEndState(sampler, nSamplesPerWindow);
+    auto endTime = std::chrono::high_resolution_clock::now();
+    auto execTime = endTime - startTime;
+    std::cout << "Finished sampling in " << execTime << std::endl;
 
-        std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
-        std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
-        std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/(sampler.simplex.feasibleStatistics.nSamples + sampler.simplex.infeasibleStatistics.nSamples) << "%" << std::endl;
-        std::cout << "Iterations per feasible transition = " << (sampler.simplex.feasibleStatistics.nSamples + sampler.simplex.infeasibleStatistics.nSamples) * 1.0/sampler.simplex.feasibleStatistics.nNonDegenerate << std::endl;
-        std::cout << "Milliseconds per feasible transition = " << execTime.count() * 1e-6/sampler.simplex.feasibleStatistics.nNonDegenerate << std::endl;
-        std::cout << "Analysis means = " << sampleStats.means() << std::endl;
+    std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
+    std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
+    std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/(sampler.simplex.feasibleStatistics.nSamples + sampler.simplex.infeasibleStatistics.nSamples) << "%" << std::endl;
+    std::cout << "Iterations per feasible transition = " << (sampler.simplex.feasibleStatistics.nSamples + sampler.simplex.infeasibleStatistics.nSamples) * 1.0/sampler.simplex.feasibleStatistics.nNonDegenerate << std::endl;
+    std::cout << "Milliseconds per feasible transition = " << execTime.count() * 1e-6/sampler.simplex.feasibleStatistics.nNonDegenerate << std::endl;
+    std::cout << "Analysis means = " << sampleStats.means() << std::endl;
 
 
-        Plotter gp;
-        gp.plot(window.realTrajectory.endState(), sampleStats.means());
+    Plotter gp;
+    gp.plot(window.realTrajectory.endState(), sampleStats.means());
 //        ModelStateSampleStatistics priorEnd(window.priorSampler, 10000);
 //        std::cout << "Window information gain = "
 //        << informationGain(window.realTrajectory.endState(), priorEnd, sampleStats) << std::endl;
-    }
-
 //    std::cout << "Calculating prior end state" << std::endl;
 //    ModelStateSampleStatistics<PredPreyAgent<GRIDSIZE>> priorEnd;
 //    priorEnd.sampleFromEndState(

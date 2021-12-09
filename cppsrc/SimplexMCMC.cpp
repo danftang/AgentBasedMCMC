@@ -23,7 +23,6 @@ SimplexMCMC::SimplexMCMC(
         : Simplex(prob),
         logProbFunc(std::move(logProb)),
         proposalFunction(*this) {
-    setObjective(glp::SparseVec());
     if(initialState.size() != 0) setLPState(initialState);
     findFeasibleStartPoint();
     proposalFunction.init();

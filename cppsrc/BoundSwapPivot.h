@@ -12,7 +12,7 @@
 
 class BoundSwapPivot {
 public:
-    static constexpr double kappa = -6.5; // exponential coefficient for probabilities of choosing row based on change in infeasibility
+    static constexpr double kappa = -8.0; // exponential coefficient for probabilities of choosing row based on change in infeasibility
 
     const int   i;
     int         j;
@@ -28,7 +28,7 @@ public:
 
     std::vector<glp::SparseVec> tableauCols;        // The simplex tableau coefficients for this basis
     std::vector<glp::SparseVec> tableauRows;
-    std::vector<double> feasibleEnergy;             // Energy change in feasible region by kSim
+//    std::vector<double> feasibleEnergy;             // Energy change in feasible region by kSim
 
     explicit BoundSwapPivot(SimplexMCMC &simplex);
 

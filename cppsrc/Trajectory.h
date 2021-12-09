@@ -294,6 +294,21 @@ public:
         };
     }
 
+
+    static std::vector<double> marginalLogProbsByEvent(int nTimesteps) {
+        std::vector<double> marginals(Trajectory<AGENT>::dimension(nTimesteps));
+        marginals[0] = 0.0;
+        for(int t=0; t<nTimesteps; ++t) {
+            for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
+                std::vector<double> agentMarginals = AGENT(agentId).marginalTimestep();
+                for(int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+                    marginals[Event<AGENT>(t,agentId, actId)] = log(agentMarginals[actId]);
+                }
+            }
+        }
+        return marginals;
+    }
+
 private:
     friend class boost::serialization::access;
 
