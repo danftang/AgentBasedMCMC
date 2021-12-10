@@ -35,8 +35,8 @@ int main(int argc, char *argv[]) {
 //    FiguresForPaper::plotStats<8>(4);
 //    FiguresForPaper::plotStats<8>(6);
 //    FiguresForPaper::plotStats<8>(8);
-// FiguresForPaper::plotStats<16>(8);
-    FiguresForPaper::plotStats<32>(8);
+   FiguresForPaper::plotStats<16>(8);
+//    FiguresForPaper::plotStats<32>(8);
 
 
 
