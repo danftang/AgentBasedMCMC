@@ -89,6 +89,7 @@ private:
     }
 
 
+    double calcRatioOfSums();
 };
 
 

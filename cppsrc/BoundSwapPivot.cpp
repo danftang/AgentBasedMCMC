@@ -105,18 +105,14 @@ void BoundSwapPivot::calculateTableau() {
 }
 
 BoundSwapPivot &BoundSwapPivot::nextProposal() {
-    if(simplex.lastSampleWasAccepted && deltaj != 0.0) updateAllCosts();
+    if(simplex.lastSampleWasAccepted) updateAllCosts();
 //    checkCosts();
     chooseCol();
     chooseBound();
-    if(deltaj != 0.0) {
 //        std::cout << j << " " << deltaj << " " << deltaFeasibleEnergy() << " "
 //                  << (currentDeltaE[j] - deltaInfeasibility()) << std::endl;
 //        assert(fabs(deltaFeasibleEnergy() - (currentDeltaE[j] - deltaInfeasibility())) < 1e-8);
-        logAcceptanceContribution = -kappa * (currentDeltaE[j] - deltaInfeasibility());
-    } else {
-        logAcceptanceContribution = 0.0;
-    }
+    logAcceptanceContribution = -kappa * (currentDeltaE[j] - deltaInfeasibility()) + log(calcRatioOfSums());
 //    std::cout << "Proposing " << j << " " << deltaj << " " << leavingVarToUpperBound << std::endl;
     return *this;
 }
@@ -236,27 +232,39 @@ void BoundSwapPivot::chooseCol() {
 // =
 // exp(kappaCol*DeltaPotential + kappaRow*DeltaInfeasibility)/(1 + exp(kappaCol*DeltaPotential + kappaRow*DeltaInfeasibility))
 void BoundSwapPivot::chooseBound() {
-    calcDeltaEChanges();
+//    calcDeltaEChanges();
+//    double changeInSum = 0.0;
+//    for(const auto [changedj, newDeltaj]: changedDeltaE) {
+//        double oldPj = colPMF[changedj];
+//        changeInSum += (newDeltaj>0.0?exp(kappa*newDeltaj):1.0) - oldPj;
+//    }
+//    double ratioOfSums = colPMF.sum()/(colPMF.sum() + changeInSum);
+//    bool doSwap;
+//    if(ratioOfSums >= 1.0) {
+//        doSwap = true;
+//    } else {
+//        doSwap = (Random::nextDouble() < ratioOfSums);
+//    }
+//    if(doSwap) {
+        leavingVarToUpperBound = !simplex.isAtUpperBound(j);
+        deltaj = simplex.isAtUpperBound(j)?-1.0:1.0;
+//    } else {
+//        leavingVarToUpperBound = simplex.isAtUpperBound(j);
+//        deltaj = 0.0;
+//    }
+}
 
+
+double BoundSwapPivot::calcRatioOfSums() {
+    calcDeltaEChanges();
     double changeInSum = 0.0;
     for(const auto [changedj, newDeltaj]: changedDeltaE) {
         double oldPj = colPMF[changedj];
         changeInSum += (newDeltaj>0.0?exp(kappa*newDeltaj):1.0) - oldPj;
     }
-    double ratioOfSums = colPMF.sum()/(colPMF.sum() + changeInSum);
-    bool doSwap;
-    if(ratioOfSums >= 1.0) {
-        doSwap = true;
-    } else {
-        doSwap = (Random::nextDouble() < ratioOfSums);
-    }
-    if(doSwap) {
-        leavingVarToUpperBound = !simplex.isAtUpperBound(j);
-        deltaj = simplex.isAtUpperBound(j)?-1.0:1.0;
-    } else {
-        leavingVarToUpperBound = simplex.isAtUpperBound(j);
-        deltaj = 0.0;
-    }
+    double ratio = colPMF.sum()/(colPMF.sum() + changeInSum);
+//    std::cout << ratio << std::endl;
+    return ratio;
 }
 
 
