@@ -1,0 +1,226 @@
+diff --git a/doc/ABMCMC.tex b/doc/ABMCMC.tex
+index 966215f..8f35d5a 100644
+--- a/doc/ABMCMC.tex
++++ b/doc/ABMCMC.tex
+@@ -61,77 +61,50 @@ We demonstrate the algorithm by performing data assimilation in an agent-based,
+ 
+ \section{Introduction}
+ 
+-Agent-based modelling (ABM) has become a popular tool for use in modelling systems that are driven by the behaviours and interactions of discrete, heterogeneous entities, such as human and animal systems.
+-Although progress has been made towards the development and adaptation of techniques to conduct parameter optimisation~\cite{thiele_facilitating_2014}, such methods are not able to dynamically optimise the model \textit{state}. 
+-Agent-based models (ABMs) are typically optimised once, by repeatedly comparing their outputs under various parameter configurations to some real-world data, and then used to make predictions. 
+-However, in many circumstances, particularly when attempting to model complex systems, natural stochasticity causes the model to diverge from the real system, regardless of how well the parameters have been optimised.
+-Although some studies have attempted to re-calibrate model parameters during runtime~\cite{oloo_predicting_2018, oloo_adaptive_2017}, this does not prevent the model \textit{state} from diverging.
+-The field of ABM has yet to develop methods that allow the model state to be updated dynamically in response to new data, which is a serious methodological drawback. 
++\subsection{Background}\label{sec:background}
+ 
+-This paper presents a new method that will allow for \textit{data assimilation} (DA) to be applied to ABMs in order to optimise the model state in response to new data that arise during runtime. The discipline of DA, sometimes known as data fusion, addresses the problem of how to make use of noisy, imcomplete experimental observations to provide information about the time evolution of unobserved properties of a dynamical system.
+-It is a technique that has developed rapidly in applications such as weather forecasting~\cite{kalnay_atmospheric_2003} and the earth sciences more broadly~\cite{reichle_data_2008}, but little progress has been made in developing techniques that are applicable when the dynamical system is an agent based model. DA methods typically rely on the differentiability of the model~\cite{lewis_dynamic_2006}. As ABMs consist of `agents' that often make discrete choices from a number of possible actions, the the space of model trajectories is not continuous so techniques based on gradient ascent, such as 4D-VAR, that require the gradient of the posterior in this space, cannot be used. 
+-In addition, a vast number of possible model trajectories will be refuted by the observations, making it challenging to use algorithms that rely on perturbing the current solution such as non-gradient optimisation or most sampling algorithms. For this reason, examples of data assimilation using well-known DA methods such as Particle Filters and variants of the Kalman Filter -- in applications such as crime~\cite{lloyd_exploring_2016}, bus routes~\cite{kieu_dealing_2020}, pedestrian dynamics~\cite{wang_data_2015, ward_dynamic_2016, clay_realtime_2020, malleson_simulating_2020} and population movement~\cite{lueck_who_2019} -- are necessarily limited to extremely small systems, quickly becoming intractable.\todo{Reviewers may want a more comprehensive lit review}
+-
+-Here we present an algorithm that generates samples of the time evolution of an agent based model, given a set of noisy, incomplete experimental observations of the system. This allows for DA on an ABM by creating a posterior distribution within a reasonable amount of time. The algorithm approximates the set of possible trajectories as a linear program and uses an extension of the simplex algorithm to provide a proposal function for Markov-Chain-Monte-Carlo sampling. We demonstrate the algorithm by performing data assimilation in an agent-based, spatial predator-prey model.
+-
+-\todo[inline]{NM: ``This paper has been structured as follows ... ''}
++Data assimilation (DA) is a technique that has been widely used in the physical sciences such as meteorology~\cite{kalnay_atmospheric_2003}, oceanography~\cite{bertino_sequential_2003} and the earth sciences more broadly~\cite{reichle_data_2008}. Specific applications of DA to ABMs are much rarer. Examples of data assimilation using well known DA methods such as Particle Filters and variants of the Kalman Filter applied to ABMs include models of crime~\cite{lloyd_exploring_2016}, bus routes~\cite{kieu_dealing_2020}, pedestrian dynamics~\cite{wang_data_2015, ward_dynamic_2016, clay_realtime_2020, malleson_simulating_2020};
++and population movement~\cite{lueck_who_2019}. Many DA algorithms rely on the differentiability of the model~\cite{lewis_dynamic_2006}.
+ 
+ Other work on sampling from discrete sets: Discrete hit-and-run (Baumert et.al. 2009) won't work because of the extreme sparsity of feasible points. Universal hashing (Meel et.al. 2016) doesn't seem to scale to the number of dimensions (100,000s) for this application. 
+ 
+ \section{Formulation of the problem}
+ %##########################################
+ 
+-Broadly, this paper presents a new method that can be used to conduct data assimilation for agent-based models. The method provides a means of sampling possible ABM trajectories, confronting them with observations from the target system, and generating a posterior. This posterior provides the best estimate of the true system state. 
+-
+-\subsection{Agents, States and Actions}
+ 
+-Formally, we define the problem as follows.
+-Suppose we have a timestepping ABM where agents have a finite number of possible internal states and a finite number of ways of acting on their world. Given this, we can define an ABM as:
++Suppose we have a timestepping ABM that consists of agents with a finite number of possible internal states and a finite number of ways of acting on their world. Given this, we can define an ABM as:
+ \begin{itemize}
+ 	\item An ordered list of agent actions $\mathcal{A} =\left< A_0 ... A_n \right>$
+ 	
+ 	\item An ordered list of agent states $\mathcal{S} = \left<S_0 ... S_m\right>$
+ 	
+-	\item An \textit{agent timestep}, $\pi : \mathbb{Z}\times\mathbb{Z}^{m+1}\times\mathbb{Z} \to \mathbb{R}$, which defines the probability that an agent will act in a particular way such that $\pi(\psi,\Phi,a) $gives the probability that an agent in state $S_\psi$, surrounded by agents, $\Phi$, will perform action $A_a$ (where $\Phi$ is a vector whose $i^{th}$ element is the number of agents in state $S_i$ at the start of the timestep).
++	\item An \textit{agent timestep}, $\pi : \mathbb{Z}\times\mathbb{Z}^{m+1}\times\mathbb{Z} \to \mathbb{R}$, which defines the probability that an agent will act in a particular way such that $\pi(\psi,\Phi,a)$ gives the probability that an agent in state $S_\psi$, surrounded by agents, $\Phi$, will perform action $A_a$ (where $\Phi$ is a vector whose $i^{th}$ element is the number of agents in state $S_i$ at the start of the timestep).
+ 	
+ 	\item An \textit{action function}, $F: \mathbb{Z} \times \mathbb{Z} \to \mathbb{Z}^{m+1}$, which defines the effect of an action on the world such that $F(\psi, a)$ returns a vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $S_i$ that result from an agent in state $S_\psi$ performing act $A_a$ (including the final state of the acting agent).
+ \end{itemize}
+ 
+-\todo[inline]{Mention that the more traditional way of defining ABMs (e.g. using objects and step functions) can be easily mapped to this formulation}
+-
+-As a simple illustration, consider a simple ``cat and mouse'' ABM, which consists of just two gridsquares, left and right, within which roam a cat and a mouse. Using the definitions above, the model can be formulated as follows: 
+-
+-\begin{description}
++As a simple illustration, we define the ``cat and mouse'' ABM, which consists of just two gridsquares, left and right, within which can roam cats and mice, so the list of agent states is, $\mathcal{S} = \left<\textrm{left cat}, \textrm{right cat}, \textrm{left mouse}, \textrm{right mouse} \right>$. In any given timestep, agents can either move or stay still, so the list of actions is $\mathcal{A} = \left<\textrm{move}, \textrm{stay still}\right>$.
+ 
+-\item[Agent actions, $\mathcal{A}$.] In any given timestep, agents can either move or stay still, so $\mathcal{A} = \left<\textrm{move}, \textrm{stay still}\right> = \left<0, 1\right>$.
+-
+-\item[Agent states, $\mathcal{S}$.] The cat and mouse can exist on either of the two squares, so $\mathcal{S} = \left<\textrm{left cat}, \textrm{right cat}, \textrm{left mouse}, \textrm{right mouse} \right> = \left<0, 1, 2, 3 \right>$. 
+-
+-\item[Agent timestep, $\pi$.] As there are two possible actions ($\mathcal{A}=\left<0, 1\right>$) then there are two variants to the agent timestep. With respect to the \textit{move} action ($\mathcal{A}=0$), a cat moves with probability $0.5$, irrespective of other agents, while a mouse will move if there are one or more cats on the same gridsquare, otherwise it will stay still:
+-\[
++A cat moves with probability $0.5$, irrespective of other agents, while a mouse will move if there is one or more cats on the same gridsquare, otherwise it will stay still. So, the agent timestep function is
++\begin{equation}
+ \begin{aligned}
+-\pi(\psi, \Phi, 0) &=   % MOVE equation
++\pi(\psi, \Phi, 0) &=
+ \begin{cases}
+-0.5 & \text{if } \psi \in \left\{0,1\right\}\\  % IF I'm a cat (0 and 1 are both cat) then prob move is 0.5%
+-1 & \text{ if } \psi = 2, \Phi_1 > 0 \text{ or } \psi=3, \Phi_2 > 0\\ % mouse left & >0 cats in same square OR mouse right and >0 cats then move
+-0 & \text{ otherwise} %otherwise stay still
+-\end{cases}
+-\end{aligned}
+-\]
+-With respect to the \textit{stay still} action  ($\mathcal{A}=1$), the probability of the cat staying still remains at 0.5, where as the mouse remains still if there are no cats on the same grid square, otherwise it will move:
+-\[
+-\begin{aligned}
+-\pi(\psi, \Phi, 1) &= % STAY STILL equation
++0.5 & \text{if } \psi \in \left\{0,1\right\}\\
++1 & \text{ if } \psi = 2, \Phi_1 > 0 \text{ or } \psi=3, \Phi_2 > 0\\
++0 & \text{ otherwise}
++\end{cases}\\
++\pi(\psi, \Phi, 1) &=
+ \begin{cases}
+-0.5 & \text{if } \psi \in \left\{0, 1\right\}\\  % IF I'm a cat (0 and 1 are both cat) then prob stay still is 0.5%
+-1 & \text{ if } \psi = 2, \Phi_1 = 0 \text{ or } \psi=3, \Phi_2 = 0\\ % definitely stay still if mouse and no cats in same square
++0.5 & \text{if } \psi \in \left\{0, 1\right\}\\
++1 & \text{ if } \psi = 2, \Phi_1 = 0 \text{ or } \psi=3, \Phi_2 = 0\\
+ 0 & \text{ otherwise}
+ \end{cases}
+ \end{aligned}
+-\]
++\end{equation}
+ 
+-\item[Action function, $F$.] Expresses the movement of the agents. For example, $F(\psi=1, a=0)$ states that if there is an agent in state $\psi=1$ (\textit{right cat}) and it performs the action $a=0$ (\textit{move)} then the result is one cat in state $\psi=0$ (\textit{left cat}):  $\Phi=\{1,0,0,0\}$. The full range of possible inputs and outputs from the action function is:
+-\[
++The action function expresses the movement of the agents
++\begin{equation}
+ \begin{aligned}
+ F(0, 0) &= \{0,1,0,0\}\\
+ F(1, 0) &= \{1,0,0,0\}\\
+@@ -142,9 +115,7 @@ F(1, 1) &= \{0,1,0,0\}\\
+ F(2, 1) &= \{0,0,1,0\}\\
+ F(3, 1) &= \{0,0,0,1\}\\
+ \end{aligned}
+-\]
+-
+-\end{description}
++\end{equation}
+ 
+ \subsection{Trajectories}
+ 
+@@ -167,7 +138,7 @@ E = \kbordermatrix{
+ 	S_3 & 0 & 0 \\
+ }
+ \]
+-where all elements are zero except those representing agent $S_1$ (\textit{right cat}) performing action $A_0$ (\textit{move}) and agent $S_2$ (\textit{left mouse}) performing action $A_1$ (\textit{stay still}).
++where all elements are zero except those representing agent $S_1$ performing action $A_0$ and agent $S_2$ performing action $A_1$.
+ 
+ Finally, let a model trajectory, $T$, be an $(m\times n\times t)$ tensor consisting of $t$ model timesteps. We use the notation $T^t$ to denote the $t^{th}$ timestep matrix, $T^t_\psi$ to denote the $\psi^{th}$ row of the $t^{th}$ timestep matrix and $T^t_{\psi a}$ to denote the $a^{th}$ element of the $\psi^{th}$ row of the $t^{th}$ timestep. By convention, indices begin at 0. Note that this tensor will generally be very large for more realistic models, but also very sparse, so it can be dealt with computationally using a sparse representation.
+ 
+@@ -179,7 +150,7 @@ A tensor must satisfy a number of constraints in order to be a valid trajectory
+ \label{nonNegativeInt}
+ \end{equation}
+ 
+-The \textit{continuity constraint}\footnote{The continuity constraint does not mean that agents cannot leave or enter the system, only that if they do then that change must be defined as part of an action.} requires that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. We define the set of continuous tensors:
++A trajectory must also be \textit{continuous} by which we mean that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. We call this the \textit{continuity constraint} and define the set of continuous tensors, with respect to an action function $F$:
+ \begin{equation}
+ \mathcal{C}^N_{SA}(F) = \left\{T\in\mathbb{R}^N_{SA}:  \forall t \in 1 ... N-1:\forall \phi: \sum_{\psi, a} F(\psi, a)_\phi T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0\right\}
+ \label{continuous}
+@@ -243,18 +214,16 @@ P(\Psi^0 = T^0\mathbf{1})
+ \label{posterior}
+ \end{equation}
+ 
+-In order to conduct data assimilation, we need to estimate the posterior, $P(T|\Omega)$. To do this it is necessary to sample from this distribution. This is the problem that this paper attempts to solve.
+-In many practical applications, sampling is difficult because the posterior has zero probability for the vast majority of tensors (i.e. most tensors are not trajectories, contain an impossible action or are refuted by the observations). Even though we can generate trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the observations refute the trajectory the probability falls to zero. 
+-With even small numbers of observations, the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. Therefore simple techniques such as rejection sampling, for example, are not practical. Techniques based on particle filtering may have more success but, for similar reasons, will likely soon reach a state containing a set of particles, none of which can be fit to the observations.
++The problem we're interested in is how to sample from this distribution. In many practical applications, sampling is difficult because the posterior has zero probability for the vast majority of tensors (i.e. most tensors are not trajectories, contain an impossible action or are refuted by the observations). Even though we can generate trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the observations refute the trajectory the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling, for example, are not practical. Techniques based on particle filtering may have more success but, for similar reasons, will likely soon reach a state containing a set of particles, none of which can be fit to the observations.
+ 
+-In this paper we'll show how the Metropolis-Hastings algorithm can be used to generate samples from \eqref{posterior}. The challenge will be to create a proposal function which randomly generates a proposed next sample given the current one. For example, a common strategy with Metropolis-Hastings is to generate a new sample by perturbing one or more elements of the previous sample at random. However, if we do this with an ABM trajectory it's very unlikely that the perturbed tensor will be a trajectory that contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
++In the rest of this paper we'll show how to use the Metropolis-Hastings algorithm to generate samples from equation \eqref{posterior}. The challenge will be to create a proposal function which randomly generates a proposed next sample given the current one. A common strategy with Metropolis-Hastings is to generate a new sample by perturbing one or more elements of the previous sample at random. However, if we do this with an ABM trajectory it's very unlikely that the perturbed tensor will be a trajectory that contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
+ 
+ \section{Approximating the support of the posterior}
+ %##########################################
+ 
+ We solve this problem by first approximating the support of the posterior, $\supp(P(T^t_{\psi a}|\Omega))$ (i.e. the set of trajectories that have non-zero probability).
+ 
+-From \eqref{posterior}
++From equation \eqref{posterior}
+ \begin{equation}
+ \begin{aligned}
+ \supp (P( T |\Omega)) = & \mathcal{T}^N_{SA} \cap \\ 
+@@ -279,7 +248,8 @@ where $L$,  $U$ and $C^{\psi a}_t$ are vectors (this is similar to the $\mathbb{
+ 
+ From equation \ref{SetOfTrajectories} we can see immediately that $\mathcal{T}^N_{SA}$ is a  $\mathbb{Z}$-polyhedron. The supports of the prior, $P(\Psi^0)$, the observations, $P(\omega(T)=v)$, and the agent actions, $\pi(\psi,T^t\mathbf{1},a)$, can often be easily expressed as $\mathbb{Z}$-polyhedra. If this is not the case, each of the probability distributions can be expressed as computer programs. Once in this form, abstract interpretation tools\cite{cousot1977abstract} using the domain of convex polyhedra  \cite{cousot1978automatic}\cite{becchi2018efficient}\cite{fukuda2020polyhedral} can be used to construct a convex polyhedron that contains the support (note that it's fine to overestimate the support, i.e. include points that aren't in the support, but not to exclude points that are in the support. Abstract interpretation tools\cite{henry2012pagai}\cite{GN2021} are perfectly suited to this purpose). In addition, if the number of agents is very much smaller than the number of agent states (which is often the case with agent based models) then we may be willing to make the assumption that at any timestep there is at most one agent performing a given action from a given start state (i.e. $\forall \psi, a, t: T^{\psi a}_t \in \{0,1\}$). Under this assumption, which we'll call the \textit{Fermionic assumption} , the set of trajectories is a subset of the corners of the unit hypercube. Any such subset is a $\mathbb{Z}$-polyhedron.
+ 
+-Under the assumption that all trajectories are Fermionic, we can rewrite \eqref{support} in the form
++If we write the $\mathbb{Z}$-polyhedral over-approximation of the support of a function, $f$ as  $\mathcal{P}^N_{SA}(f)  \supseteq \supp(f)$
++then we can rewrite equation \eqref{support} in the form
+ \begin{equation}
+ \begin{aligned}
+ \supp(P( T |\Omega)) \subseteq 
+@@ -374,19 +344,19 @@ T^t_{1 0} + T^t_{1 1} + 2T^t_{3 1} & \le 2
+ \]
+ for each timestep $t=0$ and $t=1$.
+ 
+-Taken together, these constraints define a $\mathcal{B}$-polyhedron that is the set of Fermionic trajectories for the cat and mouse ABM, and when combined with \eqref{posterior} defines $P(T|\Omega)$ as a $\mathcal{B}-distribution$.
++Taken together, these constraints define a $\mathbb{Z}$-polyhedron that is the set of (Fermionic) trajectories for the cat and mouse ABM, and when combined with equation \eqref{posterior} defines $P(T|\Omega)$ as a $\mathbb{Z}$-distribution.
+ 
+ \section{Transforming between representations of a $\mathbb{Z}$-polyhedron}
+ %#####################################################
+ 
+-\todo[inline]{Brief explanation of why representing the $\mathcal{B}$-polyhedron, and transforming between representations, is needed}
++TODO: Make this specific for Markov state: selection of J variables (permutation matrix Q) with their values at feasible levels ($X_N$). Holding J-1 feasible variables fixed defines a perturbation direction. Points where at least one additional variable is at feasible, integer level defines perturbation distance.
+ 
+-Now that we can express the support of the posterior as a $\mathcal{B}$-polyhedron in the form
++Now that we can express the support of the posterior as a $\mathbb{Z}$-polyhedron in the form
+ \begin{equation}
+ \supp(P(T|\Omega) \subseteq \left\{T \in \mathbb{Z}^N_{SA}: L \le \sum_{t,\psi,a} C^{\psi a}_t T^t_{\psi a} \le U \right\}
+ \label{bPolySupport}
+ \end{equation}
+-we describe some different ways of representing the same $\mathcal{B}$-polyhedron and methods of transforming from one representation to another. This will be useful in the development that follows.
++we now describe some different ways of representing the same $\mathbb{Z}$-polyhedron and methods of transforming from one representation to another. This will be useful in the development that follows.
+ 
+ \subsection{The standard form of a $\mathbb{Z}$-polyhedron}
+ 
+@@ -677,6 +647,39 @@ Constraining our proposal function to members of the superset in equation \eqref
+ 
+ \section{Notes}
+ 
++Why does convergence scale so badly with number of timesteps? Probably because as the number of non-zero elements per col/row increases, so does the average energy change in a feasible to infeasible transition, so we must increase the temperature to get the same amount of mixing. This results in a lot more time spent in infeasible space. 
++
++\subsection{Fermionic Trajectories}
++
++In the following we will consider only \textit{Fermionic trajectories}, which we define to be any trajectory whose elements are all either 0 or 1. i.e. a Fermionic trajectory must not only satisfy the constraints in \eqref{nonNegativeInt} and \eqref{continuous} but must also satisfy the \textit{Fermionic constraints}
++\begin{equation}
++\mathcal{B}^N_{SA} = \left\{T\in\mathbb{R}^N_{SA} : \forall t,\psi,a: T^t_{\psi a} \in \left\{ 0,1 \right\}\right\}
++\label{fermionic}
++\end{equation}
++This can be interpreted as meaning that no two agents in the same state at the same time can perform the same action. Notice that the Fermionic constraints imply the non-negative integer constraints, so the set of Fermionic trajectories, $\mathcal{F}^N_{SA}$, is the set of tensors that satisfy \eqref{fermionic} and \eqref{continuous}.
++\begin{equation}
++\mathcal{F}^N_{SA}(F) = \mathcal{B}^N_{SA} \cap \mathcal{C}^N_{SA}(F)
++\end{equation}
++
++If we now condition the posterior on $T \in \mathcal{B}^N_{SA}$ then the support of the posterior becomes
++\begin{equation}
++supp(P(T|\Omega, T\in\mathcal{B}^N_{SA})) = \mathcal{B}^N_{SA} \cap supp(P(T|\Omega))
++\label{fermionicSupport1}
++\end{equation}
++
++In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so it is overwhelmingly likely that a sample from the posterior will be Fermionic, and so intersection with $\mathcal{B}^N_{SA}$ will often have very little effect on the posterior. However, section ** describes how to extend the algorithm to apply to non-Fermionic trajectories when the Fermionic constraints are not acceptable.
++
++\begin{theorem}
++	For any set $\mathcal{X}$ there exists a convex polyhedron $P$ such that
++	\[
++	\mathcal{B}^N_{SA} \cap \mathcal{X} = \mathcal{B}^N_{SA} \cap \mathcal{P}
++	\]
++\end{theorem}
++\begin{proof}
++	Let $\mathcal{Y} = \mathcal{B}^N_{SA} \cap \mathcal{X}$ and let $\mathcal{P}$ be the convex hull of $\mathcal{Y}$. Clearly if a tensor $T\in \mathcal{Y}$ then $T\in \mathcal{B}^N_{SA} \cap \mathcal{P}$. To show the converse, suppose there is a member $T' \in \mathcal{B}^N_{SA} \cap \mathcal{P}$. Since $T'\in \mathcal{P}$ then there must be a convex combination of points in $\mathcal{Y}$ that equals $T'$. Call those points $\mathcal{Z}$. However, since $T' \in \mathcal{B}^N_{SA}$ and $\mathcal{Z}\subset \mathcal{B}^N_{SA}$ and no member of $\mathcal{B}^N_{SA}$ is a convex combination of any other member then $T'$ must be a member of $\mathcal{Z}$ and so $T'\in \mathcal{Y}$. So $\mathcal{B}^N_{SA} \cap \mathcal{X} = \mathcal{B}^N_{SA} \cap \mathcal{P}$. 
++\end{proof}
++
++
+ 
+ %\bibliographystyle{unsrtnat}
+ %\bibliographystyle{apalike} 
