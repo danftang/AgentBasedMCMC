@@ -20,6 +20,7 @@
 // If we search pivots by row, and choose the pivot that minimises the norm
 // then we can easily enforce the pivoting-out of fixed-value variables.
 class TableauNormMinimiser {
+    static constexpr int maxPivotsToTest = 4;
 
     class Column: public std::set<int> {
     public:
@@ -28,7 +29,6 @@ class TableauNormMinimiser {
         bool isBasic;
 
         Column(const glp::SparseVec &col);
-        void setBasic(int pi, std::vector<std::list<int>> &colsBySparsity);
     };
 
     class Row: public std::map<int,double> {
@@ -38,7 +38,6 @@ class TableauNormMinimiser {
         bool isActive;
 
         Row(const glp::SparseVec &row, bool isActive);
-        void inactivate(std::vector<std::list<int>> &rowsBySparsity);
     };
 
     std::vector<Column>     cols;
@@ -46,11 +45,13 @@ class TableauNormMinimiser {
 
     std::vector<std::list<int>> colsBySparsity;
     std::vector<std::list<int>> rowsBySparsity;
-
+    std::vector<int>            minimalBasis;
 
     TableauNormMinimiser(glp::Problem &problem);
 
-    void findMarkowitzPivot();
+     void findMinimalBasis();
+
+    std::pair<int,int> findMarkowitzPivot();
 
     void pivot(int i,int j);
 
@@ -58,7 +59,14 @@ class TableauNormMinimiser {
     int sparsestRowInCol(int j);
 
     void updateRowSparsity(int i);
+    void addRowSparsityEntry(int i);
+    void removeRowSparsityEntry(int i);
     void updateColSparsity(int j);
+    void addColSparsityEntry(int j);
+    void removeColSparsityEntry(int j);
+
+    void setColBasic(int j, int i);
+    void inactivateRow(int i);
 };
 
 
