@@ -38,6 +38,7 @@ class TableauNormMinimiser {
         bool isActive;
 
         Row(const glp::SparseVec &row, bool isActive);
+        void inactivate(std::vector<std::list<int>> &rowsBySparsity);
     };
 
     std::vector<Column>     cols;
@@ -49,7 +50,12 @@ class TableauNormMinimiser {
 
     TableauNormMinimiser(glp::Problem &problem);
 
+    void findMarkowitzPivot();
+
     void pivot(int i,int j);
+
+    int sparsestColInRow(int i);
+    int sparsestRowInCol(int j);
 
     void updateRowSparsity(int i);
     void updateColSparsity(int j);
