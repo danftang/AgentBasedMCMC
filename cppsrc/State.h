@@ -6,6 +6,9 @@
 #define GLPKTEST_STATE_H
 
 #include <utility>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/split_member.hpp>
+#include <assert.h>
 #include "LinearSum.h"
 #include "Event.h"
 
@@ -19,6 +22,8 @@ public:
     int       time;
     AGENT     agent;
 
+    State(): time(-1), agent(-1) { }
+
     State(int time, const AGENT &agent):
     time(time),
     agent(agent) { }
@@ -31,6 +36,7 @@ public:
     double occupationNumber(const std::vector<double> &trajectory) const;
 
     double occupationUpperBound() const {
+        assert(agent < incomingEventsByState.size());
         return std::min(AGENT::actDomainSize()*1.0, incomingEventsByState[agent].size()*1.0);
     }
 
@@ -78,9 +84,29 @@ public:
         return endStateToEvents;
     }
 
+private:
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void load(Archive &ar, const unsigned int version) {
+        int agentId;
+        ar & time & agentId;
+        agent = AGENT(agentId);
+    }
+
+    template <typename Archive>
+    void save(Archive &ar, const unsigned int version) const {
+        int agentId = agent;
+        ar & time & agentId;
+    }
+
+    BOOST_SERIALIZATION_SPLIT_MEMBER();
+
+
 };
 
 
+// TODO: this needs to be recalculated when domin size changes!
 template<typename AGENT>
 const std::vector<std::vector<Event<AGENT>>> State<AGENT>::incomingEventsByState = State<AGENT>::calculateIncomingEventsByState();
 

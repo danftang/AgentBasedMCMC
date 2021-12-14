@@ -14,17 +14,18 @@
 template<typename T>
 std::ostream &operator <<(std::ostream &out, const std::vector<T> &vec) {
     out << "{";
-//    std::copy(vec.begin(), vec.end(), std::ostream_iterator<T>(out, ", "));
-    for(int i=0; i<vec.size(); ++i) out << vec[i] << ", ";
-    out << "\b\b}";
+    for(int i=0; i<vec.size()-1; ++i) out << vec[i] << ", ";
+    if(vec.size() > 0) out << vec[vec.size()-1];
+    out << "}";
     return out;
 }
 
 template<typename T>
 std::ostream &operator <<(std::ostream &out, const std::valarray<T> &vec) {
     out << "{";
-    for(int i=0; i<vec.size(); ++i) out << vec[i] << ", ";
-    out << "\b\b}";
+    for(int i=0; i<vec.size()-1; ++i) out << vec[i] << ", ";
+    if(vec.size() > 0) out << vec[vec.size()-1];
+    out << "}";
     return out;
 }
 
@@ -33,9 +34,9 @@ template<typename KEY, typename VALUE>
 std::ostream &operator <<(std::ostream &out, const std::map<KEY,VALUE> &map) {
     out << "{";
     for(const auto &[key,value]: map) {
-        out << key << " -> " << value << ", ";
+        out << key << " -> " << value << " ";
     }
-    out << "\b\b}";
+    out << "}";
     return out;
 }
 
@@ -43,9 +44,9 @@ template<typename KEY, typename VALUE>
 std::ostream &operator <<(std::ostream &out, const std::multimap<KEY,VALUE> &map) {
     out << "{";
     for(const auto &[key,value]: map) {
-        out << key << " -> " << value << ", ";
+        out << key << " -> " << value << " ";
     }
-    out << "\b\b}";
+    out << "}";
     return out;
 }
 

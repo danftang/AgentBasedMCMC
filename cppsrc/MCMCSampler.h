@@ -7,19 +7,21 @@
 
 #include "SimplexMCMC.h"
 
+// DOMAIN must be constructible and static-castable to std::vector<double>
 template<typename DOMAIN>
 class MCMCSampler {
 public:
     SimplexMCMC simplex;
     std::thread *thread;
 
-    MCMCSampler(const ConvexPMF<DOMAIN> &pmf, const DOMAIN &initialState = std::vector<double>())
+    MCMCSampler(const ConvexPMF<DOMAIN> &pmf, const DOMAIN &initialState = std::vector<double>(), const std::vector<double> objective=std::vector<double>())
     : simplex(
-        pmf.convexSupport.toLPProblem(),
+        pmf.convexSupport.toLPProblem(objective),
         [logP = pmf.extendedLogProb](const std::vector<double> &X) { return logP(reinterpret_cast<const DOMAIN &>(X)); },
         initialState
     ),
-    thread(NULL) { }
+    thread(NULL) {
+    }
 
     MCMCSampler(MCMCSampler &&other): simplex(std::move(other.simplex)), thread(other.thread) {
         other.thread = NULL;
@@ -33,7 +35,7 @@ public:
         if(thread != NULL) delete(thread);
     }
 
-    DOMAIN nextSample() const { return DOMAIN(const_cast<SimplexMCMC &>(simplex).nextSample()); }
+    const DOMAIN &nextSample() const { return static_cast<const DOMAIN &>(const_cast<SimplexMCMC &>(simplex).nextSample()); }
 
     const DOMAIN &operator()() const {
         return static_cast<const DOMAIN &>(const_cast<SimplexMCMC &>(simplex).nextSample());

@@ -11,6 +11,7 @@
 #include "Trajectory.h"
 #include "ConvexPMFProduct.h"
 #include "AgentStateObservation.h"
+#include "ABMConstraints.h"
 
 template<typename T> class ConvexPMFProduct;
 
@@ -73,21 +74,30 @@ public:
 
     static ConvexPMF<Trajectory<AGENT>>
     generateObservationLikelihood(const Trajectory<AGENT> &realTrajectory, double pMakeObservation, double pObserveIfPresent) {
-        int nTimesteps = realTrajectory.nTimesteps();
-        ConvexPMFProduct<Trajectory<AGENT>> observations(realTrajectory.size());
-        for (int t=0; t<nTimesteps;++t) {
-            for (int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
-                if (Random::nextDouble() < pMakeObservation) {
-                    AGENT agent(agentId);
-                    int nObserved = Random::nextBinomial(realTrajectory(t,agent), pObserveIfPresent);
-                    AgentStateObservation<AGENT> observation(State<AGENT>(t,agent), nObserved, pObserveIfPresent);
-                    observations *= likelihood(nTimesteps, observation);
-                }
-            }
-        }
-        assert(observations.convexSupport.isValidSolution(realTrajectory));
-        //        checkTrajectorySatisfiesObervations(exactEndState, observations)
-        return observations;
+//        int nTimesteps = realTrajectory.nTimesteps();
+//        ConvexPMFProduct<Trajectory<AGENT>> observations(realTrajectory.size());
+//        for (int t=0; t<nTimesteps;++t) {
+//            for (int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+//                if (Random::nextDouble() < pMakeObservation) {
+//                    AGENT agent(agentId);
+//                    int nObserved = Random::nextBinomial(realTrajectory(t,agent), pObserveIfPresent);
+//                    AgentStateObservation<AGENT> observation(State<AGENT>(t,agent), nObserved, pObserveIfPresent);
+////                    debug(std::cout << "Adding constraint " << observation.support() << std::endl);
+//                    observations *= likelihood(nTimesteps, observation);
+//                }
+//            }
+//        }
+//        assert(observations.convexSupport.isValidSolution(realTrajectory));
+//        //        checkTrajectorySatisfiesObervations(exactEndState, observations)
+//        return observations;
+        return ConvexPMF<Trajectory<AGENT>>(
+                realTrajectory.nTimesteps(),
+                AgentStateObservation<AGENT>::generateObservations(
+                        realTrajectory,
+                        pMakeObservation,
+                        pObserveIfPresent
+                )
+        );
     }
 
 

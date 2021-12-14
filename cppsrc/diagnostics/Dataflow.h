@@ -27,6 +27,8 @@
 //  much easier (since a function with no arguments must have a well defined return type)!
 //
 ////////////////////////////////////////////////////////////////////////////////////////
+#include "../gnuplot-iostream/gnuplot-iostream.h"
+
 namespace dataflow {
 //    template<typename T> using Consumer = std::function<bool(T)>;
 //
@@ -267,30 +269,125 @@ namespace dataflow {
         FIRSTCONSUMER consumer1;
         LASTCONSUMER  consumer2;
         int switchCountdown;
+        bool consumer1IsOpen;
 
         SwitchAfter(int nSwitchAfter, FIRSTCONSUMER beforeSwitch, LASTCONSUMER afterSwitch):
         consumer1(std::move(beforeSwitch)),
         consumer2(std::move(afterSwitch)),
-        switchCountdown(nSwitchAfter) {}
+        switchCountdown(nSwitchAfter),
+        consumer1IsOpen(true) {}
 
         template<typename T>
         bool operator()(const T &item) {
             if (switchCountdown > 0) {
                 --switchCountdown;
-                return beforeSwitch(item);
+                if(consumer1IsOpen) consumer1IsOpen = consumer1(item);
+                return true;
             }
-            return afterSwitch(item);
+            return consumer2(item);
+        }
+    };
+
+//    template<typename FIRSTCONSUMER,typename LASTCONSUMER>
+//    class SwitchOnClose {
+//    public:
+//        FIRSTCONSUMER consumer1;
+//        LASTCONSUMER  consumer2;
+//        bool consumer1IsOpen;
+//
+//        SwitchOnClose(FIRSTCONSUMER beforeSwitch, LASTCONSUMER afterSwitch):
+//                consumer1(std::move(beforeSwitch)),
+//                consumer2(std::move(afterSwitch)),
+//                consumer1IsOpen(true) {}
+//
+//        template<typename T>
+//        bool operator()(const T &item) {
+//            if (consumer1IsOpen) {
+//                consumer1IsOpen = consumer1(item);
+//                return true;
+//            }
+//            return consumer2(item);
+//        }
+//    };
+
+
+    template<typename... CONSUMERS>
+    class SwitchOnClose {
+    public:
+        std::tuple<CONSUMERS...> consumers;
+        int activeConsumer;
+
+        SwitchOnClose(CONSUMERS... consumers):
+                consumers(std::move(consumers)...),
+                activeConsumer(0) {
+        }
+
+        template<typename T>
+        bool operator()(const T &item) {
+            feedConsumers(item, std::index_sequence_for<CONSUMERS...>());
+            return activeConsumer < sizeof...(CONSUMERS);
+        }
+
+    private:
+        template<typename T, size_t...INDEXES>
+        void feedConsumers(const T &item, std::index_sequence<INDEXES...> idx) {
+            bool isStillOpen = false;
+            (((activeConsumer == INDEXES)?(isStillOpen = std::get<INDEXES>(consumers)(item)):false),...);
+            activeConsumer += 1 - isStillOpen;
+        }
+    };
+
+
+    template<typename DATA>
+    class Sum {
+    public:
+        DATA &sum;
+
+        Sum(DATA &result): sum(result) {}
+
+        bool operator()(const DATA &item) {
+            sum += item;
+            return true;
         }
     };
 
 
     template<typename T>
-    auto pushBack(std::vector<T> &vectorLog) {
+    auto save(std::vector<T> &vectorLog) {
         return [&vectorLog](const T &item) {
             vectorLog.push_back(item);
             return true;
         };
     }
+
+    template<typename T>
+    auto save(std::valarray<T> &log) {
+        return [&log,i=0](const T &item) mutable {
+            assert(i < log.size());
+            log[i++] = item;
+            return i<log.size();
+        };
+    }
+
+    template<typename T=double>
+    class Plot1D {
+    public:
+        std::vector<T> data;
+        std::string title;
+
+        Plot1D(std::string title = "dataflow Plot1D"): title(title) { }
+
+        ~Plot1D() {
+            Gnuplot gp;
+            gp << "plot '-' title '" << title << "'with lines\n";
+            gp.send1d(data);
+        }
+
+        bool operator()(const T &item) {
+            data.push_back(item);
+            return true;
+        }
+    };
 
     template<typename T=double>
     auto plot1DAfter(int nSamples, std::string title = "dataflow plot") {

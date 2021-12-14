@@ -73,20 +73,21 @@ public:
     }
 
 
-    friend Gnuplot &operator<<(Gnuplot &gp, const PoissonState<AGENT> &state) {
+    template<int GRIDSIZE>
+    friend Gnuplot &operator<<(Gnuplot &gp, const PoissonState<PredPreyAgent<GRIDSIZE>> &state) {
         typedef std::tuple<double, double, double, double, double> HeatRecord;
         std::vector<std::vector<HeatRecord>> heatData;
 
-        for (int x = 0; x < PredPreyAgent::GRIDSIZE; ++x) {
+        for (int x = 0; x < GRIDSIZE; ++x) {
             std::vector<HeatRecord> &record = heatData.emplace_back();
-            for (int y = 0; y < PredPreyAgent::GRIDSIZE; ++y) {
-                double lPrey = state.lambda(PredPreyAgent(x, y, PredPreyAgent::PREY));
-                double lPred = state.lambda(PredPreyAgent(x, y, PredPreyAgent::PREDATOR));
+            for (int y = 0; y < GRIDSIZE; ++y) {
+                double lPrey = state.lambda(PredPreyAgent(x, y, PredPreyAgent<GRIDSIZE>::PREY));
+                double lPred = state.lambda(PredPreyAgent(x, y, PredPreyAgent<GRIDSIZE>::PREDATOR));
                 record.emplace_back(x, y, std::min(lPrey, 1.0) * 200.0, 0.0, std::min(lPred, 1.0) * 200.0);
             }
         }
 
-        gp << "plot [-0.5:" << PredPreyAgent::GRIDSIZE - 0.5 << "][-0.5:" << PredPreyAgent::GRIDSIZE - 0.5 << "] ";
+        gp << "plot [-0.5:" << GRIDSIZE - 0.5 << "][-0.5:" << GRIDSIZE - 0.5 << "] ";
         gp << "'-' with rgbimage notitle\n";
         gp.send2d(heatData);
         return gp;

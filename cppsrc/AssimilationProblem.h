@@ -7,7 +7,6 @@
 
 //#include "ConvexPMF.h"
 //#include "ConvexPMFProduct.h"
-//#include "TrajectoryPriorDistribution.h"
 //#include "Distribution.h"
 
 //class AssimilationProblem: public Distribution {

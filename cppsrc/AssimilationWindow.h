@@ -113,7 +113,7 @@ public:
 
 //////////// Use TrajectorySampler instead!
 //    BinomialDistribution priorEndState(int nSamples) const {
-//        SampleStatistics endStats(AGENT::domainSize());
+//        MCMCStatistics endStats(AGENT::domainSize());
 //        for(int s=0; s<nSamples; ++s) {
 //            Trajectory<AGENT> sample(priorSampler());
 //            endStats += sample.endState();
@@ -155,7 +155,7 @@ public:
 
 
 //    void doAnalysis(const PoissonState<AGENT> &priorStartState, int nSamples, int burnInSamples) {
-//        ABMProblem<AGENT> abm(realTrajectory.nTimesteps(), observations, [&](const Trajectory<AGENT> &trajectory) {
+//        PredPreyProblem<AGENT> abm(realTrajectory.nTimesteps(), observations, [&](const Trajectory<AGENT> &trajectory) {
 //            return priorStartState.extendedLogProb(trajectory(0));
 //        });
 //        abm.advBasis();

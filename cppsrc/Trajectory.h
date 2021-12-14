@@ -6,6 +6,8 @@
 #define GLPKTEST_TRAJECTORY_H
 
 #include <cfloat>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/vector.hpp>
 #include "glpkpp.h"
 #include "ModelState.h"
 #include "StateTrajectory.h"
@@ -78,28 +80,42 @@ public:
                     for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
                         (*this)[Event(t, agent, actId)] = 0.0;
                     }
-                    // now choose acts for each of nAgents
+                    // now choose acts for each of nAgents from act Fermionic distribution
+
                     std::vector<double> actPMF = agent.timestep(t0State);
-                    std::discrete_distribution<int> actDistribution(actPMF.begin(), actPMF.end());
-                    for(int m=0; m <nAgents; ++m) {
-                        int chosenAct = actDistribution(Random::gen);
-                        int event = Event(t, agent, chosenAct);
-                        if((*this)[event] == 0.0) {
+                    ActFermionicDistribution actDistribution(actPMF);
+                    assert(nAgents <= actPMF.size());
+                    std::vector<bool> chosenActs = actDistribution.sampleUnordered(nAgents);
+                    for(int act=0; act < chosenActs.size(); ++act) {
+                        if(chosenActs[act]) {
+                            int event = Event(t, agent, act);
                             (*this)[event] = 1.0;
-                            assert(event < size());
-                            t1State += agent.consequences(chosenAct);
-                        } else { // reject
-                            isValid = false;
-                            m = nAgents;
-                            agentId = AGENT::domainSize();
-                            t = nTimesteps;
+                            t1State += agent.consequences(act);
                         }
                     }
+
+//                    std::vector<double> actPMF = agent.timestep(t0State);
+//                    std::discrete_distribution<int> actDistribution(actPMF.begin(), actPMF.end());
+//                    for(int m=0; m <nAgents; ++m) { // TODO: replace with ActFermionicDistribution
+//                        int chosenAct = actDistribution(Random::gen);
+//                        int event = Event(t, agent, chosenAct);
+//                        if((*this)[event] == 0.0) {
+//                            (*this)[event] = 1.0;
+//                            assert(event < size());
+//                            t1State += agent.consequences(chosenAct);
+//                        } else { // reject
+//                            isValid = false;
+//                            m = nAgents;
+//                            agentId = AGENT::domainSize();
+//                            t = nTimesteps;
+//                        }
+//                    }
+
                 }
                 t0State.setToZero();
                 t0State.swap(t1State);
             }
-            if (++nAttempts > 1000)
+            if (++nAttempts > 4000)
                 throw (std::runtime_error(
                         "Can't create act-Fermionic trajectoryPrior sample of Trajectory. Too many agents for Fermionicity to be a good assumption."));
         } while (!isValid);
@@ -164,44 +180,81 @@ public:
     static int dimension(int nTimesteps) { return AGENT::domainSize()*AGENT::actDomainSize()*nTimesteps + 1; }
 
     // Log probability given fixed start state, as defined by this trajectory
-    double logProb() const {
-//        const double infeasibilityPenalty = 0.5;
+//    double logProbOld() const {
+////        const double infeasibilityPenalty = 0.5;
+//
+//        StateTrajectory<AGENT> stateTrajectory(*this);
+//        double logP = 0.0;
+//        int tEnd = nTimesteps();
+//        for (int t = 0; t < tEnd; ++t) {
+//            for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+//                std::vector<double> actPMF = AGENT(agentId).timestep(stateTrajectory[t]);
+//                double agentStateLogP;
+//                do {
+//                    agentStateLogP = 0.0;
+//                    for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+////                        double occupation = fabs((*this)[Event<AGENT>(t, agentId, actId)]);
+//                        double occupation = (*this)[Event<AGENT>(t, agentId, actId)];
+//                        if(occupation < 0.0) occupation = 0.0; else if(occupation > 1.0) occupation = 1.0; // Clamp to Fermionic limits
+//                        if (occupation > tol) {
+//                            agentStateLogP += occupation * log(actPMF[actId]);
+//                            // - CombinatoricsUtils.factorialLog(occupation) // add this for non-act-fermionic trajectories
+//                        }
+//                    }
+//                    if(agentStateLogP <= -DBL_MAX) actPMF = AGENT(agentId).marginalTimestep();
+//                } while(agentStateLogP <= -DBL_MAX);
+//                logP += agentStateLogP;
+//            }
+//        }
+//
+//        // If any state occupation number, m, is greater than 1 then we need to
+//        // multiply the prob by !m since the m agents can be assigned to m acts in
+//        // !m ways.
+//        for(const ModelState<AGENT> &step: stateTrajectory) {
+//            for(double occupation: step) {
+//                if(fabs(occupation) > 1.0 + tol) {
+//                    logP += lgamma(fabs(occupation) + 1.0);
+//                }
+//            }
+//        }
+////        std::cout << "Trajectory trajectoryPrior = " << logP << std::endl;
+//        return logP;
+//    }
 
+
+    double logProb() const {
         StateTrajectory<AGENT> stateTrajectory(*this);
         double logP = 0.0;
         int tEnd = nTimesteps();
         for (int t = 0; t < tEnd; ++t) {
-            for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
-                std::vector<double> actPMF = AGENT(agentId).timestep(stateTrajectory[t]);
-                double agentStateLogP;
-                do {
-                    agentStateLogP = 0.0;
-                    for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
-                        double occupation = fabs((*this)[Event<AGENT>(t, agentId, actId)]);
-                        if (occupation > tol) {
-                            agentStateLogP += occupation * log(actPMF[actId]);
-                            // - CombinatoricsUtils.factorialLog(occupation) // add this for non-act-fermionic trajectories
+            for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
+                double agentOccupation = stateTrajectory[t][agentId];
+                if(agentOccupation > tol) {
+                    double agentStateLogP = 0.0;
+                    std::vector<double> actPMF = AGENT(agentId).timestep(stateTrajectory[t]);
+                    double clampedAgentOccupation = 0.0;
+                    do {
+                        agentStateLogP = 0.0;
+                        for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+                            double actOccupation = (*this)[Event<AGENT>(t, agentId, actId)];
+                            if (actOccupation < tol) actOccupation = 0.0;
+                            else if (actOccupation > 1.0 - tol) actOccupation = 1.0; // Clamp to Fermionic limits
+                            if (actOccupation > 0.0) {
+                                clampedAgentOccupation += actOccupation;
+                                agentStateLogP += actOccupation * log(actPMF[actId]);
+                            }
                         }
-                    }
-                    if(agentStateLogP <= -DBL_MAX) actPMF = AGENT(agentId).marginalTimestep();
-                } while(agentStateLogP <= -DBL_MAX);
-                logP += agentStateLogP;
-            }
-        }
-
-        // If any state occupation number, m, is greater than 1 then we need to
-        // multiply the prob by !m since the m agents can be assigned to m acts in
-        // !m ways.
-        for(const ModelState<AGENT> &step: stateTrajectory) {
-            for(double occupation: step) {
-                if(fabs(occupation) > 1.0 + tol) {
-                    logP += lgamma(fabs(occupation) + 1.0);
+                        if (agentStateLogP <= -DBL_MAX) actPMF = AGENT(agentId).marginalTimestep();
+                    } while(agentStateLogP <= -DBL_MAX);
+                    logP += agentStateLogP;
+                    if(clampedAgentOccupation > 1.0) logP += lgamma(clampedAgentOccupation + 1.0); // multiply by multinomial
                 }
             }
         }
-//        std::cout << "Trajectory trajectoryPrior = " << logP << std::endl;
+//        assert(fabs(logP - logProbOld()) < 1e-8);
         return logP;
     }
+
 
     Trajectory<AGENT> slice(int fromTimestep, int nTimesteps) const {
         Trajectory<AGENT> slice(nTimesteps);
@@ -240,6 +293,30 @@ public:
             return Trajectory<AGENT>(nTimesteps, startStateSampler);
         };
     }
+
+
+    static std::vector<double> marginalLogProbsByEvent(int nTimesteps) {
+        std::vector<double> marginals(Trajectory<AGENT>::dimension(nTimesteps));
+        marginals[0] = 0.0;
+        for(int t=0; t<nTimesteps; ++t) {
+            for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
+                std::vector<double> agentMarginals = AGENT(agentId).marginalTimestep();
+                for(int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+                    marginals[Event<AGENT>(t,agentId, actId)] = log(agentMarginals[actId]);
+                }
+            }
+        }
+        return marginals;
+    }
+
+private:
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void serialize(Archive &ar, const unsigned int version) {
+        ar & static_cast<std::vector<double> &>(*this);
+    }
+
 
 };
 

@@ -3,34 +3,54 @@
 #include <future>
 #include "glpkppinclude/glpkpp.h"
 #include "agents/CatMouseAgent.h"
-#include "ABMProblem.h"
+#include "PredPreyProblem.h"
 #include "Trajectory.h"
 #include "Experiments.h"
 #include "StlStream.h"
 #include "Random.h"
 #include "UnitTests.h"
-#include "TrajectoryPriorDistribution.h"
 #include "ConvexPolyhedron.h"
 #include "ABMConstraints.h"
 #include "AssimilationProblem.h"
 #include "diagnostics/Dataflow.h"
 #include "diagnostics/MeanAndVariance.h"
 #include "Plotter.h"
+#include "FiguresForPaper.h"
+
 
 using glp::X;
+
 
 int main(int argc, char *argv[]) {
 
 
-//    Experiments::DataflowDemo();
+//    Experiments::animatedPredPreyDemo();
+//    FiguresForPaper::generateAllProblemFiles();
+
+//    FiguresForPaper::generateStatsAndPlot<8>(8);
+//    Experiments::PredPreyAssimilation();
+
+//    FiguresForPaper::generateStats<8>(8);
+//    FiguresForPaper::plotStats<8>(2);
+//    FiguresForPaper::plotStats<8>(4);
+//    FiguresForPaper::plotStats<8>(6);
+//    FiguresForPaper::plotStats<8>(8);
+//   FiguresForPaper::plotStats<16>(8);
+    FiguresForPaper::plotStats<32>(8);
+
+
+
+//    FiguresForPaper::generateStandardProblemFile();
 //    Experiments::PredPreyConvergence();
 
-//    Experiments::BinomialAgentAssimilation();
+//    Experiments::animatedPredPreyDemo();
+//        Experiments::DataflowDemo();
+// Experiments::BinomialAgentAssimilation();
 //  Experiments::CatMouseSingleObservation();
 //    Experiments::CatMouseAssimilation();
 //    Experiments::CatMouseMultiObservation();
 //    Experiments::PredPreySingleObservation();
-    Experiments::PredPreyAssimilation();
+//    Experiments::PredPreyAssimilation();
 
 //    Experiments::FermionicIntegrality();
 

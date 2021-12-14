@@ -14,37 +14,46 @@
 #include "ProposalPivot.h"
 #include "ConvexPMF.h"
 #include "PotentialEnergyPivot.h"
+#include "BoundSwapPivot.h"
 //class ConvexPMF;
 
 class SimplexMCMC: public glp::Simplex {
 public:
+    typedef BoundSwapPivot Proposal;
 
 //    static constexpr double fractionalK = 0.1;
 //    static constexpr double tol = 1e-8;
 
-    class SampleStatistics {
+    class MCMCStatistics {
     public:
         int nSamples = 0;
         int nAccepted = 0;
         int nNonDegenerate = 0;
         int nSwaps = 0;
         int nNulls = 0;
+        int nFeasibilityTransitions = 0;
 
-        void update(bool accepted, const ProposalPivot &proposal);
-        friend std::ostream &operator <<(std::ostream &out, const SampleStatistics &stats);
+        void update(bool accepted, const Proposal &proposal, bool isSameFeasibilityAsLastLog);
+        friend std::ostream &operator <<(std::ostream &out, const MCMCStatistics &stats);
+    private:
+        friend class boost::serialization::access;
+
+        template <typename Archive>
+        void serialize(Archive &ar, const unsigned int version) {
+            ar & nSamples & nAccepted & nNonDegenerate & nSwaps & nNulls & nFeasibilityTransitions;
+        }
+
     };
 
-    SampleStatistics feasibleStatistics;
-    SampleStatistics infeasibleStatistics;
+    MCMCStatistics feasibleStatistics;
+    MCMCStatistics infeasibleStatistics;
 
     std::function<double (const std::vector<double> &)> logProbFunc;
-    PotentialEnergyPivot proposalFunction;
+    double currentLogProb;
+    Proposal proposalFunction;
     bool lastSampleWasAccepted = true;
 //    BasisProbability probability;
 
-protected:
-
-public:
 
     SimplexMCMC(const glp::Problem &prob,
                 std::function<double(const std::vector<double> &)> logProb,
@@ -59,20 +68,12 @@ public:
 //    ) { }
 
 
-    double lnDegeneracyProb();
     double lnProb() { return logProbFunc(X()); }
-    // double lnFractionalPenalty();
 
     const std::vector<double> & nextSample();
-//    double reverseTransitionProb(ProposalPivot proposal);
+
     using glp::Simplex::pivot;
-    void pivot(const ProposalPivot &piv) {
-        this->glp::Simplex::pivot(piv.i, piv.j, piv.col, piv.leavingVarToUpperBound);
-    }
-
-
-//    std::vector<int> calcPivotRows(int j, const std::vector<double> &colVec);
-//    std::vector<int> calcPivotRows(int j) { return calcPivotRows(j,tableauCol(j)); }
+    void pivot(const Proposal &piv) { pivot(piv.i, piv.j, piv.tableauCol(), piv.leavingVarToUpperBound); }
 
     void randomWalk();
 
@@ -89,20 +90,40 @@ public:
 
     bool solutionIsPrimaryFeasible();
     bool solutionIsInteger();
+
+    double infeasibilityGradient(int i) {
+        int k = head[i];
+        return infeasibilityGradient(beta[i], l[k], u[k]);
+    }
+
+    static double infeasibilityGradient(double v, double lowerBound, double upperBound) {
+        if(v > upperBound) {
+            return 1.0;
+        } else if(v < lowerBound) {
+            return -1.0;
+        }
+        return 0.0;
+    }
+
+
 protected:
-    bool processProposal(const ProposalPivot &proposal);
-    const ProposalPivot &proposePivot();
+    bool processProposal(Proposal &proposal);
+    Proposal &proposePivot();
     // int proposeColumn();
 
 
 //    void toCanonicalState();
 //    std::vector<int> auxiliaries();
 
-    void updateLPSolution(const ProposalPivot &pivot);
-    void revertLPSolution(const ProposalPivot &pivot);
+    void updateLPSolution(int j, double deltaj, const glp::FVSVector &pivot);
+    void revertLPSolution(int j, double deltaj, const glp::FVSVector &pivot);
+    void updateLPSolution(int j, double deltaj, const glp::SparseVec &pivot);
+    void revertLPSolution(int j, double deltaj, const glp::SparseVec &pivot);
 
 
     double infeasibility();
+
+    void checkLPSolution();
 
 };
 

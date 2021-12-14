@@ -78,6 +78,13 @@ public:
         return *this;
     }
 
+    ModelState &operator /=(double denominator) {
+        for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+            (*this)[agentId] /= denominator;
+        }
+        return *this;
+    }
+
 
     static ModelState<AGENT> randomPoissonState(const std::function<double (const AGENT &)> &pmf) {
         ModelState<AGENT> state;
