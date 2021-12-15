@@ -73,7 +73,7 @@ Here we present an algorithm that generates samples of the time evolution of an 
 %##########################################
 
 \subsection{Agents, States and Actions}
-
+\label{agentdef}
 Suppose we have a timestepping ABM that consists of agents with a finite number of possible internal states and a finite number of ways of acting on their world. Given this, we can define an ABM as:
 \begin{itemize}
 	\item An ordered list of agent actions $\mathcal{A} =\left< A_0 ... A_n \right>$
@@ -154,7 +154,7 @@ A tensor must satisfy a number of constraints in order to be a valid trajectory 
 \label{nonNegativeInt}
 \end{equation}
 
-A trajectory must also be \textit{continuous} by which we mean that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$. We call this the \textit{continuity constraint} and define the set of continuous tensors, with respect to an action function $F$:
+A trajectory must also be \textit{continuous} by which we mean that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$\footnote{This does not mean that agents cannot leave or enter the system, only that if they do then that change must be defined as part of an action.}. We call this the \textit{continuity constraint} and define the set of continuous tensors, with respect to an action function $F$:
 \begin{equation}
 \mathcal{C}^N_{SA}(F) = \left\{T\in\mathbb{R}^N_{SA}:  \forall t \in 1 ... N-1:\forall \phi: \sum_{\psi, a} F(\psi, a)_\phi T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0\right\}
 \label{continuous}
@@ -248,12 +248,11 @@ Let a $\mathbb{Z}$-polyhedron be a set of tensors with integer elements that can
 \[
 \mathcal{P^N_{SA}} = \left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : L \le \sum_{t,\psi,a} C^{\psi a}_{t} T^t_{\psi a} \le U \right\}
 \]
-where $L$,  $U$ and $C^{\psi a}_t$ are vectors (this is similar to the $\mathbb{Z}$-polyhedron described in \cite{quinton1996manipulating}).
+where $L$,  $U$ and $C^{\psi a}_t$ are vectors (i.e. $C \in \mathbb{Z}^{SA}_{NJ}$, $L \in \mathbb{Z}_J$ and $U \in \mathbb{Z}_J$ for some $J$. This is similar to the $\mathbb{Z}$-polyhedron described in \cite{quinton1996manipulating}).
 
 From equation \ref{SetOfTrajectories} we can see immediately that $\mathcal{T}^N_{SA}$ is a  $\mathbb{Z}$-polyhedron. The supports of the prior, $P(\Psi^0)$, the observations, $P(\omega(T)=v)$, and the agent actions, $\pi(\psi,T^t\mathbf{1},a)$, can often be easily expressed as $\mathbb{Z}$-polyhedra. If this is not the case, each of the probability distributions can be expressed as computer programs. Once in this form, abstract interpretation tools\cite{cousot1977abstract} using the domain of convex polyhedra  \cite{cousot1978automatic}\cite{becchi2018efficient}\cite{fukuda2020polyhedral} can be used to construct a convex polyhedron that contains the support (note that it's fine to overestimate the support, i.e. include points that aren't in the support, but not to exclude points that are in the support. Abstract interpretation tools\cite{henry2012pagai}\cite{GN2021} are perfectly suited to this purpose). In addition, if the number of agents is very much smaller than the number of agent states (which is often the case with agent based models) then we may be willing to make the assumption that at any timestep there is at most one agent performing a given action from a given start state (i.e. $\forall \psi, a, t: T^{\psi a}_t \in \{0,1\}$). Under this assumption, which we'll call the \textit{Fermionic assumption} , the set of trajectories is a subset of the corners of the unit hypercube. Any such subset is a $\mathbb{Z}$-polyhedron.
 
-If we write the $\mathbb{Z}$-polyhedral over-approximation of the support of a function, $f$ as  $\mathcal{P}^N_{SA}(f)  \supseteq \supp(f)$
-then we can rewrite equation \eqref{support} in the form
+So, if we let $\mathcal{P}^N_{SA}(f)$ be a $\mathbb{Z}$-polyhedron that over-approximates $\supp(f)$ then from equation \eqref{support}
 \begin{equation}
 \begin{aligned}
 \supp(P( T |\Omega)) \subseteq 
@@ -306,13 +305,13 @@ and the elements of $\underline{B}\in\mathbb{R}_I$ are defined as
 
 To see why this identity holds, note first that the constraints on $I^t_{\psi a}$ make it into an indicator variable that is 0 if $T^t_{\psi a}=0$ or 1 otherwise. When $I^t_{\psi a}=1$ the first set of constraints is equal to $\sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U$ and the second is equal to $L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b}$ so their intersection is $L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U$ as required, whereas when $I^t_{\psi a}=0$ we have the constraints $\underline{B} \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le \overline{B}$. But $\underline{B}$ and $\overline{B}$ are lower and upper bounds on the value of $\sum_{s,\phi,b} C^{\phi b}_{si} T^s_{\phi b}$ so this is satisfied for all trajectories, as required.
 
-There are two things worth noting here. Firstly if we make the Fermionic assumption then $I^t_{\psi a} = T^t_{\psi a}$ and the auxiliary indicator variable becomes unnecessary. Secondly, we must impose a finite value for $m$, the maximum value that elements of the trajectory can take. In practice, this is not a problem as we can give $m$ a value such that the probability of any trajectory of interest having any element larger than $m$ is vanishingly small.
+There are two things worth noting here. Firstly if we make the Fermionic assumption then $I^t_{\psi a} = T^t_{\psi a}$ and the auxiliary indicator variable becomes unnecessary. Secondly, we must impose a finite value for $m$, the maximum value that elements of the trajectory can take. In practice, this is not a problem as we can give $m$ a value such that the probability of any trajectory of interest having any element larger than $m$ is small.
 
 Using this transformation the support of the posterior can be reduced to a $\mathbb{Z}$-polyhedron
 
-The idea of a $\mathbb{Z}$-polyhedron as the support for a probability distribution naturally leads to the idea of a $\mathbb{Z}$-distribution which is a discrete probability distribution defined over the members of a $\mathbb{Z}$-polyhedron. From the above, it can be seen that the posterior distribution of an ABM trajectory is a $\mathbb{Z}$-distribution.
+The idea of a $\mathbb{Z}$-polyhedron as the support for a probability distribution naturally leads to the idea of a $\mathbb{Z}$-distribution which is a discrete probability distribution defined over the members of a $\mathbb{Z}$-polyhedron. From the above, it can be seen that the posterior distribution of an ABM trajectory can be expressed as a $\mathbb{Z}$-distribution.
 
-As an illustration, consider a two-timestep trajectory of the cat and mouse model. Suppose we flip a fair coin to decide whether each agent state is occupied or empty at $t=0$ and that we observe a cat in the left grid-square at time $t=1$. Our aim is to construct a $\mathbb{Z}$-polyhedron, $\mathcal{P}^2_{4\,2}(P(T|\Omega))$, that describes the support of the posterior.
+As an illustration, consider a two-timestep trajectory of the cat and mouse model described in section \ref{abmdef}. Suppose we flip a fair coin to decide whether each agent state is occupied or empty at $t=0$. Suppose also that we observe a cat in the left grid-square at time $t=1$. Our aim is to construct a $\mathbb{Z}$-polyhedron, $\mathcal{P}^2_{4\,2}(P(T|\Omega))$, that describes the support of the posterior.
 
 Working through \eqref{polyhedralSupport} term by term, the $\mathcal{T}^2_{4\,2}$ term is just the continuity constraints in \eqref{continuous}, which are already in linear form so we're done. The second term is the support of the prior. This constrains each agent state at $t=0$ to be at most 1, which can be expressed as
 \[
@@ -323,7 +322,7 @@ The third term is the support of the observation. Since we observe a cat in the 
 \[
 T^1_{0 0} + T^1_{0 1} = 1
 \]
-The final term guards against impossible actions. The only impossible actions are a mouse staying put when there is a cat on the same gridsquare or moving when there are no cats, which translates to the four cases
+The final term is the constraint due to agent interactions. The impossible interactions are a mouse staying put when there is a cat on the same gridsquare or moving when there are no cats, which translates to the four cases
 \begin{equation}
 \begin{aligned}
 \supp(\pi(2,T^t\mathbf{1},0)) &= \left\{ T: -T^t_{0 0} - T^t_{0 1} \le -1 \right\}\\
@@ -337,7 +336,7 @@ If, for simplicity, we make the Fermionic assumption by adding the constraints
 \[
 \forall t,\psi,a: T^t_{\psi a} \le 1
 \]
-then using the identity in \eqref{implication} to take the union of each constraint in \eqref{actionConstraints} with $\left\{T: T^t_{\psi a} = 0\right\}$ gives the four constraints
+then using the identity in \eqref{implication} to take the union of each constraint in \eqref{actionConstraints} with $\left\{T: T^t_{\psi a} = 0\right\}$ finally gives the four constraints
 \[
 \begin{aligned}
 -T^t_{0 0} - T^t_{0 1} + T^t_{2 0} & \le 0\\
@@ -346,7 +345,7 @@ T^t_{0 0} + T^t_{0 1} + 2T^t_{2 1} & \le 2 \\
 T^t_{1 0} + T^t_{1 1} + 2T^t_{3 1} & \le 2
 \end{aligned}
 \]
-for each timestep $t=0$ and $t=1$.
+for each timestep $t=0$ and $t=1$ to describe the agent interactions.
 
 Taken together, these constraints define a $\mathbb{Z}$-polyhedron that is the set of (Fermionic) trajectories for the cat and mouse ABM, and when combined with equation \eqref{posterior} defines $P(T|\Omega)$ as a $\mathbb{Z}$-distribution.
 
@@ -466,10 +465,41 @@ In order to be useable in the Metropolis-Hastings algorithm, the proposal functi
 \end{itemize}
 
 
-\subsection{The Markov states}
+\subsection{The set of Markov states}
 %#############################################
 
-Given a $\mathbb{Z}$-polyhedron, we define a Markov state to be a pair $(X,S)$ where $X$ is a member of the $\mathbb{Z}$-polyhedron and $S$ is a pivot state that defines a standard form representation of that polyhedron.
+Given a $\mathbb{Z}$-polyhedron, we split the constraints into two sets: equalities (i.e. those whose lower and upper bound have the same value) and inequalities (i.e. those whose lower and upper bounds differ):
+\begin{equation}
+\mathcal{P} = \left\{T \in \mathbb{Z}^N_{SA}: L \le \sum_{t,\psi,a} C^{\psi a}_t T^t_{\psi a} \le U \cap \sum_{t,\psi,a} D^{\psi a}_t T^t_{\psi a} = E \right\}
+\label{bPolySupport}
+\end{equation}
+Suppose there are $N_e$ equality constraints (i.e. $E$ is an $N_e$ dimensional vector) and we partition the elements of a trajectory $T$ into `basic' and `non-basic' elements, so that there are exactly $N_e$ basic elements and $N\times S \times A - N_e$ non-basic elements. Given such a partition we can define tensors $Q\in\mathbb{R}_{SA}^{NN_e}$ and $R\in\mathbb{R}_{SA}^{NJ}$, where $J=NSA - N_e$, that take `flattened' vectors of basic, $X$, and non-basic, $Y$, variables and project them into a trajectory tensor such that
+\[
+T^t_{\psi a} =  \sum_{j}Q_{\psi a}^{tj} X_j + \sum_{j}R_{\psi a}^{t j} Y_j
+\]
+If we now let
+\[
+B^j_k = \sum_{t,\psi,a} D^{\psi a}_{tk}Q_{\psi a}^{tj}
+\]
+and
+\[
+N^j_k = \sum_{t,\psi,a} D^{\psi a}_{tk}R_{\psi a}^{tj}
+\]
+then we can write the equality constraints as
+\[
+BX + NY = E
+\]
+where we drop the tensor indices in favour of matrix notation since we're now dealing with only 1 and 2 dimensional tensors (i.e. vectors and matrices).
+
+Now, if we choose the basic variables in order to ensure that $B$ has an inverse, then given an assignment of values to $X_N$ we have 
+\[
+X = B^{-1}(E+ NY)
+\]
+So, we define a Markov state to be an assignment to the non-basic variables $X_N$ and map this to the trajectory
+\[
+T^t_{\psi a} =  \sum_{j}Q_{\psi a}^{tj}B^{-1}(E+ NY) + \sum_{j}R_{\psi a}^{t j} Y
+\]
+
 
 \subsection{The probability of a Markov state}
 
