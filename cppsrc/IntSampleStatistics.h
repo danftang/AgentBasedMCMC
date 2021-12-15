@@ -9,6 +9,7 @@
 #include <cmath>
 #include "ConvexPMF.h"
 #include "Distribution.h"
+#include "StlStream.h"
 
 // Class to represent the marginalised histograms of samples from
 // multidimensional integer grids

@@ -20,7 +20,8 @@
 // If we search pivots by row, and choose the pivot that minimises the norm
 // then we can easily enforce the pivoting-out of fixed-value variables.
 class TableauNormMinimiser {
-    static constexpr int maxPivotsToTest = 4;
+public:
+    static constexpr int maxVectorsToTest = 10;
 
     class Column: public std::set<int> {
     public:
@@ -67,6 +68,9 @@ class TableauNormMinimiser {
 
     void setColBasic(int j, int i);
     void inactivateRow(int i);
+
+    double meanColumnNorm();
+    double meanColumnL1Norm();
 };
 
 

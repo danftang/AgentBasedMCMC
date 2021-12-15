@@ -2,28 +2,36 @@
 // Created by daniel on 10/12/2021.
 //
 
+#include "StlStream.h"
 #include "TableauNormMinimiser.h"
 
 
-TableauNormMinimiser::TableauNormMinimiser(glp::Problem &problem): minimalBasis(problem.nConstraints()) {
+TableauNormMinimiser::TableauNormMinimiser(glp::Problem &problem): minimalBasis(problem.nConstraints(),-12345678) {
     rows.reserve(problem.nConstraints());
     for(int i=1; i<=problem.nConstraints(); ++i) {
         bool isActive = (problem.getRowType(i) == GLP_FX);
-        if(!isActive) minimalBasis[i-1] = -i;
         rows.push_back(Row(problem.getMatRow(i), isActive));
-        addRowSparsityEntry(i-1);
+        if(isActive) {
+            addRowSparsityEntry(i-1);
+        } else {
+            minimalBasis[i-1] = -i;
+        }
     }
     cols.reserve(problem.nVars());
     for(int j=1; j<=problem.nVars(); ++j) {
         cols.push_back(Column(problem.getMatCol(j)));
         addColSparsityEntry(j-1);
     }
+    std::cout << "Initial mean norm = " << meanColumnNorm() << std::endl;
+    std::cout << "Initial L1 norm = " << meanColumnL1Norm() << std::endl;
 }
 
 void TableauNormMinimiser::findMinimalBasis() {
     while(!rowsBySparsity.empty()) {
         auto [i,j] = findMarkowitzPivot();
         pivot(i,j);
+//        std::cout << minimalBasis << std::endl;
+//        std::cout << rowsBySparsity << std::endl;
     }
 }
 
@@ -31,9 +39,10 @@ void TableauNormMinimiser::findMinimalBasis() {
 std::pair<int,int> TableauNormMinimiser::findMarkowitzPivot() {
     int k=1;
     int lowestScore = INT32_MAX;
-    int pivotsTested = 0;
-    std::pair<int,int> bestPivot;
+    int vectorsTested = 0;
+    std::pair<int,int> bestPivot(-1,-1);
     while(k<colsBySparsity.size() && k<rowsBySparsity.size()) {
+//        std::cout << "k = " << k << std::endl;
         for(int j: colsBySparsity[k]) {
             int bestRow = sparsestRowInCol(j);
             if(bestRow != -1) {
@@ -43,7 +52,7 @@ std::pair<int,int> TableauNormMinimiser::findMarkowitzPivot() {
                     if (score <= (k - 1) * (k - 1)) return bestPivot;
                     lowestScore = score;
                 }
-                if (++pivotsTested >= maxPivotsToTest) return bestPivot;
+                if (++vectorsTested >= maxVectorsToTest) return bestPivot;
             }
         }
         for(int i: rowsBySparsity[k]) {
@@ -55,30 +64,33 @@ std::pair<int,int> TableauNormMinimiser::findMarkowitzPivot() {
                     if (score <= (k - 1) * (k - 1)) return bestPivot;
                     lowestScore = score;
                 }
-                if (++pivotsTested >= maxPivotsToTest) return bestPivot;
+                if (++vectorsTested >= maxVectorsToTest) return bestPivot;
             }
         }
         ++k;
     }
-    return std::pair<int,int>(-1,-1); // no valid pivots exist
+    return bestPivot;
 }
 
 
 void TableauNormMinimiser::pivot(int pi, int pj) {
+//    std::cout << "Pivoting at " << pi << " " << pj << std::endl;
     double Mpipj = rows[pi].at(pj);
     for(int i : cols[pj]) {
         if(i != pi) {
             double Mipj = rows[i].at(pj);
             for (const auto[j, Mpij]: rows[pi]) {
-                auto MijIt = rows[i].find(j);
-                if (MijIt == rows[i].end()) { // fill-in
-                    rows[i][j] = -Mipj * Mpij / Mpipj;
-                    cols[j].insert(i);
-                } else {
-                    double newMij = (rows[i][j] -= Mipj * Mpij / Mpipj);
-                    if (newMij == 0.0) { // drop-out
-                        cols[j].erase(i);
-                        rows[i].erase(j);
+                if(j != pj) {
+                    auto MijIt = rows[i].find(j);
+                    if (MijIt == rows[i].end()) { // fill-in
+                        rows[i][j] = -Mipj * Mpij / Mpipj;
+                        cols[j].insert(i);
+                    } else {
+                        double newMij = (rows[i][j] -= Mipj * Mpij / Mpipj);
+                        if (newMij == 0.0) { // drop-out
+                            cols[j].erase(i);
+                            rows[i].erase(j);
+                        }
                     }
                 }
             }
@@ -86,8 +98,10 @@ void TableauNormMinimiser::pivot(int pi, int pj) {
     }
 
     for(int i : cols[pj]) {
-        rows[i].erase(pj);
-        updateRowSparsity(i);
+        if(i != pi) {
+            rows[i].erase(pj);
+            if(rows[i].isActive) updateRowSparsity(i);
+        }
     }
     setColBasic(pj, pi);
     for(const auto [j, Mpij]: rows[pi]) updateColSparsity(j);
@@ -115,8 +129,9 @@ void TableauNormMinimiser::addRowSparsityEntry(int i) {
 
 void TableauNormMinimiser::removeRowSparsityEntry(int i) {
     Row &row = rows[i];
+    assert(row.isActive);
     rowsBySparsity[row.sparseSize].erase(row.sparsityEntry);
-    while(rowsBySparsity.back().empty()) rowsBySparsity.pop_back();
+    while(rowsBySparsity.size() > 0 && rowsBySparsity.back().empty()) rowsBySparsity.pop_back();
 }
 
 
@@ -139,29 +154,32 @@ void TableauNormMinimiser::addColSparsityEntry(int j) {
 
 void TableauNormMinimiser::removeColSparsityEntry(int j) {
     Column &col = cols[j];
+    assert(!col.isBasic);
     colsBySparsity[col.sparseSize].erase(col.sparsityEntry);
-    while(colsBySparsity.back().empty()) colsBySparsity.pop_back();
+    while(colsBySparsity.size() > 0 && colsBySparsity.back().empty()) colsBySparsity.pop_back();
 }
 
 
 TableauNormMinimiser::Row::Row(const glp::SparseVec &row, bool isActive): isActive(isActive) {
     for (int k = 0; k < row.sparseSize(); ++k) {
-        (*this)[row.indices[k]] = row.values[k];
+        (*this)[row.indices[k]-1] = row.values[k];
     }
     sparseSize = row.sparseSize();
 }
 
 
 TableauNormMinimiser::Column::Column(const glp::SparseVec &col): isBasic(false) {
-    insert(col.indices.begin(), col.indices.end());
+    for (int k = 0; k < col.sparseSize(); ++k) {
+        insert(col.indices[k]-1);
+    }
     sparseSize = col.sparseSize();
 }
 
 
 void TableauNormMinimiser::setColBasic(int j, int i) {
     Column &col = cols[j];
-    col.isBasic = true;
     removeColSparsityEntry(j);
+    col.isBasic = true;
     col.clear();
     col.insert(i);
     col.sparseSize = 1;
@@ -170,8 +188,8 @@ void TableauNormMinimiser::setColBasic(int j, int i) {
 
 void TableauNormMinimiser::inactivateRow(int i) {
     Row &row = rows[i];
-    row.isActive = false;
     removeRowSparsityEntry(i);
+    row.isActive = false;
 }
 
 int TableauNormMinimiser::sparsestColInRow(int i) {
@@ -184,6 +202,7 @@ int TableauNormMinimiser::sparsestColInRow(int i) {
             minj = j;
         }
     }
+//    std::cout << "Considering pivot from row " << i << " " << minj << std::endl;
     return minj;
 }
 
@@ -197,5 +216,32 @@ int TableauNormMinimiser::sparsestRowInCol(int j) {
             mini = i;
         }
     }
+//    std::cout << "Considering pivot " << mini << " from col " << j << std::endl;
     return mini;
+}
+
+double TableauNormMinimiser::meanColumnNorm() {
+    double normSum = 0.0;
+    int nNonBasic = 0;
+    for(int j=0; j<cols.size(); ++j) {
+        if(!cols[j].isBasic) {
+            normSum += cols[j].sparseSize;
+            ++nNonBasic;
+        }
+    }
+    return normSum / nNonBasic;
+}
+
+double TableauNormMinimiser::meanColumnL1Norm() {
+    double normSum = 0.0;
+    int nNonBasic = 0;
+    for(int j=0; j<cols.size(); ++j) {
+        if(!cols[j].isBasic) ++nNonBasic;
+    }
+    for(int i=0; i<rows.size(); ++i) {
+        for(const auto [j, Mij] : rows[i]) {
+            if(!cols[j].isBasic) normSum += fabs(Mij);
+        }
+    }
+    return normSum / nNonBasic;
 }

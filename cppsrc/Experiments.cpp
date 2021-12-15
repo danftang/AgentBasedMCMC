@@ -34,7 +34,53 @@
 #include "GnuplotExtensions.h"
 #include "diagnostics/Dataflow.h"
 #include "diagnostics/MultiChainStats.h"
+#include "TableauNormMinimiser.h"
 
+
+void Experiments::minimalBasis() {
+    ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
+    // 8 x 8 x 8 45% infeasible, 400 iterations per transtition, 20ms per transition
+    constexpr int GRIDSIZE = 32;
+    constexpr int windowSize = 8;
+    constexpr double pPredator = 0.05;//0.08;          // Poisson prob of predator in each gridsquare at t=0
+    constexpr double pPrey = 0.05;    // Poisson prob of prey in each gridsquare at t=0
+    constexpr double pMakeObservation = 0.02;//0.04;    // prob of making an observation of each gridsquare at each timestep
+    constexpr double pObserveIfPresent = 0.9;
+    constexpr int nSamplesPerWindow = 25000; //250000;
+    constexpr int nBurninSamples = 5000;
+    constexpr int nPriorSamples = 100000;
+//    constexpr int plotTimestep = nTimesteps-1;
+
+    ////////////////////////////////////////// SETUP PROBLEM ////////////////////////////////////////
+
+    PoissonModelState<PredPreyAgent<GRIDSIZE>> startStateDist([](PredPreyAgent<GRIDSIZE> agent) {
+        return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
+    });
+
+//    BernoulliModelState<PredPreyAgent<GRIDSIZE>> startStateDist([](PredPreyAgent<GRIDSIZE> agent) {
+//        return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
+//    });
+
+    std::cout << "Initial state distribution = " << startStateDist << std::endl;
+    Trajectory<PredPreyAgent<GRIDSIZE>> realTrajectory(windowSize, startStateDist.sampler());
+
+//    const Distribution<ModelState<PredPreyAgent<GRIDSIZE>>> *analysis = &startStateDist;
+    ModelStateSampleStatistics<PredPreyAgent<GRIDSIZE>> sampleStats;
+    AssimilationWindow<PredPreyAgent<GRIDSIZE>> window(
+            startStateDist,
+            realTrajectory,
+            pMakeObservation,
+            pObserveIfPresent);
+    std::cout << "Converting to glp::Problem" << std::endl;
+    glp::Problem predPreyProblem = window.posterior.convexSupport.toLPProblem();
+    std::cout << "Finding basis..." << std::endl;
+    TableauNormMinimiser minimiser(predPreyProblem);
+    minimiser.findMinimalBasis();
+    std::cout << "Mean norm = " << minimiser.meanColumnNorm() << std::endl;
+    std::cout << "Mean L1 norm = " << minimiser.meanColumnL1Norm() << std::endl;
+
+//    std::cout << "Minimal basis: " << std::endl << minimiser.minimalBasis << std::endl;
+}
 
 void Experiments::animatedPredPreyDemo() {
     constexpr int GRIDSIZE=64;
@@ -282,12 +328,16 @@ void Experiments::PredPreyAssimilation() {
             pMakeObservation,
             pObserveIfPresent);
     MCMCSampler sampler(window.posterior, window.priorSampler(), Trajectory<PredPreyAgent<GRIDSIZE>>::marginalLogProbsByEvent(windowSize));
+
+    //////////////////////////////// DO SAMPLE /////////////////////////////////////////////////
     for(int s=0; s<nBurninSamples; ++s) sampler.nextSample();
     sampleStats.clear();
     auto startTime = std::chrono::high_resolution_clock::now();
     sampleStats.sampleFromEndState(sampler, nSamplesPerWindow);
     auto endTime = std::chrono::high_resolution_clock::now();
     auto execTime = endTime - startTime;
+
+    ////////////////////////////// SHOW RESULTS ///////////////////////////////////
     std::cout << "Finished sampling in " << execTime << std::endl;
 
     std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;

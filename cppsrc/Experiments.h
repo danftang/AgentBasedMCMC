@@ -77,6 +77,8 @@ public:
     static void DataflowDemo();
 
     static void animatedPredPreyDemo();
+
+    static void minimalBasis();
 };
 
 
