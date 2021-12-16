@@ -289,23 +289,23 @@ T\in\mathbb{Z}^N_{SA}, I^t_{\psi a}\in\{0,1\}:\right.\\
 \underline{B} \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b}
 +
 (\underline{B}-L)I^{t}_{\psi a} \le \infty,\\
-0 \le mI^t_{\psi a} - T^t_{\psi a},\\
+0 \le uI^t_{\psi a} - T^t_{\psi a},\\
 \left. I^t_{\psi a} - T^t_{\psi a} \le 0
 \right\}
 \label{implication}
 \end{multline}
-where $m$ is the maximum value that any element of $T$ can take, the elements of $\overline{B}\in\mathbb{R}_I$ are defined as
+where $u$ is the maximum value that any element of $T$ can take, the elements of $\overline{B}\in\mathbb{R}_I$ are defined as
 \[
-\overline{B}_i = \frac{m\sum_{s,\phi,b} \left( C^{\phi b}_{si} + \left|C^{\phi b}_{si}\right|\right)}{2}
+\overline{B}_i = \frac{u\sum_{s,\phi,b} \left( C^{\phi b}_{si} + \left|C^{\phi b}_{si}\right|\right)}{2}
 \]
 and the elements of $\underline{B}\in\mathbb{R}_I$ are defined as
 \[
-\underline{B}_i = \frac{m\sum_{s,\phi,b} \left(C^{\phi b}_{si} - \left|C^{\phi b}_{si}\right|\right)}{2}
+\underline{B}_i = \frac{u\sum_{s,\phi,b} \left(C^{\phi b}_{si} - \left|C^{\phi b}_{si}\right|\right)}{2}
 \]
 
 To see why this identity holds, note first that the constraints on $I^t_{\psi a}$ make it into an indicator variable that is 0 if $T^t_{\psi a}=0$ or 1 otherwise. When $I^t_{\psi a}=1$ the first set of constraints is equal to $\sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U$ and the second is equal to $L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b}$ so their intersection is $L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U$ as required, whereas when $I^t_{\psi a}=0$ we have the constraints $\underline{B} \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le \overline{B}$. But $\underline{B}$ and $\overline{B}$ are lower and upper bounds on the value of $\sum_{s,\phi,b} C^{\phi b}_{si} T^s_{\phi b}$ so this is satisfied for all trajectories, as required.
 
-There are two things worth noting here. Firstly if we make the Fermionic assumption then $I^t_{\psi a} = T^t_{\psi a}$ and the auxiliary indicator variable becomes unnecessary. Secondly, we must impose a finite value for $m$, the maximum value that elements of the trajectory can take. In practice, this is not a problem as we can give $m$ a value such that the probability of any trajectory of interest having any element larger than $m$ is small.
+There are two things worth noting here. Firstly if we make the Fermionic assumption then $I^t_{\psi a} = T^t_{\psi a}$ and the auxiliary indicator variable becomes unnecessary. Secondly, we must impose a finite value for $u$, the maximum value that elements of the trajectory can take. In practice, this is not a problem as we can give $u$ a value such that the probability of any trajectory of interest having any element larger than $u$ is small.
 
 Using this transformation the support of the posterior can be reduced to a $\mathbb{Z}$-polyhedron
 
@@ -334,7 +334,7 @@ The final term is the constraint due to agent interactions. The impossible inter
 \end{equation}
 If, for simplicity, we make the Fermionic assumption by adding the constraints
 \[
-\forall t,\psi,a: T^t_{\psi a} \le 1
+\forall t,\psi,a: 0 \le T^t_{\psi a} \le 1
 \]
 then using the identity in \eqref{implication} to take the union of each constraint in \eqref{actionConstraints} with $\left\{T: T^t_{\psi a} = 0\right\}$ finally gives the four constraints
 \[
@@ -348,96 +348,6 @@ T^t_{1 0} + T^t_{1 1} + 2T^t_{3 1} & \le 2
 for each timestep $t=0$ and $t=1$ to describe the agent interactions.
 
 Taken together, these constraints define a $\mathbb{Z}$-polyhedron that is the set of (Fermionic) trajectories for the cat and mouse ABM, and when combined with equation \eqref{posterior} defines $P(T|\Omega)$ as a $\mathbb{Z}$-distribution.
-
-\section{Transforming between representations of a $\mathbb{Z}$-polyhedron}
-%#####################################################
-
-TODO: Make this specific for Markov state: selection of J variables (permutation matrix Q) with their values at feasible levels ($X_N$). Holding J-1 feasible variables fixed defines a perturbation direction. Points where at least one additional variable is at feasible, integer level defines perturbation distance.
-
-Now that we can express the support of the posterior as a $\mathbb{Z}$-polyhedron in the form
-\begin{equation}
-\supp(P(T|\Omega) \subseteq \left\{T \in \mathbb{Z}^N_{SA}: L \le \sum_{t,\psi,a} C^{\psi a}_t T^t_{\psi a} \le U \right\}
-\label{bPolySupport}
-\end{equation}
-we now describe some different ways of representing the same $\mathbb{Z}$-polyhedron and methods of transforming from one representation to another. This will be useful in the development that follows.
-
-\subsection{The standard form of a $\mathbb{Z}$-polyhedron}
-
-Since there are many ways of representing a polyhedron, it will be useful to define a standard form when representing $\mathbb{Z}$-polyhedra. We'll use the form
-\begin{equation}
-\mathcal{P}(Q,N,b,L,U) = \left\{X \in \mathbb{Z}^K: X = Q{X_B\choose X_N}, X_B = b - NX_N, L \le {X_B\choose X_N} \le U, X_B\in\mathbb{Z}^I, X_N \in \mathbb{Z}^J \right\}
-\label{standardpolyhedron}
-\end{equation}
-where $Q$ is a $K\times (I+J)$ matrix that selects $J \le K \le I+J$ elements from $(X_B|X_N)^T$ (i.e. each column of $Q$ has at most one element equal to 1, each row has exactly one element equal to 1 and all other elements are 0). We'll call the elements of $X_B$ ``basic-variables'' and the elements of $X_N$ ``non-basic variables''\footnote{The introduction of the requirement that $X_B \in \mathbb{Z}$ does not reduce expressivity as long as the elements of $N$ and $b$ can be expressed as rational numbers. In this case they can be converted to integers by multiplying each row by the product of the denominators on that row and dividing by the greatest common divisor. Once $N$ and $b$ are integer then $X_B$ is guaranteed to be integer for any $X_N\in\{0,1\}^J$.}.
-
-Equation \eqref{bPolySupport} can easily be expressed in the form \eqref{standardpolyhedron} by ``flattening'' the trajectory, $T$, into a $J$-dimensional vector (without changing the values of the elements) using a tensor $R\in\mathbb{R}^{SA}_{NJ}$ where $J=NSA$ (i.e. for every $(t, \psi, a)$ there is exactly one $j$ such that $R^{\psi a}_{t j} = 1$ and for every $j$ there is exactly one $(t,\psi,a)$ such that $R^{\psi a}_{t j} = 1$ and all other elements are zero) so that
-\[
-X_N = \sum_{t,\psi,a}R^{\psi a}_t T^t_{\psi a}
-\]
-and letting $N$ be the $I\times J$ matrix
-\[
-N = \sum_{t,\psi,a} C^{\psi a}_t R^{\psi a}_t
-\]
-and finally letting Q be the matrix such that $X_N = Q(X_B|X_N)$ and $b = \mathbf{0}$. The constraint $X_B\in\mathbb{I}^I$ is satisfied since all the elements of $N$ are integers in our case.
-
-\subsection{The pivot transformation}
-
-The introduction of the matrix $Q$ in \eqref{standardpolyhedron} allows us to transform the representation without changing the $\mathbb{Z}$-polyhedron that is represented. We now describe the ``pivot transformation'' which will be a central operation in the sampling algorithm, and should look familiar to anyone acquainted with the simplex algorithm (see e.g. \cite{vanderbei2015linear}).
-
-We begin by expressing the linear constraint in the form
-\[
-(I|N){X_B \choose X_N} = b
-\]
-where $I$ is the identity matrix.
-
-If we let $S_{ij}$ be the permutation matrix such that
-\[
-{X'_B\choose X'_N} = S_{ij}{X_B\choose X_N}
-\]
-has the effect of swapping the $i^{th}$ element of $X_B$ with the $j^{th}$ element of $X_N$ then we have
-\[
-(I|N)S^{-1}_{ij}{X'_B \choose X'_N} = b
-\]
-(note that $S^{-1}_{ij} = S_{ij}$).
-
-If we now pre-multiply this with the matrix 
-\[
-B_{ij}^{-1} =  
-\begin{pmatrix}
-1 &  & -\frac{N_{0j}}{N_{ij}} & & \\
-  & \ddots & \vdots & &\\
- & & \frac{1}{N_{ij}} & &\\
-  & & \vdots & \ddots &\\
-  & & -\frac{N_{nj}}{N_{ij}} & &1\\
-\end{pmatrix}
-\]
-it can be shown \cite{maros2002computational} that
-\begin{equation}
-B_{ij}^{-1}(I|N)S^{-1}_{ij} = (B_{ij}^{-1}|B_{ij}^{-1}N)S^{-1}_{ij} = (I|N')
-\label{Ntransform}
-\end{equation}
-and so
-\begin{equation}
-B_{ij}^{-1}(I|N)S^{-1}_{ij}{X'_B \choose X'_N} = B_{ij}^{-1}b  = (I|N'){X'_B \choose X'_N} = b'
-\end{equation}
-Now, if we choose an $i$ and $j$ such that $N_{ij} = \pm 1$, then all elements of $B^{-1}_{ij}$ are integer and so all elements of $N'$ are also integer, as are the elements of $b'$. This ensures that if $X_N\in\mathbb{Z}^J$ then $X_B\in\mathbb{Z}^I$ and $X\in\mathbb{Z}^K$ as required.
-
-So if we let
-\[
-Q' = QS^{-1}_{ij}
-\]
-we can express the original $\mathbb{Z}$-polyhedron in the equivalent form
-\begin{equation}
-\mathcal{P} = \left\{X\in\mathbb{Z}^K: X = Q'{X'_B\choose X'_N}, X'_B = b'-N'X'_N, S_{ij}L \le {X'_B \choose X'_N} \le S_{ij}U, X'_B \in \mathbb{Z}^I, X'_N \in \mathbb{Z}^J \right\}
-\end{equation}
-
-It is easy to see that this transformation defines an equivalence set so that, given a reference representation of a $\mathbb{Z}$-polyhedron, $\mathbb{Z}(Q,N,b,L,U)$, we can define the set of all equivalent ``pivot states'' $\mathcal{S}(Q,N,b,L,U)$.
-
-\subsection{Removal of fixed variables}
-
-If we use the method described in section \eqref{BPoly} to create a $\mathbb{Z}$-polyhedron of the support then each continuity constraint (and possibly some of the observation constraints) will result in elements of $X_B$ that have fixed values (i.e. $L_i = U_i$). Removing these will reduce the dimensionality of the problem and so make valid solutions easier to find.
-
-Suppose the $i^{th}$ element of $X_B$ is fixed. If there exists some $j:N_{ij} = \pm 1$ we can perform a pivot on $(i,j)$, to swap the fixed variable with the $j^{th}$ element of $X_N$ so that the fixed variable ends up in $X_N$. The fixed variable can be removed from $X_N$ by adding the $j^{th}$ column of $N$ times the variable's fixed value to b.
 
 \section{Sampling from a $\mathbb{Z}$-distribution}
 %#################################################
@@ -475,11 +385,11 @@ Given a $\mathbb{Z}$-polyhedron, we split the constraints into two sets: equalit
 \end{equation}
 Suppose there are $N_e$ equality constraints (i.e. $E$ is an $N_e$ dimensional vector) and we partition the elements of a trajectory $T$ into `basic' and `non-basic' elements, so that there are exactly $N_e$ basic elements and $N\times S \times A - N_e$ non-basic elements. Given such a partition we can define tensors $Q\in\mathbb{R}_{SA}^{NN_e}$ and $R\in\mathbb{R}_{SA}^{NJ}$, where $J=NSA - N_e$, that take `flattened' vectors of basic, $X$, and non-basic, $Y$, variables and project them into a trajectory tensor such that
 \[
-T^t_{\psi a} =  \sum_{j}Q_{\psi a}^{tj} X_j + \sum_{j}R_{\psi a}^{t j} Y_j
+T^t_{\psi a} =  \sum_{i}Q_{\psi a}^{ti} X_i + \sum_{j}R_{\psi a}^{t j} Y_j
 \]
 If we now let
 \[
-B^j_k = \sum_{t,\psi,a} D^{\psi a}_{tk}Q_{\psi a}^{tj}
+B^i_k = \sum_{t,\psi,a} D^{\psi a}_{tk}Q_{\psi a}^{ti}
 \]
 and
 \[
@@ -487,173 +397,117 @@ N^j_k = \sum_{t,\psi,a} D^{\psi a}_{tk}R_{\psi a}^{tj}
 \]
 then we can write the equality constraints as
 \[
-BX + NY = E
-\]
-where we drop the tensor indices in favour of matrix notation since we're now dealing with only 1 and 2 dimensional tensors (i.e. vectors and matrices).
-
-Now, if we choose the basic variables in order to ensure that $B$ has an inverse, then given an assignment of values to $X_N$ we have 
-\[
-X = B^{-1}(E+ NY)
-\]
-So, we define a Markov state to be an assignment to the non-basic variables $X_N$ and map this to the trajectory
-\[
-T^t_{\psi a} =  \sum_{j}Q_{\psi a}^{tj}B^{-1}(E+ NY) + \sum_{j}R_{\psi a}^{t j} Y
+\sum_i B^i_kX_i + \sum_j N^j_kY_j = E_k
 \]
 
+Now, if we choose the basic variables in such a way as to ensure that $B$ has an inverse, then given an assignment of values to $X_N$ we have 
+\[
+X_i = \sum_k(B^{-1})_i^k(E_k + \sum_jN^j_kY_j)
+\]
+So, we define a Markov state to be an assignment to the non-basic variables $Y$ and map this to the trajectory using
+\begin{equation}
+T^t_{\psi a} =  \sum_{i}Q_{\psi a}^{ti}\sum_k(B^{-1})_i^k(E_k + \sum_jN^j_kY_j) + \sum_{j}R_{\psi a}^{t j} Y_j
+\label{markovtotrajectory}
+\end{equation}
+subject to
+\[
+0 \le Y_j \le u
+\]
+where $u$ is the upper limit on the occupancy of agent actions.
 
 \subsection{The probability of a Markov state}
 
-Notice that for a given feasible solution, $X$, there are many Markov states, one for each possible pivot state. However, since the number of pivot states is the same for all feasible states we can assign to each feasible Markov state a probability $\frac{P(X)}{N}$, where $P(X)$ is the probability of solution $X$ and $N$ is the number of valid pivot states. So, the probability of being in a Markov state associated with solution $X$ (summed over all pivot states) is $P(X)$. In the Metropolis-Hastings algorithm we only ever need to calculate probability ratios so, since $N$ is independent of $X$, we never need to calculate the value of $N$\footnote{which is handy because it would be very difficult to calculate}.
+Given a Markov state, $Y$, that satisfies $0 \le Y_j \le u$, the associated trajectory given by equation \eqref{markovtotrajectory} is guaranteed to satisfy all the equality constraints. However, there is no guarantee that the basic variables will be within their bounds or that the inequality constraints will be satisfied. To deal with this we introduce the concept of \textit{infeasibility} which is a measure of how far a Markov state is from being feasible.
 
-\subsection{The transitions between Markov states}
-
-\subsubsection{Bounds swaps}
-Given the $X_N$ of a Markov state, a simple transition between Markov states is to swap the $i^{th}$ element of $X_N$ to it's other value while keeping the representation fixed. We'll call this a bound swap. If we're lucky the bound swap will not push $X_B$ outside its bounds and we'll have found another feasible Markov state. However, not all bound swaps are feasible in this way, and worse, there is no guarantee that given two feasible Markov states with the same representation there exists a sequence of feasible bound swaps that forms a path from one to the other.
-
-\subsubsection{Pivot transitions}
-Another simple transition between Markov states is to apply the pivot transition $S_{ij}$ to the representation for some valid $i$ and $j$. Since the variable that moves from $X_B$ to $X_N$ must end up having a value of either 0 or 1, we also specify which state this variable should end up in after the pivot. So, a pivot transition is fully defined by a triplet $(i,j,b)$.
-
-\subsubsection{Infeasibility, infeasibility objective and potential energy}
-
-Unfortunately, if we only allow bound swaps and pivot transitions between feasible states there is no guarantee that there is a path between any two feasible states (note that we can't pivot on the non-binary basic variables or on elements of $N$ that don't have an absolute value of 1, so we can't guarantee that all vertices of the polyhedron are reachable and so can't rely on the proof that the polyhedron is connected).
-
-In order to deal with this, we relax the bounds on the basic variables, $L \le X_B \le U$, and include Markov states where some elements of $X_B$ go outside their bounds. This ensures a path between any two feasible states (for example, by just performing bound swaps on the elements of $X_N$) without affecting the definition of bound swaps and pivot transitions.
-
-With this modification the sampling algorithm will sometimes return infeasible samples which don't represent valid posterior ABM trajectories. However, if we just throw these away the remaining feasible samples will have the correct distribution. So, our aim will be to ensure that the infeasible/feasible sample ratio is small enough not to excessively slow down the sampling process while being large enough to ensure proper mixing in the Markov process.
-
-\subsection{Choosing a transition}
-
-Now that we've defined the Markov states and the transitions between them, we next provide an algorithm to choose a proposal transition given the current Markov state. The algorithm should be able to draw a proposal from the transition-distribution and work out the ratio of probabilities of choosing a transition and its reverse transition.
-
-The challenge here is to ensure that, during the sampling process, feasible states sometimes transition to infeasible states (in order to ensure good mixing) while ensuring that, once in an infeasible state, the sampling process quickly moves back into a (probably different) feasible state to create the next feasible sample.
-
-In order to do this we take as our inspiration the algorithm described in \cite{maros1986general}. This algorithm is intended to be used as a ``phase I'' of the simplex algorithm (see e.g. \cite{vanderbei2015linear}) where the aim is just to find a feasible state as efficiently as possible rather than to create a Markov process. Here we present a Markov process that has a high probability of making the same transition as Maros' algorithm. Given this, we should expect the Markov process to quickly move into a feasible state.
-
-\subsubsection{Choosing a non-basic variable: Infeasibility and potential energy}
-
-The first step towards generating a proposal transition is to choose a non-basic variable to modify. To understand how this is done we'll first introduce a few concepts.
-
-Given a Markov state, $\mu$, let the infeasibility of the $i^{th}$ basic variable, $\iota^\mu_i$, be defined to be equal to 0 if the variable is within its bounds or equal to the distance to the nearest bound otherwise
+Given a trajectory, $T$, and a set of inequality constraints
 \[
-\iota^\mu_i =
+L_i \le \sum_{t,\psi,a} C^{\psi a}_{ti} T^t_{\psi a} \le U_i
+\]
+let the infeasibility of the $i^{th}$ constraint, $\iota^T_i$, be defined to be equal to 0 if the variable is within its bounds or equal to the distance to the nearest bound otherwise
+\[
+\iota(T)_i =
 \begin{cases}
-L_i-X_{Bi} & \text{if }X_{Bi}<L_i\\
-X_{Bi}-U_i & \text{if }X_{Bi}>U_i\\
+L_i-\sum_{t,\psi,a} C^{\psi a}_{ti} T^t_{\psi a} & \text{if }\sum_{t,\psi,a} C^{\psi a}_{ti} T^t_{\psi a}<L_i\\
+\sum_{t,\psi,a} C^{\psi a}_{ti} T^t_{\psi a}-U_i & \text{if }\sum_{t,\psi,a} C^{\psi a}_{ti} T^t_{\psi a}>U_i\\
 0 & \text{otherwise}
 \end{cases}
 \]
-and let the total infeasibility be the sum of infeasibilities of all basic variables
+and let the total infeasibility be the sum of infeasibilities of all constraints
 \[
-\iota^\mu = \sum_i \iota^\mu_i
+\iota(T) = \sum_i \iota(T)_i
 \]
-Note that the total infeasibility is piecewise linear, convex and all feasible points lie at the minimum. So, the problem is one of convex optimisation, complicated by the fact that we're only interested in integer feasible solutions. Given this,  a sensible strategy would be to somehow move down the gradient of $\iota$ towards optimal values.
+So, each Markov state is associated with a total infeasibility with respect to the inequalities of the $\mathbb{Z}$-distribution. 
 
-The gradient of $\iota^\mu$ at any point is given by
+Given an upper bound on the trajectory's elements, $u$, we define the \textit{clamped} trajectory
 \[
-\frac{d\iota^\mu}{dX_{Bi}} = 
+\overline{\underline{T}}^t_{\psi a} = 
 \begin{cases}
--1 & \text{if }X_{Bi}<L_i\\
-1 & \text{if }X_{Bi}>U_i\\
-0 & \text{otherwise}
+0 & T^t_{\psi a}<0\\
+u & T^t_{\psi a}>u\\
+T^t_{\psi a} & \text{otherwise}
 \end{cases}
 \]
 
-Since $X_B = b - NX_N$, the gradient of $\iota^\mu$ with respect to $X_N$, which we'll call $D^\mu$, is given by
+Furthermore, let $K_t^{\psi a}$ be a log-linear approximation to the target $\mathbb{Z}$-distribution so that
 \[
-D^\mu = \frac{d\iota^\mu}{dX_N} = \frac{d\iota^\mu}{dX_B}\frac{dX_B}{dX_N} = - \frac{d\iota^\mu}{dX_B}N
+\sum_{t \psi a} K_t^{\psi a}T^t_{\psi a} \approx \log(P(T))
+\]
+for feasible trajectories, and let the \textit{log-linear probability}, $P_K$, be
+\begin{equation}
+\log(P_K(T)) = \sum_{t \psi a} K_t^{\psi a}\overline{\underline{T}}^t_{\psi a} + \kappa\iota(T)
+\label{loglinprob}
+\end{equation}
+where $\kappa < 0$ is a tunable parameter.
+
+The probability of a Markov state, $\mu$, is now given by
+\begin{equation}
+P(\mu) =
+\begin{cases}
+P(T) & \text{if } \iota(T) = 0\\
+P_K(T) & \text{if } \iota(T) > 0\\
+\end{cases}
+\end{equation}
+
+This means that infeasible states have non-zero probability, so the Markov chain will return some infeasible states.  However, if we just throw these away then the remaining samples will be feasible samples of the target distribution. Allowing the Markov chain to pass through infeasible states has the advantage of ensuring that there exists a path between any two feasible states and improves mixing. The cost of this is the computational time spent moving through infeasible states that don't generate any useful samples. The $\kappa$ term makes the infeasible Markov states into a Boltzmann distribution with $\frac{-1}{\kappa}$ being the  ``temperature''.  It has been shown that thermodynamic systems of this type are able to solve large integer optimisation problems \cite{kirkpatrick1983optimization}. In our case, we don't need to change the temperature during the sampling process, but we do need to choose a value of $kappa$ initially. Higher temperatures will increase mixing in the Markov chain, but will also increase the proportion of time spent in infeasible states so we need to find a temperature that is high enough to ensure good mixing of the chain but low enough to ensure a reasonable proportion of samples are feasible. We have found that a good rule of thumb is to aim for 50\% of samples infeasible.
+
+\subsection{Transitions between Markov states}
+
+Given a Markov state, we can transition to another state by choosing an element of  $Y$ and perturbing it by $\pm 1$ (or, if the element is on one of its bounds then to perturb it away from the bound in the feasible direction. In the case of Fermionic trajectories, the elements of $Y$ are always on their bounds so there is always exactly one perturbation per element: a swap to the other bound). This defines the set of transitions between Markov states. Let the set of all Markov states reachable from state $T$ be denoted by $\mathcal{D}(T)$. 
+
+\subsubsection{The probability of transitions}
+
+The probability of a transitions from $T$ to $T'$ is defined as
+\[
+P(T \to T') = \frac{\min\left(1, \frac{P_K(T')}{P_K(T)}\right)}{S(T)} 
+\]
+where $P_K$ is the log-linear probability defined in \eqref{loglinprob} and
+\[
+S(T) = \sum_{T'\in \mathcal{D}(T)}\min\left(1, \frac{P_K(T')}{P_K(T)}\right)
+\]
+so that
+\[
+\frac{P(T' \to T)}{P(T \to T')} = \frac{P_K(T)}{P_K(T')}  \frac{S(T)}{S(T')} 
+\]
+and the Metropolis-Hastings acceptance probability is
+\[
+\alpha = \frac{P(T')P(T' \to T)}{P(T)P(T \to T')} = 
+\frac{P_K(T)}{P(T)} \frac{P(T')}{P_K(T')}  \frac{S(T)}{S(T')}
 \]
 
-Since the total infeasibility is convex, if $D^\mu_j$ is non zero we can tell which direction the $j^{th}$ non-basic variable, $X_{Nj}$, needs to be perturbed in order to potentially reduce infeasibility (or more precisely, which direction will definitely increase infeasibility). So, variables for which a bound-swap would move down the gradient $D^\mu$ are good potential candidates for perturbation compared to those that don't.
+When $T$ is infeasible $\frac{P_K(T)}{P(T)} = 1$. When $T$ is feasible $P_K(T)$ approximates $P(T)$ so their ratio should be close to 1. Finally, $S(T)$ will not change very much between transitions so the ratio $ \frac{S(T)}{S(T')}$ should also be close to 1.
 
-Given this, we define the potential energy of the $j^{th}$ non-basic variable to be equal to 1 if a perturbation to $X_{Nj}$ is (potentially) able to move down the gradient, and 0 otherwise.
+\subsection{Choosing a basis}
 
-In order to encourage the selection of columns with positive potential, the $j^{th}$ non-basic variable is chosen with probability proportional to the exponential of its potential energy times some constant $k_c$
-\begin{equation}
-P(j|\mu) = \frac{e^{k_cE^\mu_j}}{\sum_l e^{k_cE^\mu_l}}
-\label{columnChoice}
-\end{equation}
+The definition of the Markov chain depends on a partition of the trajectory into basic and non-basic elements. We now describe how such a partition is chosen. 
 
-\subsubsection{Choosing a column perturbation and pivot row}
+TODO: Finish this
 
-Once a non-basic variable, $X_{Nj}$, is chosen for the transition, we can choose to perform a bound-swap on $X_{Nj}$ or perform a pivot transition on the $j^{th}$ column and any row that satisfies $|N_{ij}|=1$. If a pivot is chosen, the value of the new non-basic variable needs to be chosen to be either 0 or 1. An efficient algorithm to calculate the infeasibility resulting from each of these transitions is described in \cite[Chapter~9]{maros2002computational}. For reasons that will become clear later, we also include the ``null transition'' which is a loop back to the same Markov state.
+\subsection{An efficient proposal algorithm}
 
-Let $\alpha^\mu_j$ be the set of destination states reachable through transitions on $X_{Nj}$. In order to encourage transitions to lower infeasibility, while maintaining the possibility of reverse transitions to allow detailed balance, a transition, $\mu\to\mu'$, is chosen with a probability proportional to the exponential of $-k_r\iota^{\mu'}$ for some constant $k_r$. i.e.
-\begin{equation}
-P(\mu'|j,\mu) = 
-\frac{e^{-k_r\iota^{\mu'}}e^{k_cE^{\mu'}_j} }
-	{\sum_{\rho \in \alpha^\mu_j}  e^{-k_r\iota^\rho}}
-\label{pTransitionGivenJ}
-\end{equation}
+We next provide an efficient algorithm to choose a proposal with the correct probability from the set of transitions given the current Markov state.
 
-\subsubsection{Proposal function summary}
+TODO: Finish this
 
-Given a transition from state $\mu$ to state $\mu' \ne \mu$ there is a unique non-basic variable $X_{Nj}$ that was involved in the transition \footnote{if $N$ is unchanged then the transition was a bound swap on the only non-basic that has changed, if $N$ changes to $N'$ then it was a pivot transition on the only $j$ that satisfies equation \eqref{Ntransform}} we'll use the notation $j^{\mu\to\mu'}$ to denote the index of this variable.
-
-Starting from state $\mu$, the probability of proposing a transition to $\mu'$ is the probability that we choose the non-basic variable, $X_{Nj^{\mu\to\mu'}}$ then choose the state $\mu'$ from $\alpha^\mu_{j^{\mu\to\mu'}}$, so from \eqref{columnChoice} and \eqref{pTransitionGivenJ}
-\[
-P(\mu \rightarrow \mu') 
-= 
-P(\mu'|j^{\mu\to\mu'},\mu)P(j^{\mu\to\mu'}|\mu) 
-=
-\frac{e^{-k_r \iota^{\mu'}} e^{k_cE^{\mu'}_{j^{\mu'\to\mu}}}}
-	{\sum_{\rho \in \alpha^\mu_{j^{\mu\to\mu'}}}e^{-k_r\iota^\rho}}
-\frac{e^{k_c E^\mu_{j^{\mu\to\mu'}}}}
-	{\sum_l e^{k_c E^\mu_l}}
-\]
-So, in the Metropolis-Hastings algorithm, the probability that a proposed transition, $\mu\to\mu'$, is accepted is given by
-\[
-\frac{P(\mu')P(\mu'\to\mu)}{P(\mu)P(\mu\to\mu')} 
-=
-\frac{P(\mu')}
-	{P(\mu)}
-\frac{e^{-k_r \iota^{\mu}}e^{k_cE^{\mu}_{j^{\mu\to\mu'}}}}
-	{\sum_{\rho \in \alpha^{\mu'}_{j^{\mu'\to\mu}}}e^{-k_r\iota^\rho}}
-\frac{\sum_{\rho \in \alpha^{\mu}_{j^{\mu\to\mu'}}}e^{-k_r\iota^\rho}}
-	{e^{-k_r \iota^{\mu'}}e^{k_cE^{\mu'}_{j^{\mu'\to\mu}}}}
-\frac{e^{k_c E^{\mu'}_{j^{\mu'\to\mu}}}}
-	{\sum_l e^{k_c E^{\mu'}_l}}
-\frac{\sum_l e^{k_c E^\mu_l}}
-	{e^{k_c E^\mu_{j^{\mu\to\mu'}}}}
-\]
-However thanks to the fact that we included the null transition,  $\alpha^{\mu'}_{j^{\mu\to\mu'}} = \alpha^\mu_{j^{\mu'\to\mu}}$\footnote{since $\alpha^\mu_{j^{\mu\to\mu'}}$ describes the set of states that lie on the straight line that passes through $\mu$ and $\mu'$} the two sums over $\alpha$ cancel, leaving
-\begin{equation}
-\frac{P(\mu')P(\mu'\to\mu)}
-	{P(\mu)P(\mu\to\mu')} 
-=
-\frac{P(\mu')}
-	{P(\mu)}
-\frac{e^{-k_r \iota^{\mu}}}
-	{e^{-k_r \iota^{\mu'}}}
-\frac{\sum_l e^{k_c E^\mu_l}}
-	{\sum_l e^{k_c E^{\mu'}_l}}
-\label{acceptance1}
-\end{equation}
-
-However, since infeasible states are thrown away in the final algorithm, we are free to assign them any probability we wish. This gives us some freedom to ensure that the algorithm spends an appropriate time in infeasible states and allows us to engineer an acceptance probability that is convenient to calculate. If we let
-\begin{equation}
-P(\mu) = P_e(T_\mu|\Omega)e^{-k_r \iota^{\mu}} \frac{1}{n}  \sum_l e^{k_c E^\mu_l}
-\label{penalty}
-\end{equation}
-where $T_\mu$ is the trajectory associated with Markov state $\mu$ and $P_e(T_\mu|\Omega)$ is an ``extended posterior'', which for feasible states is just the posterior given by equation \eqref{posterior}, while for infeasible states is calculated in the same way but the requirement that the trajectory belongs to $\mathcal{T}^N_{SA}(F)$ is dropped and if any of the individual probabilities is zero it is replaced by its expectation over all trajectories (with some convenient prior over trajectories, we used a uniform distribution). Notice that for feasible states $P(\mu) = P(T_\mu|\Omega)$ so if we apply this definition to all Markov states the feasible samples will be samples from the desired posterior.
-
-Inserting \eqref{penalty} into \eqref{acceptance2} gives the final form for the acceptance
-\begin{equation}
-\frac{P(\mu')P(\mu'\to\mu)}{P(\mu)P(\mu\to\mu')} 
-=
-\frac{P_e(T_{\mu'}|\Omega)}{P_e(T_\mu|\Omega)}
-\end{equation}
-
-Notice that states with lower infeasibility and lower potential energy have higher probability, so transitions that immediately reduce infeasibility are encouraged, but so are pivots that replace high potential energy variables with low potential variables. This has the consequence that if a high potential, non-basic variable is chosen but it can't immediately reduce infeasibility, it is more likely to be made basic where it is free to change its value in subsequent transitions. This helps the process find a basis where infeasibility-reducing transitions exist.
-
-\subsubsection{Choosing temperature}
-The exponential term $e^{\frac{-E^\mu}{T}}$ in equation \eqref{penalty} is a Boltzmann distribution so $T$ can be thought of as a ``temperature'' and the sampling process will act as a thermodynamic system in equilibrium (with the posterior $P_e(T_\mu|\Omega)$ acting as an additional potential energy).  It has been shown that thermodynamic systems of this type are able to solve large integer optimisation problems \cite{kirkpatrick1983optimization}. In our case, we don't need to change the temperature during the sampling process, but we do need to choose a value of $T$ initially. Higher temperatures will increase mixing in the Markov chain, but will also increase the proportion of time spent in infeasible states so we need to find a temperature that is high enough to ensure good mixing but low enough to ensure a reasonable proportion of samples are feasible.
-
-[TODO: Effective procedure for choosing $T$ and rationale. Choose start and target states at random and make linear probability with target state as maximum, then tune T to minimum samples to first hitting target. Repeat.
- Proportion of infeasible samples against proportion of feasible->infeasible samples. Average infeasible chain length proportion of infeasible samples/proportion of feasible->infeasible transitions.]
- 
- If we first sample uniformly from the set of all states, we can get an idea of the number of states at each energy level...or, during burn-in we reduce temperature until we hit the desired proportion of (increase temp while feasible, reduce while infeasible, gradually reducing the size of the step).
- 
- The ratio of $\kappa_r$ and $\kappa_c$: If $\kappa_c$ is too low, we will tend to have long infeasible runs as high potential columns will not be pivoted-in, if it is too high, then many potential transitions into infeasibility will be rejected due to the increase in potential energy. If $\kappa_r$ is to high (absolute value) then transitions into infeasibility will not be proposed often enough, if too low then potential transitions back into feasibility may be ignored even when available. The ratio is the ratio of the energy in an infeasible variable and a high-potential column....how important is reducing infeasibility against reducing potential energy?...
 
 \section{Results}
 
