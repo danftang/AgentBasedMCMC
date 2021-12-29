@@ -73,7 +73,7 @@ Here we present an algorithm that generates samples of the time evolution of an 
 %##########################################
 
 \subsection{Agents, States and Actions}
-\label{agentdef}
+\label{abmdef}
 Suppose we have a timestepping ABM that consists of agents with a finite number of possible internal states and a finite number of ways of acting on their world. Given this, we can define an ABM as:
 \begin{itemize}
 	\item An ordered list of agent actions $\mathcal{A} =\left< A_0 ... A_n \right>$
@@ -121,6 +121,29 @@ F(3, 1) &= \{0,0,0,1\}\\
 
 \end{description}
 
+\subsection{Tensor notation}
+
+The rest of this paper we'll make use of tensors, these are just arrays of numbers, like vectors or matrices, but arranged in any number of dimensions. Each dimension can be either \textit{covariant} or \textit{contravariant} and each tensor has a \textit{shape} which describes the size of the tensor in each of its dimensions. It will be useful to refer to the set of all tensors of a given shape, for this we'll use $\mathbb{R}$ adorned with the number of elements in each dimension, with covariant dimensions in the subscript position and contravariant dimensions in superscript position. So, for example, $\mathbb{R}^N_{SA}$ would describe the set of 3-dimensional tensors that have one contravariant dimension of size $N$ and two covariant dimensions of sizes $S$ and $A$.
+
+An element of a tensor is referred to by specifying the co- and contravariant coordinates of the element. For example if $T \in \mathbb{R}^N_{SA}$, then $T^t_{\psi a}$ refers to the element of $T$ that has coordinate $t$ in the contravariant dimension and coordinates $(\psi,a)$ in the covariant dimensions. By convention, coordinates begin at 0.
+
+We'll also use the Einstein summation convention, meaning that if the same index symbol is repeated in co- and contravariant positions, then a summation over that symbol is implied. So, for example if $X \in \mathbb{R}_8$ and $Y \in \mathbb{R}^8$ then
+\[
+X_\psi V^\psi \equiv \sum_{\psi=0}^7 X_\psi  V^\psi
+\]
+We refer to \textit{slices} of a tensor by using barred index symbols. So, for example if $T \in \mathbb{R}^N_{SA}$ then $T^t_{\psi \bar a}$ refers to the 1-dimensional tensor in $\mathbb{R}_A$ comprising the elements of $T$ with the given $t$ and $\psi$ but ranging over all values of $a$. So, for example,
+\[
+R_{\bar a} = T^t_{\psi \bar a}
+\]
+is equivalent to
+\[
+\forall\left(0 \le  a < A\right) : R_{a} = T^t_{\psi a}
+\] 
+
+A bold $\mathbf{1}$ represents a tensor whose elements are all 1. The shape of this tensor should be unambiguous from the context.
+
+Finally, a tensor $Y\in \mathbb{R}^J$ is considered to be equivalent to a $J$-dimensional column vector, a tensor  $X\in \mathbb{R}_I$ equivalent to an $I$-dimensional row vector and a tensor $M \in \mathbb{R}^J_I$ equivalent to a matrix with  $I$ rows and $J$ columns, so we use normal matrix notation for these tensors when that is more convenient.
+
 \subsection{Trajectories}
 
 \begin{figure}
@@ -144,9 +167,7 @@ E = \kbordermatrix{
 \]
 where all elements are zero except those representing agent $S_1$ (\textit{right cat}) performing action $A_0$ (\textit{move}) and agent $S_2$ (\textit{left mouse}) performing action $A_1$ (\textit{stay still}).
 
-Finally, let a model trajectory, $T$, be an $(m\times n\times t)$ tensor consisting of $t$ model timesteps. We use the notation $T^t$ to denote the $t^{th}$ timestep matrix, $T^t_\psi$ to denote the $\psi^{th}$ row of the $t^{th}$ timestep matrix and $T^t_{\psi a}$ to denote the $a^{th}$ element of the $\psi^{th}$ row of the $t^{th}$ timestep. By convention, indices begin at 0. Note that this tensor will generally be very large for more realistic models, but also very sparse, so it can be dealt with computationally using a sparse representation.
-
-It will occasionally be useful to refer to the set of all tensors of a given shape. For this we'll use $\mathbb{R}$ adorned with the number of elements in each index position. For example, a trajectory representing $N$ timesteps of a model with $S$ agent states and $A$ actions must be a member of the set of tensors $\mathbb{R}^N_{SA}$.
+Let a model trajectory, $T$, be a tensor in $\mathbb{R}^N_{SA}$ that represents $N$ timesteps of a model with $S$ agent states and $A$ actions, so that $T^t_{\psi a}$ denotes the $(\psi, a)^{th}$ element of the $t^{th}$ timestep matrix.
 
 A tensor must satisfy a number of constraints in order to be a valid trajectory of an ABM. Since the elements of a trajectory are counts of agents, they must be non-negative integers. We'll call this the \textit{non-negative integer constraint} and define the set of all non-negative integer tensors
 \begin{equation}
@@ -156,9 +177,11 @@ A tensor must satisfy a number of constraints in order to be a valid trajectory 
 
 A trajectory must also be \textit{continuous} by which we mean that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$\footnote{This does not mean that agents cannot leave or enter the system, only that if they do then that change must be defined as part of an action.}. We call this the \textit{continuity constraint} and define the set of continuous tensors, with respect to an action function $F$:
 \begin{equation}
-\mathcal{C}^N_{SA}(F) = \left\{T\in\mathbb{R}^N_{SA}:  \forall t \in 1 ... N-1:\forall \phi: \sum_{\psi, a} F(\psi, a)_\phi T^{t-1}_{\psi a} - \sum_a T^t_{\phi a} = 0\right\}
+\mathcal{C}^N_{SA}(F) = \left\{T\in\mathbb{R}^N_{SA}:  \forall \left(  1 \le \bar t < N\right): F^{\psi a}_{\bar\phi} T^{\bar t-1}_{\psi a} = \mathbf{1}^aT^{\bar t}_{\bar\phi a}\right\}
 \label{continuous}
 \end{equation}
+where $F^{\psi a}_\phi$ is the $\phi^{th}$ element of $F(\psi,a)$.
+
 
 So, the set of valid trajectories, $\mathcal{T}^N_{SA}(F)$, is given by the set of tensors that satisfy \eqref{nonNegativeInt} and \eqref{continuous}.
 \begin{equation}
@@ -169,38 +192,30 @@ So, the set of valid trajectories, $\mathcal{T}^N_{SA}(F)$, is given by the set 
 
 \subsection{The posterior}
 
-If we let $\Psi^t$ be the vector whose $\psi^{th}$ element is the number of agents in state $S_\psi$ at the beginning of timestep $t$, then the prior probability of a trajectory is
+Given a set of observations, $\Omega$, we'd like to sample from the posterior over the trajectories,
 \[
-P(T) =
+P\left(T \middle| \Omega\right) \propto P(T)P\left(\Omega \middle| T\right)
+\]
+The prior over the trajectory can be composed from terms involving the agent timestep function, $\pi(\psi,\Psi^t,a)$, which gives the probability that a single agent will perform action $a$ given that it starts in state $\psi$ and is surrounded by agents $\Psi^t$. First consider all agents in state $\psi$ at the beginning of timestep $t$. Let $R\in\mathbb{R}_A$ be a vector whose elements $R_a$ are the number of these agents that perform act $a$ in timestep $t$. $R$ is just a multinomial distribution
+\begin{equation}
+P\left(R \mid \Psi^t, \psi\right) = 
 \begin{cases}
-P\left(\Psi^0 = T^0 \mathbf{1} \right) \prod_{\psi, t} P\left(T^t_{\psi} \mid \Psi^t = T^t \mathbf{1}\right) & \text{if } T \in \mathcal{T}^N_{SA}(F) \\
+\Psi^t_\psi!\prod_a \frac{\pi(\psi,\Psi^t,a)^{R_ a}}{R_a!} & \text{ if } R_a\mathbf{1}^a = \Psi^t_\psi \\
 0 & \text{otherwise}
 \end{cases}
-\]
-where $P(\Psi^0)$ is our prior belief about the model state at time $t=0$, and we use $\mathbf{1}$ to denote a vector whose elements are all 1.
-
-
-The probability that a single agent in a given state will perform an action, given the state of the other agents, $\Psi^t$, is given by the agent timestep function, $\pi(\psi,\Psi^t,a)$, so the joint probability that $\Psi^t_\psi$ agents will perform actions $T^t_{\psi}$ in an environment of other agents $\Psi^t$, is given by the multinomial distribution
-\[
-P\left(T^t_{\psi} \mid \Psi^t \right) = \Psi^t_\psi!\prod_a \frac{\pi(\psi,\Psi^t,a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!}.
-\]
-So the prior probability of a trajectory is
-\[
+\end{equation}
+If we now let $P(\Psi^0)$ be the prior probability over the number of agents in each state at the beginning of the trajectory then the prior over trajectories can be written 
+\begin{equation}
 P(T) =
 \begin{cases}
-P(\Psi^0 = T^0\mathbf{1})
-\prod_{t, \psi}\left(T^t_{\psi} \cdot \mathbf{1} \right)!
-\prod_a \frac{\pi(\psi, T^{t}\mathbf{1},a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA}(F) \\
+P(\Psi^0_{\bar\psi} = T^0_{\bar\psi c}\mathbf{1}^c)
+\prod_{t, \psi}\left(T^t_{\psi b} \mathbf{1}^b \right)!
+\prod_a \frac{\pi(\psi, T^{t}_{\bar\phi d}\mathbf{1}^d,a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA}(F) \\
 0 & \text{otherwise}\\
 \end{cases}
-\]
+\end{equation}
 
-Suppose now we have a set of noisy, aggregate observations, $\Omega$, that have a likelihood function $P(\Omega|T)$. By Bayes' rule, we have
-\[
-P(T|\Omega) \propto P\left(\Omega \middle| T\right)P(T)
-\]
-
-Without loss of generality, we take $\Omega$ to consist of some number of observations that are independent of each other given the trajectory, so that the members $(\omega,v)\in \Omega$ consist of a stochastic observation operator $\omega$ and an observed value $v$ (which may be a vector). We write $P(\omega(T)=v)$ to denote the probability of observation operator $\omega$ making observation $v$ on trajectory $T$. So
+The likelihood can also be decomposed. Without loss of generality, we take $\Omega$ to consist of some number of observations that are independent of each other given the trajectory, so that $\Omega$ is a set of pairs $(\omega,v)$ that consist of a stochastic observation operator $\omega$ and an observed value $v$ (which may be a vector). We write $P(\omega(T)=v)$ to denote the probability of observation operator $\omega$ making observation $v$ on trajectory $T$. So
 \[
 P(\Omega|T) = \prod_{(\omega,v) \in \Omega} P(\omega(T)=v)
 \]
@@ -209,10 +224,12 @@ The posterior can now be written as
 \begin{equation}
 P(T|\Omega) \propto 
 \begin{cases}
-P(\Psi^0 = T^0\mathbf{1})
-\prod_{(\omega,v) \in \Omega} P\left(\omega(T)=v\right)
-\prod_{t, \psi, a}\left(T^t_{\psi}\cdot\mathbf{1}\right)!
-\frac{\pi(\psi,T^t\mathbf{1},a)^{T^{t}_{\psi a}}}{T^t_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA}(F) \\
+\prod_{(\omega,v) \in \Omega,t, \psi, a}
+P(\Psi^0_{\bar\psi} = T^0_{\bar\psi c}\mathbf{1}^c)
+P\left(\omega(T)=v\right)
+\left(T^t_{\psi b} \mathbf{1}^b \right)!
+\frac{\pi(\psi, T^{t}_{\bar\phi d}\mathbf{1}^d,a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & 
+ \text{if } T \in \mathcal{T}^N_{SA}(F) \\
 0 & \text{otherwise}\\
 \end{cases}
 \label{posterior}
@@ -220,20 +237,21 @@ P(\Psi^0 = T^0\mathbf{1})
 
 The problem we're interested in is how to sample from this distribution. In many practical applications, sampling is difficult because the posterior has zero probability for the vast majority of tensors (i.e. most tensors are not trajectories, contain an impossible action or are refuted by the observations). Even though we can generate trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the observations refute the trajectory the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling, for example, are not practical. Techniques based on particle filtering may have more success but, for similar reasons, will likely soon reach a state containing a set of particles, none of which can be fit to the observations.
 
-In the rest of this paper we'll show how to use the Metropolis-Hastings algorithm to generate samples from equation \eqref{posterior}. The challenge will be to create a proposal function which randomly generates a proposed next sample given the current one. A common strategy with Metropolis-Hastings is to generate a new sample by perturbing one or more elements of the previous sample at random. However, if we do this with an ABM trajectory it's very unlikely that the perturbed tensor will be a trajectory that contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
+In the rest of this paper we'll show how to use the Metropolis-Hastings algorithm to generate samples from equation \eqref{posterior}. The challenge will be to create a proposal function which randomly generates a proposed next sample given the current one. A common strategy with Metropolis-Hastings is to generate a new sample by perturbing one or more elements of the previous sample at random. However, if we do this with a trajectory it's very unlikely that the perturbed tensor will be a trajectory that contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
 
 \section{Approximating the support of the posterior}
 %##########################################
 
-We solve this problem by first approximating the support of the posterior, $\supp(P(T^t_{\psi a}|\Omega))$ (i.e. the set of trajectories that have non-zero probability).
+We solve this problem by first approximating the support of the posterior, $\supp(P(T|\Omega))$ (i.e. the set of trajectories that have non-zero probability).
 
 From equation \eqref{posterior}
 \begin{equation}
 \begin{aligned}
-\supp (P( T |\Omega)) = & \mathcal{T}^N_{SA} \cap \\ 
-&\supp(P(\Psi^0 = T^0\mathbf{1})) \cap \\
-&\bigcap_{(\omega,v) \in \Omega}  \supp\left(P\left(\omega(T)=v\right)\right) \cap \\
-&\bigcap_{t, \psi, a} \left( \supp\left(\pi(\psi,T^t\mathbf{1},a)\right) \cup \left\{T:T^t_{\psi a} = 0\right\} \right)
+\supp (P( T |\Omega)) = 
+& \bigcap_{(\omega,v) \in \Omega,t, \psi, a} \mathcal{T}^N_{SA} \cap \\ 
+&\supp(P(\Psi^0_{\bar\psi} = T^0_{\bar\psi c}\mathbf{1}^c)) \cap \\
+& \supp\left(P\left(\omega(T)=v\right)\right) \cap \\
+&\left( \supp\left(\pi(\psi,T^t_{\bar\phi b}\mathbf{1}^b,a)\right) \cup \left\{T:T^t_{\psi a} = 0\right\} \right)
 \end{aligned}
 \label{support}
 \end{equation}
@@ -244,23 +262,23 @@ i.e. in order for $T$ to have non-zero posterior probability, it must be a traje
 %################################################################
 \label{BPoly}
 
-Let a $\mathbb{Z}$-polyhedron be a set of tensors with integer elements that can be described as a set of linear constraints on the elements: 
+Let a $\mathbb{Z}$-polyhedron be a set of tensors whose elements satisfy a set of linear constraints and belong to the set of integers: 
 \[
-\mathcal{P^N_{SA}} = \left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : L \le \sum_{t,\psi,a} C^{\psi a}_{t} T^t_{\psi a} \le U \right\}
+\mathcal{P^N_{SA}} = \left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : L^{\bar i} \le  C^{\psi a\bar i}_t T^t_{\psi a} \le U^{\bar i} \right\}
 \]
-where $L$,  $U$ and $C^{\psi a}_t$ are vectors (i.e. $C \in \mathbb{Z}^{SA}_{NJ}$, $L \in \mathbb{Z}_J$ and $U \in \mathbb{Z}_J$ for some $J$. This is similar to the $\mathbb{Z}$-polyhedron described in \cite{quinton1996manipulating}).
+$C \in \mathbb{Z}^{SAI}_{N}$, $L \in \mathbb{Z}^I$ and $U \in \mathbb{Z}^I$ for some $I$. This is similar to the $\mathbb{Z}$-polyhedron described in \cite{quinton1996manipulating}).
 
 From equation \ref{SetOfTrajectories} we can see immediately that $\mathcal{T}^N_{SA}$ is a  $\mathbb{Z}$-polyhedron. The supports of the prior, $P(\Psi^0)$, the observations, $P(\omega(T)=v)$, and the agent actions, $\pi(\psi,T^t\mathbf{1},a)$, can often be easily expressed as $\mathbb{Z}$-polyhedra. If this is not the case, each of the probability distributions can be expressed as computer programs. Once in this form, abstract interpretation tools\cite{cousot1977abstract} using the domain of convex polyhedra  \cite{cousot1978automatic}\cite{becchi2018efficient}\cite{fukuda2020polyhedral} can be used to construct a convex polyhedron that contains the support (note that it's fine to overestimate the support, i.e. include points that aren't in the support, but not to exclude points that are in the support. Abstract interpretation tools\cite{henry2012pagai}\cite{GN2021} are perfectly suited to this purpose). In addition, if the number of agents is very much smaller than the number of agent states (which is often the case with agent based models) then we may be willing to make the assumption that at any timestep there is at most one agent performing a given action from a given start state (i.e. $\forall \psi, a, t: T^{\psi a}_t \in \{0,1\}$). Under this assumption, which we'll call the \textit{Fermionic assumption} , the set of trajectories is a subset of the corners of the unit hypercube. Any such subset is a $\mathbb{Z}$-polyhedron.
 
-So, if we let $\mathcal{P}^N_{SA}(f)$ be a $\mathbb{Z}$-polyhedron that over-approximates $\supp(f)$ then from equation \eqref{support}
+So, if we let $\mathcal{P}^N_{SA}(f)$ be a $\mathbb{Z}$-polyhedron that over-approximates $\supp(f)$ on the integer points then from equation \eqref{support}
 \begin{equation}
 \begin{aligned}
 \supp(P( T |\Omega)) \subseteq 
-& \mathcal{T}^N_{SA} \cap \\
-& \mathcal{P}^N_{SA}(P(\Psi^0 = T^0\mathbf{1})) \cap\\
-& \bigcap_{(\omega,v) \in \Omega}   \mathcal{P}^N_{SA}\left(P\left(\omega(T)=v\right)\right) \cap \\
-& \bigcap_{t,\psi, a}
-\left(\mathcal{P}^N_{SA}\left(\pi(\psi,T^t\mathbf{1},a)\right)
+& \bigcap_{(\omega,v) \in \Omega,t,\psi, a} \mathcal{T}^N_{SA} \cap \\
+& \mathcal{P}^N_{SA}(P(\Psi^0_{\bar\psi} = T^0_{\bar\psi c}\mathbf{1}^c)) \cap\\
+&    \mathcal{P}^N_{SA}\left(P\left(\omega(T)=v\right)\right) \cap \\
+& 
+\left(\mathcal{P}^N_{SA}\left(\pi(\psi,T^t_{\bar\phi b}\mathbf{1}^b,a)\right)
 \cup
 \left\{T: T^t_{\psi a} = 0\right\}\right)
 \\
@@ -270,23 +288,23 @@ So, if we let $\mathcal{P}^N_{SA}(f)$ be a $\mathbb{Z}$-polyhedron that over-app
 
 The intersection of two $\mathcal{Z}$-polyhedra is easy to construct by just concatenating the constraints
 \begin{multline}
-\left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : L \le \sum_{t,\psi,a} C^{\psi a}_{t} T^t_{\psi a} \le U \right\}
-\cap \left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : L' \le \sum_{t,\psi,a} D^{\psi a}_{t} T^t_{\psi a} \le U' \right\} \\
-= \left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : {L \choose L'}  \le \sum_{t,\psi,a} {C^{\psi a}_t\choose D^{\psi a}_t} T^t_{\psi a} \le {U\choose U'} \right\}
+\left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : L \le C^{\psi a \bar i}_{t} T^t_{\psi a} \le U \right\}
+\cap \left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : L' \le D^{\psi a \bar i}_{t} T^t_{\psi a} \le U' \right\} \\
+= \left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : {L \choose L'}  \le  {C^{\psi a\bar i}_t \choose D^{\psi a\bar j}_t} T^t_{\psi a} \le {U \choose U'} \right\}
 \end{multline}
 so the only difficulty is the union in the final term of \eqref{polyhedralSupport}. To transform this into an intersection we introduce an auxiliary variable $I^t_{\psi a}$ and use the identity
 \begin{multline}
-\left\{ T\in\mathbb{Z}^N_{SA} : L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U \right\}
+\left\{ T\in\mathbb{Z}^N_{SA} : L \le C^{\phi b\bar i}_{s} T^s_{\phi b} \le U \right\}
 \cup
 \left\{T: T^t_{\psi a} = 0\right\}
 =\\
 \left\{
 T\in\mathbb{Z}^N_{SA}, I^t_{\psi a}\in\{0,1\}:\right.\\
--\infty \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b}
+-\infty \le C^{\phi b \bar i}_{s} T^s_{\phi b}
 +
 (\overline{B}-U)I^{t}_{\psi a}
 \le \overline{B},\\
-\underline{B} \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b}
+\underline{B} \le C^{\phi b \bar i}_{s} T^s_{\phi b}
 +
 (\underline{B}-L)I^{t}_{\psi a} \le \infty,\\
 0 \le uI^t_{\psi a} - T^t_{\psi a},\\
@@ -294,18 +312,18 @@ T\in\mathbb{Z}^N_{SA}, I^t_{\psi a}\in\{0,1\}:\right.\\
 \right\}
 \label{implication}
 \end{multline}
-where $u$ is the maximum value that any element of $T$ can take, the elements of $\overline{B}\in\mathbb{R}_I$ are defined as
+where $u$ is the maximum value that any element of $T$ can take, the elements of $\overline{B}\in\mathbb{R}^I$ are defined as
 \[
-\overline{B}_i = \frac{u\sum_{s,\phi,b} \left( C^{\phi b}_{si} + \left|C^{\phi b}_{si}\right|\right)}{2}
+\overline{B}^i = \frac{u\sum_{s,\phi,b} \left( C^{\phi bi}_{s} + \left|C^{\phi bi}_{s}\right|\right)}{2}
 \]
-and the elements of $\underline{B}\in\mathbb{R}_I$ are defined as
+and the elements of $\underline{B}\in\mathbb{R}^I$ are defined as
 \[
-\underline{B}_i = \frac{u\sum_{s,\phi,b} \left(C^{\phi b}_{si} - \left|C^{\phi b}_{si}\right|\right)}{2}
+\underline{B}^i = \frac{u\sum_{s,\phi,b} \left(C^{\phi bi}_{s} - \left|C^{\phi bi}_{s}\right|\right)}{2}
 \]
 
-To see why this identity holds, note first that the constraints on $I^t_{\psi a}$ make it into an indicator variable that is 0 if $T^t_{\psi a}=0$ or 1 otherwise. When $I^t_{\psi a}=1$ the first set of constraints is equal to $\sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U$ and the second is equal to $L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b}$ so their intersection is $L \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le U$ as required, whereas when $I^t_{\psi a}=0$ we have the constraints $\underline{B} \le \sum_{s,\phi,b} C^{\phi b}_{s} T^s_{\phi b} \le \overline{B}$. But $\underline{B}$ and $\overline{B}$ are lower and upper bounds on the value of $\sum_{s,\phi,b} C^{\phi b}_{si} T^s_{\phi b}$ so this is satisfied for all trajectories, as required.
+To see why this identity holds, note first that the constraints on $I^t_{\psi a}$ make it into an indicator variable that is 0 if $T^t_{\psi a}=0$ or 1 otherwise. When $I^t_{\psi a}=1$ the first set of constraints is equal to $C^{\phi b\bar i}_{s} T^s_{\phi b} \le U$ and the second is equal to $L \le C^{\phi b\bar i}_{s} T^s_{\phi b}$ so their intersection is $L \le  C^{\phi b\bar i}_{s} T^s_{\phi b} \le U$ as required, whereas when $I^t_{\psi a}=0$ we have the constraints $\underline{B} \le C^{\phi b\bar i}_{s} T^s_{\phi b} \le \overline{B}$. But $\underline{B}^i$ and $\overline{B}^i$ are lower and upper bounds on the value of $C^{\phi bi}_{s} T^s_{\phi b}$ so this is satisfied for all trajectories, as required.
 
-There are two things worth noting here. Firstly if we make the Fermionic assumption then $I^t_{\psi a} = T^t_{\psi a}$ and the auxiliary indicator variable becomes unnecessary. Secondly, we must impose a finite value for $u$, the maximum value that elements of the trajectory can take. In practice, this is not a problem as we can give $u$ a value such that the probability of any trajectory of interest having any element larger than $u$ is small.
+There are two things worth noting here. Firstly if we make the Fermionic assumption then $I^t_{\psi a} = T^t_{\psi a}$ and the auxiliary indicator variables become unnecessary. Secondly, we must impose a finite value for $u$, the maximum value that elements of the trajectory can take. In practice, this is not a problem as we can give $u$ a value such that the probability of any trajectory of interest having any element larger than $u$ is small.
 
 Using this transformation the support of the posterior can be reduced to a $\mathbb{Z}$-polyhedron
 
@@ -315,7 +333,7 @@ As an illustration, consider a two-timestep trajectory of the cat and mouse mode
 
 Working through \eqref{polyhedralSupport} term by term, the $\mathcal{T}^2_{4\,2}$ term is just the continuity constraints in \eqref{continuous}, which are already in linear form so we're done. The second term is the support of the prior. This constrains each agent state at $t=0$ to be at most 1, which can be expressed as
 \[
-\bigcap_\psi \left\{T:T^0_{\psi 0} + T^0_{\psi 1} \le 1\right\}
+\left\{T:T^0_{\bar \psi 0} + T^0_{\bar\psi 1} \le \mathbf{1}_{\bar\psi}\right\}
 \]
 
 The third term is the support of the observation. Since we observe a cat in the left grid-square at time $t=1$ we need to add the constraint
@@ -325,14 +343,14 @@ T^1_{0 0} + T^1_{0 1} = 1
 The final term is the constraint due to agent interactions. The impossible interactions are a mouse staying put when there is a cat on the same gridsquare or moving when there are no cats, which translates to the four cases
 \begin{equation}
 \begin{aligned}
-\supp(\pi(2,T^t\mathbf{1},0)) &= \left\{ T: -T^t_{0 0} - T^t_{0 1} \le -1 \right\}\\
-\supp(\pi(3,T^t\mathbf{1},0)) &= \left\{ T: -T^t_{1 0} - T^t_{1 1} \le -1 \right\}\\
-\supp(\pi(2,T^t\mathbf{1},1)) &= \left\{ T: T^t_{0 0} + T^t_{0 1} \le 0 \right\}\\
-\supp(\pi(3,T^t\mathbf{1},1)) &= \left\{ T: T^t_{1 0} + T^t_{1 1} \le 0 \right\}
+\supp(\pi(2,T^t_{\bar\phi a}\mathbf{1}^a,0)) &= \left\{ T: -T^t_{0 0} - T^t_{0 1} \le -1 \right\}\\
+\supp(\pi(3,T^t_{\bar\phi a}\mathbf{1}^a,0)) &= \left\{ T: -T^t_{1 0} - T^t_{1 1} \le -1 \right\}\\
+\supp(\pi(2,T^t_{\bar\phi a}\mathbf{1}^a,1)) &= \left\{ T: T^t_{0 0} + T^t_{0 1} \le 0 \right\}\\
+\supp(\pi(3,T^t_{\bar\phi a}\mathbf{1}^a,1)) &= \left\{ T: T^t_{1 0} + T^t_{1 1} \le 0 \right\}
 \end{aligned}
 \label{actionConstraints}
 \end{equation}
-If, for simplicity, we make the Fermionic assumption by adding the constraints
+for all t. If, for simplicity, we make the Fermionic assumption by adding the constraints
 \[
 \forall t,\psi,a: 0 \le T^t_{\psi a} \le 1
 \]
@@ -352,7 +370,7 @@ Taken together, these constraints define a $\mathbb{Z}$-polyhedron that is the s
 \section{Sampling from a $\mathbb{Z}$-distribution}
 %#################################################
 
-Armed with the ability to express $P(T|\Omega)$ as a $\mathbb{Z}$-distribution and some tools to manipulate representations of $\mathbb{Z}$-polyhedra, we can now go about defining a Markov process which will allow us to sample from a $\mathbb{Z}$-distribution.
+Now that we have shown how to express $P(T|\Omega)$ as a $\mathbb{Z}$-distribution, we now show how to construct a Markov process which will allow us to sample from a $\mathbb{Z}$-distribution.
 
 To do this we need to define
 \begin{itemize}
@@ -371,7 +389,7 @@ In order to be useable in the Metropolis-Hastings algorithm, the proposal functi
 	
 	\item For any transition from state $S_a \to S_b$ with non-zero probability, the probability of the reverse transition from $S_b \to S_a$ should also be non-zero. This allows us to attain detailed balance in the Metropolis Hastings algorithm. The average ratio of forward and backward probabilities times the ratio of start and end state probabilities should be close to 1 to ensure that a reasonable proportion of proposals are accepted.
 	
-	\item Given a current Markov state, there should be computationally efficient ways of generating a proposal and calculating the ratio the probability of that transition and the reverse transition. 
+	\item Given a current Markov state, there should be computationally efficient ways of generating a proposal and calculating the acceptance probability. 
 \end{itemize}
 
 
@@ -380,34 +398,38 @@ In order to be useable in the Metropolis-Hastings algorithm, the proposal functi
 
 Given a $\mathbb{Z}$-polyhedron, we split the constraints into two sets: equalities (i.e. those whose lower and upper bound have the same value) and inequalities (i.e. those whose lower and upper bounds differ):
 \begin{equation}
-\mathcal{P} = \left\{T \in \mathbb{Z}^N_{SA}: L \le \sum_{t,\psi,a} C^{\psi a}_t T^t_{\psi a} \le U \cap \sum_{t,\psi,a} D^{\psi a}_t T^t_{\psi a} = E \right\}
+\mathcal{P} = \left\{T \in \mathbb{Z}^N_{SA}: L \le C^{\psi a\bar i}_t T^t_{\psi a} \le U \cap D^{\psi a \bar i}_t T^t_{\psi a} = E \right\}
 \label{bPolySupport}
 \end{equation}
-Suppose there are $N_e$ equality constraints (i.e. $E$ is an $N_e$ dimensional vector) and we partition the elements of a trajectory $T$ into `basic' and `non-basic' elements, so that there are exactly $N_e$ basic elements and $N\times S \times A - N_e$ non-basic elements. Given such a partition we can define tensors $Q\in\mathbb{R}_{SA}^{NN_e}$ and $R\in\mathbb{R}_{SA}^{NJ}$, where $J=NSA - N_e$, that take `flattened' vectors of basic, $X$, and non-basic, $Y$, variables and project them into a trajectory tensor such that
+Suppose there are $N_e$ equality constraints (i.e. $E$ is an $N_e$ dimensional vector) and we partition the elements of $T$ into `basic' and `non-basic' elements, so that there are exactly $N_e$ basic elements and $N\times S \times A - N_e$ non-basic elements.
+
+Given such a partition we can define tensors $Q\in\mathbb{R}_{SAN_e}^{N}$ and $R\in\mathbb{R}_{SAJ}^{N}$, where $J=NSA - N_e$, that take `flattened' vectors of basic, $X\in\mathbb{R}^N_e$, and non-basic, $Y\in\mathbb{R}^J$, variables and project them into a trajectory tensor such that
 \[
-T^t_{\psi a} =  \sum_{i}Q_{\psi a}^{ti} X_i + \sum_{j}R_{\psi a}^{t j} Y_j
+T^{t}_{\psi a} =  Q_{\psi ai}^{t} X^i + R_{ \psi  aj}^{t} Y^j
 \]
 If we now let
 \[
-B^i_k = \sum_{t,\psi,a} D^{\psi a}_{tk}Q_{\psi a}^{ti}
+B_i^k = D^{\psi ak}_{t}Q_{\psi a i}^{t}
 \]
 and
 \[
-N^j_k = \sum_{t,\psi,a} D^{\psi a}_{tk}R_{\psi a}^{tj}
+N_j^k = D^{\psi ak}_{t}R_{\psi aj}^{t}
 \]
 then we can write the equality constraints as
-\[
-\sum_i B^i_kX_i + \sum_j N^j_kY_j = E_k
-\]
-
-Now, if we choose the basic variables in such a way as to ensure that $B$ has an inverse, then given an assignment of values to $X_N$ we have 
-\[
-X_i = \sum_k(B^{-1})_i^k(E_k + \sum_jN^j_kY_j)
-\]
-So, we define a Markov state to be an assignment to the non-basic variables $Y$ and map this to the trajectory using
 \begin{equation}
-T^t_{\psi a} =  \sum_{i}Q_{\psi a}^{ti}\sum_k(B^{-1})_i^k(E_k + \sum_jN^j_kY_j) + \sum_{j}R_{\psi a}^{t j} Y_j
-\label{markovtotrajectory}
+B_i^kX^i + N_j^kY^j = E^k
+\label{eqconstraints}
+\end{equation}
+
+Now, since there are $N_e$ basic variables and $N_e$ equality constraints, $B$ is square so if we choose the basic variables in order to ensure that $B$ has an inverse then
+\begin{equation}
+X^i = (B^{-1})^i_k(E^k + N_j^kY^j)
+\label{basicvars}
+\end{equation}
+So, we define a Markov state to be an assignment to a non-basic variable vector $Y$ and map this to the trajectory using
+\begin{equation}
+T^t_{\psi a} =  Q_{\psi ai}^{t}(B^{-1})^i_k(E^k + N_j^kY^j) + R_{\psi aj}^{t } Y^j
+\label{markovtotrajectorytensor}
 \end{equation}
 subject to
 \[
@@ -415,32 +437,65 @@ subject to
 \]
 where $u$ is the upper limit on the occupancy of agent actions.
 
+Equation \eqref{markovtotrajectorytensor} can be written as
+\begin{equation}
+T^t_{\psi a} =  K^t_{\psi a} + M^{t}_{\psi aj} Y^j
+\label{markovtotrajectory}
+\end{equation}
+where
+\[
+K^t_{\psi a} = Q_{\psi ai}^{t} (B^{-1})^i_kE^k
+\]
+and
+\[
+M^{t}_{\psi aj} = Q_{\psi ai}^{t} (B^{-1})^i_kN_j^k + R_{\psi aj}^{t}
+\]
+
 \subsection{The probability of a Markov state}
 
-Given a Markov state, $Y$, that satisfies $0 \le Y_j \le u$, the associated trajectory given by equation \eqref{markovtotrajectory} is guaranteed to satisfy all the equality constraints. However, there is no guarantee that the basic variables will be within their bounds or that the inequality constraints will be satisfied. To deal with this we introduce the concept of \textit{infeasibility} which is a measure of how far a Markov state is from being feasible.
+Given a Markov state, $Y$, that satisfies $0 \le Y_j \le u$, the associated trajectory given by equation \eqref{markovtotrajectory} is guaranteed to satisfy all the equality constraints. However, there is no guarantee that the basic variables given by eq \eqref{basicvars} will be within their bounds or that the inequality constraints will be satisfied. To deal with this we introduce the concept of \textit{infeasibility} which is a measure of how far a Markov state is from being feasible.
 
-Given a trajectory, $T$, and a set of inequality constraints
+Given the inequality constraints of the $\mathbb{Z}$-distribution (including the upper limits of the basic variables themselves)
 \[
-L_i \le \sum_{t,\psi,a} C^{\psi a}_{ti} T^t_{\psi a} \le U_i
+L^i \le C^{\psi ai}_{t} T^t_{\psi a} \le U^i
 \]
-let the infeasibility of the $i^{th}$ constraint, $\iota^T_i$, be defined to be equal to 0 if the variable is within its bounds or equal to the distance to the nearest bound otherwise
+using \eqref{markovtotrajectory} this can be written as
+\begin{equation}
+L^i \le J^i + Q_j^i Y^j \le U^i
+\label{ineqconstraints}
+\end{equation}
+where
 \[
-\iota(T)_i =
+J^i = C^{\psi ai}_{t} K^t_{\psi a}
+\]
+and
+\[
+Q_j^i = C^{\psi ai}_{t}M^{t}_{\psi aj}
+\]
+
+let the infeasibility of the $i^{th}$ constraint, $\iota(Y)_i$, be defined to be equal to 0 if the constraint is satisfied or equal to the distance to the nearest bound otherwise
+\[
+\iota(Y)_i =
 \begin{cases}
-L_i-\sum_{t,\psi,a} C^{\psi a}_{ti} T^t_{\psi a} & \text{if }\sum_{t,\psi,a} C^{\psi a}_{ti} T^t_{\psi a}<L_i\\
-\sum_{t,\psi,a} C^{\psi a}_{ti} T^t_{\psi a}-U_i & \text{if }\sum_{t,\psi,a} C^{\psi a}_{ti} T^t_{\psi a}>U_i\\
+L^i- J^i - Q_j^iY^j & \text{if }J^i + Q_j^iY^j<L^i\\
+J^i + Q_j^iY^j-U^i & \text{if }J^i + Q_j^iY^j>U^i\\
 0 & \text{otherwise}
 \end{cases}
 \]
 and let the total infeasibility be the sum of infeasibilities of all constraints
 \[
-\iota(T) = \sum_i \iota(T)_i
+\iota(Y) = \sum_i \iota(Y)_i
 \]
 So, each Markov state is associated with a total infeasibility with respect to the inequalities of the $\mathbb{Z}$-distribution. 
 
-Given an upper bound on the trajectory's elements, $u$, we define the \textit{clamped} trajectory
+If the infeasibility is zero, then all the constraints are satisfied and the probability is defined by the $\mathbb{Z}$-distribution
 \[
-\overline{\underline{T}}^t_{\psi a} = 
+P(Y) = P(K^t_{\psi a} + M^{t}_{\psi aj}Y^j)
+\]
+
+If the infeasibility is not zero, then the probability is defined in the following way. Given an upper bound on the trajectory's elements, $u$, we define the \textit{clamped} trajectory
+\[
+\overline{\underline{T^t_{\psi a}}} = 
 \begin{cases}
 0 & T^t_{\psi a}<0\\
 u & T^t_{\psi a}>u\\
@@ -448,59 +503,146 @@ T^t_{\psi a} & \text{otherwise}
 \end{cases}
 \]
 
-Furthermore, let $K_t^{\psi a}$ be a log-linear approximation to the target $\mathbb{Z}$-distribution so that
+Furthermore, let $H_t^{\psi a}$ be a log-linear approximation to the target $\mathbb{Z}$-distribution so that for feasible trajectories
 \[
-\sum_{t \psi a} K_t^{\psi a}T^t_{\psi a} \approx \log(P(T))
+H_t^{\psi a}T^t_{\psi a} \approx \log(P(T))
 \]
-for feasible trajectories, and let the \textit{log-linear probability}, $P_K$, be
+For infeasible trajectories, we define the probability, $P_\iota$, as
 \begin{equation}
-\log(P_K(T)) = \sum_{t \psi a} K_t^{\psi a}\overline{\underline{T}}^t_{\psi a} + \kappa\iota(T)
+\log(P_\iota(Y)) = \sum_{t \psi a} H_t^{\psi a}\overline{\underline{K^t_{\psi a}+M^{t}_{\psi aj}Y^j}} + \kappa\iota(Y)
 \label{loglinprob}
 \end{equation}
 where $\kappa < 0$ is a tunable parameter.
 
-The probability of a Markov state, $\mu$, is now given by
+The probability of a Markov state, $Y$, is now given by
 \begin{equation}
-P(\mu) =
+P(Y) =
 \begin{cases}
-P(T) & \text{if } \iota(T) = 0\\
-P_K(T) & \text{if } \iota(T) > 0\\
+P(Y) & \text{if } \iota(Y) = 0\\
+P_\iota(Y) & \text{if } \iota(Y) > 0\\
 \end{cases}
 \end{equation}
 
-This means that infeasible states have non-zero probability, so the Markov chain will return some infeasible states.  However, if we just throw these away then the remaining samples will be feasible samples of the target distribution. Allowing the Markov chain to pass through infeasible states has the advantage of ensuring that there exists a path between any two feasible states and improves mixing. The cost of this is the computational time spent moving through infeasible states that don't generate any useful samples. The $\kappa$ term makes the infeasible Markov states into a Boltzmann distribution with $\frac{-1}{\kappa}$ being the  ``temperature''.  It has been shown that thermodynamic systems of this type are able to solve large integer optimisation problems \cite{kirkpatrick1983optimization}. In our case, we don't need to change the temperature during the sampling process, but we do need to choose a value of $kappa$ initially. Higher temperatures will increase mixing in the Markov chain, but will also increase the proportion of time spent in infeasible states so we need to find a temperature that is high enough to ensure good mixing of the chain but low enough to ensure a reasonable proportion of samples are feasible. We have found that a good rule of thumb is to aim for 50\% of samples infeasible.
+This means that infeasible states have non-zero probability, so the Markov chain will pass through some infeasible states.  However, if we just ignore these and only take samples from feasible states then we end up with samples of the target $\mathbb{Z}$-distribution. Allowing the Markov chain to pass through infeasible states has the advantage of ensuring that there exists a path between any two feasible states and improves mixing. The disadvantage is the computational cost of moving through infeasible states that don't generate useful samples.
+
+The infeasible Markov states are distributed as a Boltzmann distribution with a ``temperature'' of $\frac{-1}{\kappa}$.  It has been shown that thermodynamic systems of this type are able to solve large integer optimisation problems \cite{kirkpatrick1983optimization}. In our case, we don't need to change the temperature during the sampling process, but we do need to choose a value for $\kappa$. Higher temperatures will increase mixing in the Markov chain, but will also increase the proportion of time spent in infeasible states so we need to find a temperature that is high enough to ensure good mixing of the chain but low enough to ensure a reasonable proportion of samples are feasible. We have found that a good rule of thumb is to set the temperature so that 50\% of the states in a chain are infeasible.
 
 \subsection{Transitions between Markov states}
 
-Given a Markov state, we can transition to another state by choosing an element of  $Y$ and perturbing it by $\pm 1$ (or, if the element is on one of its bounds then to perturb it away from the bound in the feasible direction. In the case of Fermionic trajectories, the elements of $Y$ are always on their bounds so there is always exactly one perturbation per element: a swap to the other bound). This defines the set of transitions between Markov states. Let the set of all Markov states reachable from state $T$ be denoted by $\mathcal{D}(T)$. 
+Given a Markov state, we can transition to another state by choosing an element of  $Y$ and perturbing it by $\pm 1$ (or, if the element is on one of its bounds then to perturb it away from the bound in the feasible direction. In the case of Fermionic trajectories, the elements of $Y$ are always on their bounds so there is always exactly one perturbation per element: a swap to the other bound). This defines the set of transitions between Markov states. Let the set of all Markov states reachable from state $Y$ be denoted by $\mathcal{D}(Y)$. 
 
 \subsubsection{The probability of transitions}
 
-The probability of a transitions from $T$ to $T'$ is defined as
+The probability of a transitions from $Y$ to $Y'$ is defined to be
 \[
-P(T \to T') = \frac{\min\left(1, \frac{P_K(T')}{P_K(T)}\right)}{S(T)} 
+P(Y \to Y') = \frac{\min\left(1, \frac{P_\iota(Y')}{P_\iota(Y)}\right)}{S(Y)} 
 \]
-where $P_K$ is the log-linear probability defined in \eqref{loglinprob} and
+where $P_\iota$ is the log-linear probability defined in \eqref{loglinprob} and
 \[
-S(T) = \sum_{T'\in \mathcal{D}(T)}\min\left(1, \frac{P_K(T')}{P_K(T)}\right)
+S(Y) = \sum_{Y'\in \mathcal{D}(Y)}\min\left(1, \frac{P_\iota(Y')}{P_\iota(Y)}\right)
 \]
-so that
+Note that this is irrespective of whether $Y$ or $Y'$ are feasible.
+
+Given this, the Metropolis-Hastings acceptance probability is
 \[
-\frac{P(T' \to T)}{P(T \to T')} = \frac{P_K(T)}{P_K(T')}  \frac{S(T)}{S(T')} 
-\]
-and the Metropolis-Hastings acceptance probability is
-\[
-\alpha = \frac{P(T')P(T' \to T)}{P(T)P(T \to T')} = 
-\frac{P_K(T)}{P(T)} \frac{P(T')}{P_K(T')}  \frac{S(T)}{S(T')}
+\alpha = \frac{P(T')P(Y' \to Y)}{P(T)P(Y \to Y')} = 
+\frac{P_\iota(Y)}{P(Y)} \frac{P(Y')}{P_\iota(Y')}  \frac{S(Y)}{S(Y')}
 \]
 
-When $T$ is infeasible $\frac{P_K(T)}{P(T)} = 1$. When $T$ is feasible $P_K(T)$ approximates $P(T)$ so their ratio should be close to 1. Finally, $S(T)$ will not change very much between transitions so the ratio $ \frac{S(T)}{S(T')}$ should also be close to 1.
+When $Y$ is infeasible $\frac{P_\iota(Y)}{P(Y)} = 1$. When $Y$ is feasible $P_\iota(Y)$ approximates $P(Y)$ so their ratio should be close to 1. Finally, $S(Y)$ will not change very much between transitions so the ratio $ \frac{S(Y)}{S(Y')}$ should also be close to 1 meaning that the acceptance probability should also be close to 1.
 
 \subsection{Choosing a basis}
 
+TODO: need to start with auxiliary variables for equality constraints...or factorize out columns one at a time starting with (X|Y) as a flattening of T and all variables considered non-basic and the factorized part as the 'proper' basic variables (i.e. same as with aux variables but they're implicit).
+
 The definition of the Markov chain depends on a partition of the trajectory into basic and non-basic elements. We now describe how such a partition is chosen. 
 
-TODO: Finish this
+If we let
+\[
+F^j_i = C^{\psi a j}_tQ^t_{\psi a i}
+\]
+and
+\[
+G^j_i = C^{\psi aj}_tR^t{\psi a i}
+\]
+then we can combine the equality constraints \eqref{eqconstraints} and inequality constraints \eqref{ineqconstraints}
+\[
+{0 \choose L} \le
+\begin{pmatrix}
+B & N\\
+F & G
+\end{pmatrix}
+{X \choose Y} + {-E \choose J} \le {0 \choose U}
+\]
+then
+\[
+{0 \choose L} \le
+\begin{pmatrix}
+I & B^{-1}N\\
+F & G
+\end{pmatrix}
+{X \choose Y} + {-B^{-1}E \choose J} \le {0 \choose U}
+\]
+and
+\[
+{0 \choose L} \le
+\begin{pmatrix}
+I & B^{-1}N\\
+0 & G-FB^{-1}N
+\end{pmatrix}
+{X \choose Y} + {-B^{-1}E \choose J + FB^{-1}E} \le {0 \choose U}
+\]
+
+
+where $I$ is the identity matrix.
+
+If we let $S_{ij}$ be the permutation matrix such that
+\[
+{X'\choose Y'} = S_{ij}{X\choose Y}
+\]
+has the effect of swapping the $i^{th}$ element of $X$ with the $j^{th}$ element of $Y$ then we have
+\[
+\begin{pmatrix}
+I & N\\
+CQ & CR
+\end{pmatrix}
+S^{-1}_{ij}{X' \choose Y'} = b
+\]
+(note that $S^{-1}_{ij} = S_{ij}$).
+
+If we now pre-multiply this with the matrix 
+\[
+B_{ij}^{-1} =  
+\begin{pmatrix}
+1 &  & -\frac{N_{0j}}{N_{ij}} & & \\
+& \ddots & \vdots & &\\
+& & \frac{1}{N_{ij}} & &\\
+& & \vdots & \ddots &\\
+& & -\frac{N_{nj}}{N_{ij}} & &1\\
+\end{pmatrix}
+\]
+it can be shown \cite{maros2002computational} that
+\begin{equation}
+B_{ij}^{-1}(I|N)S^{-1}_{ij} = (B_{ij}^{-1}|B_{ij}^{-1}N)S^{-1}_{ij} = (I|N')
+\label{Ntransform}
+\end{equation}
+and so
+\begin{equation}
+B_{ij}^{-1}(I|N)S^{-1}_{ij}{X'_B \choose X'_N} = B_{ij}^{-1}b  = (I|N'){X'_B \choose X'_N} = b'
+\end{equation}
+Now, if we choose an $i$ and $j$ such that $N_{ij} = \pm 1$, then all elements of $B^{-1}_{ij}$ are integer and so all elements of $N'$ are also integer, as are the elements of $b'$. This ensures that if $X_N\in\mathbb{Z}^J$ then $X_B\in\mathbb{Z}^I$ and $X\in\mathbb{Z}^K$ as required.
+
+So if we let
+\[
+Q' = QS^{-1}_{ij}
+\]
+we can express the original $\mathbb{Z}$-polyhedron in the equivalent form
+\begin{equation}
+\mathcal{P} = \left\{X\in\mathbb{Z}^K: X = Q'{X'_B\choose X'_N}, X'_B = b'-N'X'_N, S_{ij}L \le {X'_B \choose X'_N} \le S_{ij}U, X'_B \in \mathbb{Z}^I, X'_N \in \mathbb{Z}^J \right\}
+\end{equation}
+
+It is easy to see that this transformation defines an equivalence set so that, given a reference representation of a $\mathbb{Z}$-polyhedron, $\mathbb{Z}(Q,N,b,L,U)$, we can define the set of all equivalent ``pivot states'' $\mathcal{S}(Q,N,b,L,U)$.
+
 
 \subsection{An efficient proposal algorithm}
 
