@@ -131,16 +131,17 @@ We'll also use the Einstein summation convention, meaning that if the same index
 \[
 X_\psi V^\psi \equiv \sum_{\psi=0}^7 X_\psi  V^\psi
 \]
-We refer to \textit{slices} of a tensor by using barred index symbols. So, for example if $T \in \mathbb{R}^N_{SA}$ then $T^t_{\psi \bar a}$ refers to the 1-dimensional tensor in $\mathbb{R}_A$ comprising the elements of $T$ with the given $t$ and $\psi$ but ranging over all values of $a$. So, for example,
+When the same symbol is repeated in the same position, this implies universal quantification. For example if $Y\in R_8$ then
 \[
-R_{\bar a} = T^t_{\psi \bar a}
+X_\psi = Y_\psi 
 \]
 is equivalent to
 \[
-\forall\left(0 \le  a < A\right) : R_{a} = T^t_{\psi a}
-\] 
+\forall (0 \le \psi < 8) : X_\psi = Y_\psi 
+\]
+We refer to \textit{slices} of a tensor by using the $*$ symbol in an index position. So, for example if $T \in \mathbb{R}^N_{SA}$ then $T^t_{\psi *}$ refers to the 1-dimensional tensor in $\mathbb{R}_A$ comprising the elements of $T$ with the given $t$ and $\psi$ but ranging over all values of $a$.
 
-A bold $\mathbf{1}$ represents a tensor whose elements are all 1. The shape of this tensor should be unambiguous from the context.
+The symbols $\mathbf{0}$ and $\mathbf{1}$ represent tensors whose elements are all 0 or 1 respectively. Their shape should be unambiguous from the context.
 
 Finally, a tensor $Y\in \mathbb{R}^J$ is considered to be equivalent to a $J$-dimensional column vector, a tensor  $X\in \mathbb{R}_I$ equivalent to an $I$-dimensional row vector and a tensor $M \in \mathbb{R}^J_I$ equivalent to a matrix with  $I$ rows and $J$ columns, so we use normal matrix notation for these tensors when that is more convenient.
 
@@ -196,11 +197,11 @@ Given a set of observations, $\Omega$, we'd like to sample from the posterior ov
 \[
 P\left(T \middle| \Omega\right) \propto P(T)P\left(\Omega \middle| T\right)
 \]
-The prior over the trajectory can be composed from terms involving the agent timestep function, $\pi(\psi,\Psi^t,a)$, which gives the probability that a single agent will perform action $a$ given that it starts in state $\psi$ and is surrounded by agents $\Psi^t$. First consider all agents in state $\psi$ at the beginning of timestep $t$. Let $R\in\mathbb{R}_A$ be a vector whose elements $R_a$ are the number of these agents that perform act $a$ in timestep $t$. $R$ is just a multinomial distribution
+The prior over the trajectory can be composed from terms involving the agent timestep function, $\pi(\psi,\Psi,a)$, which gives the probability that a single agent will perform action $a$ given that it starts in state $\psi$ and is surrounded by agents $\Psi$. First consider all the agents that are in state $\psi$ at the beginning of timestep $t$. Let $R\in\mathbb{R}_A$ be a vector whose elements $R_a$ are the number of these agents that perform act $a$ in timestep $t$. The probability distribution of $R$ is just a multinomial distribution
 \begin{equation}
-P\left(R \mid \Psi^t, \psi\right) = 
+P\left(R \mid \Psi, \psi\right) = 
 \begin{cases}
-\Psi^t_\psi!\prod_a \frac{\pi(\psi,\Psi^t,a)^{R_ a}}{R_a!} & \text{ if } R_a\mathbf{1}^a = \Psi^t_\psi \\
+\Psi_\psi!\prod_a \frac{\pi(\psi,\Psi,a)^{R_ a}}{R_a!} & \text{ if } R_a\mathbf{1}^a = \Psi_\psi \\
 0 & \text{otherwise}
 \end{cases}
 \end{equation}
@@ -208,9 +209,9 @@ If we now let $P(\Psi^0)$ be the prior probability over the number of agents in 
 \begin{equation}
 P(T) =
 \begin{cases}
-P(\Psi^0_{\bar\psi} = T^0_{\bar\psi c}\mathbf{1}^c)
+P(\Psi^0 = T^0_{* c}\mathbf{1}^c)
 \prod_{t, \psi}\left(T^t_{\psi b} \mathbf{1}^b \right)!
-\prod_a \frac{\pi(\psi, T^{t}_{\bar\phi d}\mathbf{1}^d,a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA}(F) \\
+\prod_a \frac{\pi(\psi, T^{t}_{* d}\mathbf{1}^d,a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA}(F) \\
 0 & \text{otherwise}\\
 \end{cases}
 \end{equation}
@@ -225,10 +226,10 @@ The posterior can now be written as
 P(T|\Omega) \propto 
 \begin{cases}
 \prod_{(\omega,v) \in \Omega,t, \psi, a}
-P(\Psi^0_{\bar\psi} = T^0_{\bar\psi c}\mathbf{1}^c)
+P(\Psi^0 = T^0_{* c}\mathbf{1}^c)
 P\left(\omega(T)=v\right)
 \left(T^t_{\psi b} \mathbf{1}^b \right)!
-\frac{\pi(\psi, T^{t}_{\bar\phi d}\mathbf{1}^d,a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & 
+\frac{\pi(\psi, T^{t}_{* d}\mathbf{1}^d,a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & 
  \text{if } T \in \mathcal{T}^N_{SA}(F) \\
 0 & \text{otherwise}\\
 \end{cases}
@@ -249,9 +250,9 @@ From equation \eqref{posterior}
 \begin{aligned}
 \supp (P( T |\Omega)) = 
 & \bigcap_{(\omega,v) \in \Omega,t, \psi, a} \mathcal{T}^N_{SA} \cap \\ 
-&\supp(P(\Psi^0_{\bar\psi} = T^0_{\bar\psi c}\mathbf{1}^c)) \cap \\
+&\supp(P(\Psi^0 = T^0_{* c}\mathbf{1}^c)) \cap \\
 & \supp\left(P\left(\omega(T)=v\right)\right) \cap \\
-&\left( \supp\left(\pi(\psi,T^t_{\bar\phi b}\mathbf{1}^b,a)\right) \cup \left\{T:T^t_{\psi a} = 0\right\} \right)
+&\left( \supp\left(\pi(\psi,T^t_{* b}\mathbf{1}^b,a)\right) \cup \left\{T:T^t_{\psi a} = 0\right\} \right)
 \end{aligned}
 \label{support}
 \end{equation}
@@ -264,7 +265,7 @@ i.e. in order for $T$ to have non-zero posterior probability, it must be a traje
 
 Let a $\mathbb{Z}$-polyhedron be a set of tensors whose elements satisfy a set of linear constraints and belong to the set of integers: 
 \[
-\mathcal{P^N_{SA}} = \left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : L^{\bar i} \le  C^{\psi a\bar i}_t T^t_{\psi a} \le U^{\bar i} \right\}
+\mathcal{P^N_{SA}} = \left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : L^{i} \le  C^{\psi ai}_t T^t_{\psi a} \le U^{i} \right\}
 \]
 $C \in \mathbb{Z}^{SAI}_{N}$, $L \in \mathbb{Z}^I$ and $U \in \mathbb{Z}^I$ for some $I$. This is similar to the $\mathbb{Z}$-polyhedron described in \cite{quinton1996manipulating}).
 
@@ -275,10 +276,10 @@ So, if we let $\mathcal{P}^N_{SA}(f)$ be a $\mathbb{Z}$-polyhedron that over-app
 \begin{aligned}
 \supp(P( T |\Omega)) \subseteq 
 & \bigcap_{(\omega,v) \in \Omega,t,\psi, a} \mathcal{T}^N_{SA} \cap \\
-& \mathcal{P}^N_{SA}(P(\Psi^0_{\bar\psi} = T^0_{\bar\psi c}\mathbf{1}^c)) \cap\\
+& \mathcal{P}^N_{SA}(P(\Psi^0 = T^0_{* c}\mathbf{1}^c)) \cap\\
 &    \mathcal{P}^N_{SA}\left(P\left(\omega(T)=v\right)\right) \cap \\
 & 
-\left(\mathcal{P}^N_{SA}\left(\pi(\psi,T^t_{\bar\phi b}\mathbf{1}^b,a)\right)
+\left(\mathcal{P}^N_{SA}\left(\pi(\psi,T^t_{* b}\mathbf{1}^b,a)\right)
 \cup
 \left\{T: T^t_{\psi a} = 0\right\}\right)
 \\
@@ -288,23 +289,23 @@ So, if we let $\mathcal{P}^N_{SA}(f)$ be a $\mathbb{Z}$-polyhedron that over-app
 
 The intersection of two $\mathcal{Z}$-polyhedra is easy to construct by just concatenating the constraints
 \begin{multline}
-\left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : L \le C^{\psi a \bar i}_{t} T^t_{\psi a} \le U \right\}
-\cap \left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : L' \le D^{\psi a \bar i}_{t} T^t_{\psi a} \le U' \right\} \\
-= \left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : {L \choose L'}  \le  {C^{\psi a\bar i}_t \choose D^{\psi a\bar j}_t} T^t_{\psi a} \le {U \choose U'} \right\}
+\left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : L \le C^{\psi a*}_{t} T^t_{\psi a} \le U \right\}
+\cap \left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : L' \le D^{\psi a *}_{t} T^t_{\psi a} \le U' \right\} \\
+= \left\{ T\in\mathbb{\mathbb{Z}}^N_{SA} : {L \choose L'}  \le  {C^{\psi a*}_t \choose D^{\psi a*}_t} T^t_{\psi a} \le {U \choose U'} \right\}
 \end{multline}
 so the only difficulty is the union in the final term of \eqref{polyhedralSupport}. To transform this into an intersection we introduce an auxiliary variable $I^t_{\psi a}$ and use the identity
 \begin{multline}
-\left\{ T\in\mathbb{Z}^N_{SA} : L \le C^{\phi b\bar i}_{s} T^s_{\phi b} \le U \right\}
+\left\{ T\in\mathbb{Z}^N_{SA} : L \le C^{\phi b*}_{s} T^s_{\phi b} \le U \right\}
 \cup
 \left\{T: T^t_{\psi a} = 0\right\}
 =\\
 \left\{
 T\in\mathbb{Z}^N_{SA}, I^t_{\psi a}\in\{0,1\}:\right.\\
--\infty \le C^{\phi b \bar i}_{s} T^s_{\phi b}
+-\infty \le C^{\phi b *}_{s} T^s_{\phi b}
 +
 (\overline{B}-U)I^{t}_{\psi a}
 \le \overline{B},\\
-\underline{B} \le C^{\phi b \bar i}_{s} T^s_{\phi b}
+\underline{B} \le C^{\phi b *}_{s} T^s_{\phi b}
 +
 (\underline{B}-L)I^{t}_{\psi a} \le \infty,\\
 0 \le uI^t_{\psi a} - T^t_{\psi a},\\
@@ -321,7 +322,7 @@ and the elements of $\underline{B}\in\mathbb{R}^I$ are defined as
 \underline{B}^i = \frac{u\sum_{s,\phi,b} \left(C^{\phi bi}_{s} - \left|C^{\phi bi}_{s}\right|\right)}{2}
 \]
 
-To see why this identity holds, note first that the constraints on $I^t_{\psi a}$ make it into an indicator variable that is 0 if $T^t_{\psi a}=0$ or 1 otherwise. When $I^t_{\psi a}=1$ the first set of constraints is equal to $C^{\phi b\bar i}_{s} T^s_{\phi b} \le U$ and the second is equal to $L \le C^{\phi b\bar i}_{s} T^s_{\phi b}$ so their intersection is $L \le  C^{\phi b\bar i}_{s} T^s_{\phi b} \le U$ as required, whereas when $I^t_{\psi a}=0$ we have the constraints $\underline{B} \le C^{\phi b\bar i}_{s} T^s_{\phi b} \le \overline{B}$. But $\underline{B}^i$ and $\overline{B}^i$ are lower and upper bounds on the value of $C^{\phi bi}_{s} T^s_{\phi b}$ so this is satisfied for all trajectories, as required.
+To see why this identity holds, note first that the constraints on $I^t_{\psi a}$ make it into an indicator variable that is 0 if $T^t_{\psi a}=0$ or 1 otherwise. When $I^t_{\psi a}=1$ the first set of constraints is equal to $C^{\phi b*}_{s} T^s_{\phi b} \le U$ and the second is equal to $L \le C^{\phi b*}_{s} T^s_{\phi b}$ so their intersection is $L \le  C^{\phi b*}_{s} T^s_{\phi b} \le U$ as required, whereas when $I^t_{\psi a}=0$ we have the constraints $\underline{B} \le C^{\phi b*}_{s} T^s_{\phi b} \le \overline{B}$. But $\underline{B}^i$ and $\overline{B}^i$ are lower and upper bounds on the value of $C^{\phi bi}_{s} T^s_{\phi b}$ so this is satisfied for all trajectories, as required.
 
 There are two things worth noting here. Firstly if we make the Fermionic assumption then $I^t_{\psi a} = T^t_{\psi a}$ and the auxiliary indicator variables become unnecessary. Secondly, we must impose a finite value for $u$, the maximum value that elements of the trajectory can take. In practice, this is not a problem as we can give $u$ a value such that the probability of any trajectory of interest having any element larger than $u$ is small.
 
@@ -333,7 +334,7 @@ As an illustration, consider a two-timestep trajectory of the cat and mouse mode
 
 Working through \eqref{polyhedralSupport} term by term, the $\mathcal{T}^2_{4\,2}$ term is just the continuity constraints in \eqref{continuous}, which are already in linear form so we're done. The second term is the support of the prior. This constrains each agent state at $t=0$ to be at most 1, which can be expressed as
 \[
-\left\{T:T^0_{\bar \psi 0} + T^0_{\bar\psi 1} \le \mathbf{1}_{\bar\psi}\right\}
+\left\{T:T^0_{\psi 0} + T^0_{\psi 1} \le \mathbf{1}_{\psi}\right\}
 \]
 
 The third term is the support of the observation. Since we observe a cat in the left grid-square at time $t=1$ we need to add the constraint
@@ -343,16 +344,16 @@ T^1_{0 0} + T^1_{0 1} = 1
 The final term is the constraint due to agent interactions. The impossible interactions are a mouse staying put when there is a cat on the same gridsquare or moving when there are no cats, which translates to the four cases
 \begin{equation}
 \begin{aligned}
-\supp(\pi(2,T^t_{\bar\phi a}\mathbf{1}^a,0)) &= \left\{ T: -T^t_{0 0} - T^t_{0 1} \le -1 \right\}\\
-\supp(\pi(3,T^t_{\bar\phi a}\mathbf{1}^a,0)) &= \left\{ T: -T^t_{1 0} - T^t_{1 1} \le -1 \right\}\\
-\supp(\pi(2,T^t_{\bar\phi a}\mathbf{1}^a,1)) &= \left\{ T: T^t_{0 0} + T^t_{0 1} \le 0 \right\}\\
-\supp(\pi(3,T^t_{\bar\phi a}\mathbf{1}^a,1)) &= \left\{ T: T^t_{1 0} + T^t_{1 1} \le 0 \right\}
+\supp(\pi(2,T^t_{* a}\mathbf{1}^a,0)) &= \left\{ T: -T^t_{0 0} - T^t_{0 1} \le -1 \right\}\\
+\supp(\pi(3,T^t_{* a}\mathbf{1}^a,0)) &= \left\{ T: -T^t_{1 0} - T^t_{1 1} \le -1 \right\}\\
+\supp(\pi(2,T^t_{* a}\mathbf{1}^a,1)) &= \left\{ T: T^t_{0 0} + T^t_{0 1} \le 0 \right\}\\
+\supp(\pi(3,T^t_{* a}\mathbf{1}^a,1)) &= \left\{ T: T^t_{1 0} + T^t_{1 1} \le 0 \right\}
 \end{aligned}
 \label{actionConstraints}
 \end{equation}
 for all t. If, for simplicity, we make the Fermionic assumption by adding the constraints
 \[
-\forall t,\psi,a: 0 \le T^t_{\psi a} \le 1
+\mathbf{0}^t_{\psi a} \le T^t_{\psi a} \le \mathbf{1}^t_{\psi a}
 \]
 then using the identity in \eqref{implication} to take the union of each constraint in \eqref{actionConstraints} with $\left\{T: T^t_{\psi a} = 0\right\}$ finally gives the four constraints
 \[
@@ -398,19 +399,32 @@ In order to be useable in the Metropolis-Hastings algorithm, the proposal functi
 
 Given a $\mathbb{Z}$-polyhedron, we split the constraints into two sets: equalities (i.e. those whose lower and upper bound have the same value) and inequalities (i.e. those whose lower and upper bounds differ):
 \begin{equation}
-\mathcal{P} = \left\{T \in \mathbb{Z}^N_{SA}: L \le C^{\psi a\bar i}_t T^t_{\psi a} \le U \cap D^{\psi a \bar i}_t T^t_{\psi a} = E \right\}
-\label{bPolySupport}
+\mathcal{P} = \left\{T \in \mathbb{Z}^N_{SA}: L^i \le C^{\psi ai}_t T^t_{\psi a} \le U^i \cap D^{\psi ai}_t T^t_{\psi a} = E^i \right\}
+\label{zPolySupport}
 \end{equation}
-Suppose there are $N_e$ equality constraints (i.e. $E$ is an $N_e$ dimensional vector) and we partition the elements of $T$ into `basic' and `non-basic' elements, so that there are exactly $N_e$ basic elements and $N\times S \times A - N_e$ non-basic elements.
 
-Given such a partition we can define tensors $Q\in\mathbb{R}_{SAN_e}^{N}$ and $R\in\mathbb{R}_{SAJ}^{N}$, where $J=NSA - N_e$, that take `flattened' vectors of basic, $X\in\mathbb{R}^N_e$, and non-basic, $Y\in\mathbb{R}^J$, variables and project them into a trajectory tensor such that
-\[
+Suppose there are $N_e$ equality constraints (i.e. $E$ is an $N_e$ dimensional vector of integers) and we partition the elements of $T$ into `basic' and `non-basic' elements, so that there are exactly $N_e$ basic elements and $N\times S \times A - N_e$ non-basic elements.
+
+A partition of $T$ can be defined as a pair of tensors $Q\in\{0,1\}_{SAN_e}^{N}$ and $R\in\{0,1\}_{SAJ}^{N}$, where $J=NSA - N_e$. $Q$ and $R$ take vectors of basic, $X\in\mathbb{R}^{N_e}$, and non-basic, $Y\in\mathbb{R}^J$, variables and pack them into a trajectory tensor, without changing their values. More formally, $Q$ and $R$ should satisfy
+ \[
+Q_{\psi ai}^{t} \mathbf{1}^i + R_{ \psi  aj}^{t} \mathbf{1}^j =  \mathbf{1}^t_{\psi a}
+ \]
+ \[
+Q_{\psi ai}^{t} \mathbf{1}_t^{\psi a} = \mathbf{1}_i
+ \]
+ \[
+R_{\psi aj}^{t} \mathbf{1}_t^{\psi a} = \mathbf{1}_j
+\]
+Given the partition, we can map from vectors to tensors
+\begin{equation}
 T^{t}_{\psi a} =  Q_{\psi ai}^{t} X^i + R_{ \psi  aj}^{t} Y^j
-\]
+\label{trajXY}
+\end{equation}
 If we now let
-\[
+\begin{equation}
 B_i^k = D^{\psi ak}_{t}Q_{\psi a i}^{t}
-\]
+\label{Bmatrix}
+\end{equation}
 and
 \[
 N_j^k = D^{\psi ak}_{t}R_{\psi aj}^{t}
@@ -421,23 +435,17 @@ B_i^kX^i + N_j^kY^j = E^k
 \label{eqconstraints}
 \end{equation}
 
-Now, since there are $N_e$ basic variables and $N_e$ equality constraints, $B$ is square so if we choose the basic variables in order to ensure that $B$ has an inverse then
+Now, since there are $N_e$ basic variables and $N_e$ equality constraints, $B$ is square so if we choose the basic variables in such a way as to ensure that $B$ has an inverse then
 \begin{equation}
 X^i = (B^{-1})^i_k(E^k + N_j^kY^j)
 \label{basicvars}
 \end{equation}
-So, we define a Markov state to be an assignment to a non-basic variable vector $Y$ and map this to the trajectory using
+inserting this into \eqref{trajXY} gives
 \begin{equation}
 T^t_{\psi a} =  Q_{\psi ai}^{t}(B^{-1})^i_k(E^k + N_j^kY^j) + R_{\psi aj}^{t } Y^j
 \label{markovtotrajectorytensor}
 \end{equation}
-subject to
-\[
-0 \le Y_j \le u
-\]
-where $u$ is the upper limit on the occupancy of agent actions.
-
-Equation \eqref{markovtotrajectorytensor} can be written as
+or equivalently
 \begin{equation}
 T^t_{\psi a} =  K^t_{\psi a} + M^{t}_{\psi aj} Y^j
 \label{markovtotrajectory}
@@ -450,12 +458,17 @@ and
 \[
 M^{t}_{\psi aj} = Q_{\psi ai}^{t} (B^{-1})^i_kN_j^k + R_{\psi aj}^{t}
 \]
+If we also choose the basic variables such that all elements of $B^{-1}$ are integer then we can define the set of Markov states to be
+\[
+\mathcal{M} = \left\{ Y \in \mathbb{Z}^J: \forall i:0 \le Y_i \le u \right\}
+\]
+where $u$ is the upper limit on the occupancy of agent actions, and map each Markov state, $Y$, to a unique integer trajectory using \eqref{markovtotrajectory}.
 
 \subsection{The probability of a Markov state}
 
 Given a Markov state, $Y$, that satisfies $0 \le Y_j \le u$, the associated trajectory given by equation \eqref{markovtotrajectory} is guaranteed to satisfy all the equality constraints. However, there is no guarantee that the basic variables given by eq \eqref{basicvars} will be within their bounds or that the inequality constraints will be satisfied. To deal with this we introduce the concept of \textit{infeasibility} which is a measure of how far a Markov state is from being feasible.
 
-Given the inequality constraints of the $\mathbb{Z}$-distribution (including the upper limits of the basic variables themselves)
+Given the inequality constraints of the $\mathbb{Z}$-distribution (including the upper and lower limits of the trajectory elements themselves)
 \[
 L^i \le C^{\psi ai}_{t} T^t_{\psi a} \le U^i
 \]
@@ -553,105 +566,92 @@ When $Y$ is infeasible $\frac{P_\iota(Y)}{P(Y)} = 1$. When $Y$ is feasible $P_\i
 
 \subsection{Choosing a basis}
 
-TODO: need to start with auxiliary variables for equality constraints...or factorize out columns one at a time starting with (X|Y) as a flattening of T and all variables considered non-basic and the factorized part as the 'proper' basic variables (i.e. same as with aux variables but they're implicit).
+The definition of the Markov chain depends on a partition of the trajectory into basic and non-basic variables such that $B$ in equation \eqref{Bmatrix} has an integer inverse $B^{-1} \in \mathbb{Z}^{N_e}_{N_e}$. In general there exist many possible partitions so it remains to define a method of choosing one. The choice we make affects the way Markov states are mapped to trajectories via equation \eqref{markovtotrajectory} and how infeasibility is calculated via equation \eqref{ineqconstraints}, where the columns of $Q$ can be thought of as basis vectors in a \textit{constraint space} and $Y$ as a coordinate on the grid formed by that basis. The Markov chain can be seen as a random walk around this grid. If we choose a basis that consists of very dense basis vectors then the Markov states adjacent to a feasible trajectory are likely to have high infeasibility and low probability, leading to slow mixing of the chain, so we aim to choose a basis that has sparse basis vectors in the constraint space. This has the additional advantage that when we transition between adjacent Markov states, the probability distribution over transitions changes in only a few dimensions. This means we can use a binary tree to efficiently update and draw from the probability distribution over transitions\cite{TangMutableCategorical}.
 
-The definition of the Markov chain depends on a partition of the trajectory into basic and non-basic elements. We now describe how such a partition is chosen. 
-
+Starting with a $\mathbb{Z}$-polyhedron expressed in the form
+\[
+\mathcal{P} = \left\{T \in \mathbb{Z}^N_{SA}: L^i \le C^{\psi ai}_t T^t_{\psi a} \le U^i \cap D^{\psi ai}_t T^t_{\psi a} = E^i \right\}
+\]
+suppose we begin with no basic variables so that $R$ is an arbitrary ordering of the elements of a trajectory
+\[
+T^t_{\psi a} = R^t_{\psi a j}Y^j
+\]
 If we let
 \[
-F^j_i = C^{\psi a j}_tQ^t_{\psi a i}
+W^*_j = {D^{\psi a*}_t R^t_{\psi aj} \choose C^{\psi a*}_t R^t_{\psi aj}}
 \]
 and
 \[
-G^j_i = C^{\psi aj}_tR^t{\psi a i}
-\]
-then we can combine the equality constraints \eqref{eqconstraints} and inequality constraints \eqref{ineqconstraints}
-\[
-{0 \choose L} \le
-\begin{pmatrix}
-B & N\\
-F & G
-\end{pmatrix}
-{X \choose Y} + {-E \choose J} \le {0 \choose U}
+F = {E \choose \mathbf{0}}
 \]
 then
-\[
-{0 \choose L} \le
-\begin{pmatrix}
-I & B^{-1}N\\
-F & G
-\end{pmatrix}
-{X \choose Y} + {-B^{-1}E \choose J} \le {0 \choose U}
-\]
-and
-\[
-{0 \choose L} \le
-\begin{pmatrix}
-I & B^{-1}N\\
-0 & G-FB^{-1}N
-\end{pmatrix}
-{X \choose Y} + {-B^{-1}E \choose J + FB^{-1}E} \le {0 \choose U}
-\]
-
-
-where $I$ is the identity matrix.
-
-If we let $S_{ij}$ be the permutation matrix such that
-\[
-{X'\choose Y'} = S_{ij}{X\choose Y}
-\]
-has the effect of swapping the $i^{th}$ element of $X$ with the $j^{th}$ element of $Y$ then we have
-\[
-\begin{pmatrix}
-I & N\\
-CQ & CR
-\end{pmatrix}
-S^{-1}_{ij}{X' \choose Y'} = b
-\]
-(note that $S^{-1}_{ij} = S_{ij}$).
-
-If we now pre-multiply this with the matrix 
-\[
-B_{ij}^{-1} =  
-\begin{pmatrix}
-1 &  & -\frac{N_{0j}}{N_{ij}} & & \\
-& \ddots & \vdots & &\\
-& & \frac{1}{N_{ij}} & &\\
-& & \vdots & \ddots &\\
-& & -\frac{N_{nj}}{N_{ij}} & &1\\
-\end{pmatrix}
-\]
-it can be shown \cite{maros2002computational} that
 \begin{equation}
-B_{ij}^{-1}(I|N)S^{-1}_{ij} = (B_{ij}^{-1}|B_{ij}^{-1}N)S^{-1}_{ij} = (I|N')
-\label{Ntransform}
-\end{equation}
-and so
-\begin{equation}
-B_{ij}^{-1}(I|N)S^{-1}_{ij}{X'_B \choose X'_N} = B_{ij}^{-1}b  = (I|N'){X'_B \choose X'_N} = b'
-\end{equation}
-Now, if we choose an $i$ and $j$ such that $N_{ij} = \pm 1$, then all elements of $B^{-1}_{ij}$ are integer and so all elements of $N'$ are also integer, as are the elements of $b'$. This ensures that if $X_N\in\mathbb{Z}^J$ then $X_B\in\mathbb{Z}^I$ and $X\in\mathbb{Z}^K$ as required.
-
-So if we let
-\[
-Q' = QS^{-1}_{ij}
-\]
-we can express the original $\mathbb{Z}$-polyhedron in the equivalent form
-\begin{equation}
-\mathcal{P} = \left\{X\in\mathbb{Z}^K: X = Q'{X'_B\choose X'_N}, X'_B = b'-N'X'_N, S_{ij}L \le {X'_B \choose X'_N} \le S_{ij}U, X'_B \in \mathbb{Z}^I, X'_N \in \mathbb{Z}^J \right\}
+\mathcal{P} = \left\{T \in \mathbb{Z}^N_{SA}: {\mathbf{0} \choose L} \le W Y - F \le {\mathbf{0} \choose U} \right\}
+\label{jointconstraints}
 \end{equation}
 
-It is easy to see that this transformation defines an equivalence set so that, given a reference representation of a $\mathbb{Z}$-polyhedron, $\mathbb{Z}(Q,N,b,L,U)$, we can define the set of all equivalent ``pivot states'' $\mathcal{S}(Q,N,b,L,U)$.
+We use a greedy algorithm to eliminate variables from $Y$ and equality constraints from $W$ one at a time until $N_e$ variables and all equality constraints have been eliminated. The remaining variables in $Y$ will make up the non-basic variables and the remaining constraints will define a basis in the constraint space.
 
+Given a set of constraints in the form \eqref{jointconstraints}, if we choose an element $W^i_j$ to be a \textit{pivot point} such that $W^i_j = \pm1$ and $i < N_e$, we can eliminate variable $Y^j$ and the equality constraint $W^*_i$ by performing Gaussian elimination on the $j^{th}$ column of $W$ and removing row $i$ and column $j$ from $W$, so that
+\[
+{\mathbf{0} \choose L} \le GWH\hat{Y} - GF \le {\mathbf{0} \choose U}
+\]
+where $G\in \mathbb{Z}^{N_e-1}_{N_e}$
+\[
+G =  
+\begin{pmatrix}
+1 &  & &-\frac{W^0_j}{W^i_j} & & &\\
+& \ddots & &\vdots & & &\\
+& & 1 & -\frac{W^{i-1}_j}{W^i_j} & & &\\
+& &  & -\frac{W^{i+1}_j}{W^i_j} & 1 & &\\
+& & & \vdots & & \ddots &\\
+& & & -\frac{W^n_j}{W^i_j} & & &1\\
+\end{pmatrix}
+\]
+$\hat{Y}$ is $Y$ with the $j^{th}$ element removed and $H$ is the identity matrix with the $j^{th}$ column removed. Letting $\hat{W} = GWH$ and $\hat{F} = GF$ recovers the canonical form
+\[
+{\mathbf{0} \choose L} \le \hat{W}\hat{Y} - \hat{F} \le {\mathbf{0} \choose U}
+\]
 
-\subsection{An efficient proposal algorithm}
+Since $W^i_j = \pm1$, $B^{-1}$ exists and is integer, so $\hat{Y}$ maps to a unique integer trajectory, as required.
 
-We next provide an efficient algorithm to choose a proposal with the correct probability from the set of transitions given the current Markov state.
+Note that $WG$ differs from $G$ in $(\left|G^*_j\right|_0-1)(\left|G^i_*\right|_0-1)$ elements, where $\left|\cdot\right|_0$ is the number of non-zero elements in a tensor. So, this gives an upper bound on the increase in L0-norm, $\left|WG\right|_0 - \left|G\right|_0$ and so gives a measure of how much sparsity may be lost by pivoting on $W^i_j$.  It has been found that choosing $W^i_j$ to be the element that minimises this measure (known as the Markowitz criterion) is a computationally efficient way of maintaining the sparsity of a matrix while performing Gaussian eliminatination\cite{markowitz1957elimination}\cite{maros2002computational}\cite{suhl1990computing}. So, in order to find a sparse basis we choose the element that minimises $(\left|G^*_j\right|_0-1)(\left|G^i_*\right|_0-1)$, perform the elimination and repeat until no more equality constraints remain, $N_e=0$.
 
-TODO: Finish this
+\section{Spatial predator-prey demonstration}
 
+We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey'' agents. At each timestep a prey either moves to an adjacent grid-square (i.e. up, down, left or right with equal probability), dies or gives birth to another prey on the an adjacent grid-square. Predators also either move to an adjacent grid-square, die or give birth. However, predators only give birth if there is at least one prey on an adjacent grid-square. In addition, if a prey has any predators on adjacent grid-squares there is a chance it may be eaten. The probability of each behaviour is shown in table \ref{rates}.
 
-\section{Results}
+\begin{table}
+	\begin{center}
+		\begin{tabular}{llllc}
+		\hline
+		Aget type & Adjacent agents & Behaviour & Probability\\
+		\hline
+		Prey & No predators & die &        0.100\\
+			& & give birth &        0.156\\
+			& & move &        0.744\\
+			& &&\\
+		Prey & Predators > 0 & die &        0.100\\
+			& & give birth &        0.156\\
+			& & eaten &        0.300\\
+			& & move &        0.444\\
+			& &&\\
+		Predator  & No prey & die  &      0.100\\
+			& & move &        0.900\\
+			& &&\\
+		Predator  & Prey > 0 & die  &      0.100\\
+			& & give birth &        0.300\\
+			& & movement &        0.600\\
+		\hline& 
+		\end{tabular}
+	\end{center}
+	\caption{The probabilities of each behaviour in the predator-prey model}
+	\label{rates}
+\end{table}
+
+A forward simulation of the ABM was performed in order to create simulated observation data. The initial state of the simulation was constructed by looping over all grid-squares and choosing the number of predators in that square from a Poisson distribution with rate parameter $\lambda = 0.05$, similarly with the number of prey. The model was then simulated forward for 16 timesteps. At each timestep, for each grid-square, with 0.02 probability, the number of prey was observed. If an observation was made, each prey in that grid-square was counted with a 0.9 probability. The same procedure was then repeated for predators.
+
+Four separate Markov chains of 1,000,000 samples each were generated from the posterior using the method described above. The start state for each chain was drawn from the prior (i.e. model trajectory without any observations). In order to assess the convergence of the chains we calculated the Gelman Rubin diagnostic \cite{gelman1992inference} as modified in \cite{gelman2013bayesian}. The summary statistics we used were the number of agents within regions of differing sizes at the end of the last timestep of the trajectory, the regions are shown in figure ##.
 
 \section{Further work}
 \subsection{Abstract interpretation using convex polyhedra}
