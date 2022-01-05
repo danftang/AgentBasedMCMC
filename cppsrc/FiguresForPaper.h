@@ -203,8 +203,58 @@ public:
         std::cout << "Mean execution time per effective sample: " << ineff.sum()*execTimePerSample/ineff.size() << "ms" << std::endl;
         // plot end state
 
-        Plotter().plot(problem.realTrajectory.endState(), stats.meanEndState(),"End state " + std::to_string(GRIDSIZE) + " x " + std::to_string(nTimesteps));
+        Plotter endStatePlotter;
+        endStatePlotter.plot(problem.realTrajectory.endState(), stats.meanEndState(),"End state " + std::to_string(GRIDSIZE) + " x " + std::to_string(nTimesteps));
+//        while(acPlotter.is_open() || endStatePlotter.is_open());
     }
+
+//    template<int GRIDSIZE>
+//    static void plotStatsToFile(int nTimesteps) {
+//        std::string statFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".stat";
+//        std::ifstream statFile(statFilename);
+//        if(!statFile.good()) throw("Can't open stats probFile. Maybe you haven't run the analysis for this geometry yet.");
+//        boost::archive::binary_iarchive statArchive(statFile);
+//        MultiChainStats stats;
+//        statArchive >> stats;
+//
+//        std::string probFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".prob";
+//        std::ifstream probFile(probFilename);
+//        if(!probFile.good()) throw("Can't open problem probFile for this geometry. Odd because the stats probFile exists!");
+//        boost::archive::binary_iarchive probArchive(probFile);
+//        PredPreyProblem<GRIDSIZE> problem;
+//        probArchive >> problem;
+//
+//        // plot autocorrelations
+//        Plotter acPlotter;
+//        std::valarray<std::valarray<double>> autocorrelation = stats.autocorrelation();
+//        int nDimensions = autocorrelation[0].size();
+//        double xStride = stats.front().varioStride;
+//        acPlotter << "set title 'Autocorrelations " << GRIDSIZE << " x " << nTimesteps << "'\n";
+//        acPlotter << "plot ";
+//        for(int d=1; d<=nDimensions; ++d) acPlotter << "'-' using (" << xStride <<  "*$0):" << d << " with lines title 'synopsis " << d << "', ";
+//        acPlotter << "0 with lines notitle\n";
+//        for(int d=1; d<=nDimensions; ++d) acPlotter.send1d(autocorrelation);
+//
+//        // Print MCMC stats
+//        std::cout << stats;
+//
+//        // Print scale reduction and effective samples
+//        std::valarray<double> neff = stats.effectiveSamples();
+//        std::valarray<double> ineff = (stats.nSamples()*1.0)/neff;
+//        double execTimePerSample = stats.execTimeMilliSeconds * 2.0 / (stats.front().feasibleStats.nSamples*stats.size());
+//        std::cout << "Summary statistics for " << GRIDSIZE << " x " << nTimesteps << std::endl;
+//        std::cout << "Potential scale reduction: " << stats.potentialScaleReduction() << std::endl;
+//        std::cout << "Actual number of samples per chain: " << stats.nSamples() << std::endl;
+//        std::cout << "Effective number of samples: " << neff << std::endl;
+//        std::cout << "Sample inefficiency factor: " << ineff << std::endl << std::endl;
+//        std::cout << "Execution time per sample: " << execTimePerSample << "ms" << std::endl;
+//        std::cout << "Mean execution time per effective sample: " << ineff.sum()*execTimePerSample/ineff.size() << "ms" << std::endl;
+//        // plot end state
+//
+//        Plotter().plot(problem.realTrajectory.endState(), stats.meanEndState(),"End state " + std::to_string(GRIDSIZE) + " x " + std::to_string(nTimesteps));
+//    }
+
+
 
     template<int GRIDSIZE>
     static std::valarray<double> synopsis(const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory) {

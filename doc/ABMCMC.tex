@@ -269,7 +269,9 @@ Let a $\mathbb{Z}$-polyhedron be a set of tensors whose elements satisfy a set o
 \]
 $C \in \mathbb{Z}^{SAI}_{N}$, $L \in \mathbb{Z}^I$ and $U \in \mathbb{Z}^I$ for some $I$. This is similar to the $\mathbb{Z}$-polyhedron described in \cite{quinton1996manipulating}).
 
-From equation \ref{SetOfTrajectories} we can see immediately that $\mathcal{T}^N_{SA}$ is a  $\mathbb{Z}$-polyhedron. The supports of the prior, $P(\Psi^0)$, the observations, $P(\omega(T)=v)$, and the agent actions, $\pi(\psi,T^t\mathbf{1},a)$, can often be easily expressed as $\mathbb{Z}$-polyhedra. If this is not the case, each of the probability distributions can be expressed as computer programs. Once in this form, abstract interpretation tools\cite{cousot1977abstract} using the domain of convex polyhedra  \cite{cousot1978automatic}\cite{becchi2018efficient}\cite{fukuda2020polyhedral} can be used to construct a convex polyhedron that contains the support (note that it's fine to overestimate the support, i.e. include points that aren't in the support, but not to exclude points that are in the support. Abstract interpretation tools\cite{henry2012pagai}\cite{GN2021} are perfectly suited to this purpose). In addition, if the number of agents is very much smaller than the number of agent states (which is often the case with agent based models) then we may be willing to make the assumption that at any timestep there is at most one agent performing a given action from a given start state (i.e. $\forall \psi, a, t: T^{\psi a}_t \in \{0,1\}$). Under this assumption, which we'll call the \textit{Fermionic assumption} , the set of trajectories is a subset of the corners of the unit hypercube. Any such subset is a $\mathbb{Z}$-polyhedron.
+From equation \ref{SetOfTrajectories} we can see immediately that $\mathcal{T}^N_{SA}$ is a  $\mathbb{Z}$-polyhedron. The supports of the prior, $P(\Psi^0)$, the observations, $P(\omega(T)=v)$, and the agent actions, $\pi(\psi,T^t\mathbf{1},a)$, can often be easily expressed as $\mathbb{Z}$-polyhedra. However, if this is not the case, each of the probability distributions can be expressed as computer programs. Once in this form, it is possible to use a technique known as \textit{abstract interpretation}\cite{cousot1977abstract} using the domain of convex polyhedra\cite{cousot1978automatic}\cite{becchi2018efficient}\cite{fukuda2020polyhedral} to efficiently calculate a convex polyhedron that contains the support (note that it's fine to overestimate the support, i.e. include points that aren't in the support, but not to exclude points that are in the support). Tools to perform abstract interpretation already exist\cite{henry2012pagai}\cite{GN2021} and are used widely in applications such as the verification of safety critical systems\cite{blanchet2003static}. In practice, the generated polyhedra are often reasonably tight approximations of the true support. Calls to a random number generator in the program can be dealt with in the abstract domain by generating a new variable, $r$, that satisfies $0 \le r < 1$ for each call to \texttt{Random()}. These can either be left in as ``auxiliary'' variables in the same way as slack variables, or removed as soon as the variable goes out of scope by finding the convex hull of the projection into a lower dimensional space (by, for example, using the double description method\cite{motzkin1953double}).
+
+If the number of agents is very much smaller than the number of agent states (which is often the case with agent based models) then we may be willing to make the assumption that at any timestep there is at most one agent performing a given action from a given start state (i.e. $\forall \psi, a, t: T^{\psi a}_t \in \{0,1\}$). Under this assumption, which we'll call the \textit{Fermionic assumption}, the set of trajectories is a subset of the corners of the unit hypercube, so the union of any set with the Fermionic trajectories can be expressed as a $\mathbb{Z}$-polyhedron without introducing any approximation.
 
 So, if we let $\mathcal{P}^N_{SA}(f)$ be a $\mathbb{Z}$-polyhedron that over-approximates $\supp(f)$ on the integer points then from equation \eqref{support}
 \begin{equation}
@@ -619,7 +621,7 @@ Note that $WG$ differs from $G$ in $(\left|G^*_j\right|_0-1)(\left|G^i_*\right|_
 
 \section{Spatial predator-prey demonstration}
 
-We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey'' agents. At each timestep a prey either moves to an adjacent grid-square (i.e. up, down, left or right with equal probability), dies or gives birth to another prey on the an adjacent grid-square. Predators also either move to an adjacent grid-square, die or give birth. However, predators only give birth if there is at least one prey on an adjacent grid-square. In addition, if a prey has any predators on adjacent grid-squares there is a chance it may be eaten. The probability of each behaviour is shown in table \ref{rates}.
+We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey'' agents. At each timestep a prey agent either moves to an adjacent grid-square (i.e. up, down, left or right with equal probability), dies or gives birth to another prey agent on the an adjacent grid-square. Predators also either move to an adjacent grid-square, die or give birth. However, predators only give birth when there is at least one prey on an adjacent grid-square. In addition, if a prey has any predators on adjacent grid-squares there is a chance it may be eaten. The probability of each behaviour is shown in table \ref{rates}.
 
 \begin{table}
 	\begin{center}
@@ -633,7 +635,7 @@ We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey''
 			& &&\\
 		Prey & Predators > 0 & die &        0.100\\
 			& & give birth &        0.156\\
-			& & eaten &        0.300\\
+			& & be eaten &        0.300\\
 			& & move &        0.444\\
 			& &&\\
 		Predator  & No prey & die  &      0.100\\
@@ -641,7 +643,7 @@ We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey''
 			& &&\\
 		Predator  & Prey > 0 & die  &      0.100\\
 			& & give birth &        0.300\\
-			& & movement &        0.600\\
+			& & move &        0.600\\
 		\hline& 
 		\end{tabular}
 	\end{center}
@@ -649,66 +651,57 @@ We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey''
 	\label{rates}
 \end{table}
 
-A forward simulation of the ABM was performed in order to create simulated observation data. The initial state of the simulation was constructed by looping over all grid-squares and choosing the number of predators in that square from a Poisson distribution with rate parameter $\lambda = 0.05$, similarly with the number of prey. The model was then simulated forward for 16 timesteps. At each timestep, for each grid-square, with 0.02 probability, the number of prey was observed. If an observation was made, each prey in that grid-square was counted with a 0.9 probability. The same procedure was then repeated for predators.
+Simulated observation data was generated by profroming a forward simulation of the model. The number of predators and prey in each gridsquare at the start of the simulation was drawn from a Poisson distribution with rate parameter $\lambda = 0.05$. The model was then simulated forward for 16 timesteps. At each timestep, each gridsquare was observed with a probability of 0.02. If an observation was made, the number of predators in the gridsquare was observed. In order to simulate observational noise, each predator was observed with probability 0.9 (i.e. the number observed was drawn from a Binomial distribution). The same procedure was then repeated for prey.
 
-Four separate Markov chains of 1,000,000 samples each were generated from the posterior using the method described above. The start state for each chain was drawn from the prior (i.e. model trajectory without any observations). In order to assess the convergence of the chains we calculated the Gelman Rubin diagnostic \cite{gelman1992inference} as modified in \cite{gelman2013bayesian}. The summary statistics we used were the number of agents within regions of differing sizes at the end of the last timestep of the trajectory, the regions are shown in figure ##.
+Four separate Markov chains of 1,000,000 samples each were generated from the posterior using the method described above. The start state for each chain was drawn from the prior (i.e. model trajectory without any observations).  The first xxx samples of each chain were discarded and the remaining samples were split into first and last halves to give 8 sample sequences in total.
+
+In order to assess the convergence of the chains, a set of summary statistics were calculated for each sample of each chain.  the summary statistics consisted of the total number of agents within the regions shown in figure \ref{figRegions} after the last timestep of the trajectory, this arrangement of regions was chosen in order to capture the convergence at different spatial scales. From the summary statistics, we calculated the the Gelman-Rubin diagnostic \cite{gelman1992inference} as modified in \cite{gelman2013bayesian} defined as
+\[
+\hat{R} = \sqrt{\frac{\widehat{\text{var}}^+(x|y)}{W}}
+\]
+and an approximation to the autocorrelation defined as
+\[
+\hat{\rho}(t) = 1 - \frac{V(t)}{2\widehat{\text{var}}^+(x|y)}
+\]
+where
+\[
+V(t) = \frac{1}{n-t} \sum_{i=0}^{n-t-1} (x_i - x_{i+t})^2
+\]
+and $x_i$ is the $i^{th}$ value of each sequence.
+
+Figure \ref{figAutocorrelation} shows $\hat{\rho}(t)$ for each scalar in the summary statistics. Figure \ref{figEndState} shows the mean number of agents at the end of the simulation, averaged over all samples.
+
+\begin{figure}
+	\centering
+	\resizebox{0.5\textwidth}{!}{
+		\includegraphics[scale=0.5]{figs/gridRegionsSm.png}
+	}
+	\caption{Summary statistics consist of the total number of agents in each of the four shaded regions.}
+	\label{figRegions}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\resizebox{0.8\textwidth}{!}{
+		\includegraphics{figs/autocorrelation.png}
+	}
+	\caption{Mean autocorrelation for each scalar of the summary statistics, averaged over all chains.}
+	\label{figAutocorrelation}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\resizebox{0.8\textwidth}{!}{
+		\includegraphics{figs/endState.png}
+	}
+	\caption{Mean number of agents in each gridsquare after the last timestep, averaged over all samples. Blue represents predator, red represents prey. The dots represent the final positions of agents in the simulation from which the observations were generated. The background colour of each square has red/blue intensity proportional to the log of the mean number of prey/predators in that square, respectively.}
+	\label{figEndState}
+\end{figure}
+
 
 \section{Further work}
-\subsection{Abstract interpretation using convex polyhedra}
-
-In many cases a $\mathcal{B}$-polyhedron of the set of Fermionic trajectories in the support of the prior, observations and timestep of an agent can easily be constructed by hand in the form of a set of linear inequalities. In some cases, however, it may be less obvious how to construct this. In this case the linear inequalities can be constructed automatically from a computer program that calculates the function whose support we're trying to find.
-
-
-
-
-
-The first two terms in equation \eqref{support} consists of the supports of computer programs whose inputs are ABM trajectories and whose outputs are given, i.e. the set of trajectories that, when passed to a computer program, would produce a given output.
-
-Calculating the support of a computer program for a given output is, in full generality, NP-complete\footnote{Consider, for example, a program that accepts an assignment of variables to truth values, and returns true if that assignment satisfies a Boolean formula. Deciding whether the support of this program, given that it returns true, is empty or not is equivalent to solving the Boolean satisfiability problem, which is known to be NP-complete\cite{cook1971complexity}} but it is possible to use a technique known as \textit{abstract interpretation}\cite{cousot1977abstract} to efficiently calculate a superset of the support. So, given a computer program $\rho$, we can calculate a set $\mathcal{P}(\rho, v)$ such that
-\[
-\supp(P(\rho(.)=y)) \subset \mathcal{P}(\rho, v)
-\]
-Tools to perform abstract interpretation already exist (e.g. PAGAI\cite{henry2012pagai}) and are used widely in applications such as the verification of safety critical systems\cite{blanchet2003static} and in practice $\mathcal{P}(\rho, v)$ is often reasonably tight (i.e. most members of $\mathcal{P}(\rho, v)$ are in $\supp(P(\rho(.)=y))$). For our application we choose to express $\mathcal{P}(\rho, v)$ in terms of a set of linear inequalities on $\rho$'s inputs, this corresponds to the abstract domain of convex polyhedra\cite{cousot1978automatic}\cite{becchi2018efficient}. Calls to the random number generator can be dealt with in the abstract domain by generating a new variable, $r$, that satisfies $0 \le r < 1$ for each call to \texttt{Random()}. These can either be left in as ``auxiliary'' variables in the same way as slack variables, or removed as soon as the variable goes out of scope by finding the convex hull of the projection into a lower dimensional space (this can be done using the double description method\cite{motzkin1953double}).
-
-
-Constraining our proposal function to members of the superset in equation \eqref{linearSupport} instead of the true support won't affect the stationary distribution of the Markov Chain. If the proposal function happens to return a trajectory that isn't in $\supp(P(\rho(.)=y))$ then it will just be rejected. This is fine as long as we generate acceptable proposals at a reasonable rate.
 
 \section{Conclusion}
-
-\section{Notes}
-
-Why does convergence scale so badly with number of timesteps? Probably because as the number of non-zero elements per col/row increases, so does the average energy change in a feasible to infeasible transition, so we must increase the temperature to get the same amount of mixing. This results in a lot more time spent in infeasible space. 
-
-\subsection{Fermionic Trajectories}
-
-In the following we will consider only \textit{Fermionic trajectories}, which we define to be any trajectory whose elements are all either 0 or 1. i.e. a Fermionic trajectory must not only satisfy the constraints in \eqref{nonNegativeInt} and \eqref{continuous} but must also satisfy the \textit{Fermionic constraints}
-\begin{equation}
-\mathcal{B}^N_{SA} = \left\{T\in\mathbb{R}^N_{SA} : \forall t,\psi,a: T^t_{\psi a} \in \left\{ 0,1 \right\}\right\}
-\label{fermionic}
-\end{equation}
-This can be interpreted as meaning that no two agents in the same state at the same time can perform the same action. Notice that the Fermionic constraints imply the non-negative integer constraints, so the set of Fermionic trajectories, $\mathcal{F}^N_{SA}$, is the set of tensors that satisfy \eqref{fermionic} and \eqref{continuous}.
-\begin{equation}
-\mathcal{F}^N_{SA}(F) = \mathcal{B}^N_{SA} \cap \mathcal{C}^N_{SA}(F)
-\end{equation}
-
-If we now condition the posterior on $T \in \mathcal{B}^N_{SA}$ then the support of the posterior becomes
-\begin{equation}
-supp(P(T|\Omega, T\in\mathcal{B}^N_{SA})) = \mathcal{B}^N_{SA} \cap supp(P(T|\Omega))
-\label{fermionicSupport1}
-\end{equation}
-
-In practice, the number of agents in an ABM is usually much smaller than the number of agent states, so it is overwhelmingly likely that a sample from the posterior will be Fermionic, and so intersection with $\mathcal{B}^N_{SA}$ will often have very little effect on the posterior. However, section ** describes how to extend the algorithm to apply to non-Fermionic trajectories when the Fermionic constraints are not acceptable.
-
-\begin{theorem}
-	For any set $\mathcal{X}$ there exists a convex polyhedron $P$ such that
-	\[
-	\mathcal{B}^N_{SA} \cap \mathcal{X} = \mathcal{B}^N_{SA} \cap \mathcal{P}
-	\]
-\end{theorem}
-\begin{proof}
-	Let $\mathcal{Y} = \mathcal{B}^N_{SA} \cap \mathcal{X}$ and let $\mathcal{P}$ be the convex hull of $\mathcal{Y}$. Clearly if a tensor $T\in \mathcal{Y}$ then $T\in \mathcal{B}^N_{SA} \cap \mathcal{P}$. To show the converse, suppose there is a member $T' \in \mathcal{B}^N_{SA} \cap \mathcal{P}$. Since $T'\in \mathcal{P}$ then there must be a convex combination of points in $\mathcal{Y}$ that equals $T'$. Call those points $\mathcal{Z}$. However, since $T' \in \mathcal{B}^N_{SA}$ and $\mathcal{Z}\subset \mathcal{B}^N_{SA}$ and no member of $\mathcal{B}^N_{SA}$ is a convex combination of any other member then $T'$ must be a member of $\mathcal{Z}$ and so $T'\in \mathcal{Y}$. So $\mathcal{B}^N_{SA} \cap \mathcal{X} = \mathcal{B}^N_{SA} \cap \mathcal{P}$. 
-\end{proof}
-
 
 
 %\bibliographystyle{unsrtnat}
