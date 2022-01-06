@@ -25,7 +25,7 @@
 \newtheorem{theorem}{Theorem}
 \DeclareMathOperator\supp{supp}
 
-\title{Sampling from the Bayesian poster of an agent-based model given partial observations}
+\title{Data assimilation with agent-based models: A sampling algorithm}
 
 %\date{September 9, 1985}	% Here you can change the date presented in the paper title
 %\date{} 					% Or removing it
@@ -49,11 +49,11 @@
 \maketitle
 
 \begin{abstract}
-The discipline of data assimilation (DA), sometimes known as data fusion, addresses the problem of how to make use of noisy, imcomplete experimental observations to provide information about unobserved properties of a dynamical system. DA has developed rapidly in some areas of research, notably weather forecasting, but relatively little progress has been made in DA techniques applicable to agent based modelling. Agent Based Models (ABMs) consist of `agents' which often make discrete choices from a number of possible actions, meaning the space of model trajectories is not continuous and we cannot use techniques based on gradient ascent, such as 4D-VAR, that require the gradient of the posterior in this space. In addition, a set of observations will typically refute the vast majority of model trajectories, making it difficult to even identify trajectories that could have given rise to the observations, and so making it challenging to use algorithms that rely on perturbing the current solution such as non-gradient optimisation or most sampling algorithms.
+The discipline of data assimilation, sometimes known as data fusion, addresses the problem of how to make use of noisy, incomplete experimental observations to provide information about unobserved properties of a dynamical system. Data assimilation has developed rapidly in some areas of application, notably weather forecasting, but relatively little progress has been made in performing data assimilation with agent based models.
 
-Here we present an algorithm that generates samples of the time evolution of an agent based model, given a set of noisy, incomplete experimental observations of the system. The algorithm approximates the set of possible trajectories as a linear program and uses an extension of the simplex algorithm to provide a proposal function for Markov-Chain-Monte-Carlo sampling.
+Here we formulate the problem in terms of Bayesian inference and present an algorithm that generates samples of the time evolution of an agent based model over an observed time-period given a set of noisy, incomplete observations of the system. The algorithm approximates the set of possible model trajectories as a linear program and uses a sparse factorization algorithm to provide a proposal function for Markov-Chain-Monte-Carlo sampling.
 
-We demonstrate the algorithm by performing data assimilation in an agent-based, spatial predator-prey model.
+We demonstrate the algorithm by performing data assimilation with an agent-based, spatial predator-prey model.
 \end{abstract}
 
 % keywords can be removed
@@ -61,13 +61,11 @@ We demonstrate the algorithm by performing data assimilation in an agent-based, 
 
 \section{Introduction}
 
-Agent-based modelling (ABM) has become a popular tool for use in modelling the interactions of many discrete, heterogeneous entities, such as humans or animals. In such applications we often have noisy, aggregated and/or incomplete observations of the agents over some period of time and would like to use our ABM to model what happened to the agents during this time period, given our observations. However, this is not straightforward as we don't know the complete start-state of the model, or the exact behavioural decisions the agents would need to make in order to reproduce our observations, so simply running the model forward is not an option. The problem is better framed in terms of probabilistic inference: given the model, our prior beliefs about the start state and our observations, what is the probability distribution over all possible histories over the observed period? This is the problem of Data assimilation (DA) and the subject of this paper. Note that this problem is distinct from the problem of model estimation or parameter optimisation~\cite{thiele_facilitating_2014} which we do not address here.
+Agent-based models (ABMs) have been widely used to model the interactions of many discrete, heterogeneous entities, such as humans or animals. [ABM for predictive modelling] In such applications we often have noisy, aggregated and/or incomplete observations of the agents over some period of time and would like to use our ABM to model what happened to the agents during this time period, given our observations. However, this is not straightforward as we don't know the complete start-state of the model, or the exact behavioural decisions the agents would need to make in order to reproduce our observations, so simply running the model forward is not an option. The problem is better framed in terms of probabilistic inference: given the model, our prior beliefs about the start state (or other boundary conditions) and our observations, what is the probability distribution of some unobserved measure over the observed period? This is the problem of \textit{data assimilation} (DA) and this paper presents a new method that allows such questions to be answered. Note that this problem is distinct from the problem of model estimation or parameter optimisation~\cite{thiele_facilitating_2014} which we do not directly address here.
 
-This paper presents a new method that will allow for \textit{data assimilation} (DA) to be applied to ABMs in order to make inference about the evolution of the agents over an observed time priod. DA has developed rapidly in applications such as weather forecasting~\cite{kalnay_atmospheric_2003} and the earth sciences more broadly~\cite{reichle_data_2008}, but little progress has been made in developing techniques that are applicable when the dynamical system is an agent based model. Many DA methods rely on the differentiability of the posterior distribution~\cite{lewis_dynamic_2006}, but since ABMs consist of `agents' that often make discrete choices from a number of possible actions, the space of model trajectories is not continuous and techniques based on gradient ascent, such as 4D-VAR~\cite{talagrand_assimilation_1997} cannot be used. 
-In addition, the majority of model trajectories will be refuted by the observations, making it challenging to use algorithms that rely on perturbing the current solution such as non-gradient optimisation or most sampling algorithms. Some studies have tried to apply well-known DA methods such as Particle Filters and variants of the Kalman Filter to ABMs in applications such as crime~\cite{lloyd_exploring_2016}, bus routes~\cite{kieu_dealing_2020}, pedestrian dynamics~\cite{wang_data_2015, ward_dynamic_2016, clay_realtime_2020, malleson_simulating_2020} and population movement~\cite{lueck_who_2019}, but these have not scaled well and the lack of DA techniques for ABM remains a serious methodological limitation. Other existing techniques for sampling from discrete probability distributions include discrete hit-and-run~\cite{baumert2009discrete} but because of the extreme sparsity of feasible points in the space of ABM trajectories this is unlikely to be efficient. Universal hashing~\cite{meel2016constrained} provides a promising alternative, but in our experience this doesn't scale to the number of dimensions needed for our application. 
+DA has developed rapidly in applications such as weather forecasting~\cite{kalnay_atmospheric_2003} and the earth sciences more broadly~\cite{reichle_data_2008}, but little progress has been made in applying DA to ABMs. Established DA techniques do not perform well in the context of ABMs. Since ABMs consist of `agents' that often make discrete choices from a number of possible actions, the space of model trajectories is not usually continuous and so techniques that require the gradient of the posterior~\cite{talagrand_assimilation_1997}~\cite{lewis_dynamic_2006} are not directly applicable. Some studies have tried to apply particle filters and variants of the Kalman filter to ABMs in applications such as crime~\cite{lloyd_exploring_2016}, bus routes~\cite{kieu_dealing_2020}, pedestrian dynamics~\cite{wang_data_2015, ward_dynamic_2016, clay_realtime_2020, malleson_simulating_2020} and population movement~\cite{lueck_who_2019}, but these have not scaled well in practice. Sampling algorithms offer an alternative approach, where we take samples of the posterior model trajectory over the observed period then convert these to samples of the unobserved measure of interest. However, sampling is difficult in practice because the posterior has zero probability for the vast majority of model trajectories. Even though we can generate trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the observations refute the trajectory the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling, for example, are not practical. It is for similar reasons that the techniques based on particle filtering fail. As we'll show in the next section, the problem can be reduced to sampling from a high dimensional convex polyhedron. Techniques for sampling from discrete points in a convex polyhedron do exist. For example, discrete hit-and-run~\cite{baumert2009discrete} has had some success, but because of the extreme sparsity of feasible points this is unlikely to be efficient when applied to our case. Universal hashing~\cite{meel2016constrained} provides a promising alternative but we have found that this technique doesn't scale well to the number of dimensions needed for our application. This lack of applicable DA techniques has severely limited the use of ABMs for predictive modelling.
 
-Here we present an algorithm that generates samples of the time evolution of an agent based model given a set of noisy, incomplete experimental observations of the system. The algorithm approximates the set of possible trajectories as a linear program and adapts techniques used in linear programming to provide a proposal function for Metropolis-Hastings sampling. We demonstrate the algorithm by performing data assimilation in an agent-based, spatial predator-prey model.
-
+Here we present an algorithm that generates samples of the time evolution of an agent based model given a set of noisy, incomplete observations of the system. We show how to approximate the set of possible trajectories as a convex polyhedron and how to use this to construct a proposal function for use in the Metropolis-Hastings algorithm. We demonstrate the algorithm by performing data assimilation in an agent-based, spatial predator-prey model.
 
 \section{Formulation of the problem}
 %##########################################
@@ -236,7 +234,7 @@ P\left(\omega(T)=v\right)
 \label{posterior}
 \end{equation}
 
-The problem we're interested in is how to sample from this distribution. In many practical applications, sampling is difficult because the posterior has zero probability for the vast majority of tensors (i.e. most tensors are not trajectories, contain an impossible action or are refuted by the observations). Even though we can generate trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the observations refute the trajectory the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling, for example, are not practical. Techniques based on particle filtering may have more success but, for similar reasons, will likely soon reach a state containing a set of particles, none of which can be fit to the observations.
+The problem we're interested in is how to sample from this distribution. 
 
 In the rest of this paper we'll show how to use the Metropolis-Hastings algorithm to generate samples from equation \eqref{posterior}. The challenge will be to create a proposal function which randomly generates a proposed next sample given the current one. A common strategy with Metropolis-Hastings is to generate a new sample by perturbing one or more elements of the previous sample at random. However, if we do this with a trajectory it's very unlikely that the perturbed tensor will be a trajectory that contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old.
 
@@ -651,26 +649,6 @@ We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey''
 	\label{rates}
 \end{table}
 
-Simulated observation data was generated by profroming a forward simulation of the model. The number of predators and prey in each gridsquare at the start of the simulation was drawn from a Poisson distribution with rate parameter $\lambda = 0.05$. The model was then simulated forward for 16 timesteps. At each timestep, each gridsquare was observed with a probability of 0.02. If an observation was made, the number of predators in the gridsquare was observed. In order to simulate observational noise, each predator was observed with probability 0.9 (i.e. the number observed was drawn from a Binomial distribution). The same procedure was then repeated for prey.
-
-Four separate Markov chains of 1,000,000 samples each were generated from the posterior using the method described above. The start state for each chain was drawn from the prior (i.e. model trajectory without any observations).  The first xxx samples of each chain were discarded and the remaining samples were split into first and last halves to give 8 sample sequences in total.
-
-In order to assess the convergence of the chains, a set of summary statistics were calculated for each sample of each chain.  the summary statistics consisted of the total number of agents within the regions shown in figure \ref{figRegions} after the last timestep of the trajectory, this arrangement of regions was chosen in order to capture the convergence at different spatial scales. From the summary statistics, we calculated the the Gelman-Rubin diagnostic \cite{gelman1992inference} as modified in \cite{gelman2013bayesian} defined as
-\[
-\hat{R} = \sqrt{\frac{\widehat{\text{var}}^+(x|y)}{W}}
-\]
-and an approximation to the autocorrelation defined as
-\[
-\hat{\rho}(t) = 1 - \frac{V(t)}{2\widehat{\text{var}}^+(x|y)}
-\]
-where
-\[
-V(t) = \frac{1}{n-t} \sum_{i=0}^{n-t-1} (x_i - x_{i+t})^2
-\]
-and $x_i$ is the $i^{th}$ value of each sequence.
-
-Figure \ref{figAutocorrelation} shows $\hat{\rho}(t)$ for each scalar in the summary statistics. Figure \ref{figEndState} shows the mean number of agents at the end of the simulation, averaged over all samples.
-
 \begin{figure}
 	\centering
 	\resizebox{0.5\textwidth}{!}{
@@ -699,10 +677,67 @@ Figure \ref{figAutocorrelation} shows $\hat{\rho}(t)$ for each scalar in the sum
 \end{figure}
 
 
-\section{Further work}
+Simulated observation data was generated by profroming a forward simulation of the model. The number of predators and prey in each gridsquare at the start of the simulation was drawn from a Poisson distribution with rate parameter $\lambda = 0.05$. The model was then simulated forward for 16 timesteps. At each timestep, each gridsquare was observed with a probability of 0.02. If an observation was made, the number of predators in the gridsquare was observed. In order to simulate observational noise, each predator was observed with probability 0.9 (i.e. the number observed was drawn from a Binomial distribution). The same procedure was then repeated for prey.
+
+Four separate Markov chains of 1,500,000 samples each were generated from the posterior using the method described above. The start state for each chain was drawn from the prior (i.e. model trajectory without any observations). The first 200,000 samples of each chain were discarded and the remaining samples were split into first and last halves to give 8 sample sequences in total. 
+
+In order to assess the convergence of the chains, a set of summary statistics were calculated for each sample of each chain. The summary statistics consisted of the total number of agents within the shaded regions shown in figure \ref{figRegions} measured after the last timestep of the trajectory. This arrangement of regions was chosen in order to capture the convergence at different spatial scales. From the summary statistics, we calculated the the Gelman-Rubin diagnostic \cite{gelman1992inference}, and approximated the autocorrelation at various time lags. Using the notation $x_{ij}$ to refer to a scalar statistic of the $i^{th}$ sample of the $j^{th}$ sequence, given $m$ sequences of $n$ samples each, let $\bar{x}_j$ be the mean of the $j^{th}$ sequence and $\bar{x}$ be the mean over all sequences
+\[
+\bar{x}_j = \frac{1}{n}\sum_{i=1}^n x_{ij}, \bar{x} = \frac{1}{m}\sum_{j=1}^m \bar{x}_j
+\]
+let $W$ be the within-sequence variance
+\[
+W = \frac{1}{m} \sum_{j=1}^m \frac{1}{n-1} \sum_{i=1}^n (x_{ij} - \bar{x}_j)^2
+\]
+and $B$ be the between-sequence variance
+\[
+B = \frac{n}{m-1}\sum_{j=1}^m (\bar{x}_j - \bar{x})^2
+\]
+Following\cite{gelman2013bayesian}, an overapproximation of the true variance of the statistic can be calculated as
+\[
+\widehat{\text{var}}^+ = \frac{n-1}{n}W + \frac{1}{n}B
+\]
+and the Gelman-Rubin statistic can be defined as
+\[
+\hat{R} = \sqrt{\frac{\widehat{\text{var}}^+}{W}}
+\]
+This gives a measure of the uncertainty in the standard deviation of the statistic due to the fact that we have only taken a finite number of samples. If this number is close to 1, then we have some justification in believing that we have taken enough samples.
+
+Also following\cite{gelman2013bayesian}, we approximated the autocorrelation as
+\[
+\hat{\rho}_t = 1 - \frac{V_t}{2\widehat{\text{var}}^+}
+\]
+where
+\[
+V_t = \frac{1}{n-t} \sum_{i=1}^{n-t} (x_i - x_{i+t})^2
+\]
+
+Figure \ref{figAutocorrelation} shows $\hat{\rho}_t$ as a function of $t$ for each scalar in the summary statistics. A decline of $\hat{\rho}_t$ to zero long before $t$ reaches the total number of samples, shows good convergence of the chain. The rate of this decline can be used to calculate the effective number of samples, defined as
+\[
+\hat{n}_e = \frac{mn}{1 + 2\sum_{t} \hat{\rho}_t}
+\]
+where the sum runs until $\hat{\rho}_t \le 0$. This approximates of the number of samples from a perfect IID sampler that would give the same uncertainty in the mean of the statistic.
+
+Finally, figure \ref{figEndState} shows the mean number of agents at the end of the simulation, averaged over all samples. This is a visual way of showing that the observations have given rise to a posterior that gives some information about the true positions of the agents.
+ 
+
+\section{Limitations and further work}
+
+[column generation for larger internal state]
+
+[automatic linearisation]
+
+[extension to PPL]
+
+[model error]
 
 \section{Conclusion}
 
+We have described and demonstrated an algorithm to sample model trajectories from the posterior distribution of an agent based model given a set of observations. This allows us to use ABMs to perform inference about unobserved variables given a set of observations and to make forecasts given observations up to the present.
+
+As presented, the algorithm is not applicable to agents that have a large amount of internal state (above a few bytes) but we suggest ways that this algorithm can be extended to apply in these cases.
+
+Data assimilation with agent based models is currently in its infancy, and more powerful techniques for performing Bayesian inference with ABM could transform the usefulness and applicability of these models. The 
 
 %\bibliographystyle{unsrtnat}
 %\bibliographystyle{apalike} 
