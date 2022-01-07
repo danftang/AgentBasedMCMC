@@ -38,8 +38,8 @@ int main(int argc, char *argv[]) {
 //    FiguresForPaper::plotStats<8>(8);
 //   FiguresForPaper::plotStats<16>(8);
 //    FiguresForPaper::plotStats<32>(8);
-    FiguresForPaper::plotStats<32>(8);
-//    FiguresForPaper::plotStats<32>(16);
+//    FiguresForPaper::plotStats<32>(8);
+    FiguresForPaper::plotStats<32>(16);
 
 
 //    FiguresForPaper::generateStandardProblemFile();

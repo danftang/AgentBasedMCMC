@@ -49,11 +49,11 @@
 \maketitle
 
 \begin{abstract}
-The discipline of data assimilation, sometimes known as data fusion, addresses the problem of how to make use of noisy, incomplete experimental observations to provide information about unobserved properties of a dynamical system. Data assimilation has developed rapidly in some areas of application, notably weather forecasting, but relatively little progress has been made in performing data assimilation with agent based models.
+Every day, weather forecasting centres around the world receive noisy, incomplete observations of the atmosphere and use this data, along with their atmospheric models, to update their forecasts. This process, known as data assimilation or data fusion, is best expressed as Bayesian inference: given a set of observations, some prior beliefs and a model of the target system, what is the probability distribution of some set of observables? The observables are generally not variables that have been directly observed and may be in the future.
 
-Here we formulate the problem in terms of Bayesian inference and present an algorithm that generates samples of the time evolution of an agent based model over an observed time-period given a set of noisy, incomplete observations of the system. The algorithm approximates the set of possible model trajectories as a linear program and uses a sparse factorization algorithm to provide a proposal function for Markov-Chain-Monte-Carlo sampling.
+While data assimilation has developed rapidly in weather forecasting and other areas, relatively little progress has been made in performing data assimilation with agent based models. This has hampered the use of agent based models to make forecasts of real-world observables.
 
-We demonstrate the algorithm by performing data assimilation with an agent-based, spatial predator-prey model.
+Here we present an algorithm that uses Markov-Chain-Monte-Carlo to generate samples of the states of an agent based model over a window of time given a set of noisy, incomplete observations of the system. We demonstrate the algorithm by performing data assimilation with an agent-based, spatial predator-prey model.
 \end{abstract}
 
 % keywords can be removed
@@ -61,11 +61,13 @@ We demonstrate the algorithm by performing data assimilation with an agent-based
 
 \section{Introduction}
 
-Agent-based models (ABMs) have been widely used to model the interactions of many discrete, heterogeneous entities, such as humans or animals. [ABM for predictive modelling] In such applications we often have noisy, aggregated and/or incomplete observations of the agents over some period of time and would like to use our ABM to model what happened to the agents during this time period, given our observations. However, this is not straightforward as we don't know the complete start-state of the model, or the exact behavioural decisions the agents would need to make in order to reproduce our observations, so simply running the model forward is not an option. The problem is better framed in terms of probabilistic inference: given the model, our prior beliefs about the start state (or other boundary conditions) and our observations, what is the probability distribution of some unobserved measure over the observed period? This is the problem of \textit{data assimilation} (DA) and this paper presents a new method that allows such questions to be answered. Note that this problem is distinct from the problem of model estimation or parameter optimisation~\cite{thiele_facilitating_2014} which we do not directly address here.
+Agent-based models (ABMs) have been widely used to model the interactions of many discrete, heterogeneous entities, such as humans or animals. These models are often used to demonstrate the existence of certain dynamical mechanisms or emergent properties. However, if we wish to use a model to make quantitative forecasts, we're often in a situation where we have noisy, aggregated and/or incomplete observations of the target system over some period of time and would like to use our ABM to infer the value of some unobserved variable given our observations. This is not straightforward as we don't generally know the complete start-state of the model, or the exact behavioural decisions the agents would need to make in order to reproduce our observations, so simply running the model forward is not an option. The problem is better framed in terms of probabilistic inference: given the model, our prior beliefs about the start state (or other boundary conditions) and our observations, what is the probability distribution of some unobserved measure? This is the problem of \textit{data assimilation} (DA) and this paper presents a new method that allows such questions to be answered. Note that this problem is distinct from the problem of model estimation or parameter optimisation~\cite{thiele_facilitating_2014} which we do not directly address here.
 
-DA has developed rapidly in applications such as weather forecasting~\cite{kalnay_atmospheric_2003} and the earth sciences more broadly~\cite{reichle_data_2008}, but little progress has been made in applying DA to ABMs. Established DA techniques do not perform well in the context of ABMs. Since ABMs consist of `agents' that often make discrete choices from a number of possible actions, the space of model trajectories is not usually continuous and so techniques that require the gradient of the posterior~\cite{talagrand_assimilation_1997}~\cite{lewis_dynamic_2006} are not directly applicable. Some studies have tried to apply particle filters and variants of the Kalman filter to ABMs in applications such as crime~\cite{lloyd_exploring_2016}, bus routes~\cite{kieu_dealing_2020}, pedestrian dynamics~\cite{wang_data_2015, ward_dynamic_2016, clay_realtime_2020, malleson_simulating_2020} and population movement~\cite{lueck_who_2019}, but these have not scaled well in practice. Sampling algorithms offer an alternative approach, where we take samples of the posterior model trajectory over the observed period then convert these to samples of the unobserved measure of interest. However, sampling is difficult in practice because the posterior has zero probability for the vast majority of model trajectories. Even though we can generate trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the observations refute the trajectory the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling, for example, are not practical. It is for similar reasons that the techniques based on particle filtering fail. As we'll show in the next section, the problem can be reduced to sampling from a high dimensional convex polyhedron. Techniques for sampling from discrete points in a convex polyhedron do exist. For example, discrete hit-and-run~\cite{baumert2009discrete} has had some success, but because of the extreme sparsity of feasible points this is unlikely to be efficient when applied to our case. Universal hashing~\cite{meel2016constrained} provides a promising alternative but we have found that this technique doesn't scale well to the number of dimensions needed for our application. This lack of applicable DA techniques has severely limited the use of ABMs for predictive modelling.
+DA has developed rapidly in applications such as weather forecasting~\cite{kalnay_atmospheric_2003} and the earth sciences more broadly~\cite{reichle_data_2008}, but established DA techniques do not work well with ABMs and little progress has been made in developing ABM-specific techniques. Since ABMs consist of `agents' that often make discrete choices from a number of possible actions, the space of model trajectories is not usually continuous and so techniques that require the gradient of the posterior~\cite{talagrand_assimilation_1997}~\cite{lewis_dynamic_2006} are not directly applicable. Some studies have tried to apply particle filters and variants of the Kalman filter to ABMs in applications such as crime~\cite{lloyd_exploring_2016}, bus routes~\cite{kieu_dealing_2020}, pedestrian dynamics~\cite{wang_data_2015, ward_dynamic_2016, clay_realtime_2020, malleson_simulating_2020} and population movement~\cite{lueck_who_2019}, but these have not scaled well in practice.
 
-Here we present an algorithm that generates samples of the time evolution of an agent based model given a set of noisy, incomplete observations of the system. We show how to approximate the set of possible trajectories as a convex polyhedron and how to use this to construct a proposal function for use in the Metropolis-Hastings algorithm. We demonstrate the algorithm by performing data assimilation in an agent-based, spatial predator-prey model.
+Sampling algorithms offer an alternative approach, where we take samples of the posterior model trajectory over some time period then convert these to samples of the unobserved measure of interest. However, sampling is difficult in practice because the posterior has zero probability for the vast majority of model trajectories, so even finding a trajectory that fits the observations is difficult. Even though we can generate trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the observations refute the trajectory the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling, for example, are not practical. It is for similar reasons that the techniques based on particle filtering fail. As we'll show in the next section, the problem can be reduced to sampling from a high dimensional convex polyhedron. Techniques for sampling from discrete points in a convex polyhedron do exist. For example, discrete hit-and-run~\cite{baumert2009discrete} has had some success, but because of the extreme sparsity of feasible points this is unlikely to be efficient when applied to our case. Universal hashing~\cite{meel2016constrained} provides a promising alternative but we have found that this technique doesn't scale well to the number of dimensions needed for our application. This lack of applicable DA techniques has severely limited the use of ABMs for predictive modelling.
+
+Here we present an algorithm that uses the Metropolis-Hastings algorithm to generate model trajectories from the posterior distribution given a set of noisy, incomplete observations of the system. We show how to approximate the set of possible trajectories as a convex polyhedron and how to use this to construct a proposal function. We demonstrate the algorithm by performing data assimilation in an agent-based, spatial predator-prey model.
 
 \section{Formulation of the problem}
 %##########################################
@@ -74,21 +76,22 @@ Here we present an algorithm that generates samples of the time evolution of an 
 \label{abmdef}
 Suppose we have a timestepping ABM that consists of agents with a finite number of possible internal states and a finite number of ways of acting on their world. Given this, we can define an ABM as:
 \begin{itemize}
-	\item An ordered list of agent actions $\mathcal{A} =\left< A_0 ... A_n \right>$
+	\item An ordered list of agent states $\mathcal{S} = \left<S_0 ... S_{m-1}\right>$
+
+	\item An ordered list of agent actions $\mathcal{A} =\left< A_0 ... A_{n-1} \right>$	
 	
-	\item An ordered list of agent states $\mathcal{S} = \left<S_0 ... S_m\right>$
+	\item An \textit{agent timestep}, $\pi : \mathbb{Z}\times\mathbb{Z}^m\times\mathbb{Z} \to \mathbb{R}$, which defines the probability that an agent will act in a particular way such that $\pi(\psi,\Phi,a)$ gives the probability that an agent in state $S_\psi$, surrounded by agents, $\Phi$, will perform action $A_a$ (where $\Phi$ is a vector whose $i^{th}$ element is the number of agents in state $S_i$ at the start of the timestep).
 	
-	\item An \textit{agent timestep}, $\pi : \mathbb{Z}\times\mathbb{Z}^{m+1}\times\mathbb{Z} \to \mathbb{R}$, which defines the probability that an agent will act in a particular way such that $\pi(\psi,\Phi,a)$ gives the probability that an agent in state $S_\psi$, surrounded by agents, $\Phi$, will perform action $A_a$ (where $\Phi$ is a vector whose $i^{th}$ element is the number of agents in state $S_i$ at the start of the timestep).
-	
-	\item An \textit{action function}, $F: \mathbb{Z} \times \mathbb{Z} \to \mathbb{Z}^{m+1}$, which defines the effect of an action on the world such that $F(\psi, a)$ returns a vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $S_i$ that result from an agent in state $S_\psi$ performing act $A_a$ (including the final state of the acting agent).
+	\item An \textit{action function}, $F: \mathbb{Z} \times \mathbb{Z} \to \mathbb{Z}^m$, which defines the effect of an action on the world such that $F(\psi, a)$ returns a vector, $\Phi$, whose $i^{th}$ element gives the number of agents in state $S_i$ that result from an agent in state $S_\psi$ performing act $A_a$ (including the final state of the acting agent).
 \end{itemize}
 
 As a simple illustration, we define the ``cat and mouse'' ABM which, using the definitions above, we define as follows: 
 \begin{description}
+	\item[Agent states, $\mathcal{S}$.] An agent can be either a cat or a mouse and can be on one of two gridsquares, left or right, so \[\mathcal{S} = \left<\textrm{left cat}, \textrm{right cat}, \textrm{left mouse}, \textrm{right mouse} \right>\]. 
+
 	\item[Agent actions, $\mathcal{A}$.] In any given timestep, an agent can either move or stay still, so \[\mathcal{A} = \left<\textrm{move}, \textrm{stay still}\right>\].
 	
-	\item[Agent states, $\mathcal{S}$.] An agent can be either a cat or a mouse and can be on one of two gridsquares, left or right, so \[\mathcal{S} = \left<\textrm{left cat}, \textrm{right cat}, \textrm{left mouse}, \textrm{right mouse} \right>\]. 
-	
+
 	\item[Agent timestep, $\pi$.] The agent timestep can be expressed as
 	\[
 	\begin{aligned}
@@ -103,7 +106,7 @@ As a simple illustration, we define the ``cat and mouse'' ABM which, using the d
 	\]
 	 The top line says that a cat will move or stay still with probability $0.5$, irrespective of other agents. The next line says that a mouse will stay still if there are no cats on the same gridsquare while the third line says that a mouse will move if there are any cats on the same gridsquare. Finally, the last line says that any other behaviours have zero probability.
 
-\item[Action function, $F$.] Expresses the movement of the agents. For example, $F(\psi=1, a=0)$ states that if there is an agent in state $\psi=1$ (\textit{right cat}) and it performs the action $a=0$ (\textit{move)} then the result is one cat in state $\psi=0$ (\textit{left cat}) which is expressed as the vector $\{1,0,0,0\}$. Similarly:
+\item[Action function, $F$.] $F$ gives the result of an agent's actions. For example, $F(\psi=1, a=0)$ is the result of an agent in state $\psi=1$ (\textit{right cat}) performing the action $a=0$ (\textit{move)}. If $F(1,0) = \{1,0,0,0\}$ then the result is one cat in state $\psi=0$ (\textit{left cat}). Similarly:
 \[
 \begin{aligned}
 F(0, 0) &= \{0,1,0,0\}\\
@@ -121,11 +124,11 @@ F(3, 1) &= \{0,0,0,1\}\\
 
 \subsection{Tensor notation}
 
-The rest of this paper we'll make use of tensors, these are just arrays of numbers, like vectors or matrices, but arranged in any number of dimensions. Each dimension can be either \textit{covariant} or \textit{contravariant} and each tensor has a \textit{shape} which describes the size of the tensor in each of its dimensions. It will be useful to refer to the set of all tensors of a given shape, for this we'll use $\mathbb{R}$ adorned with the number of elements in each dimension, with covariant dimensions in the subscript position and contravariant dimensions in superscript position. So, for example, $\mathbb{R}^N_{SA}$ would describe the set of 3-dimensional tensors that have one contravariant dimension of size $N$ and two covariant dimensions of sizes $S$ and $A$.
+In the rest of this paper we'll make use of tensors. These are just arrays of numbers, like vectors or matrices, but arranged in any number of dimensions. Each dimension can be either \textit{covariant} or \textit{contravariant} and each tensor has a \textit{shape} which describes the size of the tensor in each of its dimensions. It will be useful to refer to the set of all tensors of a given shape, for this we'll use $\mathbb{R}$ adorned with the number of elements in each dimension, with covariant dimensions in the subscript position and contravariant dimensions in superscript position. So, for example, $\mathbb{R}^N_{SA}$ would describe the set of 3-dimensional tensors that have one contravariant dimension of size $N$ and two covariant dimensions of sizes $S$ and $A$.
 
 An element of a tensor is referred to by specifying the co- and contravariant coordinates of the element. For example if $T \in \mathbb{R}^N_{SA}$, then $T^t_{\psi a}$ refers to the element of $T$ that has coordinate $t$ in the contravariant dimension and coordinates $(\psi,a)$ in the covariant dimensions. By convention, coordinates begin at 0.
 
-We'll also use the Einstein summation convention, meaning that if the same index symbol is repeated in co- and contravariant positions, then a summation over that symbol is implied. So, for example if $X \in \mathbb{R}_8$ and $Y \in \mathbb{R}^8$ then
+We'll also use the Einstein summation convention, meaning that if the same index symbol is repeated in co- and contravariant positions in a term, then a summation over that symbol is implied. So, for example if $X \in \mathbb{R}_8$ and $Y \in \mathbb{R}^8$ then
 \[
 X_\psi V^\psi \equiv \sum_{\psi=0}^7 X_\psi  V^\psi
 \]
@@ -141,7 +144,7 @@ We refer to \textit{slices} of a tensor by using the $*$ symbol in an index posi
 
 The symbols $\mathbf{0}$ and $\mathbf{1}$ represent tensors whose elements are all 0 or 1 respectively. Their shape should be unambiguous from the context.
 
-Finally, a tensor $Y\in \mathbb{R}^J$ is considered to be equivalent to a $J$-dimensional column vector, a tensor  $X\in \mathbb{R}_I$ equivalent to an $I$-dimensional row vector and a tensor $M \in \mathbb{R}^J_I$ equivalent to a matrix with  $I$ rows and $J$ columns, so we use normal matrix notation for these tensors when that is more convenient.
+Finally, a tensor $Y\in \mathbb{R}^J$ is considered to be equivalent to a $J$-dimensional column vector, a tensor  $X\in \mathbb{R}_I$ equivalent to an $I$-dimensional row vector and a tensor $M \in \mathbb{R}^J_I$ equivalent to a matrix with  $I$ rows and $J$ columns, so normal matrix notation can be used with these tensors without ambiguity.
 
 \subsection{Trajectories}
 
@@ -164,19 +167,19 @@ E = \kbordermatrix{
 	S_3 & 0 & 0 \\
 }
 \]
-where all elements are zero except those representing agent $S_1$ (\textit{right cat}) performing action $A_0$ (\textit{move}) and agent $S_2$ (\textit{left mouse}) performing action $A_1$ (\textit{stay still}).
+where one agent in state $S_1$ (\textit{right cat}) performs action $A_0$ (\textit{move}) and one agent in state $S_2$ (\textit{left mouse}) performs action $A_1$ (\textit{stay still}).
 
 Let a model trajectory, $T$, be a tensor in $\mathbb{R}^N_{SA}$ that represents $N$ timesteps of a model with $S$ agent states and $A$ actions, so that $T^t_{\psi a}$ denotes the $(\psi, a)^{th}$ element of the $t^{th}$ timestep matrix.
 
 A tensor must satisfy a number of constraints in order to be a valid trajectory of an ABM. Since the elements of a trajectory are counts of agents, they must be non-negative integers. We'll call this the \textit{non-negative integer constraint} and define the set of all non-negative integer tensors
 \begin{equation}
-\mathcal{I}^N_{SA} = \left\{ T \in \mathbb{R^N_{SA}}: \forall t,\psi, a: T^t_{\psi a} \ge 0, T^t_{\psi a} \in \mathbb{Z}\right\}
+\mathbb{N}^N_{SA} = \left\{ T \in \mathbb{R^N_{SA}}: \forall t,\psi, a: T^t_{\psi a} \ge 0, T^t_{\psi a} \in \mathbb{Z}\right\}
 \label{nonNegativeInt}
 \end{equation}
 
 A trajectory must also be \textit{continuous} by which we mean that the number of agents in each state at the end of timestep $t-1$ must be the number of agents in each state at the beginning of timestep $t$\footnote{This does not mean that agents cannot leave or enter the system, only that if they do then that change must be defined as part of an action.}. We call this the \textit{continuity constraint} and define the set of continuous tensors, with respect to an action function $F$:
 \begin{equation}
-\mathcal{C}^N_{SA}(F) = \left\{T\in\mathbb{R}^N_{SA}:  \forall \left(  1 \le \bar t < N\right): F^{\psi a}_{\bar\phi} T^{\bar t-1}_{\psi a} = \mathbf{1}^aT^{\bar t}_{\bar\phi a}\right\}
+\mathcal{C}^N_{SA}(F) = \left\{T\in\mathbb{R}^N_{SA}:  \forall \left(  1 \le \bar t < N\right): F^{\psi a}_{\phi} T^{t-1}_{\psi a} = \mathbf{1}^bT^{t}_{\phi b}\right\}
 \label{continuous}
 \end{equation}
 where $F^{\psi a}_\phi$ is the $\phi^{th}$ element of $F(\psi,a)$.
@@ -184,7 +187,7 @@ where $F^{\psi a}_\phi$ is the $\phi^{th}$ element of $F(\psi,a)$.
 
 So, the set of valid trajectories, $\mathcal{T}^N_{SA}(F)$, is given by the set of tensors that satisfy \eqref{nonNegativeInt} and \eqref{continuous}.
 \begin{equation}
-\mathcal{T}^N_{SA}(F) = \mathcal{I}^N_{SA} \cap \mathcal{C}^N_{SA}(F)
+\mathcal{T}^N_{SA}(F) = \mathbb{N}^N_{SA} \cap \mathcal{C}^N_{SA}(F)
 \label{SetOfTrajectories}
 \end{equation}
 
@@ -193,9 +196,9 @@ So, the set of valid trajectories, $\mathcal{T}^N_{SA}(F)$, is given by the set 
 
 Given a set of observations, $\Omega$, we'd like to sample from the posterior over the trajectories,
 \[
-P\left(T \middle| \Omega\right) \propto P(T)P\left(\Omega \middle| T\right)
+P\left(T \middle| \Omega\right) \propto P\left(\Omega \middle| T\right)P(T)
 \]
-The prior over the trajectory can be composed from terms involving the agent timestep function, $\pi(\psi,\Psi,a)$, which gives the probability that a single agent will perform action $a$ given that it starts in state $\psi$ and is surrounded by agents $\Psi$. First consider all the agents that are in state $\psi$ at the beginning of timestep $t$. Let $R\in\mathbb{R}_A$ be a vector whose elements $R_a$ are the number of these agents that perform act $a$ in timestep $t$. The probability distribution of $R$ is just a multinomial distribution
+The prior over the trajectory, $P(T)$, can be composed from terms involving the agent timestep function, $\pi(\psi,\Psi,a)$, which gives the probability that a single agent will perform action $a$ given that it starts in state $\psi$ and is surrounded by agents $\Psi$. First consider all the agents that are in state $\psi$ at the beginning of timestep $t$. Let $R\in\mathbb{R}_A$ be a vector whose elements $R_a$ are the number of these agents that perform act $a$ in timestep $t$. The probability distribution of $R$ is just a multinomial distribution
 \begin{equation}
 P\left(R \mid \Psi, \psi\right) = 
 \begin{cases}

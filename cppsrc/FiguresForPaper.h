@@ -205,6 +205,8 @@ public:
 
         Plotter endStatePlotter;
         endStatePlotter.plot(problem.realTrajectory.endState(), stats.meanEndState(),"End state " + std::to_string(GRIDSIZE) + " x " + std::to_string(nTimesteps));
+        std::cout << "Press Enter to exit" << std::endl;
+        std::cin.get();
 //        while(acPlotter.is_open() || endStatePlotter.is_open());
     }
 
