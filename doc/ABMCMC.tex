@@ -21,6 +21,7 @@
 \usepackage{algpseudocode}
 \usepackage{kbordermatrix}% http://www.hss.caltech.edu/~kcb/TeX/kbordermatrix.sty
 \usepackage{todonotes}
+\usepackage{natbib}
 
 \newtheorem{theorem}{Theorem}
 \DeclareMathOperator\supp{supp}
@@ -49,11 +50,11 @@
 \maketitle
 
 \begin{abstract}
-Every day, weather forecasting centres around the world receive noisy, incomplete observations of the atmosphere and use this data, along with their atmospheric models, to update their forecasts. This process, known as data assimilation or data fusion, is best expressed as Bayesian inference: given a set of observations, some prior beliefs and a model of the target system, what is the probability distribution of some set of observables? The observables are generally not variables that have been directly observed and may be in the future.
+Every day, weather forecasting centres around the world receive noisy, incomplete observations of the atmosphere and use this data, along with their atmospheric models, to update their forecasts. This process is known as data assimilation, data fusion or state estimation and is best expressed as Bayesian inference: given a set of observations, some prior beliefs and a model of the target system, what is the probability distribution of some set of unobserved measures at some time, possibly in the future?
 
-While data assimilation has developed rapidly in weather forecasting and other areas, relatively little progress has been made in performing data assimilation with agent based models. This has hampered the use of agent based models to make forecasts of real-world observables.
+While data assimilation has developed rapidly in weather forecasting and other areas, relatively little progress has been made in performing data assimilation with agent based models. This has hampered the use of agent based models to make forecasts of real-world dynamic systems.
 
-Here we present an algorithm that uses Markov-Chain-Monte-Carlo to generate samples of the states of an agent based model over a window of time given a set of noisy, incomplete observations of the system. We demonstrate the algorithm by performing data assimilation with an agent-based, spatial predator-prey model.
+Here we present an algorithm that uses Markov-Chain-Monte-Carlo methods to generate samples of the states of an agent based model over a window of time given a set of noisy, incomplete observations of the system. We demonstrate the algorithm by performing data assimilation with an agent-based, spatial predator-prey model.
 \end{abstract}
 
 % keywords can be removed
@@ -61,9 +62,23 @@ Here we present an algorithm that uses Markov-Chain-Monte-Carlo to generate samp
 
 \section{Introduction}
 
-Agent-based models (ABMs) have been widely used to model the interactions of many discrete, heterogeneous entities, such as humans or animals. These models are often used to demonstrate the existence of certain dynamical mechanisms or emergent properties. However, if we wish to use a model to make quantitative forecasts, we're often in a situation where we have noisy, aggregated and/or incomplete observations of the target system over some period of time and would like to use our ABM to infer the value of some unobserved variable given our observations. This is not straightforward as we don't generally know the complete start-state of the model, or the exact behavioural decisions the agents would need to make in order to reproduce our observations, so simply running the model forward is not an option. The problem is better framed in terms of probabilistic inference: given the model, our prior beliefs about the start state (or other boundary conditions) and our observations, what is the probability distribution of some unobserved measure? This is the problem of \textit{data assimilation} (DA) and this paper presents a new method that allows such questions to be answered. Note that this problem is distinct from the problem of model estimation or parameter optimisation~\cite{thiele_facilitating_2014} which we do not directly address here.
+Agent-based models (ABMs) have been widely used to model the interactions of many discrete, heterogeneous entities, such as humans or animals. These models are often calibrated against real-world data then used to demonstrate the existence of certain mechanisms or emergent properties of the dynamical system. However, ABMs are less frequently used to make quantitative forecasts of real-world systems. This is because, given an ABM and some noisy, aggregated and/or incomplete observations of the target system over some period of time, it is far from clear how we should go about using the ABM and the observations to make a forecast. The observations don't generally specify the complete state of the model at the current time so we can't simply run the model forward to produce a forecast. The problem can be framed in terms of probabilistic inference: given the model, our prior beliefs about the start state (or other boundary conditions) of the model and our observations, what is the probability distribution of some unobserved measure? This is the problem of \textit{data assimilation}(DA) and this paper presents a new method that allows such questions to be answered. In this paper we focus on the case where the unobserved measure is a function of the model trajectory, this is distinct from the problem of parameter estimation or model estimation~\citep{thiele_facilitating_2014} which we discuss briefly in section \ref{discussion},
 
-DA has developed rapidly in applications such as weather forecasting~\cite{kalnay_atmospheric_2003} and the earth sciences more broadly~\cite{reichle_data_2008}, but established DA techniques do not work well with ABMs and little progress has been made in developing ABM-specific techniques. Since ABMs consist of `agents' that often make discrete choices from a number of possible actions, the space of model trajectories is not usually continuous and so techniques that require the gradient of the posterior~\cite{talagrand_assimilation_1997}~\cite{lewis_dynamic_2006} are not directly applicable. Some studies have tried to apply particle filters and variants of the Kalman filter to ABMs in applications such as crime~\cite{lloyd_exploring_2016}, bus routes~\cite{kieu_dealing_2020}, pedestrian dynamics~\cite{wang_data_2015, ward_dynamic_2016, clay_realtime_2020, malleson_simulating_2020} and population movement~\cite{lueck_who_2019}, but these have not scaled well in practice.
+\subsection{Related work}
+
+Early examples of data assimilation appeared in the context of weather forecasting~\citep*{talagrand_assimilation_1997, kalnay_atmospheric_2003, lewis_dynamic_2006} in the form of \textit{optimal interpolation}\citep{sasaki1958objective}, \textit{3D-var}\citep{lorenc1986analysis} and \textit{4D-var}\citep{courtier1990variational}. These techniques find the most probable model trajectory given the observations by calculating the gradient of the posterior in the space of model trajectories and performing non-linear optimisation. However, since ABMs consist of `agents' that often make discrete choices from a number of possible actions, the space of trajectories in this case is not usually continuous and so the posterior distribution of ABM trajectories does not generally have a gradient, making it hard to directly apply these techniques to ABMs. \citet{lloyd_exploring_2016} transforms an ABM of urban crime into a set of differential equations before performing data assimilation. However, in many cases there is no obvious way to transform an ABM into a set of differential equations, so this technique cannot generally be used.
+
+[separate previous work clearly into categories: non-linear optimization, extended kalman filter, ensemble kalman, translation into PDE, symbolic(creation/annihilation operator), particle filter/SMC and explain clearly why each fails to apply to ABM]
+
+[todo]
+
+pedestrian dynamics~\cite{ward_dynamic_2016, clay_realtime_2020, malleson_simulating_2020} and population movement~\cite{lueck_who_2019}, but these have not scaled well in practice.
+
+[particle filter]
+
+bus routes~\cite{kieu_dealing_2020}
+
+smart environments (building occupation) \cite{wang_data_2015}
 
 Sampling algorithms offer an alternative approach, where we take samples of the posterior model trajectory over some time period then convert these to samples of the unobserved measure of interest. However, sampling is difficult in practice because the posterior has zero probability for the vast majority of model trajectories, so even finding a trajectory that fits the observations is difficult. Even though we can generate trajectories that fit the prior by simply performing a forward execution of the model from an initial state drawn from the prior, if the observations refute the trajectory the probability falls to zero. It doesn't take many observations until the probability of randomly choosing a trajectory that fits the observations becomes very small indeed. So simple techniques such as rejection sampling, for example, are not practical.  It is for similar reasons that the techniques based on particle filtering fail. The Metropolis-Hastings algorithm is another widely used sampling algorithm. The challenge to using this algorithm for our purposes is to create a proposal function which randomly generates a proposed next sample given the current one. A common strategy is to generate a new sample by perturbing one or more elements of the previous sample at random. However, if we do this in a naive way it's very unlikely that the perturbed sample will be a trajectory that contains only possible actions and satisfies the observations. So, the proposed next sample would almost certainly be rejected and we'd probably end up stuck on the first sample until we grew old. 
 
@@ -676,7 +691,7 @@ We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey''
 \end{figure}
 
 
-Simulated observation data was generated by profroming a forward simulation of the model. The number of predators and prey in each gridsquare at the start of the simulation was drawn from a Poisson distribution with rate parameter $\lambda = 0.05$. The model was then simulated forward for 16 timesteps. At each timestep, each gridsquare was observed with a probability of 0.02. If an observation was made, the number of predators in the gridsquare was observed. In order to simulate observational noise, each predator was observed with probability 0.9 (i.e. the number observed was drawn from a Binomial distribution). The same procedure was then repeated for prey.
+Simulated observation data was generated by profroming a forward simulation of the model. The number of predators and prey in each gridsquare at the start of the simulation was drawn from a Poisson distribution with rate parameter $\lambda = 0.05$. The model was then simulated forward for 16 timesteps. At each timestep, each gridsquare was observed with a probability of 0.02. If an observation was made, the number of predators in the gridsquare was observed. In order to demonstrate assimilation with observational noise, each predator was observed with probability 0.9 (i.e. the number observed was drawn from a Binomial distribution. Note that our algorithm can also assimilate observations with no noise). The same procedure was then repeated for prey.
 
 Four separate Markov chains of 1,500,000 samples each were generated from the posterior using the method described above. The start state for each chain was drawn from the prior (i.e. model trajectory without any observations). The first 200,000 samples of each chain were discarded and the remaining samples were split into first and last halves to give 8 sample sequences in total. 
 
@@ -718,17 +733,24 @@ Figure \ref{figAutocorrelation} shows $\hat{\rho}_t$ as a function of $t$ for ea
 where the sum runs until $\hat{\rho}_t \le 0$. This approximates of the number of samples from a perfect IID sampler that would give the same uncertainty in the mean of the statistic.
 
 Finally, figure \ref{figEndState} shows the mean number of agents at the end of the simulation, averaged over all samples. This is a visual way of showing that the observations have given rise to a posterior that gives some information about the true positions of the agents.
+
+\section{Discussion} 
+\label{discussion}
+ The technique described here could easily be extended to the problem of parameter estimation by replacing all distributions over the model trajectory with the joint distribution over parameter values and model trajectory and treating our prior beliefs about the parameters as a boundary condition. We can then sample from the joint distribution of parameters and trajectory which, after removing the trajectory, gives a probability distribution over parameter space. If we have observations that span multiple, independent observed time periods, a single parameter distribution can be generated by taking the product of the distributions from the individual time periods.
  
+[explain turnaround options, depending on nature of the model: variational, kernel density estimation, particle as known start state, relationship to SMC/particle filtering]
+
+[explain model imperfection: model uncertainty should be included in stochasticity and parameters. Making models that don't fit observation and then making them `almost' fit is a bad strategy. If your model doesn't fit observation, your model assumptions are wrong.]
+
+[explain extension to parameter estimation]
 
 \section{Limitations and further work}
 
-[column generation for larger internal state]
+[column generation for ABMs with larger agent state]
 
-[automatic linearisation]
+[automatic linearisation from ABM expressed as computer program]
 
 [extension to PPL]
-
-[model error]
 
 [automated temperature setting]
 
