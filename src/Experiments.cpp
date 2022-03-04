@@ -40,7 +40,7 @@
 void Experiments::minimalBasis() {
     ////////////////////////////////////////// SETUP PARAMETERS ////////////////////////////////////////
     // 8 x 8 x 8 45% infeasible, 400 iterations per transtition, 20ms per transition
-    constexpr int GRIDSIZE = 32;
+    constexpr int GRIDSIZE = 8;
     constexpr int windowSize = 8;
     constexpr double pPredator = 0.05;//0.08;          // Poisson prob of predator in each gridsquare at t=0
     constexpr double pPrey = 0.05;    // Poisson prob of prey in each gridsquare at t=0
@@ -72,14 +72,14 @@ void Experiments::minimalBasis() {
             pMakeObservation,
             pObserveIfPresent);
     std::cout << "Converting to glp::Problem" << std::endl;
-    glp::Problem predPreyProblem = window.posterior.convexSupport.toLPProblem();
+//    glp::Problem predPreyProblem = window.posterior.convexSupport.toLPProblem();
     std::cout << "Finding basis..." << std::endl;
-    TableauNormMinimiser minimiser(predPreyProblem);
+    TableauNormMinimiser minimiser(window.posterior.convexSupport);
     minimiser.findMinimalBasis();
-    std::cout << "Mean norm = " << minimiser.meanColumnNorm() << std::endl;
+    std::cout << "Mean L0 norm = " << minimiser.meanColumnL0Norm() << std::endl;
     std::cout << "Mean L1 norm = " << minimiser.meanColumnL1Norm() << std::endl;
 
-//    std::cout << "Minimal basis: " << std::endl << minimiser.minimalBasis << std::endl;
+    std::cout << "Minimal basis: " << std::endl << minimiser.minimalBasis << std::endl;
 }
 
 void Experiments::animatedPredPreyDemo() {

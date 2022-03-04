@@ -22,10 +22,10 @@ using glp::X;
 
 int main(int argc, char *argv[]) {
 
-//    Experiments::minimalBasis();
+    Experiments::minimalBasis();
 
 //    Experiments::animatedPredPreyDemo();
-    FiguresForPaper::generateAllProblemFiles();
+//    FiguresForPaper::generateAllProblemFiles();
 
 //    FiguresForPaper::generateStatsAndPlot<8>(8);
 //    Experiments::PredPreyAssimilation();

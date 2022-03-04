@@ -1,4 +1,0 @@
-/home/daniel/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/213.6461.75/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++-11 -G "CodeBlocks - Unix Makefiles" /home/daniel/my/deselby-research/AgentBasedMCMC/src
--- Configuring done
--- Generating done
--- Build files have been written to: /home/daniel/my/deselby-research/AgentBasedMCMC/src/cmake-build-release
