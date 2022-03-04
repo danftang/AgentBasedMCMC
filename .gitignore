@@ -38,5 +38,5 @@ src/META-INF
 *.swp
 
 # c++ build
-cppsrc/cmake*
-cppsrc/.idea*
+src/cmake*
+src/.idea*
