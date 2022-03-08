@@ -7,7 +7,6 @@
 
 #include <vector>
 #include <boost/serialization/vector.hpp>
-#include "glpkpp.h"
 #include "Event.h"
 #include "StlStream.h"
 #include "StateTrajectory.h"

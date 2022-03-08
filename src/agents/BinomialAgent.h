@@ -7,8 +7,8 @@
 
 
 #include <vector>
-#include "glpkpp.h"
 #include "../ModelState.h"
+#include "../Constraint.h"
 
 // Agent that has no interactions and can either stay put or move right (on a circular, 1D domain)
 class BinomialAgent {
@@ -41,7 +41,7 @@ public:
         return { *this };
     }
 
-    std::vector<glp::Constraint> constraints(int time, Act act) const {
+    std::vector<Constraint> constraints(int time, Act act) const {
         return { };
     }
 

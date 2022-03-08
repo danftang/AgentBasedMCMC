@@ -41,16 +41,16 @@ public:
     }
 
 
-    glp::LinearSum operator *(double c) const {
-        glp::LinearSum eventVector;
+    LinearSum operator *(double c) const {
+        LinearSum eventVector;
         int beginIndex = Event<AGENT>(time, agent, 0);
         for(int actId=0; actId < AGENT::actDomainSize(); ++actId) {
-            eventVector += c*glp::X(beginIndex+actId);
+            eventVector += c*X(beginIndex+actId);
         }
         return eventVector;
     }
 
-    friend glp::LinearSum operator *(double c, const State<AGENT> &state) {
+    friend LinearSum operator *(double c, const State<AGENT> &state) {
         return state * c;
     }
 

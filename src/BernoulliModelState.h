@@ -60,7 +60,7 @@ public:
             double p = prob(agentId);
             double lowerBound = p==1.0?1.0:0.0;
             double upperBound = p==0.0?0.0:1.0;
-            constraints.push_back(lowerBound <= 1.0*glp::X(agentId) <= upperBound);
+            constraints.push_back(lowerBound <= 1.0*X(agentId) <= upperBound);
         }
         return constraints;
     }

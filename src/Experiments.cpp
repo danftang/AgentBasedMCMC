@@ -35,6 +35,7 @@
 #include "diagnostics/Dataflow.h"
 #include "diagnostics/MultiChainStats.h"
 #include "TableauNormMinimiser.h"
+#include "SparseBasis.h"
 
 
 void Experiments::minimalBasis() {
@@ -684,28 +685,36 @@ void Experiments::BinomialAgentAssimilation() {
     std::cout << "Likelihood support is \n" << window.likelihoodPMF.convexSupport << std::endl;
     std::cout << "Posterior support is \n" << window.posterior.convexSupport << std::endl;
 
-    MCMCSampler<Trajectory<BinomialAgent>> sampler(window.posterior, window.priorSampler());
-    std::cout << "simplex = \n" << sampler.simplex << std::endl;
-    std::cout << "Starting burn-in" << std::endl;
-    for(int s=0; s<nBurninSamples; ++s)  sampler();
-    std::cout << "Done burn-in" << std::endl;
-    ModelStateSampleStatistics<BinomialAgent> sampleStats(sampler, nSamplesPerWindow);
+    TableauNormMinimiser tableau(window.posterior.convexSupport);
 
-    std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
-    std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
-    std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl;
-    std::vector<double> analysis = sampleStats.means();
-    std::cout << "Analysis means = " << analysis << std::endl;
+    std::cout << "Initial tableau" << std::endl << tableau << std::endl;
+    tableau.findMinimalBasis();
+    std::cout << "Reduced tableau" << std::endl << tableau << std::endl;
+    SparseBasis<int> basis(tableau);
+    std::cout << "Basis is" << std::endl << basis << std::endl;
+
+//    MCMCSampler<Trajectory<BinomialAgent>> sampler(window.posterior, window.priorSampler());
+//    std::cout << "simplex = \n" << sampler.simplex << std::endl;
+//    std::cout << "Starting burn-in" << std::endl;
+//    for(int s=0; s<nBurninSamples; ++s)  sampler();
+//    std::cout << "Done burn-in" << std::endl;
+//    ModelStateSampleStatistics<BinomialAgent> sampleStats(sampler, nSamplesPerWindow);
+
+//    std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
+//    std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
+//    std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/sampler.simplex.feasibleStatistics.nSamples << "%" << std::endl;
+//    std::vector<double> analysis = sampleStats.means();
+//    std::cout << "Analysis means = " << analysis << std::endl;
 
 //    std::cout << "Starting exact solve" << std::endl;
-    ExactSolver<BinomialAgent> exactSolver(window.posterior);
-    std::cout << "Exact means = " << exactSolver.exactEndState << std::endl;
-    double mse = 0.0;
-    for(int i=0; i<analysis.size(); ++i) {
-        mse += pow(analysis[i] - exactSolver.exactEndState[i],2.0);
-    }
-    mse /= analysis.size();
-    std::cout << "Mean square error = " << mse << std::endl;
+//    ExactSolver<BinomialAgent> exactSolver(window.posterior);
+//    std::cout << "Exact means = " << exactSolver.exactEndState << std::endl;
+//    double mse = 0.0;
+//    for(int i=0; i<analysis.size(); ++i) {
+//        mse += pow(analysis[i] - exactSolver.exactEndState[i],2.0);
+//    }
+//    mse /= analysis.size();
+//    std::cout << "Mean square error = " << mse << std::endl;
 }
 
 

@@ -5,7 +5,6 @@
 #ifndef GLPKTEST_CONVEXPMF_H
 #define GLPKTEST_CONVEXPMF_H
 
-#include "glpkpp.h"
 #include "ConvexPolyhedron.h"
 #include "ConvexPMFBase.h"
 #include "Trajectory.h"

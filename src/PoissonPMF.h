@@ -7,7 +7,6 @@
 
 #include <vector>
 #include <cmath>
-#include "glpkpp.h"
 #include "Random.h"
 
 // Represents a LogPMF where each variable is drawn from a Poisson distribution

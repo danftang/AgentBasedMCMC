@@ -6,7 +6,6 @@
 #define GLPKTEST_BOUNDSWAPPIVOT_H
 
 #include <vector>
-#include "glpkpp.h"
 #include "ProposalPivot.h"
 #include "MutableCategoricalArray.h"
 

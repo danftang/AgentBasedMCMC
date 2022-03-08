@@ -7,7 +7,6 @@
 
 #include <vector>
 #include <map>
-#include "glpkpp.h"
 #include "../ModelState.h"
 
 class PredPreyAgentBase {

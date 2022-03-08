@@ -20,7 +20,7 @@ public:
         std::vector<std::vector<Event<AGENT>>> incomingEdges = consequencesByEndState();
         for(int time = 1; time < nTimesteps; ++time) {
             for(int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
-                glp::Constraint &constraint = constraints.emplace_back(0.0 ,0.0);
+                Constraint &constraint = constraints.emplace_back(0.0 ,0.0);
                 // outgoing edges
                 for (int act = 0; act < AGENT::actDomainSize(); ++act) {
                     constraint.coefficients.insert(Event<AGENT>(time, agentState, act), 1.0);
@@ -41,7 +41,7 @@ public:
             for (int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
                 AGENT agent(agentState);
                 for (int act = 0; act < AGENT::actDomainSize(); ++act) {
-                    for(const glp::Constraint &actConstraint : agent.constraints(time, act)) {
+                    for(const Constraint &actConstraint : agent.constraints(time, act)) {
                         push_xImpliesY(constraints, Event(time,agent,act), actConstraint);
                     }
                 }
@@ -56,9 +56,9 @@ public:
     // and 0 <= y_i <= 1
     // by using the identity
     //
-    static void push_xImpliesY(std::vector<glp::Constraint> &constraints, int x, const glp::Constraint &y) {
+    static void push_xImpliesY(std::vector<Constraint> &constraints, int x, const Constraint &y) {
         if(y.upperBound != INFINITY) {
-            glp::Constraint &upperBoundConstraint = constraints.emplace_back(-INFINITY, 0.0);
+            Constraint &upperBoundConstraint = constraints.emplace_back(-INFINITY, 0.0);
             for (int i=0; i < y.coefficients.sparseSize(); ++i) {
                 if (y.coefficients.values[i] > 0.0) upperBoundConstraint.upperBound += y.coefficients.values[i];
                 upperBoundConstraint.coefficients.insert(y.coefficients.indices[i], y.coefficients.values[i]);
@@ -66,7 +66,7 @@ public:
             upperBoundConstraint.coefficients.insert(x, upperBoundConstraint.upperBound - y.upperBound);
         }
         if(y.lowerBound != -INFINITY) {
-            glp::Constraint &lowerBoundConstraint = constraints.emplace_back(-INFINITY, 0.0);
+            Constraint &lowerBoundConstraint = constraints.emplace_back(-INFINITY, 0.0);
             for (int i=0; i < y.coefficients.sparseSize(); ++i) {
                 if (y.coefficients.values[i] < 0.0) lowerBoundConstraint.upperBound -= y.coefficients.values[i];
                 lowerBoundConstraint.coefficients.insert(y.coefficients.indices[i], -y.coefficients.values[i]);
@@ -111,8 +111,8 @@ public:
 
     static ConvexPolyhedron startStateConstraintsToTrajectoryConstraints(const ConvexPolyhedron &startStateConstraints) {
         ConvexPolyhedron trajectoryConstraints;
-        for(const glp::Constraint &constraint: startStateConstraints) {
-            glp::Constraint trajectoryConstraint = startStateConstraintToTrajectoryConstraint(constraint);
+        for(const Constraint &constraint: startStateConstraints) {
+            Constraint trajectoryConstraint = startStateConstraintToTrajectoryConstraint(constraint);
             if(trajectoryConstraint.coefficients.sparseSize() != 0) {
                 trajectoryConstraints.push_back(std::move(trajectoryConstraint));
             }
@@ -122,8 +122,8 @@ public:
 
 protected:
 
-    static glp::Constraint startStateConstraintToTrajectoryConstraint(const glp::Constraint &startStateConstraint) {
-        glp::LinearSum trajectoryCoeffs;
+    static Constraint startStateConstraintToTrajectoryConstraint(const Constraint &startStateConstraint) {
+        LinearSum trajectoryCoeffs;
         double fermionicUpperBound = 0;
         for(int i=0; i<startStateConstraint.coefficients.sparseSize(); ++i) {
             State<AGENT> state(0, startStateConstraint.coefficients.indices[i]);
@@ -133,7 +133,7 @@ protected:
         if(startStateConstraint.lowerBound > 0.0 || startStateConstraint.upperBound < fermionicUpperBound) {
             return std::max(startStateConstraint.lowerBound,0.0) <= trajectoryCoeffs <= std::min(startStateConstraint.upperBound,fermionicUpperBound);
         }
-        return glp::Constraint();
+        return Constraint();
     }
 
 };

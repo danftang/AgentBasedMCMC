@@ -9,7 +9,6 @@
 #include <vector>
 #include <map>
 #include <list>
-#include "glpkpp.h"
 #include "ConvexPolyhedron.h"
 
 // Takes an LP Problem and finds the basis that pivots out as many
@@ -25,11 +24,12 @@
 // and pivot so that they have only one non-zero element equal to -1.
 // to give
 // M(X A)^T = F,  0 <= (X A) <= (H U-L)
+// where M has a total of |A| + M reduced columns (i.e. basic variables)
 //
 // Given this, we can transform into the form
 // Q X_N - F = (X A), 0 <= (X A) <= (H U-L)
-// where A' is the non-fixed auxiliary variables, by taking
-// columns of M over to the other side and adding singleton rows to M.
+// by taking basic variables over to the right-hand side and adding rows to Q
+// to insert the non-basic vars.
 // The columns of Q form the sparse basis so if M is sparse, so is Q.
 //
 // All fixed variables are assumed to be functions of integers only.
@@ -40,12 +40,13 @@ public:
 
     static constexpr int maxVectorsToTest = 10;
 
+
     class Column: public std::set<int> { // set of non-zero orw indices
     public:
         std::list<int>::iterator sparsityEntry; // iterator into colsBySaprsity entry
         bool isBasic;
 
-        explicit Column(const glp::SparseVec &col);
+//        explicit Column(const SparseVec<double> &col);
         Column(): isBasic(false) {};
     };
 
@@ -54,7 +55,7 @@ public:
         std::list<int>::iterator sparsityEntry; // iterator into rowsBySaprsity entry
         bool isActive;
 
-        Row(const glp::SparseVec &row, bool isActive);
+        Row(const SparseVec<double> &row, bool isActive);
     };
 
     std::vector<Column>     cols;   // tableau columns
@@ -63,11 +64,18 @@ public:
     std::vector<std::list<int>> colsBySparsity;     // only contains non-basic cols
     std::vector<std::list<int>> rowsBySparsity;     // only contains active rows
     std::vector<int>            minimalBasis;       // basic variables after minimisation: -ve is auxiliary by row index-1, otherwise col index
+    int                         nAuxiliaryVars;     // number of auxiliary variables
+    std::vector<double>         F;                  // aggregated value of all non-basic fixed vars
+    std::vector<double>         H;                  // upper bounds of non-basic variables
 
-    TableauNormMinimiser(glp::Problem &problem);
-    TableauNormMinimiser(ConvexPolyhedron &problem);
+//    TableauNormMinimiser(glp::Problem &problem);
+    TableauNormMinimiser(const ConvexPolyhedron &problem);
 
-     void findMinimalBasis();
+    int nNonBasic() const { return cols.size() + nAuxiliaryVars - rows.size(); }
+
+    void findMinimalBasis();
+
+    double operator ()(int i, int j) const { auto it = rows[i].find(j); return it == rows[i].end()?0.0:it->second; }
 
     std::pair<int,int> findMarkowitzPivot();
 
@@ -86,8 +94,10 @@ public:
     void setColBasic(int j, int i);
     void inactivateRow(int i);
 
-    double meanColumnL0Norm();
-    double meanColumnL1Norm();
+    double meanColumnL0Norm() const;
+    double meanColumnL1Norm() const;
+
+    friend std::ostream &operator <<(std::ostream &out, const TableauNormMinimiser &tableau);
 };
 
 

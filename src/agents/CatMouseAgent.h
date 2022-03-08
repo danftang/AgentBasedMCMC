@@ -19,7 +19,6 @@
 
 #include <vector>
 #include <set>
-#include "glpkpp.h"
 #include "../ModelState.h"
 
 class CatMouseAgent {

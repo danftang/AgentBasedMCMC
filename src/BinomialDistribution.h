@@ -76,7 +76,7 @@ public:
     ConvexPolyhedron convexSupport() const {
         ConvexPolyhedron support;
         for(int d=0; d < nDimensions(); ++d) {
-            glp::Constraint constraint = (0.0 <= 1.0*glp::X(d) <= binomials[d].trials());
+            Constraint constraint = (0.0 <= 1.0*X(d) <= binomials[d].trials());
             if(binomials[d].success_fraction() == 0.0) {
                 constraint.upperBound = 0.0;
             } else if(binomials[d].success_fraction() == 1.0) {

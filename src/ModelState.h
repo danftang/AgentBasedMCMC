@@ -6,6 +6,7 @@
 #define GLPKTEST_MODELSTATE_H
 
 #include <map>
+#include <functional>
 #include "Random.h"
 
 // represents occupation numbers of agent states in a single timestep.

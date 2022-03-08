@@ -8,7 +8,6 @@
 #include <cfloat>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/vector.hpp>
-#include "glpkpp.h"
 #include "ModelState.h"
 #include "StateTrajectory.h"
 #include "Random.h"

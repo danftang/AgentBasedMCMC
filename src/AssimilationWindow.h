@@ -13,7 +13,7 @@
 #include "TrajectorySampler.h"
 #include "BinomialDistribution.h"
 #include "gnuplot-iostream/gnuplot-iostream.h"
-#include "agents/PredPreyAgent.h"
+//#include "agents/PredPreyAgent.h"
 #include "RejectionSampler.h"
 
 // For testing puroposes only

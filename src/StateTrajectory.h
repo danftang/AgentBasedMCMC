@@ -8,7 +8,6 @@
 #include <vector>
 #include <map>
 
-#include "glpkpp.h"
 #include "State.h"
 #include "ModelState.h"
 #include "constants.h"

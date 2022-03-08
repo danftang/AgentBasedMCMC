@@ -13,7 +13,6 @@
 #include <map>
 #include <iostream>
 
-#include "glpkpp.h"
 #include "constants.h"
 class SimplexMCMC;
 
