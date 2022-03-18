@@ -32,8 +32,8 @@ std::vector<double> CatMouseAgent::marginalTimestep() const {
         actPmf[MOVE] = pCatMove;
         actPmf[STAYPUT] = 1.0 - pCatMove;
     } else {
-        actPmf[MOVE] = 0.5;
-        actPmf[STAYPUT] = 0.5;
+        actPmf[MOVE] = 1.0;     // given that all constraints are satisfied
+        actPmf[STAYPUT] = 1.0;
     }
     return actPmf;
 }

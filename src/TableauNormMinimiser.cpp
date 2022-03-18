@@ -8,58 +8,48 @@
 #include "StlStream.h"
 #include "TableauNormMinimiser.h"
 
-//TableauNormMinimiser::TableauNormMinimiser(glp::Problem &problem): minimalBasis(problem.nConstraints()) {
-//    rows.reserve(problem.nConstraints());
-//    for(int i=1; i<=problem.nConstraints(); ++i) {
-//        bool isActive = (problem.getRowType(i) == GLP_FX);
-//        rows.push_back(Row(problem.getMatRow(i), isActive));
-//        if(isActive) addRowSparsityEntry(i-1);
-//        minimalBasis[i-1] = -i;
-//    }
-//    cols.reserve(problem.nVars());
-//    for(int j=1; j<=problem.nVars(); ++j) {
-//        cols.push_back(Column(problem.getMatCol(j)));
-//        addColSparsityEntry(j-1);
-//    }
-//
-//    std::cout << "Initial mean L0 norm = " << meanColumnL0Norm() << std::endl;
-//    std::cout << "Initial L1 norm = " << meanColumnL1Norm() << std::endl;
-//}
-
-
 // Turns the supplied convex polyhedron into a set of equality constraints by introducing auxiliary
 // variables where the upper and lower bounds are not equal. So if we have
 // L <= CX <= U
 // then
 // (-L M)(1 X A)^T = 0, 0 <= A <= U-L
 // where the zero'th elelemet of (1 X A) is 1.
-TableauNormMinimiser::TableauNormMinimiser(const ConvexPolyhedron &problem):
-minimalBasis(problem.size()),
-F(problem.size(),0.0)
+TableauNormMinimiser::TableauNormMinimiser(const ConvexPolyhedron &problem)
 {
+    basis.reserve(problem.size());
+    F.reserve(problem.size());
     rows.reserve(problem.size());
-    int maxCol = 0;
+    Ha.reserve(problem.size());
+    Ha.push_back(0.0);
+    int maxCol = 0; // maximum column id seen so far
     nAuxiliaryVars = 0;
-    for(int i=0; i<problem.size(); ++i) {
-//        if(problem[i].coefficients.sparseSize());
-        bool isActive = (problem[i].upperBound == problem[i].lowerBound);
-        rows.push_back(Row(problem[i].coefficients, isActive));
-        if(isActive) {
-            addRowSparsityEntry(i);
-            minimalBasis[i] = 0; // fixed var
-        } else {
-            minimalBasis[i] = -(++nAuxiliaryVars);
+    for(const Constraint &constraint: problem) {
+        if(constraint.coefficients.sparseSize() == 1) { // rectilinear limits
+            assert(constraint.lowerBound == 0);
+            int xi = constraint.coefficients.indices[0];
+            if(Hc.size() < xi + 1) Hc.resize(xi+1);
+            Hc[xi] = constraint.upperBound/constraint.coefficients.values[0];
+            if(xi > maxCol) maxCol = xi;
+        } else { // normal tableau entry
+            bool isActive = (constraint.upperBound == constraint.lowerBound);
+            rows.push_back(Row(constraint.coefficients, isActive));
+            if (isActive) {
+                addRowSparsityEntry(rows.size()-1);
+                basis.push_back(0); // fixed var
+            } else {
+                basis.push_back(-(++nAuxiliaryVars));
+                Ha.push_back(constraint.upperBound - constraint.lowerBound);
+            }
+            F.push_back(-constraint.lowerBound); // lower bounds are all set to 0
+            int rowMaxCol = rows.back().rbegin()->first;
+            if(rowMaxCol > maxCol) maxCol = rowMaxCol;
         }
-        if(problem[i].lowerBound != 0.0) F[i] = problem[i].lowerBound; // lower bounds are all set to 0
-        int rowMaxCol = rows[i].rbegin()->first;
-        if(rowMaxCol > maxCol) maxCol = rowMaxCol;
     }
 
-    cols.reserve(maxCol +1);
-    for(int j=0; j<=maxCol; ++j) {
-        cols.push_back(Column());
-    }
-    for(int i=0; i<problem.size(); ++i) {
+    Hc.resize(maxCol+1);
+    cols.resize(maxCol +1);
+    for(int j=1; j<=maxCol; ++j) assert(Hc[j] != 0); // no rectilinear limit given for non-basic j or fixed at 0
+    for(int i=0; i<rows.size(); ++i) {
         for(auto [j, v]: rows[i]) {
             cols[j].insert(i);
         }
@@ -79,6 +69,8 @@ void TableauNormMinimiser::findMinimalBasis() {
 //        std::cout << minimalBasis << std::endl;
 //        std::cout << rowsBySparsity << std::endl;
     }
+    std::cout << "Reduced mean L0 norm = " << meanColumnL0Norm() << std::endl;
+    std::cout << "Reduced L1 norm = " << meanColumnL1Norm() << std::endl;
 
 }
 
@@ -126,22 +118,24 @@ void TableauNormMinimiser::pivot(int pi, int pj) {
     double Mpipj = rows[pi].at(pj);
 
     // remove sparsity entries of all affected rows and columns
-    for( auto [j, v] : rows[pi]) {
-        removeColSparsityEntry(j);
-    }
+    for( auto [j, v] : rows[pi]) removeColSparsityEntry(j);
+
+    rows[pi] *= -1.0/Mpipj;     // divide row through to make the pivot point -1
+    F[pi] *= -1.0/Mpipj;
 
     for(int i : cols[pj]) {
         if(i != pi) {
             if(rows[i].isActive) removeRowSparsityEntry(i);
-            double MipjOverMpipj = rows[i].at(pj)/Mpipj;
+            double Mipj = rows[i].at(pj);
+//            double MipjOverMpipj = rows[i].at(pj)/Mpipj;
             for (const auto[j, Mpij]: rows[pi]) {
                 if(j != pj) {
                     auto MijIt = rows[i].find(j);
                     if (MijIt == rows[i].end()) { // fill-in
-                        rows[i][j] = -MipjOverMpipj * Mpij;
+                        rows[i][j] = Mipj * Mpij;
                         cols[j].insert(i);
                     } else {
-                        double newMij = (rows[i][j] -= MipjOverMpipj * Mpij);
+                        double newMij = (rows[i][j] += Mipj * Mpij);
                         if (newMij == 0.0) { // drop-out
                             cols[j].erase(i);
                             rows[i].erase(j);
@@ -149,7 +143,7 @@ void TableauNormMinimiser::pivot(int pi, int pj) {
                     }
                 }
             }
-            F[i] -= MipjOverMpipj * F[pi];
+            F[i] += Mipj * F[pi];
         }
     }
 
@@ -224,6 +218,11 @@ TableauNormMinimiser::Row::Row(const SparseVec<double> &row, bool isActive): isA
     }
 }
 
+TableauNormMinimiser::Row &TableauNormMinimiser::Row::operator*=(double c) {
+    for(auto it = begin(); it != end(); ++it) it->second *= c;
+    return *this;
+}
+
 
 //TableauNormMinimiser::Column::Column(const SparseVec<double> &col): isBasic(false) {
 //    for (int k = 0; k < col.sparseSize(); ++k) {
@@ -237,7 +236,7 @@ void TableauNormMinimiser::setColBasic(int j, int i) {
     col.isBasic = true;
     col.clear();
     col.insert(i);
-    minimalBasis[i] = j;
+    basis[i] = j;
 }
 
 void TableauNormMinimiser::inactivateRow(int i) {
@@ -301,17 +300,27 @@ double TableauNormMinimiser::meanColumnL1Norm() const {
 }
 
 std::ostream &operator <<(std::ostream &out, const TableauNormMinimiser &tableau) {
+    // show upper limits
+    out << "    \t \t";
+    for(int j=0; j<tableau.cols.size(); ++j) {
+        out << tableau.Hc[j] << "\t";
+    }
+    out << std::endl;
+    // print tableau
+    for(int i=0; i<tableau.rows.size(); ++i) {
+        out << "x(" << tableau.basis[i] << ")\t=\t";
+        for(int j=0; j<tableau.cols.size(); ++j) {
+            out << tableau(i,j) << "\t";
+        }
+        out << "+\t" << tableau.F[i];
+        if(tableau.basis[i] < 0) out << " <= " << tableau.Ha[-tableau.basis[i]];
+        out << std::endl;
+    }
+    // mark basic columns
     out << "    \t \t";
     for(int j=0; j<tableau.cols.size(); ++j) {
         out << (tableau.cols[j].isBasic?"B\t":"-\t");
     }
     out << std::endl;
-    for(int i=0; i<tableau.rows.size(); ++i) {
-        out << "x(" <<tableau.minimalBasis[i] << ")\t=\t";
-        for(int j=0; j<tableau.cols.size(); ++j) {
-            out << tableau(i,j) << "\t";
-        }
-        out << "-\t" << tableau.F[i] << std::endl;
-    }
     return out;
 }

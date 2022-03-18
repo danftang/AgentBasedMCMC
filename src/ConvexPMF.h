@@ -10,7 +10,7 @@
 #include "Trajectory.h"
 #include "ConvexPMFProduct.h"
 #include "AgentStateObservation.h"
-#include "ABMConstraints.h"
+#include "ABM.h"
 
 template<typename T> class ConvexPMFProduct;
 
@@ -62,8 +62,8 @@ public:
         return T.logProb() + startState(T(0));
         },
                 Trajectory<AGENT>::dimension(nTimesteps),
-                ABMConstraints<AGENT>::actFermionicABMConstraints(nTimesteps) +
-                ABMConstraints<AGENT>::startStateConstraintsToTrajectoryConstraints(priorStartState.convexSupport)) {}
+                ABM<AGENT>::actFermionicABMConstraints(nTimesteps) +
+                ABM<AGENT>::startStateConstraintsToTrajectoryConstraints(priorStartState.convexSupport)) {}
 
 
     static ConvexPMF<Trajectory<AGENT>> uniformTrajectoryDistribution(int nTimesteps) {
@@ -104,11 +104,13 @@ public:
         std::function<double(const Trajectory<AGENT> &)> extendedLogP;
         if(observation.state.time == nTimesteps) {
             extendedLogP = [observation](const Trajectory<AGENT> &X) {
-                return observation.extendedLogP(observation.state.backwardOccupationNumber(X));
+//                return observation.extendedLogP(observation.state.backwardOccupationNumber(X));
+                return observation.logLikelihood(X.backwardOccupationNumber(observation.state));
             };
         } else {
             extendedLogP = [observation](const Trajectory<AGENT> &X) {
-                return observation.extendedLogP(observation.state.forwardOccupationNumber(X));
+//                return observation.extendedLogP(observation.state.forwardOccupationNumber(X));
+                return observation.logLikelihood(X.forwardOccupationNumber(observation.state));
             };
         }
         return ConvexPMF(std::move(extendedLogP), Trajectory<AGENT>::dimension(nTimesteps), observation.support());
@@ -122,7 +124,7 @@ public:
         std::function<double(const Trajectory<AGENT> &)> extendedLogP = [observations = std::move(observations)](const Trajectory<AGENT> &X) {
             double extLogP = 0.0;
             for(const AgentStateObservation<AGENT> &observation: observations) {
-                extLogP += observation.extendedLogP(observation.state.occupationNumber(X));
+                extLogP += observation.logLikelihood(X.occupationNumber(observation.state));
             }
             return extLogP;
         };

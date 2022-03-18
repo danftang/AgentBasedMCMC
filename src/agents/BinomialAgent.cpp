@@ -4,6 +4,4 @@
 
 #include "BinomialAgent.h"
 
-int BinomialAgent::GRIDSIZE = 100;
-double BinomialAgent::pMove = 0.5;
 

@@ -6,6 +6,7 @@
 #define GLPKTEST_EVENT_H
 
 #include <utility>
+#include "X.h"
 
 template<typename AGENT>
 class Event: public X {

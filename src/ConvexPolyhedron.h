@@ -7,24 +7,24 @@
 
 
 #include <vector>
+#include <iostream>
 #include "StlStream.h"
-//#include "agents/PredPreyAgent.h"
 #include "Constraint.h"
 
-class ConvexPolyhedron: public std::vector<Constraint> {
+template<class T>
+class ConvexPolyhedron: public std::vector<Constraint<T>> {
 public:
-    ConvexPolyhedron(): std::vector<Constraint>() {}
-    explicit ConvexPolyhedron(const std::vector<Constraint> &constraints): std::vector<Constraint>(constraints) {}
-    explicit ConvexPolyhedron(std::vector<Constraint> &&constraints): std::vector<Constraint>(constraints) {}
-    ConvexPolyhedron(const std::initializer_list<Constraint> &constraints): std::vector<Constraint>(constraints) {}
+    ConvexPolyhedron(): std::vector<Constraint<T>>() {}
+    explicit ConvexPolyhedron(const std::vector<Constraint<T>> &constraints): std::vector<Constraint<T>>(constraints) {}
+    explicit ConvexPolyhedron(std::vector<Constraint<T>> &&constraints): std::vector<Constraint<T>>(constraints) {}
+    ConvexPolyhedron(const std::initializer_list<Constraint<T>> &constraints): std::vector<Constraint<T>>(constraints) {}
 
-    bool isValidSolution(const std::vector<double> &X) const {
-        for(const Constraint &constraint: *this) {
-//            std::cout << "Checking if " << X << " satisfies " << constraint << std::endl;
+    bool isValidSolution(const std::vector<T> &X) const {
+        for(const Constraint<T> &constraint: *this) {
+            std::cout << "Checking if " << X << " satisfies " << constraint << std::endl;
             if(!constraint.isValidSolution(X)) return false;
         }
         return true;
-
     }
 
 
@@ -64,52 +64,52 @@ public:
     // the id of the highest variable in this polyhedron
     int dimension() {
         int dim = 0;
-        for(const Constraint &constraint: *this) {
+        for(const Constraint<T> &constraint: *this) {
             dim = std::max(dim,constraint.coefficients.maxNonZeroIndex());
         }
         return dim;
     }
 
-    ConvexPolyhedron &operator +=(const std::vector<Constraint> &other) {
-        reserve(size()+other.size());
-        for(const Constraint &constraint: other) {
+    ConvexPolyhedron<T> &operator +=(const std::vector<Constraint<T>> &other) {
+        reserve(this->size()+other.size());
+        for(const Constraint<T> &constraint: other) {
             push_back(constraint);
         }
         return *this;
     }
 
-    ConvexPolyhedron &operator +=(std::vector<Constraint> &&other) {
-        reserve(size()+other.size());
-        for(Constraint &constraint: other) {
+    ConvexPolyhedron<T> &operator +=(std::vector<Constraint<T>> &&other) {
+        reserve(this->size()+other.size());
+        for(Constraint<T> &constraint: other) {
             push_back(std::move(constraint));
         }
         return *this;
     }
 
-    ConvexPolyhedron operator +(const std::vector<Constraint> &other) && {
+    ConvexPolyhedron<T> operator +(const std::vector<Constraint<T>> &other) && {
         (*this) += other;
         return std::move(*this);
     }
 
-    ConvexPolyhedron operator +(std::vector<Constraint> &&other) && {
+    ConvexPolyhedron<T> operator +(std::vector<Constraint<T>> &&other) && {
         (*this) += std::move(other);
         return std::move(*this);
     }
 
-    ConvexPolyhedron operator +(std::vector<Constraint> &&other) const & {
+    ConvexPolyhedron<T> operator +(std::vector<Constraint<T>> &&other) const & {
         ConvexPolyhedron result(std::move(other));
         result += *this;
         return result;
     }
 
-    ConvexPolyhedron operator +(const std::vector<Constraint> &other) const & {
+    ConvexPolyhedron<T> operator +(const std::vector<Constraint<T>> &other) const & {
         ConvexPolyhedron result(*this);
         result += other;
         return result;
     }
 
-    friend std::ostream &operator <<(std::ostream &out, const ConvexPolyhedron &convexPolyhedron) {
-        for(const Constraint &constraint: convexPolyhedron) {
+    friend std::ostream &operator <<(std::ostream &out, const ConvexPolyhedron<T> &convexPolyhedron) {
+        for(const Constraint<T> &constraint: convexPolyhedron) {
             out << constraint << std::endl;
         }
         return out;

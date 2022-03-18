@@ -20,6 +20,7 @@
 #include <vector>
 #include <set>
 #include "../ModelState.h"
+#include "../Constraint.h"
 
 class CatMouseAgent {
 public:
@@ -58,7 +59,7 @@ public:
     std::vector<double> marginalTimestep() const;
     std::vector<CatMouseAgent> consequences(Act act) const; // the consequences of an act
     // returns the constraints implied by the given act
-    std::vector<glp::Constraint> constraints(int time, Act act) const; // to be generated automatically by static analysis...eventually.
+    std::vector<Constraint> constraints(int time, Act act) const; // to be generated automatically by static analysis...eventually.
 
     friend std::ostream &operator <<(std::ostream &out, const CatMouseAgent &agent) {
         out << (agent.type()==CAT?"CAT":"MSE") << ":" << (agent.position()==LEFT?"L":"R");

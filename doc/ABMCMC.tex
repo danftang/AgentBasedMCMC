@@ -328,8 +328,8 @@ If the trajectory is continuous then $\Psi^t = T^t_{* a}\mathbf{1}^a$ so
 P(T|\theta) =
 \begin{cases}
 P(\Psi^0 = T^0_{* c}\mathbf{1}^c|\theta)
-\prod_{t, \psi, a}\left(T^t_{\psi b} \mathbf{1}^b \right)!
-\frac{\pi(\psi, T^{t}_{* d}\mathbf{1}^d,a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA}(F) \\
+\prod_{t, \psi} \left(T^t_{\psi b} \mathbf{1}^b \right)!
+\prod_{a} \frac{\pi(\psi, T^{t}_{* d}\mathbf{1}^d,a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA}(F) \\
 0 & \text{otherwise}\\
 \end{cases}
 \label{priorTrajectory}
@@ -347,9 +347,8 @@ P(\theta)
 P(\Psi^0 = T^0_{* c}\mathbf{1}^c|\theta)
 \prod_{(\omega,v) \in \Omega}
 P\left(\omega(T)=v\right)
-\prod_{t, \psi, a}
-\left(T^t_{\psi b} \mathbf{1}^b \right)!
-\frac{\pi(\psi, T^{t}_{* d}\mathbf{1}^d,a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & 
+\prod_{t, \psi} \left(T^t_{\psi b} \mathbf{1}^b \right)!
+\prod_{a} \frac{\pi(\psi, T^{t}_{* d}\mathbf{1}^d,a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & 
  \text{if } T \in \mathcal{T}^N_{SA}(F) \\
 0 & \text{otherwise}\\
 \end{cases}
@@ -625,7 +624,7 @@ and a \textit{clamped} trajectory
 
 Next we introduce a function that is approximately equal to $P(T,\theta,\Omega)$ inside the polyhedron, but is also well defined and non-zero inside the whole hyper-rectangle $H$. We define the approximation as decomposable into functions on each individual agent act $T^t_{\psi a}$
 \[
-g(T,\theta) = \prod_{t,\psi,a} g^t_{\psi a}(T^t_{\psi a},\theta)P(\theta) \approx P(T,\Omega|\theta)P(\theta) = P(T,\theta,\Omega) \text{ if }\left<T,\theta\right>\text{ is feasible}
+g(T,\theta) = \prod_{t,\psi,a} g^t_{\psi a}(T^t_{\psi a},\theta) \approx P(T,\Omega|\theta)P(\theta) = P(T,\theta,\Omega) \text{ if }\left<T,\theta\right>\text{ is feasible}
 \]
 Now let $R$ be a function that is 1 inside a hyper-rectangle $L \le X \le U$ and decays exponentially outside
 \[
@@ -653,9 +652,9 @@ This means that infeasible states have non-zero probability and the Markov chain
 
 The approximating functions $g^t_{\psi a}$ do not affect the stationary state of the Markov chain in the feasible region so can be any arbitrary function that is non-zero inside the hyper-rectangle. However, we'll see in the next section that a proposal is more likely to be accepted if the approximation is better, so a better approximation leads to a more efficient algorithm. We have found that approximating $g^t_{\psi a}$ as 
 \[
-g^t_{\psi a}(T^t_{\psi a},\theta) = \int P(T^t_{\psi a}|\theta')d\theta' \prod_{\left<\omega,v\right> \in \Omega} \int P(\omega(T)=v|T)P(T|\theta'') dT  d\theta''
+g^t_{\psi a}(T^t_{\psi a},\theta) = \int P(T^t_{\psi a}|\theta')P(\theta')d\theta' \prod_{\left<\omega,v\right> \in \Omega} \int P(\omega(T)=v|T)P(T|\theta'')P(\theta'') dT  d\theta''
 \]
-gives acceptable performance. Note that the $\theta$ dependence of $g^t_{\psi a}$ has been marginalised out, and the product term is constant for all $g^t_{\psi a}$. There may be model-specific ways of retaining some $\theta$ dependence as appropriate. The first integral can easily be found by importance sampling from the prior (i.e. drawing from $P(\theta)$  then drawing from $P(\Psi^0|\theta)$, then executing the model and weighting the resulting trajectory by $P(\theta)^{-1}$ ($P(\theta)$ can be replaced by some overdispersed approximation to improve stability if $P(\theta)^-1$ has high variance). The same samples can be used for all $t$, $\psi$ and $a$. Each of the integrals in the product can also be approximated using the same importance weighted samples from the prior.
+gives acceptable performance. Note that the the product term is constant for all $g^t_{\psi a}$ and the $\theta$ dependence of $g^t_{\psi a}$ has been marginalised out; there may be model-specific ways of retaining some $\theta$ dependence as appropriate. The first integral can easily be found by sampling from the prior (i.e. drawing from $P(\theta)$  then drawing from $P(\Psi^0|\theta)$, then executing the model) and marginalising for each $t$, $\psi$ and $a$. Each of the integrals in the product term can also be approximated using the same samples from the prior.
 
 If we define the \textit{energy} of a Markov state to be
 \[
@@ -700,10 +699,9 @@ In the next section we'll see how to calculate this value efficiently.
 In order to choose a transition, we draw a destination state $X'_N \in \mathcal{D}(X_N)$ with probability $P(X_N \to X'_N)$. The Metropolis-Hastings acceptance probability is then
 \[
 \alpha = 
-\frac{P(X'_N)P(X'_N,X_N)}{P(X_N)P(X_N,X'_N)} = 
-\frac{P_\iota(X_N)}{P(X_N)} \frac{P(X'_N)}{P_\iota(X'_N)}  \frac{S(X_N)}{S(X'_N)}
+\min\left( 1, \frac{P(X'_N)P(X'_N \to X_N)}{P(X_N)P(X_N \to X'_N)} \right) = \min\left(1, 
+\frac{P_\iota(X_N)}{P(X_N)} \frac{P(X'_N)}{P_\iota(X'_N)}  \frac{S(X_N)}{S(X'_N)}\right)
 \]
-
 When $X_N$ is infeasible $\frac{P_\iota(X_N)}{P(X_N)} = 1$. When $X_N$ is feasible $P_\iota(X_N)$ approximates $P(X_N)$ so their ratio should be close to 1. Similarly for $X'_N$. Finally, we'll see in the next section that if we choose the basis carefully then $S(X_N)$ will not change very much between transitions so the ratio $ \frac{S(X_N)}{S(X'_N)}$ should also be close to 1 meaning that the acceptance probability should also be close to 1.
 
 \subsection{Choosing a basis}

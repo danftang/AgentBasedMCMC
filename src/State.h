@@ -11,8 +11,7 @@
 #include <assert.h>
 #include "LinearSum.h"
 #include "Event.h"
-
-template<typename A> class Trajectory;
+#include "ABM.h"
 
 template<typename AGENT>
 class State {
@@ -28,29 +27,22 @@ public:
     time(time),
     agent(agent) { }
 
-
-    double forwardOccupationNumber(const std::vector<double> &trajectory) const;
-
-    double backwardOccupationNumber(const std::vector<double> &trajectory) const;
-
-    double occupationNumber(const std::vector<double> &trajectory) const;
-
-    double occupationUpperBound() const {
+    ABM::occupation_type occupationUpperBound() const {
         assert(agent < incomingEventsByState.size());
-        return std::min(AGENT::actDomainSize()*1.0, incomingEventsByState[agent].size()*1.0);
+        return std::min(AGENT::actDomainSize(), incomingEventsByState[agent].size());
     }
 
 
-    LinearSum operator *(double c) const {
-        LinearSum eventVector;
-        int beginIndex = Event<AGENT>(time, agent, 0);
+    LinearSum<ABM::occupation_type> operator *(ABM::occupation_type c) const {
+        LinearSum<ABM::occupation_type> eventVector;
+        int beginIndex = Event<AGENT>(time, agent, 0).id;
         for(int actId=0; actId < AGENT::actDomainSize(); ++actId) {
             eventVector += c*X(beginIndex+actId);
         }
         return eventVector;
     }
 
-    friend LinearSum operator *(double c, const State<AGENT> &state) {
+    friend LinearSum<ABM::occupation_type> operator *(ABM::occupation_type c, const State<AGENT> &state) {
         return state * c;
     }
 
@@ -106,33 +98,32 @@ private:
 };
 
 
-// TODO: this needs to be recalculated when domin size changes!
 template<typename AGENT>
 const std::vector<std::vector<Event<AGENT>>> State<AGENT>::incomingEventsByState = State<AGENT>::calculateIncomingEventsByState();
 
-template<typename AGENT>
-double State<AGENT>::backwardOccupationNumber(const std::vector<double> &trajectory) const {
-    assert(time != 0);
-    double occupation = 0;
-    for(const Event<AGENT> &incomingEvent : incomingEventsByState[agent]) {
-        occupation += trajectory[Event(time-1, incomingEvent.agent(), incomingEvent.act())];
-    }
-    return occupation;
-}
-
-template<typename AGENT>
-double State<AGENT>::forwardOccupationNumber(const std::vector<double> &trajectory) const {
-    double occupation = 0;
-    for(int act=0; act<AGENT::actDomainSize(); ++act) {
-        occupation += trajectory[Event(time,agent,act)];
-    }
-    return occupation;
-}
-
-template<typename AGENT>
-double State<AGENT>::occupationNumber(const std::vector<double> &trajectory) const {
-    if(trajectory.size() == Trajectory<AGENT>::dimension(time)) return backwardOccupationNumber(trajectory);
-    return forwardOccupationNumber(trajectory);
-}
+//template<typename AGENT>
+//double State<AGENT>::backwardOccupationNumber(const std::vector<double> &trajectory) const {
+//    assert(time != 0);
+//    double occupation = 0;
+//    for(const Event<AGENT> &incomingEvent : incomingEventsByState[agent]) {
+//        occupation += trajectory[Event(time-1, incomingEvent.agent(), incomingEvent.act())];
+//    }
+//    return occupation;
+//}
+//
+//template<typename AGENT>
+//double State<AGENT>::forwardOccupationNumber(const std::vector<double> &trajectory) const {
+//    double occupation = 0;
+//    for(int act=0; act<AGENT::actDomainSize(); ++act) {
+//        occupation += trajectory[Event(time,agent,act)];
+//    }
+//    return occupation;
+//}
+//
+//template<typename AGENT>
+//double State<AGENT>::occupationNumber(const std::vector<double> &trajectory) const {
+//    if(trajectory.size() == Trajectory<AGENT>::dimension(time)) return backwardOccupationNumber(trajectory);
+//    return forwardOccupationNumber(trajectory);
+//}
 
 #endif //GLPKTEST_STATE_H

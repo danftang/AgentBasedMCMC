@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #include "../ModelState.h"
+#include "../Constraint.h"
 
 class PredPreyAgentBase {
 public:
@@ -70,7 +71,7 @@ public:
     std::vector<double> marginalTimestep() const;
     std::vector<PredPreyAgent<GRIDSIZE>> consequences(Act act) const; // the consequences of an act
     // returns the constraints implied by the given act
-    std::vector<glp::Constraint> constraints(int time, Act act) const; // to be generated automatically by static analysis...eventually.
+    std::vector<Constraint> constraints(int time, Act act) const; // to be generated automatically by static analysis...eventually.
 
     friend std::ostream &operator <<(std::ostream &out, const PredPreyAgent<GRIDSIZE> &agent) {
 
@@ -143,6 +144,8 @@ std::vector<double> PredPreyAgent<GRIDSIZE>::timestep(const ModelState<PredPreyA
 }
 
 
+// Should be factored approximation of multinomial given that constraints are satisfied
+// (i.e. given that the prob of this act is not zero)
 template<int GRIDSIZE>
 std::vector<double> PredPreyAgent<GRIDSIZE>::marginalTimestep() const {
     constexpr double pPreyNeighbourGivenPred = 0.2;
@@ -167,16 +170,16 @@ std::vector<double> PredPreyAgent<GRIDSIZE>::marginalTimestep() const {
 
 
 template<int GRIDSIZE>
-std::vector<glp::Constraint> PredPreyAgent<GRIDSIZE>::constraints(int time, PredPreyAgent<GRIDSIZE>::Act act) const {
+std::vector<Constraint> PredPreyAgent<GRIDSIZE>::constraints(int time, PredPreyAgent<GRIDSIZE>::Act act) const {
     if(type() == PREDATOR && act == GIVEBIRTH) {
-        return std::vector<glp::Constraint>({
+        return std::vector<Constraint>({
                                                     1.0*State(time,PredPreyAgent<GRIDSIZE>(xLeft(),yPosition(), PREY)) +
                                                     1.0*State(time,PredPreyAgent<GRIDSIZE>(xRight(),yPosition(), PREY)) +
                                                     1.0*State(time,PredPreyAgent<GRIDSIZE>(xPosition(),yUp(),PREY)) +
                                                     1.0*State(time,PredPreyAgent<GRIDSIZE>(xPosition(),yDown(),PREY)) >= 1.0
                                             });
     }
-    return std::vector<glp::Constraint>();
+    return std::vector<Constraint>();
 }
 
 #endif //GLPKTEST_PREDPREYAGENT_H

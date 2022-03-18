@@ -7,7 +7,7 @@
 
 #include "ConvexPMF.h"
 #include "Trajectory.h"
-#include "ABMConstraints.h"
+#include "ABM.h"
 
 //template<typename AGENT>
 //class TrajectoryPMF: public ConvexPMF {

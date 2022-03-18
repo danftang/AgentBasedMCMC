@@ -9,11 +9,12 @@
 #include <vector>
 #include "../ModelState.h"
 #include "../Constraint.h"
+#include "../ABM.h"
 
 // Agent that has no interactions and can either stay put or move right (on a circular, 1D domain)
+template<int GRIDSIZE>
 class BinomialAgent {
 public:
-    static int GRIDSIZE;
     static double pMove; // probability of moving right
 
     typedef int Act;
@@ -36,12 +37,18 @@ public:
         return {1.0-pMove, pMove};
     }
 
-    std::vector<BinomialAgent> consequences(Act act) const {
-        if(act == 1) return {BinomialAgent((stateId + 1)%GRIDSIZE)};
+    double marginalTimestep(Act act) const {
+         if(act == 0) return 1.0-pMove;
+         return pMove;
+    }
+
+
+    std::vector<BinomialAgent<GRIDSIZE>> consequences(Act act) const {
+        if(act == 1) return {BinomialAgent<GRIDSIZE>((stateId + 1)%GRIDSIZE)};
         return { *this };
     }
 
-    std::vector<Constraint> constraints(int time, Act act) const {
+    std::vector<Constraint<ABM::occupation_type>> constraints(int time, Act act) const {
         return { };
     }
 
@@ -49,6 +56,9 @@ public:
 //        out << binomialAgent.stateId;
 //    }
 };
+
+template<int GRIDSIZE>
+double BinomialAgent<GRIDSIZE>::pMove = 0.5;
 
 
 #endif //GLPKTEST_BINOMIALAGENT_H

@@ -13,18 +13,21 @@
 #include "Random.h"
 #include "ActFermionicDistribution.h"
 #include "Sampler.h"
+#include "ABM.h"
 
 template<typename AGENT>
-class Trajectory: public std::vector<double> {
+class Trajectory: public std::vector<ABM::occupation_type> {
 public:
 //    static constexpr double tol = SimplexMCMC::tol;
 
-    explicit Trajectory(int nTimesteps): std::vector<double>(dimension(nTimesteps)) { }
-    Trajectory(std::vector<double> &&rvalue): std::vector<double>(rvalue) {
-        assert((size()-1)%(AGENT::domainSize()*AGENT::actDomainSize()) == 0);
+    explicit Trajectory(int nTimesteps): std::vector<value_type>(dimension(nTimesteps)) { }
+
+    explicit Trajectory(std::vector<value_type> &&rvalue): std::vector<value_type>(rvalue) {
+        assert((this->size()-1)%(AGENT::domainSize()*AGENT::actDomainSize()) == 0);
     }
-    explicit Trajectory(const std::vector<double> &lvalue): std::vector<double>(lvalue) {
-        assert((size()-1)%(AGENT::domainSize()*AGENT::actDomainSize()) == 0);
+
+    explicit Trajectory(const std::vector<value_type> &lvalue): std::vector<value_type>(lvalue) {
+        assert((this->size()-1)%(AGENT::domainSize()*AGENT::actDomainSize()) == 0);
     }
 
     // execute forward from a given start state distribution, choosing a exactEndState with probability
@@ -128,12 +131,11 @@ public:
     // occupation number of an agent state at a particular time
     // time must be between 0 and nTimesteps-1 (final state not implemented at present)
     // use pre-multiply by agent state? (vector dot product)
-    double operator()(int time, const AGENT &agent) const {
+    value_type operator()(int time, const AGENT &agent) const {
         int beginIndex = Event(time,agent,0);
-        assert(beginIndex < size()); // TODO: Implement final state occupation numbers
+        assert(beginIndex < this->size()); // TODO: Implement final state occupation numbers
         int endIndex = beginIndex + AGENT::actDomainSize();
-        double occupation = 0.0;
-        int eventId;
+        value_type occupation = 0;
         for(int eventId=beginIndex; eventId<endIndex; ++eventId) {
             occupation += (*this)[eventId];
         }
@@ -150,7 +152,7 @@ public:
         int beginIndex = Event(time,AGENT(0),0);
         int endIndex = beginIndex + AGENT::actDomainSize() * AGENT::domainSize();
         for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
-            if (double occupation = (*this)[eventId]; fabs(occupation) > tol)
+            if (value_type occupation = (*this)[eventId]; occupation > 0)
                 timeslice[Event<AGENT>(eventId).agent()] += occupation;
         }
         return timeslice;
@@ -162,7 +164,7 @@ public:
         int beginIndex = Event(nTimesteps()-1,AGENT(0),0);
         int endIndex = beginIndex + AGENT::actDomainSize() * AGENT::domainSize();
         for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
-            if (double occupation = (*this)[eventId]; fabs(occupation) > tol) {
+            if (value_type occupation = (*this)[eventId]; occupation != 0) {
                 for(const AGENT &consequence : Event<AGENT>(eventId).consequences()) {
                     timeslice[consequence] += occupation;
                 }
@@ -170,6 +172,13 @@ public:
         }
         return timeslice;
     }
+
+
+    value_type forwardOccupationNumber(const State<AGENT> &agentState) const;
+
+    value_type backwardOccupationNumber(const State<AGENT> &agentState) const;
+
+    value_type occupationNumber(const State<AGENT> &agentState) const;
 
 
     int nTimesteps() const { return (size()-1)/(AGENT::domainSize()*AGENT::actDomainSize()); }
@@ -228,7 +237,7 @@ public:
         for (int t = 0; t < tEnd; ++t) {
             for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
                 double agentOccupation = stateTrajectory[t][agentId];
-                if(agentOccupation > tol) {
+                if(agentOccupation > 0) {
                     double agentStateLogP = 0.0;
                     std::vector<double> actPMF = AGENT(agentId).timestep(stateTrajectory[t]);
                     double clampedAgentOccupation = 0.0;
@@ -236,8 +245,8 @@ public:
                         agentStateLogP = 0.0;
                         for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
                             double actOccupation = (*this)[Event<AGENT>(t, agentId, actId)];
-                            if (actOccupation < tol) actOccupation = 0.0;
-                            else if (actOccupation > 1.0 - tol) actOccupation = 1.0; // Clamp to Fermionic limits
+                            if (actOccupation < 0) actOccupation = 0.0;
+                            else if (actOccupation > 1.0) actOccupation = 1.0; // Clamp to Fermionic limits
                             if (actOccupation > 0.0) {
                                 clampedAgentOccupation += actOccupation;
                                 agentStateLogP += actOccupation * log(actPMF[actId]);
@@ -318,6 +327,33 @@ private:
 
 
 };
+
+template<typename AGENT>
+typename Trajectory<AGENT>::value_type Trajectory<AGENT>::backwardOccupationNumber(const State<AGENT> &agentState) const {
+    assert(agentState.time > 0 && agentState.time <= nTimesteps());
+    value_type occupation = 0;
+    for(const Event<AGENT> &incomingEvent : State<AGENT>::incomingEventsByState[agentState.agent]) {
+        occupation += (*this)[Event(agentState.time-1, incomingEvent.agent(), incomingEvent.act())];
+    }
+    return occupation;
+}
+
+template<typename AGENT>
+typename Trajectory<AGENT>::value_type Trajectory<AGENT>::forwardOccupationNumber(const State<AGENT> &agentState) const {
+    assert(agentState.time >= 0 && agentState.time < nTimesteps());
+    value_type occupation = 0;
+    for(int act=0; act<AGENT::actDomainSize(); ++act) {
+        occupation += (*this)[Event(agentState.time,agentState.agent,act)];
+    }
+    return occupation;
+}
+
+template<typename AGENT>
+typename Trajectory<AGENT>::value_type Trajectory<AGENT>::occupationNumber(const State<AGENT> &agentState) const {
+    if(agentState.time == nTimesteps()) return backwardOccupationNumber(agentState);
+    return forwardOccupationNumber(agentState);
+}
+
 
 //template<typename AGENT>
 //std::function<ModelState<AGENT>()> endStateAdaptor(const std::function<const Trajectory<AGENT> &()> &trajectorySampler) {

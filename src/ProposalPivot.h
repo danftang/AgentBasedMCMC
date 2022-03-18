@@ -13,7 +13,7 @@
 #include <map>
 #include <iostream>
 
-#include "constants.h"
+#include "globals.h"
 class SimplexMCMC;
 
 class ProposalPivot {

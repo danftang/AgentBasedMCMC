@@ -23,11 +23,11 @@
 // If D has M rows, we can choose any M linearly independent columns
 // and pivot so that they have only one non-zero element equal to -1.
 // to give
-// M(X A)^T = F,  0 <= (X A) <= (H U-L)
+// M(X A)^T + F = 0,  0 <= (X A) <= (H U-L)
 // where M has a total of |A| + M reduced columns (i.e. basic variables)
 //
 // Given this, we can transform into the form
-// Q X_N - F = (X A), 0 <= (X A) <= (H U-L)
+// Q X_N + F = (X A), 0 <= (X A) <= (H U-L)
 // by taking basic variables over to the right-hand side and adding rows to Q
 // to insert the non-basic vars.
 // The columns of Q form the sparse basis so if M is sparse, so is Q.
@@ -56,6 +56,8 @@ public:
         bool isActive;
 
         Row(const SparseVec<double> &row, bool isActive);
+
+        Row &operator *=(double c);
     };
 
     std::vector<Column>     cols;   // tableau columns
@@ -63,10 +65,11 @@ public:
 
     std::vector<std::list<int>> colsBySparsity;     // only contains non-basic cols
     std::vector<std::list<int>> rowsBySparsity;     // only contains active rows
-    std::vector<int>            minimalBasis;       // basic variables after minimisation: -ve is auxiliary by row index-1, otherwise col index
+    std::vector<int>            basis;            // basic variables: -ve means auxiliary, otherwise col index
     int                         nAuxiliaryVars;     // number of auxiliary variables
     std::vector<double>         F;                  // aggregated value of all non-basic fixed vars
-    std::vector<double>         H;                  // upper bounds of non-basic variables
+    std::vector<double>         Hc;                  // upper bounds of columns
+    std::vector<double>         Ha;                  // upper bounds of auxiliaries
 
 //    TableauNormMinimiser(glp::Problem &problem);
     TableauNormMinimiser(const ConvexPolyhedron &problem);

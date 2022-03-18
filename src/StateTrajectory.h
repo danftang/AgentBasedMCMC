@@ -10,7 +10,7 @@
 
 #include "State.h"
 #include "ModelState.h"
-#include "constants.h"
+#include "ABM.h"
 
 // A vector of timesteps, whith each timestep a map from agent state to occupation number
 template<typename AGENT>
@@ -18,22 +18,12 @@ class StateTrajectory: public std::vector<ModelState<AGENT>> {
 public:
     using std::vector<ModelState<AGENT>>::operator [];
 
-//    static constexpr double tol = SimplexMCMC::tol;
 
-//    StateTrajectory(const glp::SparseVec &actTrajectory) {
-//        for(int i=1; i <= actTrajectory.sparseSize(); ++i) {
-//            auto event = Event<AGENT>(actTrajectory.indices[i]);
-//            if(event.time() >= this->size()) this->resize(event.time()+1);
-//            (*this)[event.time()][event.agent()] += actTrajectory.values[i];
-//        }
-//    }
-
-
-    StateTrajectory(const std::vector<double> &eventTrajectory):
+    StateTrajectory(const std::vector<ABM::occupation_type> &eventTrajectory):
     std::vector<ModelState<AGENT>>((eventTrajectory.size() - 1) / (AGENT::domainSize() * AGENT::actDomainSize())) {
         for(int eventId=1; eventId < eventTrajectory.size(); ++eventId) {
-            double occupation = fabs(eventTrajectory[eventId]);
-            if(occupation > tol) {
+            ABM::occupation_type occupation = eventTrajectory[eventId];
+            if(occupation != 0) {
                 auto event = Event<AGENT>(eventId);
                 (*this)[event.time()][event.agent()] += occupation;
             }
@@ -41,12 +31,12 @@ public:
     }
 
 
-    double operator [](const State<AGENT> &agentState) const {
-        if(agentState.time >= this->size()) return 0.0;
+    ABM::occupation_type operator [](const State<AGENT> &agentState) const {
+        if(agentState.time >= this->size()) return 0;
         return (*this)[agentState.time][agentState.agent];
     }
 
-    double &operator [](const State<AGENT> &agentState) {
+    ABM::occupation_type &operator [](const State<AGENT> &agentState) {
         return (*this)[agentState.time][agentState.agent];
     }
 

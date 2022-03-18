@@ -35,7 +35,7 @@
 #include "diagnostics/Dataflow.h"
 #include "diagnostics/MultiChainStats.h"
 #include "TableauNormMinimiser.h"
-#include "SparseBasis.h"
+#include "SparseBasisSampler.h"
 
 
 void Experiments::minimalBasis() {
@@ -80,7 +80,7 @@ void Experiments::minimalBasis() {
     std::cout << "Mean L0 norm = " << minimiser.meanColumnL0Norm() << std::endl;
     std::cout << "Mean L1 norm = " << minimiser.meanColumnL1Norm() << std::endl;
 
-    std::cout << "Minimal basis: " << std::endl << minimiser.minimalBasis << std::endl;
+    std::cout << "Minimal basis: " << std::endl << minimiser.basis << std::endl;
 }
 
 void Experiments::animatedPredPreyDemo() {
@@ -690,7 +690,7 @@ void Experiments::BinomialAgentAssimilation() {
     std::cout << "Initial tableau" << std::endl << tableau << std::endl;
     tableau.findMinimalBasis();
     std::cout << "Reduced tableau" << std::endl << tableau << std::endl;
-    SparseBasis<int> basis(tableau);
+    SparseBasisSampler<int> basis(tableau);
     std::cout << "Basis is" << std::endl << basis << std::endl;
 
 //    MCMCSampler<Trajectory<BinomialAgent>> sampler(window.posterior, window.priorSampler());
@@ -751,8 +751,8 @@ void Experiments::FermionicIntegrality() {
     constexpr int GRIDSIZE = 3;
     int nTimesteps = 2;
     ConvexPolyhedron fermi =
-            ABMConstraints<PredPreyAgent<GRIDSIZE>>::actFermionicConstraints(nTimesteps) +
-            ABMConstraints<PredPreyAgent<GRIDSIZE>>::continuityConstraints(nTimesteps);
+            ABM<PredPreyAgent<GRIDSIZE>>::actFermionicConstraints(nTimesteps) +
+            ABM<PredPreyAgent<GRIDSIZE>>::continuityConstraints(nTimesteps);
 
     std::cout << "Constraints:\n" << fermi << std::endl;
 

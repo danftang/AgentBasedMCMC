@@ -56,8 +56,8 @@ public:
         return 0.0;
     }
 
-
-    T operator *(const std::vector<T> &other) const {
+    template<class OTHERNUMBER>
+    T operator *(const std::vector<OTHERNUMBER> &other) const {
         T dotProd = 0;
         for(int i=0; i < sparseSize(); ++i) {
             dotProd += values[i] * other[indices[i]];

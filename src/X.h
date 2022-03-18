@@ -9,9 +9,9 @@
 class X {
 public:
     int id;
-    X(int id): id(id) { }
+    explicit X(int id): id(id) { }
 
-    operator int() const { return id; }
+//    operator int() const { return id; }
 };
 
 

@@ -102,10 +102,10 @@ public:
     }
 
     // the sum of all un-normalised probabilities (doesn't need to be 1.0)
-    double sum() { return tree[0]; }
+    double sum() const { return tree[0]; }
 
     // Returns the normalised probability of the index'th element
-    double P(int index) { return get(index)/sum(); }
+    double P(int index) const { return get(index)/sum(); }
 
 protected:
     double descendantSum(int index) const;

@@ -18,35 +18,45 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_sparse.hpp>
 #include "agents/BinomialAgent.h"
-#include "BernoulliModelState.h"
-#include "AssimilationWindow.h"
-#include "TableauNormMinimiser.h"
-#include "SparseBasis.h"
+//#include "BernoulliModelState.h"
+//#include "AssimilationWindow.h"
+//#include "TableauNormMinimiser.h"
+//#include "SparseBasisSampler.h"
+#include "BernoulliStartState.h"
+#include "ObservationLikelihood.h"
+#include "TrajectoryForecastDistribution.h"
 
 void BinomialAgentAssimilation() {
     constexpr int nTimesteps = 2;
-    BinomialAgent::GRIDSIZE = nTimesteps + 1;
+    typedef BinomialAgent<nTimesteps+1> AGENT;
     constexpr int nSamplesPerWindow = 1000000;
     constexpr int nBurninSamples = 5000;
 
-    BernoulliModelState<BinomialAgent> startState([](BinomialAgent agent) {
-        return agent.stateId==0?1.0:0.1;
-    });
+    BernoulliStartState<AGENT> PStartState([](AGENT agent) { return agent.stateId==0?1.0:0.1; });
+    std::cout << "Start state support is \n" << PStartState.constraints << std::endl;
 
-    AgentStateObservation<BinomialAgent> observation(State<BinomialAgent>(1, 0),1,0.9);
+//    ObservationLikelihood<BinomialAgent> PObsGivenTrajectory(AgentStateObservation(State<BinomialAgent>(1, 0),1,0.9));
+//    TrajectoryForecastDistribution<BinomialAgent> PTrajectoryGivenStartState(nTimesteps);
+//
+//    // WeightedFactoredConvexDistribution<BinomialAgent,int>
+//    auto posterior = PObsGivenTrajectory * PTrajectoryGivenStartState * PStartState;
+//
+//    std::cout << "Likelihood support is \n" << PObsGivenTrajectory << std::endl;
+//    std::cout << "Posterior support is \n" << posterior << std::endl;
+//
+//    SparseBasisSampler<int> sampler(posterior);
 
-    AssimilationWindow<BinomialAgent> window(nTimesteps, startState, observation);
-    std::cout << "Prior support is \n" << window.priorPMF.convexSupport << std::endl;
-    std::cout << "Likelihood support is \n" << window.likelihoodPMF.convexSupport << std::endl;
-    std::cout << "Posterior support is \n" << window.posterior.convexSupport << std::endl;
+    //...
 
-    TableauNormMinimiser tableau(window.posterior.convexSupport);
-
-    std::cout << "Initial tableau" << std::endl << tableau << std::endl;
-    tableau.findMinimalBasis();
-    std::cout << "Reduced tableau" << std::endl << tableau << std::endl;
-    SparseBasis<int> basis(tableau);
-    std::cout << "Basis is" << std::endl << basis << std::endl;
+//    TableauNormMinimiser tableau(posterior);
+//    std::cout << "Initial tableau" << std::endl << tableau << std::endl;
+//    tableau.findMinimalBasis();
+//    std::cout << "Reduced tableau" << std::endl << tableau << std::endl;
+//    SparseBasisSampler<int> basis(tableau, [](int i, int occupation) {
+//        Event<BinomialAgent> event(i);
+//        return event.agent().marginalTimestep(event.act());
+//    });
+//    std::cout << "Basis is" << std::endl << basis << std::endl;
 
 //    MCMCSampler<Trajectory<BinomialAgent>> sampler(window.posterior, window.priorSampler());
 //    std::cout << "simplex = \n" << sampler.simplex << std::endl;
@@ -74,28 +84,6 @@ void BinomialAgentAssimilation() {
 
 
 int main(int argc, char *argv[]) {
-
-    boost::numeric::ublas::vector<int> X(4, 1);
-    boost::numeric::ublas::compressed_vector<int> Y(32000000000);
-    boost::numeric::ublas::mapped_vector<int> Z(4);
-//    Z.insert_element(1, 1);
-    std::cout << Z.size() << std::endl;
-    std::cout << Y.size() << std::endl;
-    Z[1] = 1;
-    Y = Z;
-    Y.resize(4);
-    Y.reserve(4);
-    Y.insert_element(3,2);
-    auto it = Y.begin();
-    for(auto it= Y.begin(); it != Y.end(); it++) {
-        std::cout << it.index() << ", " << *it <<  std::endl;
-    }
-
-    X = X + Y;
-    std::cout << Z[0] << ", " << Z[1] << std::endl;
-
-    std::cout << X[0] << ", " << X[1] << std::endl;
-
 
     BinomialAgentAssimilation();
 
