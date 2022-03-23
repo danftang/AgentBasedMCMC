@@ -1,4 +1,7 @@
 \documentclass{article}
+%DIF LATEXDIFF DIFFERENCE FILE
+%DIF DEL ABMCMC.tex      Tue Mar 22 15:26:56 2022
+%DIF ADD ABMCMC-NM.tex   Wed Mar 23 10:16:04 2022
 
 \usepackage{arxiv}
 
@@ -22,7 +25,9 @@
 \usepackage{kbordermatrix}% http://www.hss.caltech.edu/~kcb/TeX/kbordermatrix.sty
 \usepackage{todonotes}
 \usepackage{natbib}
-\usepackage{appendix}
+%DIF 25a25
+\usepackage{appendix} %DIF > 
+%DIF -------
 
 \newtheorem{theorem}{Theorem}
 \DeclareMathOperator\supp{supp}
@@ -45,7 +50,87 @@
   %% Affiliation \\
   %% Address \\
 }
-
+%DIF PREAMBLE EXTENSION ADDED BY LATEXDIFF
+%DIF UNDERLINE PREAMBLE %DIF PREAMBLE
+\RequirePackage[normalem]{ulem} %DIF PREAMBLE
+\RequirePackage{color}\definecolor{RED}{rgb}{1,0,0}\definecolor{BLUE}{rgb}{0,0,1} %DIF PREAMBLE
+\providecommand{\DIFaddtex}[1]{{\protect\color{blue}\uwave{#1}}} %DIF PREAMBLE
+\providecommand{\DIFdeltex}[1]{{\protect\color{red}\sout{#1}}}                      %DIF PREAMBLE
+%DIF SAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddbegin}{} %DIF PREAMBLE
+\providecommand{\DIFaddend}{} %DIF PREAMBLE
+\providecommand{\DIFdelbegin}{} %DIF PREAMBLE
+\providecommand{\DIFdelend}{} %DIF PREAMBLE
+\providecommand{\DIFmodbegin}{} %DIF PREAMBLE
+\providecommand{\DIFmodend}{} %DIF PREAMBLE
+%DIF FLOATSAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddFL}[1]{\DIFadd{#1}} %DIF PREAMBLE
+\providecommand{\DIFdelFL}[1]{\DIFdel{#1}} %DIF PREAMBLE
+\providecommand{\DIFaddbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFaddendFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelendFL}{} %DIF PREAMBLE
+%DIF HYPERREF PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFadd}[1]{\texorpdfstring{\DIFaddtex{#1}}{#1}} %DIF PREAMBLE
+\providecommand{\DIFdel}[1]{\texorpdfstring{\DIFdeltex{#1}}{}} %DIF PREAMBLE
+\newcommand{\DIFscaledelfig}{0.5}
+%DIF HIGHLIGHTGRAPHICS PREAMBLE %DIF PREAMBLE
+\RequirePackage{settobox} %DIF PREAMBLE
+\RequirePackage{letltxmacro} %DIF PREAMBLE
+\newsavebox{\DIFdelgraphicsbox} %DIF PREAMBLE
+\newlength{\DIFdelgraphicswidth} %DIF PREAMBLE
+\newlength{\DIFdelgraphicsheight} %DIF PREAMBLE
+% store original definition of \includegraphics %DIF PREAMBLE
+\LetLtxMacro{\DIFOincludegraphics}{\includegraphics} %DIF PREAMBLE
+\newcommand{\DIFaddincludegraphics}[2][]{{\color{blue}\fbox{\DIFOincludegraphics[#1]{#2}}}} %DIF PREAMBLE
+\newcommand{\DIFdelincludegraphics}[2][]{% %DIF PREAMBLE
+\sbox{\DIFdelgraphicsbox}{\DIFOincludegraphics[#1]{#2}}% %DIF PREAMBLE
+\settoboxwidth{\DIFdelgraphicswidth}{\DIFdelgraphicsbox} %DIF PREAMBLE
+\settoboxtotalheight{\DIFdelgraphicsheight}{\DIFdelgraphicsbox} %DIF PREAMBLE
+\scalebox{\DIFscaledelfig}{% %DIF PREAMBLE
+\parbox[b]{\DIFdelgraphicswidth}{\usebox{\DIFdelgraphicsbox}\\[-\baselineskip] \rule{\DIFdelgraphicswidth}{0em}}\llap{\resizebox{\DIFdelgraphicswidth}{\DIFdelgraphicsheight}{% %DIF PREAMBLE
+\setlength{\unitlength}{\DIFdelgraphicswidth}% %DIF PREAMBLE
+\begin{picture}(1,1)% %DIF PREAMBLE
+\thicklines\linethickness{2pt} %DIF PREAMBLE
+{\color[rgb]{1,0,0}\put(0,0){\framebox(1,1){}}}% %DIF PREAMBLE
+{\color[rgb]{1,0,0}\put(0,0){\line( 1,1){1}}}% %DIF PREAMBLE
+{\color[rgb]{1,0,0}\put(0,1){\line(1,-1){1}}}% %DIF PREAMBLE
+\end{picture}% %DIF PREAMBLE
+}\hspace*{3pt}}} %DIF PREAMBLE
+} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddbegin}{\DIFaddbegin} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddend}{\DIFaddend} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelbegin}{\DIFdelbegin} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelend}{\DIFdelend} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddbegin}{\DIFOaddbegin \let\includegraphics\DIFaddincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddend}{\DIFOaddend \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelbegin}{\DIFOdelbegin \let\includegraphics\DIFdelincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelend}{\DIFOaddend \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddbeginFL}{\DIFaddbeginFL} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddendFL}{\DIFaddendFL} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelbeginFL}{\DIFdelbeginFL} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelendFL}{\DIFdelendFL} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddbeginFL}{\DIFOaddbeginFL \let\includegraphics\DIFaddincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddendFL}{\DIFOaddendFL \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelbeginFL}{\DIFOdelbeginFL \let\includegraphics\DIFdelincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelendFL}{\DIFOaddendFL \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+%DIF LISTINGS PREAMBLE %DIF PREAMBLE
+\RequirePackage{listings} %DIF PREAMBLE
+\RequirePackage{color} %DIF PREAMBLE
+\lstdefinelanguage{DIFcode}{ %DIF PREAMBLE
+%DIF DIFCODE_UNDERLINE %DIF PREAMBLE
+  moredelim=[il][\color{red}\sout]{\%DIF\ <\ }, %DIF PREAMBLE
+  moredelim=[il][\color{blue}\uwave]{\%DIF\ >\ } %DIF PREAMBLE
+} %DIF PREAMBLE
+\lstdefinestyle{DIFverbatimstyle}{ %DIF PREAMBLE
+	language=DIFcode, %DIF PREAMBLE
+	basicstyle=\ttfamily, %DIF PREAMBLE
+	columns=fullflexible, %DIF PREAMBLE
+	keepspaces=true %DIF PREAMBLE
+} %DIF PREAMBLE
+\lstnewenvironment{DIFverbatim}{\lstset{style=DIFverbatimstyle}}{} %DIF PREAMBLE
+\lstnewenvironment{DIFverbatim*}{\lstset{style=DIFverbatimstyle,showspaces=true}}{} %DIF PREAMBLE
+%DIF END PREAMBLE EXTENSION ADDED BY LATEXDIFF
 
 \begin{document}
 \maketitle
@@ -53,49 +138,64 @@
 \begin{abstract}
 Every day, weather forecasting centres around the world receive noisy, incomplete observations of the atmosphere and use this data to update the state of their atmospheric models and forecasts. This process is known as data assimilation, data fusion or state estimation and is best expressed as Bayesian inference: given a set of observations, some prior beliefs and a model of the target system, what is the probability distribution of some set of unobserved measures at some time, possibly in the future?
 
-While data assimilation has developed rapidly in some areas of application, relatively little progress has been made in performing data assimilation with agent-based models. This has hampered the use of agent-based models to make quantitative claims about real-world systems.
+While data assimilation has developed rapidly in some areas of application, relatively little progress has been made in performing data assimilation with \DIFdelbegin \DIFdel{agent based }\DIFdelend \DIFaddbegin \DIFadd{agent-based }\DIFaddend models. This has hampered the use of \DIFdelbegin \DIFdel{agent based }\DIFdelend \DIFaddbegin \DIFadd{agent-based }\DIFaddend models to make quantitative claims about real-world systems.
 
-Here we present an algorithm that uses Markov-Chain-Monte-Carlo methods to generate samples of the trajectories of an agent-based model over a window of time given a set of noisy, incomplete observations of the system. This approach is more likely to be a feasible means of assimilating observations than the current state-of-the-art (that typically involves trying to apply existing data assimilation methods such as those used in weather forecasting to an agent-based model directly). 
+Here we present an algorithm that uses Markov-Chain-Monte-Carlo methods to generate samples of the trajectories of an \DIFdelbegin \DIFdel{agent based }\DIFdelend \DIFaddbegin \DIFadd{agent-based }\DIFaddend model over a window of time given a set of noisy, incomplete observations of the system. \DIFaddbegin \DIFadd{This approach is more likely to be a feasible means of assimilating observations than the current state-of-the-art (that typically involves trying to apply existing data assimilation methods such as those used in weather forecasting to an agent-based model directly). 
+}
 
-The algorithm is applicable to time-stepping agent-based models whose agents have a finite set of states and a finite number of ways of acting on the world. As presented the algorithm is only practical for agents with a few bytes of internal state although we discuss ways of removing this restriction. We demonstrate the algorithm by performing data assimilation with an agent-based, spatial predator-prey model.
+\DIFaddend The algorithm is applicable to time-stepping \DIFdelbegin \DIFdel{agent based }\DIFdelend \DIFaddbegin \DIFadd{agent-based }\DIFaddend models whose agents have a finite set of states and a finite number of ways of acting on the world. As presented the algorithm is only practical for agents with a few bytes of internal state although we discuss ways of removing this restriction. We demonstrate the algorithm by performing data assimilation with an agent-based, spatial predator-prey model.
 \end{abstract}
 
 % keywords can be removed
-\keywords{Data assimilation, Bayesian inference, agent-based model, Integer linear programming, predator prey model}
+\DIFdelbegin %DIFDELCMD < \keywords{Data assimilation, Bayesian inference, Agent based model, Integer linear programming, predator prey model}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \keywords{Data assimilation, Bayesian inference, agent-based model, Integer linear programming, predator prey model}
+\DIFaddend 
 
 \section{Introduction}
 
-\textit{[XXXX I have tried to break up the Introduction so that it presents a broad (brief) overview of the work, and moved the more detailed stuff to a new section]}
+\DIFaddbegin \textit{[\DIFadd{XXXX I have tried to break up the Introduction so that it presents a broad (brief) overview of the work, and moved the more detailed stuff to a new section}]}
 
-Agent-based models (ABMs) have been widely adopted as an intuitive way to model systems that consist of a heterogeneous collection of autonomous, interacting agents. The uses of ABMs can be broadly be divided into two categories. \textit{Abstract} models are typically used to explore the fundamental dynamics of a system. For example, \citet{schelling1971dynamic} famously showed that an unexpected collective behaviour can emerge from a known agent behaviour; agents with only a very slight preference to live close to agents of their own race can quickly form a highly racially-segregated population. This use of ABMs requires no assimilation of real-world data but as a consequence the model's output cannot be used to make direct assertions about the real world. \citeauthor{schelling1971dynamic}'s model \textit{might} reveal something about the dynamics of real human patterns in segregation, but to be sure we need to first demonstrate that the model is a proper abstraction of the real-world. \textit{Predictive} ABMs, on the other hand, are those that use real-world observations to demonstrate that that they are reliable abstractions and hence can be used to make predictions about current or future system states. This paper deals with the `predictive' case, where we have an ABM of some real-world target system and some observations of that same system. Our aim will be to combine the information in the observational data with the knowledge encoded in the model to learn something about some set of unobserved real-world measures.
+\DIFaddend Agent-based models (ABMs) have been widely adopted as an intuitive way to model systems that consist of a heterogeneous collection of autonomous, interacting agents. \DIFdelbegin \DIFdel{ABMs are sometimes used to show }\DIFdelend \DIFaddbegin \DIFadd{The uses of ABMs can be broadly be divided into two categories. }\textit{\DIFadd{Abstract}} \DIFadd{models are typically used to explore the fundamental dynamics of a system. For example, }\citet{schelling1971dynamic} \DIFadd{famously showed }\DIFaddend that an unexpected collective behaviour can emerge from a known agent behaviour\DIFdelbegin \DIFdel{.  For example }%DIFDELCMD < \citet{schelling1971dynamic} %%%
+\DIFdel{famously showed that }\DIFdelend \DIFaddbegin \DIFadd{; }\DIFaddend agents with only a very slight preference to live close to agents of their own race can quickly form a highly racially-segregated population. This use of ABMs requires no assimilation of real-world data but as a consequence the model's output cannot be used to \DIFdelbegin \DIFdel{assert anything }\DIFdelend \DIFaddbegin \DIFadd{make direct assertions }\DIFaddend about the real world\DIFdelbegin \DIFdel{without first demonstrating }\DIFdelend \DIFaddbegin \DIFadd{. \mbox{%DIFAUXCMD
+\citeauthor{schelling1971dynamic}}\hspace{0pt}%DIFAUXCMD
+'s model }\textit{\DIFadd{might}} \DIFadd{reveal something about the dynamics of real human patterns in segregation, but to be sure we need to first demonstrate }\DIFaddend that the model is a proper abstraction of the real-world. \DIFdelbegin \DIFdel{In this paper, we'll deal with the case }\DIFdelend \DIFaddbegin \textit{\DIFadd{Predictive}} \DIFadd{ABMs, on the other hand, are those that use real-world observations to demonstrate that that they are reliable abstractions and hence can be used to make predictions about current or future system states. This paper deals with the `predictive' case, }\DIFaddend where we have an ABM of some real-world target system and some observations of that same system. Our aim will be to combine the information in the observational data with the knowledge encoded in the model to learn something about some set of unobserved real-world measures.
 
-Recent years have seen an emerging interest in the ability of ABMs to use up-to-date data to make more accurate predictions~\citep[e.g.][]{wang_data_2015, lloyd_exploring_2016, ward_dynamic_2016, tang2019data, lueck_who_2019, tang2019osf, clay_realtime_2020, kieu_dealing_2020, malleson_simulating_2020}. However, studies to date have attempted to adapt existing data assimilation methods, typically developed in fields such as meteorology~\citep{kalnay_atmospheric_2003}, that face difficulties in their application to ABMs. These problems include identifying `correct' model trajectories from the immense space of all possible evolutions that an ABM could follow and sampling from possible model trajectories in a way that maintains a healthy distribution of different possible trajectories (sample impoverishment). In addition, many of the existing approaches rely on methods with Gaussian assumptions that do not hold in ABMs. 
+\DIFdelbegin \DIFdel{The observations }\DIFdelend \DIFaddbegin \DIFadd{Recent years have seen an emerging interest in the ability of ABMs to use up-to-date data to make more accurate predictions~}\citep[e.g.][]{wang_data_2015, lloyd_exploring_2016, ward_dynamic_2016, tang2019data, lueck_who_2019, tang2019osf, clay_realtime_2020, kieu_dealing_2020, malleson_simulating_2020}\DIFadd{. However, studies to date have attempted to adapt existing data assimilation methods, typically developed in fields such as meteorology~}\citep{kalnay_atmospheric_2003}\DIFadd{, that face difficulties in their application to ABMs. These problems include identifying `correct' model trajectories from the immense space of all possible evolutions that an ABM could follow and sampling from possible model trajectories in a way that maintains a healthy distribution of different possible trajectories (sample impoverishment). In addition, many of the existing approaches rely on methods with Gaussian assumptions that do not hold in ABMs. 
+}
 
-\textit{[XXXX The following mostly repeats the abstract; there is room for a bit of elaboration if necessary but not important]}
+\textit{[\DIFadd{XXXX The following mostly repeats the abstract; there is room for a bit of elaboration if necessary but not important}]}
 
-This paper proposes a new solution to the problem of data assimilation in ABMs. We present an algorithm that uses Markov-Chain-Monte-Carlo (MCMC) methods to generate samples of the trajectories of an agent-based model over a window of time given a set of noisy, incomplete observations of the system. It is applicable to a very broad category of ABMs -- time-stepping ABMs whose agents have a finite set of states and a finite number of ways of acting on the world. We demonstrate the algorithm by performing data assimilation with an agent-based, spatial predator-prey model and show that the algorithm is able to sample from a posterior estimate of the possible locations of predators and prey in a reasonable time.
+\DIFadd{This paper proposes a new solution to the problem of data assimilation in ABMs. We present an algorithm that uses Markov-Chain-Monte-Carlo (MCMC) methods to generate samples of the trajectories of an agent-based model over a window of time given a set of noisy, incomplete observations of the system. It is applicable to a very broad category of ABMs -- time-stepping ABMs whose agents have a finite set of states and a finite number of ways of acting on the world. We demonstrate the algorithm by performing data assimilation with an agent-based, spatial predator-prey model and show that the algorithm is able to sample from a posterior estimate of the possible locations of predators and prey in a reasonable time.
+}
 
-The paper is structured as follows: Section~\ref{sec:context} discusses the context and related research; Section~\ref{sec:formulation} formulates the problem in detail; Sections~\ref{sec:approx_support} and~\ref{sec:posterior_sampling} outline the method; Section~\ref{sec:demonstration} demonstrates the algorithm in the context of a predator-prey model; Sections~\ref{discussion} and~\ref{sec:conclusion} provide the discussion and conclusions.
+\DIFadd{The paper is structured as follows: Section~\ref{sec:context} discusses the context and related research; Section~\ref{sec:formulation} formulates the problem in detail; Sections~\ref{sec:approx_support} and~\ref{sec:posterior_sampling} outline the method; Section~\ref{sec:demonstration} demonstrates the algorithm in the context of a predator-prey model; Sections~\ref{discussion} and~\ref{sec:conclusion} provide the discussion and conclusions.
+}
 
 
-\section{Context}\label{sec:context}
+\section{\DIFadd{Context}}\label{sec:context}
 
-This section will outline the problem in more detail and discuss the drawbacks with the state-of-the-art approaches. It begins by outlining the general problem, which is common to most predictive ABM research, in more detail. 
+\DIFadd{This section will outline the problem in more detail and discuss the drawbacks with the state-of-the-art approaches. It begins by outlining the general problem, which is common to most predictive ABM research, in more detail. 
+}
 
-\subsection{Overview}
+\subsection{\DIFadd{Overview}}
 
-Recall that our aim is to combine sparse observational data with an uncertain agent-based model to generate a more realistic picture of the true state of a system than would be possible with the observations or the model in isolation. Considering the observations, they may contain aggregated or macro-scale measures and may be subject to noise during the measurement process. The unobserved measures may be taken at any time, and may include times before, during and/or after the observed interval. \textit{[Could you elaborate slightly? I'm not sure what the `unobserved measures' refers to. Is this observing a negative? (like *not* seeing a prey) or referring to latent variables? (After reading further down I think it's referring to latent variables, but it would be good to be sure here)]} The behaviour of the agents in the model will generally be stochastic, in order to account for our uncertainty in agent behaviour, and will be a function of some set of unknown parameters, $\theta$, in order to account for our uncertainty over which behavioural model best represents the real-world target entities, or over the values of measures that we know are constant over time. Note that the parameters can, and generally should, contain values that control the size of the model stochasticity in order to account for ``unknown unknowns''. The target system may also interact with a world outside of the model; these interactions necessarily consist of agents being injected into the model at certain times and/or external influences on modelled agents' behaviour (we take the purist view that an ABM models everything as an agent). The start state of the model is also a boundary condition, consisting of the injection of agents into the model at time $t=0$. Although the boundary conditions are semantically distinct from the parameters, their mathematical treatment will be identical so we assume $\theta$ includes any boundary conditions. So, an ABM defines a distribution, $P(\tau| \theta)$, which is the probability that the agents would exhibit behaviours $\tau$ on a model execution with parameters/boundary conditions $\theta$. We call $\tau$ a \textit{model trajectory}; it represents the path that a particular model will take through the space of all possible model evolutions.
+\DIFadd{Recall that our aim is to combine sparse observational data with an uncertain agent-based model to generate a more realistic picture of the true state of a system than would be possible with the observations or the model in isolation. Considering the observations, they }\DIFaddend may contain aggregated or macro-scale measures and may be subject to noise during the measurement process. The unobserved measures may be taken at any time, and may include times before, during and/or after the observed interval. \DIFaddbegin \textit{[\DIFadd{Could you elaborate slightly? I'm not sure what the `unobserved measures' refers to. Is this observing a negative? (like *not* seeing a prey) or referring to latent variables? (After reading further down I think it's referring to latent variables, but it would be good to be sure here)}]} \DIFaddend The behaviour of the agents in the model will generally be stochastic, in order to account for our uncertainty in agent behaviour, and will be a function of some set of unknown parameters, $\theta$, in order to account for our uncertainty over which behavioural model best represents the real-world target entities, or over the values of measures that we know are constant over time. Note that the parameters can, and generally should, contain values that control the size of the model stochasticity in order to account for ``unknown unknowns''. The target system may also interact with a world outside of the model\DIFdelbegin \DIFdel{, }\DIFdelend \DIFaddbegin \DIFadd{; }\DIFaddend these interactions necessarily consist of agents being injected into the model at certain times and/or external influences on modelled agents' behaviour \DIFdelbegin \footnote{\DIFdel{we take the purist view that an ABM models everything as an agent}}%DIFAUXCMD
+\addtocounter{footnote}{-1}%DIFAUXCMD
+\DIFdelend \DIFaddbegin \DIFadd{(we take the purist view that an ABM models everything as an agent)}\DIFaddend . The start state of the model is also a boundary condition, consisting of the injection of agents into the model at time $t=0$. Although the boundary conditions are semantically distinct from the parameters, their mathematical treatment will be identical so we assume $\theta$ includes any boundary conditions. So, an ABM defines a distribution, $P(\tau| \theta)$, which is the probability that the agents would exhibit behaviours $\tau$ on a model execution with parameters/boundary conditions $\theta$. We \DIFdelbegin \DIFdel{'ll }\DIFdelend call $\tau$ a \textit{model trajectory}\DIFaddbegin \DIFadd{; it represents the path that a particular model will take through the space of all possible model evolutions}\DIFaddend .
 
 Letting $\Omega$ be our set of real-world observations, our aim can be expressed as the approximation of the expectation of some arbitrary unobserved measure, $\Lambda$, given the observations
 \begin{equation}
 \mathbb{E}_{P(\tau,\theta|\Omega)}(\Lambda(\tau,\theta)) = \int \Lambda(\tau,\theta) P(\tau,\theta|\Omega) d\tau d\theta
 \label{expectation}
 \end{equation}
-This assumes that $\Lambda$ can be calculated from the model trajectory, the parameters and the boundary conditions; if this is not the case then we are using the wrong model.
+This assumes that $\Lambda$ can be calculated from the model trajectory, the parameters and the boundary conditions\DIFdelbegin \footnote{\DIFdel{If this isn't the case then we're simply using the wrong model for our needs}}%DIFAUXCMD
+\addtocounter{footnote}{-1}%DIFAUXCMD
+\DIFdelend \DIFaddbegin \DIFadd{; if this is not the case then we are using the wrong model}\DIFaddend .
 
-\textit{XXXX Dan, this equation is quite a big leap for me. I think it may be worth adding a sentence to explain what is going on in the integral (like you have explained \eqref{bayesassimilation}). I'm also still slightly confused about the unobserved measure, and how this is distinct from a trajectory.}
+\DIFaddbegin \textit{\DIFadd{XXXX Dan, this equation is quite a big leap for me. I think it may be worth adding a sentence to explain what is going on in the integral (like you have explained }\eqref{bayesassimilation}\DIFadd{). I'm also still slightly confused about the unobserved measure, and how this is distinct from a trajectory.}}
 
-There are various strategies to solve this equation for ABMs. One strategy is to first transform the ABM into a simpler form, such as a set of partial differential equations \citep{lloyd_exploring_2016} or a graphical model \citep{liao2010integrated}, for which there exists a well known method of solving the problem. An alternative strategy is presented in \citet{tang2019data} where creation and annihilation operators are employed to describe an ABM and the integral in \eqref{expectation} is calculated using symbolic computation. However, the most popular strategy is to approximate $\mathbb{E}_{P(\tau,\theta|\Omega)}(\Lambda(\tau,\theta))$ by sampling from the posterior $P(\tau,\theta|\Omega)$ and using Monte Carlo integration. This is the technique we employ here.
+\DIFaddend There are various strategies to solve this equation for ABMs. One strategy is to first transform the ABM into a simpler form, such as a set of partial differential equations \citep{lloyd_exploring_2016} or a graphical model \citep{liao2010integrated}, for which there exists a well known method of solving the problem. An alternative strategy is presented in \citet{tang2019data} where creation and annihilation operators are employed to describe an ABM and the integral in \eqref{expectation} is calculated using symbolic computation. However, the most popular strategy is to approximate $\mathbb{E}_{P(\tau,\theta|\Omega)}(\Lambda(\tau,\theta))$ by sampling from the posterior \DIFdelbegin \DIFdel{$P(\tau,\theta|Omega)$ }\DIFdelend \DIFaddbegin \DIFadd{$P(\tau,\theta|\Omega)$ }\DIFaddend and using Monte Carlo integration\DIFdelbegin \DIFdel{, this }\DIFdelend \DIFaddbegin \DIFadd{. This }\DIFaddend is the technique we employ here.
 
 Bayes' rule gives us
 \begin{equation}
@@ -113,11 +213,11 @@ Once expressed in this form we can, in theory at least, approximate $\mathbb{E}_
 \item Approximate $\mathbb{E}_{P(\tau,\theta|\Omega)}(\Lambda(\tau,\theta)) \approx \sum_{i=1}^N \frac{w_i\Lambda(\tau_i,\theta_i) }{\sum_{j=1}^Nw_j}$
 \end{enumerate}
 
-\subsection{Problem 1: Model Divergence}
+\DIFdelbegin \DIFdel{However}\DIFdelend \DIFaddbegin \subsection{\DIFadd{Problem 1: Model Divergence}}
 
-\textit{[XXXX I've tried to break this section up a bit with sub-sections. Also later you talk about 'solving these problems' so I have tried to identify the different problems explicitly, but appreciate that numbering them might not help]}
+\textit{[\DIFadd{XXXX I've tried to break this section up a bit with sub-sections. Also later you talk about 'solving these problems' so I have tried to identify the different problems explicitly, but appreciate that numbering them might not help}]}
 
-Although it is possible to use importance sampling to estimate $\mathbb{E}_{P(\tau,\theta|\Omega)}(\Lambda(\tau,\theta))$, \citet{chatterjee2018sample} show that the information contained in the weighted samples reduces exponentially with the KL-divergence from the prior to the posterior, $D_{KL}\left(P(\tau,\theta|\Omega) \mid\mid P(\tau|\theta)P(\theta) \right)$. This divergence can be thought of as a measure of the information in the observations $\Omega$. In practice, in the case of ABMs, the observations usually contain enough information to make the set of weighted samples less informative than a single unweighted sample, even when $N$ is astronomically high. \textit{[XXXX I'm missing something - why is this?]} So this algorithm will not work.
+\DIFadd{Although it is possible to use importance sampling to estimate $\mathbb{E}_{P(\tau,\theta|\Omega)}(\Lambda(\tau,\theta))$}\DIFaddend , \citet{chatterjee2018sample} show that the information contained in the weighted samples reduces exponentially with the KL-divergence from the prior to the posterior, $D_{KL}\left(P(\tau,\theta|\Omega) \mid\mid P(\tau|\theta)P(\theta) \right)$. This divergence can be thought of as a measure of the information in the observations $\Omega$. In practice, in the case of ABMs, the observations usually contain enough information to make the set of weighted samples less informative than a single unweighted sample, even when $N$ is astronomically high. \DIFaddbegin \textit{[\DIFadd{XXXX I'm missing something - why is this?}]} \DIFaddend So this algorithm will not work.
 
 A popular strategy to tackle this problem is to split the time period we're interested in into smaller, contiguous time windows with (not necessarily equidistant) end times $\left<t_1 \dots t_N\right>$ where $t_m < t_{m+1}$. The trajectory and observations can be similarly split based on which window they occur in, $\tau = \left<\tau_1 \dots \tau_N\right>$ and $\Omega = \left<\Omega_1 \dots \Omega_N\right>$. The posterior distribution of the whole trajectory can then be split into the product of contributions from each window given the end state from the previous window, leading to a recursion relation
 \begin{equation}
@@ -125,44 +225,127 @@ P\left(\tau_{1:t+1}, \theta | \Omega_{1:t+1}\right)
 =
 \frac{ P(\Omega_{t+1}|\tau_{t+1})
 P(\tau_{t+1}|\tau_{1:t},\theta) P\left(\tau_{1:t},\theta| \Omega_{1:t}\right)
-}
-{	P(\Omega_{t+1}| \Omega_{1:t}) }
+}{	P(\Omega_{t+1}| \Omega_{1:t}) }
 \label{bayesrecursion}
 \end{equation}
-where $\tau_{1:t} = \left<\tau_1 \dots \tau_t\right>$ and $P(\tau_{t+1}|\tau_{1:t},\theta)$ is the probability that an execution of the ABM that starts with trajectory $\tau_{1:t}$ would go on to produce $\tau_{t+1}$ given the parameters/boundary conditions $\theta$. The final posterior $P(\tau_{1:N},\theta|\Omega_{1:N})$ can now be built up in steps, starting with the first window and moving to the last, using the recursion as we go. This makes the problem easier in two respects. Firstly the dimensions of the distributions we need to deal with at each recursion step are reduced since we are only concerned with the trajectory in one window at a time. Secondly we split the information in the observations into smaller chunks, so at each recursion the information in $\Omega_t$ is more likely to be small enough to make it practical to perform importance sampling with the prior. This describes the \textit{particle filtering} or \textit{sequential Monte Carlo} approach to Bayesian inference.
+where $\tau_{1:t} = \left<\tau_1 \dots \tau_t\right>$ and $P(\tau_{t+1}|\tau_{1:t},\theta)$ is the probability that an execution of the ABM that starts with trajectory $\tau_{1:t}$ would go on to produce $\tau_{t+1}$ given the parameters/boundary conditions $\theta$. The final posterior $P(\tau_{1:N},\theta|\Omega_{1:N})$ can now be built up in steps, starting with the first window and moving to the last, using the recursion as we go. This makes the problem easier in two respects\DIFdelbegin \DIFdel{, firstly the dimension }\DIFdelend \DIFaddbegin \DIFadd{. Firstly the dimensions }\DIFaddend of the distributions we need to deal with at each recursion step are reduced since we \DIFdelbegin \DIFdel{'re }\DIFdelend \DIFaddbegin \DIFadd{are }\DIFaddend only concerned with the trajectory in one window at a time\DIFdelbegin \DIFdel{, secondly }\DIFdelend \DIFaddbegin \DIFadd{. Secondly }\DIFaddend we split the information in the observations into smaller chunks, so at each recursion the information in $\Omega_t$ is more likely to be small enough to make it practical to perform importance sampling with the prior. This describes the \textit{particle filtering} or \textit{sequential Monte Carlo} approach to Bayesian inference.
 
-If the unobserved measure of interest, $\Lambda$, depends only on the states of the agents, $\sigma_N$, at time $t^N$ and/or the parameters/boundary conditions, $\theta$, rather than on the full trajectory, $\tau_{1:N}$, then we can reduce the dimensionality even further by performing the recursion on model states rather than trajectories (where a model state tells us how many agents there are in each agent state). Appendix~\ref{appendix:state_recursion} demonstrates how to do this, using sequential importance resampling to solve the recursion.
+If the unobserved measure of interest, $\Lambda$, depends only on the states of the agents, $\sigma_N$, at time $t^N$ and/or the parameters/boundary conditions, $\theta$, rather than on the full trajectory, $\tau_{1:N}$, then we can reduce the dimensionality even further by performing the recursion on model states rather than trajectories (where a model state tells us how many agents there are in each agent state). \DIFdelbegin \DIFdel{First arrange the windows so that each observation lies at the end of a window, then marginalise equation }%DIFDELCMD < \eqref{bayesrecursion} %%%
+\DIFdel{over $\tau_{1:t+1}$ for a fixed $\sigma_{t+1}$ to get
+}\begin{displaymath}
+\DIFdel{P\left(\sigma_{t+1}, \theta | \Omega_{1:t+1}\right)
+=
+\frac{ P(\Omega_{t+1}|\sigma_{t+1}) 
+}{	P(\Omega_{t+1}| \Omega_{1:t}) }
+\int P(\sigma_{t+1}|\sigma_t,\theta)P\left(\sigma_{t},\theta| \Omega_{1:t}\right) d \sigma_t
+%DIFDELCMD < \label{bayesstaterecursion}%%%
+}\end{displaymath}%DIFAUXCMD
+\DIFdel{where we've assumed that the observation likelihoods depend only on the model state and made explicit in $P(\sigma_{t+1}|\sigma_t,\theta)$ that the probability of the state $\sigma_{t+1}$ depends only on $\sigma_t$ and $\theta$  }\footnote{\DIFdel{technically, if $\theta$ contains time dependent boundary conditions, the model states need to be timestamped so that the model knows which boundary conditions to apply}}%DIFAUXCMD
+\addtocounter{footnote}{-1}%DIFAUXCMD
+\DIFdel{.   Note that the definition of ``model state'' can always be re-defined in such a way as to make these assumptions true. In fact, we can see that equation }%DIFDELCMD < \eqref{bayesrecursion} %%%
+\DIFdel{can be thought of as a special case of equation }%DIFDELCMD < \eqref{bayesstaterecursion} %%%
+\DIFdel{where the model state, $\sigma_t$, is the trajectory, $\tau_{1:t}$, and the integral over $\sigma_t$ is non-zero for only a single trajectory, since $P(\tau'_{1:t+1}|\tau_{1:t},\theta) = \delta_{\tau'_{1:t}}(\tau_{1:t})P(\tau'_{t+1}|\tau_{1:t},\theta)$, where $\delta$ is the delta distribution.
+}%DIFDELCMD < 
 
-\textit{[XXXX My thought here, with the appendix, is that if the state recursion is an important new innovation that you've developed then we need to build it in to the methodology. I don't think it fits here. Alternatively, if you're happy to just refer to it then it can go in an appendix]}
+%DIFDELCMD < %%%
+\DIFdel{So, we can consider a recursion on }\textit{\DIFdel{generalised trajectories}}%DIFAUXCMD
+\DIFdel{, $T_t$,
+}\begin{displaymath}
+\DIFdel{P\left(T_{t+1}| \Omega_{1:t+1}\right)
+=
+\frac{ P(\Omega_{t+1}|T_{t+1})}{	P(\Omega_{t+1}| \Omega_{1:t}) }
+\int P(T_{t+1}|T_t)P\left(T_{t}| \Omega_{1:t}\right) d T_t
+%DIFDELCMD < \label{generalisedbayesrecursion}%%%
+}\end{displaymath}%DIFAUXCMD
+\DIFdel{so that equations }%DIFDELCMD < \eqref{bayesrecursion} %%%
+\DIFdel{and }%DIFDELCMD < \eqref{bayesstaterecursion} %%%
+\DIFdel{would correspond to $T_t=\left<\tau_{1:t},\theta\right>$ and $T_t=\left<\sigma_t,\theta\right>$ respectively. The unobserved measure becomes
+}\begin{displaymath}
+\DIFdel{\mathbb{E}_{P(T_N|\Omega)}(\Lambda(T_N)) = \int \Lambda(T_N) P(T_N|\Omega_{1:N}) dT_N
+}\end{displaymath}%DIFAUXCMD
+\DIFdel{This holds for any sequence of functions $T_t(\tau_{1:t},\theta)$ such that 
+}\[
+\DIFdel{P(\Omega_t|T_t(\tau_{1:t},\theta)) = P(\Omega_t|\tau_t)
+}\]%DIFAUXCMD
+\[
+\DIFdel{P(T_{t+1}(\tau'_{1:t+1},\theta')|T_{t}(\tau_{1:t},\theta)) = \delta_{\theta'}(\theta)\delta_{\tau'_{1:t}}(\tau_{1:t})P(\tau_{t+1}|\tau_{1:t},\theta)
+}\]%DIFAUXCMD
+\[
+\DIFdel{\Lambda(T_N(\tau_{1:N},\theta)) = \Lambda(\tau_{1:N},\theta)
+}\]%DIFAUXCMD
+\DIFdel{and to terminate the recursion we define $\Omega_{1:0}$ to be the null condition, $\tau_{1:0}$ to be the empty trajectory $\emptyset$ and
+}\[
+\DIFdel{P(T_0(\emptyset,\theta)) = P(T_0(\emptyset,\theta)|\Omega_{1:0}) = P(\theta)
+}\]%DIFAUXCMD
+%DIFDELCMD < 
 
-\subsection{Problem 2: Sample Impoverishment}
+%DIFDELCMD < %%%
+\DIFdel{This recursion can be solved if, given a set of samples $\left\{T_t^1 \dots T_t^R\right\}$ drawn from $P(T_t|\Omega_{1:t})$, we can generate a set of samples  $\left\{T_{t+1}^1 \dots T_{t+1}^R\right\}$ drawn from $P(T_{t+1}|\Omega_{1:t+1})$. This can be done with a simple algorithm known as }\DIFdelend \DIFaddbegin \DIFadd{Appendix~\ref{appendix:state_recursion} demonstrates how to do this, using }\DIFaddend sequential importance resampling \DIFdelbegin \DIFdel{which consists of the following steps:
+}%DIFDELCMD < \begin{enumerate}
+%DIFDELCMD < \item %%%
+\DIFdel{Generate a set of samples $\left\{T^1_0 \dots T^R_0\right\}$ from the prior $P(T_0)$. Set $t=0$.
+}\DIFdelend \DIFaddbegin \DIFadd{to solve the recursion.
+}\DIFaddend 
 
-The state recursion algorithm in Appendix~\ref{appendix:state_recursion} suffers from the problem of \textit{sample impoverishment} \citep{li2014fight} or \textit{sample deprivation} which describes the situation when the resampling step leaves many particles in the same state, so the number of distinct samples in our sample set is much smaller than the total number of samples. This is because after each importance sampling step the information in the observations causes the effective sample size to decrease and so the resampling step is likely to generate repeated samples. This loss of effective sampling size can accumulate and in practice as the number of windows increases, the number of particles required to maintain a desired accuracy increases exponentially. In the worst case, we encounter an observation that is impossible for all our samples and we end up with an effective sample size of zero. \citet{malleson_simulating_2020} show that sample impoverishment is an issue when applied to data assimilation with an ABM of crowd movement. \citet{khan2003efficient} encounter the same problem in a model of ant movement.
+\DIFdelbegin %DIFDELCMD < \item %%%
+\DIFdel{For each sample $T_t^i$, generate a sample from $\hat{T}_{t+1}^i \sim P(T_{t+1}|T^i_t)$ by executing the ABM from the end state of $T^i_t$ to create a forecast $\hat{T}_{t+1}^i$.
+}\DIFdelend \DIFaddbegin \textit{[\DIFadd{XXXX My thought here, with the appendix, is that if the state recursion is an important new innovation that you've developed then we need to build it in to the methodology. I don't think it fits here. Alternatively, if you're happy to just refer to it then it can go in an appendix}]}
+\DIFaddend 
+
+\DIFdelbegin %DIFDELCMD < \item %%%
+\DIFdel{Turn the forecast into an importance sample from the posterior by assigning a weight to each $\hat{T}_{t+1}^i$
+}\[
+\DIFdel{w_i = \frac{P(\Omega_{t+1}|\hat{T}_{t+1}^i)}{\sum_{j=1}^R P(\Omega_{t+1}|\hat{T}_{t+1}^j)}.
+}\]%DIFAUXCMD
+\DIFdelend \DIFaddbegin \subsection{\DIFadd{Problem 2: Sample Impoverishment}}
+\DIFaddend 
+
+\DIFdelbegin %DIFDELCMD < \item %%%
+\DIFdel{Resample from the posterior by taking $R$ samples from the importance sampling approximation
+}\begin{displaymath}
+\DIFdel{P(T_{t+1}|\Omega_{1:t+1}) \approx  \sum_i w_i\delta_{\hat{T}_{t+1}^i}\left(T_{t+1}\right)
+%DIFDELCMD < \label{importanceApprox}%%%
+}\end{displaymath}%DIFAUXCMD
+\DIFdel{to give a new set of unweighted samples $\left\{T^1_{t+1} \dots T^R_{t+1}\right\}$.
+There are a few ways of performing this resampling }%DIFDELCMD < \citep{douc2005comparison}%%%
+\DIFdel{, the simplest being to draw an integer $i\in[1,R]$ with probability $w_i$, returning the sample $\hat{T}_{t+1}^i$ then repeating $R$ times.
+}%DIFDELCMD < 
+
+%DIFDELCMD < \item %%%
+\DIFdel{Increment $t$ and repeat from step 2.
+}%DIFDELCMD < 
+
+%DIFDELCMD < \end{enumerate}
+%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdel{However, this algorithm }\DIFdelend \DIFaddbegin \DIFadd{The state recursion algorithm in Appendix~\ref{appendix:state_recursion} }\DIFaddend suffers from the problem of \textit{sample impoverishment} \citep{li2014fight} or \textit{sample deprivation} which describes the situation when the resampling step leaves many particles in the same state, so the number of distinct samples in our sample set is much smaller than the total number of samples. This is because \DIFdelbegin \DIFdel{, as we've seen, }\DIFdelend after each importance sampling step the information in the observations causes the effective sample size to decrease and so the resampling step is likely to generate repeated samples. This loss of effective sampling size can accumulate and in practice as the number of windows increases, the number of particles required to maintain a desired accuracy increases exponentially. In the worst case, we encounter an observation that is impossible for all our samples and we end up with an effective sample size of zero. \citet{malleson_simulating_2020} show that sample impoverishment is an issue when applied to data assimilation with an ABM of crowd movement. \citet{khan2003efficient} encounter the same problem in a model of ant movement.
 
 To get a better understanding of impoverishment, suppose we use the above algorithm to generate a set of samples $\left\{\left<\tau_{1:N}^1,\theta^1\right> \dots \left<\tau_{1:N}^S,\theta^S\right>\right\}$ of the full trajectory $P(\tau_{1:N},\theta|\Omega_{1:N})$, from which we generate marginalisations over each window $W_t = \left\{\left<\tau_t^1,\theta^1\right> \dots \left<\tau_t^S,\theta^S\right>\right\}$. The repeated impoverishment at each step causes the number of distinct values in $W_{N-L}$ to decrease exponentially as the lag, L, increases (i.e. as we look further back in time). So we often find that all samples in $W_1$ have collapsed to a single value. The rate of impoverishment as we go back in time depends on the rate of flow of information from the observations. However, when considering the effect of this on samples from the final window $W_N$ (which is often all we care about) the model dynamics and observations between the $(N-L)^{th}$ and $N^{th}$ windows have the effect of making the samples form the $N^{th}$ window increasingly independent of the samples in the $(N-L)^{th}$ window as $L$ increases. That is, as $L$ increases, the number of distinct samples in $W_{N-L}$ reduces, so we lose information about the true distribution of $P(\tau_{N-L},\theta|\Omega_{1:N})$, but at the same time the model dynamics and observations make $P(\tau_{N},\theta|\Omega_{1:N})$ increasingly independent of $P(\tau_{N-L},\theta|\Omega_{1:N})$ so we care less about impoverishment as $L$ increases. Impoverishment becomes a problem when the first effect dominates the second. Unfortunately every window's trajectory depends on the parameters, $\theta$, but these are sampled in the first window and never subsequently change, so after assimilating a few windows all samples are likely to have collapsed to the same value of $\theta$, giving us little information about the true distribution of the marginalised posterior $P(\theta|\Omega_{1:N})$. This is fine if the parameters are fixed at $t=0$, but if there is prior uncertainty in $\theta$ then we need deal with the problem of impoverishment \citep*{liu2001combined, andrieu2004particle}.
 
-A simple way of dealing with sample impoverishment is to add fixed noise to the particles at each step. This is known as roughening \citep*{gordon1993novel, li2014fight} and is equivalent to replacing the delta function in Equation \eqref{importanceApprox} (see Appendix~\ref{appendix:state_recursion}) with some other function so we end up with a weighted kernel density estimation. \citet{kieu_dealing_2020} uses this technique in the context of an ABM of public transport. However, \citet{liu2001combined} show that this leads to over-dispersion of the parameters unless we ``shrink'' the samples towards their mean value. Whether kernel density estimation leads to a good approximation or not depends on the nature of the model and the chosen kernel but, as we shall see, this is certainly not always the case for ABMs. In general, the consequence of roughening is that a finite number of samples from a roughened particle filter is no longer a draw from the true posterior, when averaged over all possible draws of the same size, so we need to convince ourselves that the error introduced by the roughening process is small enough for our requirements; not always an easy task for an ABM.
+A simple way of dealing with sample impoverishment is to add fixed noise to the particles at each step. This is known as roughening \citep*{gordon1993novel, li2014fight} and is equivalent to replacing the delta function in \DIFdelbegin \DIFdel{equation }\DIFdelend \DIFaddbegin \DIFadd{Equation }\DIFaddend \eqref{importanceApprox} \DIFaddbegin \DIFadd{(see Appendix~\ref{appendix:state_recursion}) }\DIFaddend with some other function so we end up with a weighted kernel density estimation. \citet{kieu_dealing_2020} uses this technique in the context of an ABM of public transport. However, \citet{liu2001combined} \DIFdelbegin \DIFdel{shows }\DIFdelend \DIFaddbegin \DIFadd{show }\DIFaddend that this leads to over-dispersion of the parameters unless we ``shrink'' the samples towards their mean value. Whether kernel density estimation leads to a good approximation or not depends on the nature of the model and the chosen kernel but, as we shall see, this is certainly not always the case for ABMs. In general, the consequence of roughening is that a finite number of samples from a roughened particle filter is no longer a draw from the true posterior, when averaged over all possible draws of the same size, so we need to convince ourselves that the error introduced by the roughening process is small enough for our requirements; not always an easy task for an ABM.
 
-\citet{wang_data_2015} deal with sample impoverishment by using the samples at time $t$ to approximate the marginal probabilities over each individual agent $P(a_j)$ then drawing new samples from the product of the marginals $P(a_1 \dots a_n) = \prod_{j=1}^NP(a_j)$, i.e. sampling the state of the $j^{th}$ agent from the marginal $P(a_j)$. This improves sample diversity at the cost of losing all correlations between agents. 
+\citet{wang_data_2015} \DIFdelbegin \DIFdel{deals }\DIFdelend \DIFaddbegin \DIFadd{deal }\DIFaddend with sample impoverishment by using the samples at time $t$ to approximate the marginal probabilities over each individual agent $P(a_j)$ then drawing new samples from the product of the marginals $P(a_1 \dots a_n) = \prod_{j=1}^NP(a_j)$, i.e. sampling the state of the $j^{th}$ agent from the marginal $P(a_j)$. This improves sample diversity at the \DIFdelbegin \DIFdel{price }\DIFdelend \DIFaddbegin \DIFadd{cost }\DIFaddend of losing all correlations between agents. 
 
-\subsection{Problem 3: Zero Likelihood Particles}
+\DIFaddbegin \subsection{\DIFadd{Problem 3: Zero Likelihood Particles}}
 
-Another problem, which is related to the problem of particle impoverishment, is that in the context of ABMs the importance sampling step often generates particles that have zero weight and so hold no information when it comes to the resampling step. This is because a very large proportion of the likelihood function $P(\Omega_t|T_t)$ is often zero in the case of observations of agent-based systems. For example, suppose we are tracking mobile phones using their unique IMEI codes and receive intermittent signals from the phones identifying which cell they are in. Suppose for simplicity that if a phone is in a known cell at time $t$ then it could be in any of 8 cells at time $t+1$, each with equal prior probability. Suppose we're tracking 20 phones and at time $t$ we get signals from 10 phones. Even if we know the exact model state at time $t-1$, the probability that a sample from the prior at time $t$ has a non-zero likelihood is $8^{-10}$, about one in a billion. So sequential importance resampling will fail in a single step in this case.
+\DIFaddend Another problem, which is related to the problem of particle impoverishment, is that in the context of ABMs the importance sampling step often generates particles that have zero weight and so hold no information when it comes to the resampling step. This is because a very large proportion of the likelihood function $P(\Omega_t|T_t)$ is often zero in the case of observations of \DIFdelbegin \DIFdel{agent based }\DIFdelend \DIFaddbegin \DIFadd{agent-based }\DIFaddend systems. For example, suppose we \DIFdelbegin \DIFdel{'re }\DIFdelend \DIFaddbegin \DIFadd{are }\DIFaddend tracking mobile phones \DIFdelbegin \DIFdel{by IMEI }\DIFdelend \DIFaddbegin \DIFadd{using their unique IMEI codes }\DIFaddend and receive intermittent signals from the phones identifying which cell they \DIFdelbegin \DIFdel{'re }\DIFdelend \DIFaddbegin \DIFadd{are }\DIFaddend in. Suppose for simplicity that if a phone is in a known cell at time $t$ then it could be in any of 8 cells at time $t+1$, each with equal prior probability. Suppose we're tracking 20 phones and at time $t$ we get signals from 10 phones. Even if we know the exact model state at time $t-1$, the probability that a sample from the prior at time $t$ has a non-zero likelihood is $8^{-10}$, about one in a billion. So sequential importance resampling will fail in a single step in this case.
 
-\subsection{The Gaussian Assumption and Kalman Filters}
+\DIFaddbegin \subsection{\DIFadd{The Gaussian Assumption and Kalman Filters}}
 
-One potential solution to the problems of impoverishment and zero likelihood is to assume that the distributions are Gaussian. This is the basis of the data assimilation algorithms that have had a great deal of success in geophysical models \citep*{carrassi2018data, talagrand_assimilation_1997, kalnay_atmospheric_2003, lewis_dynamic_2006}. Assuming the forecast $P(T_{t+1}|\Omega_{1:t})$ and likelihood function $P(\Omega_{t+1}|T_{t+1})$ are multivariate Gaussians allows the recursion to be solved analytically and new samples from the posterior to be generated even when the observations $\Omega_t$ are highly informative. This idea leads to the \textit{Ensemble Kalman filter} \citep{evensen2003ensemble} and the \textit{Unscented Kalman filter} \citep{wan2001unscented}, both of which have been applied to data assimilation in ABM \citep*{ward_dynamic_2016, clay_realtime_2020}.
+\DIFaddend One potential solution to the problems of impoverishment and zero likelihood is to assume that the distributions are Gaussian. This is the basis of the data assimilation algorithms that have had a great deal of success in geophysical models \DIFdelbegin %DIFDELCMD < \citet*{carrassi2018data, talagrand_assimilation_1997, kalnay_atmospheric_2003, lewis_dynamic_2006}%%%
+\DIFdelend \DIFaddbegin \citep*{carrassi2018data, talagrand_assimilation_1997, kalnay_atmospheric_2003, lewis_dynamic_2006}\DIFaddend . Assuming the forecast $P(T_{t+1}|\Omega_{1:t})$ and likelihood function $P(\Omega_{t+1}|T_{t+1})$ are multivariate Gaussians allows the recursion to be solved analytically and new samples from the posterior to be generated even when the observations $\Omega_t$ are highly informative. This idea leads to the \textit{Ensemble Kalman filter} \citep{evensen2003ensemble} and the \textit{Unscented Kalman filter} \citep{wan2001unscented}, both of which have been applied to data assimilation in ABM \citep*{ward_dynamic_2016, clay_realtime_2020}.
 
-However, the Gaussian assumption is not usually a good one for ABMs. For example, suppose there is a sports hall containing $N$ people and we take the model state to be the $2N$ dimensional vector consisting of the $(x,y)$ coordinates of each person. Even if the initial state is distributed according to a $2N$ dimensional Gaussian distribution, the either/or decisions of the people can transform this into a multimodal distribution. Suppose two exits are opened on opposite sides of the hall and the people move towards the nearest exit. Each preson makes an either/or decision which exit to move towards based on their position, so we can think of the prior Gaussian as being partitioned into $2^N$ regions based on the set of decisions made by the agents. In the forecast the probability mass in each region will split away and move towards one of the $2^N$ model states where all agents are at one or other of the exits, creating a highly non-Gaussian distribution with $2^N$ modes. In addition, the likelihood function is often highly non-Gaussian in the this state space. For example, suppose there is a sensor at one of the exits that trips if any agents are close. Suppose for simplicity that there are just two agents so the model state space is $(x_1,y_1,x_2,y_2)$ and the origin of the agents' coordinate system is at the sensor. If the sensor trips, the likelihood function is zero everywhere except along the perpendicular planes $(0,0,x_2,y_2)$ and $(x_1,y_1,0,0)$. This clearly isn't well approximated by any Gaussian. This is a consequence of the fact that we don't know which agent caused the sensor to trip, a problem known as the \textit{data association problem} \citep{lueck_who_2019}. This problem becomes superexponentially worse if we have multiple sensors. If there are $N$ agents and $M$ sensors the distribution is the union of $\frac{N!}{(N-M)!}$ hyperplanes.
+However, the Gaussian assumption is not usually a good one for ABMs. For example, suppose there is a sports hall containing $N$ people and we take the model state to be the $2N$ dimensional vector consisting of the $(x,y)$ coordinates of each person. Even if the initial state is distributed according to a $2N$ dimensional Gaussian distribution, the either/or decisions of the people can transform this into a multimodal distribution. Suppose two \DIFdelbegin \DIFdel{exists }\DIFdelend \DIFaddbegin \DIFadd{exits }\DIFaddend are opened on opposite sides of the hall and the people move towards the nearest exit. Each preson makes an either/or decision which exit to move towards based on their position, so we can think of the prior Gaussian as being partitioned into $2^N$ regions based on the set of decisions made by the agents. In the forecast the probability mass in each region will split away and move towards one of the $2^N$ model states where all agents are at one or other of the exits, creating a highly non-Gaussian distribution with $2^N$ modes. In addition, the likelihood function is often highly non-Gaussian in the this state space. For example, suppose there is a sensor at one of the exits that trips if any agents are close. Suppose for simplicity that there are just two agents so the model state space is $(x_1,y_1,x_2,y_2)$ and the origin of the agents' coordinate system is at the sensor. If the sensor trips, the likelihood function is zero everywhere except along the perpendicular planes $(0,0,x_2,y_2)$ and $(x_1,y_1,0,0)$. This clearly isn't well approximated by any Gaussian. This is a consequence of the fact that we don't know which agent caused the sensor to trip, a problem known as the \textit{data association problem} \citep{lueck_who_2019}. This problem becomes superexponentially worse if we have multiple sensors. If there are $N$ agents and $M$ sensors the distribution is the union of $\frac{N!}{(N-M)!}$ hyperplanes.
 
 An alternative representation of the model state space is the \textit{occupation number} representation where each agent state becomes a dimension in the state space and the coordinate values give the number of agents in each state. In this representation Gaussians may be appropriate in some models if there are a large number of agents in every state. However, as the occupation numbers get smaller, an increasing proportion of a Gaussian approximation lies on states that contain negative occupation numbers, which is problematic. Likelihood functions in this space can also be highly non-Gaussian. For example, the sensor in (a discretised version of) the sports hall example above would have a likelihood function that is a step function on the dimension that corresponds to the state close to the door.
 
-\subsection{Proposed Solution}
+\DIFaddbegin \subsection{\DIFadd{Proposed Solution}}
 
-In the following sections we present a solution to these problems by constructing a Markov process whose stationary state is $P(\tau_{1:t},\theta|\Omega_{1:t})$. For small $N$ we can sample directly from this Markov process to get samples from the posterior. For larger $N$, or if we wish to perform \textit{online} data assimilation where the observations form a continuous, effectively endless stream, we propose using the Markov transition function as part of a Sequential MCMC or MCMC Particle Filter algorithm \citep*{finke2020limit, septier2009mcmc} which solves the problem of impoverishment by integrating MCMC techniques with particle filtering. Within this broad classification there are many specific algorithms. Unfortunately the most appropriate algorithm to use depends on the nature of the ABM dynamics, the likelihood function and the unobserved measure, $\Lambda$, so there is no silver bullet. In Section \ref{discussion} we give some guidance by presenting some algorithms that are appropriate for application to ABMs. Since the nature of an ABM's parameters is highly model-specific, in the following we focus on the treatment of the trajectory in a way that is fully integrated with a model-specific treatment of the parameters for which we give more general design advice. In the case of state estimation (where the parameters are already known) the parameter specific part can be left out completely.
+\DIFaddend In the following sections we present a solution to these problems by constructing a Markov process whose stationary state is $P(\tau_{1:t},\theta|\Omega_{1:t})$. For small $N$ we can sample directly from this Markov process to get samples from the posterior. For larger $N$, or if we wish to perform \textit{online} data assimilation where the observations form a continuous, effectively endless stream, we propose using the Markov transition function as part of a Sequential MCMC or MCMC Particle Filter algorithm \citep*{finke2020limit, septier2009mcmc} which \DIFdelbegin \DIFdel{solve }\DIFdelend \DIFaddbegin \DIFadd{solves }\DIFaddend the problem of impoverishment by integrating MCMC techniques with particle filtering. Within this broad classification there are many specific algorithms. Unfortunately the most appropriate algorithm to use depends on the nature of the ABM dynamics, the likelihood function and the unobserved measure, $\Lambda$, so there \DIFdelbegin \DIFdel{'s }\DIFdelend \DIFaddbegin \DIFadd{is }\DIFaddend no silver bullet. In \DIFdelbegin \DIFdel{section }\DIFdelend \DIFaddbegin \DIFadd{Section }\DIFaddend \ref{discussion} we give some guidance by presenting some algorithms that are appropriate for application to ABMs. Since the nature of an ABM's parameters is highly model-specific, in the following we focus on the treatment of the trajectory \DIFdelbegin \DIFdel{but }\DIFdelend in a way that is fully integrated with a model-specific treatment of the parameters for which we give more general design advice. In the case of state estimation (where the parameters are already known) the parameter specific part can be left out completely.
 
-\section{Formal Specification of the Problem}\label{sec:formulation}
-%##########################################
+\section{\DIFdelbegin \DIFdel{Formulation }\DIFdelend \DIFaddbegin \DIFadd{Formal Specification }\DIFaddend of the \DIFdelbegin \DIFdel{problem}\DIFdelend \DIFaddbegin \DIFadd{Problem}\DIFaddend }\DIFaddbegin \label{sec:formulation}
+\DIFaddend %##########################################
 
 \subsection{Definition of an ABM}
 \label{abmdef}
@@ -171,9 +354,9 @@ Suppose we have a timestepping ABM that consists of agents with a finite number 
 	\item An ordered list of agent states $\mathcal{S} = \left<\sigma_0 ... \sigma_{S-1}\right>$
 
 	\item An ordered list of agent actions $\mathcal{A} =\left< \alpha_0 ... \alpha_{A-1} \right>$	
-	
+
 	\item An \textit{agent timestep}, $\pi : \mathbb{Z}\times\mathbb{Z}^S\times\mathbb{Z} \to \mathbb{R}$, which defines the probability that an agent will act in a particular way such that $\pi(\psi,\Psi,a)$ gives the probability that an agent in state $\sigma_\psi$, surrounded by agents, $\Psi$, will perform action $\alpha_a$ (where $\Psi$ is an $S$ dimensional vector whose $i^{th}$ element is the number of agents in state $\sigma_i$ at the start of the timestep).
-	
+
 	\item An \textit{action function}, $F: \mathbb{Z} \times \mathbb{Z} \to \mathbb{Z}^S$, which defines the effect of an action on the world such that $F(\psi, a)$ is an $S$ dimensional vector whose $i^{th}$ element gives the number of agents in state $\sigma_i$ that result from an agent in state $\sigma_\psi$ performing act $\alpha_a$ (including the final state of the acting agent).
 \end{itemize}
 
@@ -182,7 +365,7 @@ As a simple illustration, we define the ``cat and mouse'' ABM which, using the d
 	\item[Agent states, $\mathcal{S}$.] An agent can be either a cat or a mouse and can be on one of two grid-squares, left or right, so \[\mathcal{S} = \left<\textrm{left-cat}, \textrm{right-cat}, \textrm{left-mouse}, \textrm{right-mouse} \right>\]. 
 
 	\item[Agent actions, $\mathcal{A}$.] In any given timestep, an agent can either move to the other grid-square or stay still, so \[\mathcal{A} = \left<\textrm{move}, \textrm{stay still}\right>\].
-	
+
 
 	\item[Agent timestep, $\pi$.] The agent timestep can be expressed as
 	\[
@@ -331,8 +514,8 @@ P\left(\omega(T)=v\right)
 \label{posterior}
 \end{equation}
 
-\section{Approximating the support of the posterior}\label{sec:approx_support}
-%##########################################
+\section{Approximating the support of the posterior}\DIFaddbegin \label{sec:approx_support}
+\DIFaddend %##########################################
 
 As we saw in the introduction, sampling from equation \eqref{posterior} is difficult because it is hard to find proposal trajectories that have non-zero probability. Our strategy to solve this problem is to first derive an expression for a volume of trajectory/parameter space that bounds the support of the posterior, $\supp(P(T,\theta|\Omega))$ (i.e. the set of $\left<T,\theta\right>$ pairs that have non-zero posterior probability). If we choose a bounding volume that it is easy to sample from and is a relatively tight approximation of $\supp(P(T|\Omega)))$ then there's a good chance that a sample drawn from the volume will have non-zero probability. The bounding volume doesn't need to be exact, it just needs to tight enough to make it easier to find a non-zero probability sample.
 
@@ -383,7 +566,7 @@ where $\delta^{ij}$ and $\delta_{ij}$ are 1 if $i=j$ and 0 otherwise. In this wa
 
 From equation \ref{SetOfTrajectories} we can see immediately that the set of all trajectories, $\mathcal{T}^N_{SA}$, is is already defined as a set of linear constraints on $T$. The support of the prior $P(\theta)$ is usually of a simple form that can easily bounded, usually by a hyper-rectangle giving the range of each variable. The supports of the start state, $P(\Psi^0|\theta)$, the observations, $P(\omega(T)=v)$, and the agent actions, $\pi_\theta(\psi,T^t_{*b}\mathbf{1}^b,a)$, can often be easily expressed as linear constraints by hand. However, if this is not the case, each of the probability distributions can be expressed as computer programs. In practice, these computer programs will be simple and it will be possible to use a technique known as \textit{abstract interpretation} \citep{cousot1977abstract} using the domain of convex polyhedra \citep*{cousot1978automatic, becchi2018efficient, fukuda2020polyhedral} to efficiently calculate a convex polyhedron that bounds the support of the program. Software to perform abstract interpretation using convex polyhedra already exists \citep*{henry2012pagai, GN2021, jeannet2009apron, bagnara2008parma} and the technique has been used in applications such as compiler optimization \citep{nsjodin2009design} and verification of safety-critical systems \citep{halbwachs1997verification}. The programs may contain calls to a random number generator \texttt{Random()} that returns a random floating-point number $0 \le r < 1$. This can be represented in the polyhedral domain by introducing an real valued auxiliary variable, $r$, that satisfies $0 \le r < 1$ for each call to \texttt{Random()}. These auxiliary variables can be removed immediately using the abstract interpretation software to project the polyhedron back into the space of $X$. This relies on converting the polyhedron to its set of vertices \citep{motzkin1953double} and projecting the vertices, so the number of vertices must be of a tractable size. Alternatively, the auxiliary variables can be added to X and marginalised out when we take the samples.
 
-If the number of agents is very much smaller than the number of agent states (which is often the case with agent-based models) then we may be willing to make the assumption that in any timestep there is at most one agent performing a given action from a given start state (i.e. $\forall \psi, a, t: T^{\psi a}_t \in \{0,1\}$). Under this assumption, which we'll call the \textit{Fermionic assumption}, the set of \textit{Fermionic trajectories}, $\mathcal{F}^N_{SA} = \left\{T\in\mathcal{T}^N_{SA}: \forall \psi, a, t: T^{\psi a}_t \in \left\{0,1\right\}\right\}$, all lie on the corners of the unit hypercube. So the intersection of $\mathcal{F}^N_{SA}$ with any set is a convex polyhedron and $\supp(P(T|\Omega))$ can always be exactly represented as a mixed-integer polyhedron (although finding that polyhedron isn't always easy).
+If the number of agents is very much smaller than the number of agent states (which is often the case with \DIFdelbegin \DIFdel{agent based }\DIFdelend \DIFaddbegin \DIFadd{agent-based }\DIFaddend models) then we may be willing to make the assumption that in any timestep there is at most one agent performing a given action from a given start state (i.e. $\forall \psi, a, t: T^{\psi a}_t \in \{0,1\}$). Under this assumption, which we'll call the \textit{Fermionic assumption}, the set of \textit{Fermionic trajectories}, $\mathcal{F}^N_{SA} = \left\{T\in\mathcal{T}^N_{SA}: \forall \psi, a, t: T^{\psi a}_t \in \left\{0,1\right\}\right\}$, all lie on the corners of the unit hypercube. So the intersection of $\mathcal{F}^N_{SA}$ with any set is a convex polyhedron and $\supp(P(T|\Omega))$ can always be exactly represented as a mixed-integer polyhedron (although finding that polyhedron isn't always easy).
 
 So, if we let $\mathcal{P}(f)$ be a mixed integer polyhedron that bounds $\supp(f)$ then from equation \eqref{support}
 \begin{equation}
@@ -475,8 +658,8 @@ for each timestep $t=0$ and $t=1$.
 
 Taken together, these constraints define a polyhedron that bounds the set of (Fermionic) trajectories for the cat and mouse ABM.
 
-\section{Sampling from the posterior}\label{sec:posterior_sampling}
-%#################################################
+\section{Sampling from the posterior}\DIFaddbegin \label{sec:posterior_sampling}
+\DIFaddend %#################################################
 
 Having shown how to approximate $\supp(P(T,\theta|\Omega))$ as a mixed-integer polyhedron, we now need to devise a way to use this to sample from $P(T,\theta|\Omega)$.
 
@@ -496,9 +679,9 @@ The Metropolis-Hastings algorithm is another well known and widely used sampling
 In order to be of use in practice, the proposal function, $f$, must have the following properties:
 \begin{itemize}
 	\item For any two Markov states there should exist a sequence of transitions which forms a path between those states and has non-zero probability of being proposed.
-	
+
 	\item For any proposal from state $S_a \to S_b$ with non-zero probability, the probability of the reverse transition from $S_b \to S_a$ should also be non-zero. This allows us to attain detailed balance in the Metropolis Hastings algorithm. The average ratio of forward and backward probabilities times the ratio of start and end state probabilities should be close to 1 to ensure that a reasonable proportion of proposals are accepted.
-	
+
 	\item Given a current Markov state, there should be computationally efficient procedure to generate a proposal and calculate its acceptance probability. 
 \end{itemize}
 
@@ -752,7 +935,8 @@ This defines a set of valid pivot points at each elimination step. In order to d
 \]
  elements, where $\left|\cdot\right|_0$ is the L0-norm (i.e. the number of non-zero elements in a vector or matrix). So, this gives an upper bound on $\left|WG\right|_0 - \left|G\right|_0$, the change in L0-norm (or reduction in sparsity) of $W$ when we pivot on $W^i_j$. It has been found that choosing $W^i_j$ to be the element that minimises $\mu$ (known as the Markowitz criterion) is a computationally efficient way of maintaining the sparsity of a matrix while performing Gaussian elimination \citep*{markowitz1957elimination, suhl1990computing, maros2002computational}. So, in order to find a sparse basis, we calculate the set of valid pivot points, choose the point that minimises $\mu$, perform the pivot and repeat until no more valid pivot points remain. \citet{suhl1990computing} shows how to perform this in a computationally efficient way.
 
-\section{Spatial predator-prey demonstration}\label{sec:demonstration}
+\section{Spatial predator-prey demonstration}\DIFaddbegin \label{sec:demonstration}
+\DIFaddend 
 
 We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey'' agents. At each timestep a prey agent either moves to an adjacent grid-square (i.e. up, down, left or right with equal probability), dies or gives birth to another prey agent on the an adjacent grid-square. Predators also either move to an adjacent grid-square, die or give birth. However, predators only give birth when there is at least one prey on an adjacent grid-square. In addition, if a prey has any predators on adjacent grid-squares there is a chance it may be eaten. The probability of each behaviour is shown in table \ref{rates}.
 
@@ -887,88 +1071,95 @@ As presented, the algorithm is only applicable if the internal state of an agent
 
 [extension to PPL]
 
-\section{Conclusion}\label{sec:conclusion}
+\section{Conclusion}\DIFaddbegin \label{sec:conclusion}
+\DIFaddend 
 
-We described and demonstrated an algorithm to sample model trajectory / parameter setting pairs from the posterior distribution of an agent-based model given a set of observations. This allows us to  perform Bayesian inference with ABMs and so perform data assimilation.
+We described and demonstrated an algorithm to sample model trajectory / parameter setting pairs from the posterior distribution of an \DIFdelbegin \DIFdel{agent based }\DIFdelend \DIFaddbegin \DIFadd{agent-based }\DIFaddend model given a set of observations. This allows us to  perform Bayesian inference with ABMs and so perform data assimilation.
 
-Data assimilation with agent-based models is currently in its infancy, and more powerful techniques for performing Bayesian inference with ABM could transform the usefulness and applicability of these models.
+Data assimilation with \DIFdelbegin \DIFdel{agent based }\DIFdelend \DIFaddbegin \DIFadd{agent-based }\DIFaddend models is currently in its infancy, and more powerful techniques for performing Bayesian inference with ABM could transform the usefulness and applicability of these models.
+\DIFaddbegin 
 
 
 
-%
-% **************** APPENDICES ****************
-%
+%DIF > 
+%DIF >  **************** APPENDICES ****************
+%DIF > 
 
 \begin{appendices}
 
-\section{Recursion on Model States}\label{appendix:state_recursion}
+\section{\DIFadd{Recursion on Model States}}\label{appendix:state_recursion}
 
-The following illustrates how to perform recursion on model states, rather than model trajectories.
+\DIFadd{The following illustrates how to perform recursion on model states, rather than model trajectories.
+}
 
-First arrange the windows so that each observation lies at the end of a window, then marginalise equation \eqref{bayesrecursion} over $\tau_{1:t+1}$ for a fixed $\sigma_{t+1}$ to get
-\begin{equation}
-P\left(\sigma_{t+1}, \theta | \Omega_{1:t+1}\right)
+\DIFadd{First arrange the windows so that each observation lies at the end of a window, then marginalise equation }\eqref{bayesrecursion} \DIFadd{over $\tau_{1:t+1}$ for a fixed $\sigma_{t+1}$ to get
+}\begin{equation}
+\DIFadd{P\left(\sigma_{t+1}, \theta | \Omega_{1:t+1}\right)
 =
 \frac{ P(\Omega_{t+1}|\sigma_{t+1}) 
-}
-{	P(\Omega_{t+1}| \Omega_{1:t}) }
+}{	P(\Omega_{t+1}| \Omega_{1:t}) }
 \int P(\sigma_{t+1}|\sigma_t,\theta)P\left(\sigma_{t},\theta| \Omega_{1:t}\right) d \sigma_t
 \label{bayesstaterecursion}
-\end{equation}
-where we've assumed that the observation likelihoods depend only on the model state and made explicit in $P(\sigma_{t+1}|\sigma_t,\theta)$ that the probability of the state $\sigma_{t+1}$ depends only on $\sigma_t$ and $\theta$  \footnote{technically, if $\theta$ contains time dependent boundary conditions, the model states need to be timestamped so that the model knows which boundary conditions to apply}.   Note that the definition of ``model state'' can always be re-defined in such a way as to make these assumptions true. In fact, we can see that equation \eqref{bayesrecursion} can be thought of as a special case of equation \eqref{bayesstaterecursion} where the model state, $\sigma_t$, is the trajectory, $\tau_{1:t}$, and the integral over $\sigma_t$ is non-zero for only a single trajectory, since $P(\tau'_{1:t+1}|\tau_{1:t},\theta) = \delta_{\tau'_{1:t}}(\tau_{1:t})P(\tau'_{t+1}|\tau_{1:t},\theta)$, where $\delta$ is the delta distribution.
+}\end{equation}
+\DIFadd{where we've assumed that the observation likelihoods depend only on the model state and made explicit in $P(\sigma_{t+1}|\sigma_t,\theta)$ that the probability of the state $\sigma_{t+1}$ depends only on $\sigma_t$ and $\theta$  }\footnote{\DIFadd{technically, if $\theta$ contains time dependent boundary conditions, the model states need to be timestamped so that the model knows which boundary conditions to apply}}\DIFadd{.   Note that the definition of ``model state'' can always be re-defined in such a way as to make these assumptions true. In fact, we can see that equation }\eqref{bayesrecursion} \DIFadd{can be thought of as a special case of equation }\eqref{bayesstaterecursion} \DIFadd{where the model state, $\sigma_t$, is the trajectory, $\tau_{1:t}$, and the integral over $\sigma_t$ is non-zero for only a single trajectory, since $P(\tau'_{1:t+1}|\tau_{1:t},\theta) = \delta_{\tau'_{1:t}}(\tau_{1:t})P(\tau'_{t+1}|\tau_{1:t},\theta)$, where $\delta$ is the delta distribution.
+}
 
-So, we can consider a recursion on \textit{generalised trajectories}, $T_t$,
-\begin{equation}
-P\left(T_{t+1}| \Omega_{1:t+1}\right)
+\DIFadd{So, we can consider a recursion on }\textit{\DIFadd{generalised trajectories}}\DIFadd{, $T_t$,
+}\begin{equation}
+\DIFadd{P\left(T_{t+1}| \Omega_{1:t+1}\right)
 =
-\frac{ P(\Omega_{t+1}|T_{t+1})}
-{	P(\Omega_{t+1}| \Omega_{1:t}) }
+\frac{ P(\Omega_{t+1}|T_{t+1})}{	P(\Omega_{t+1}| \Omega_{1:t}) }
 \int P(T_{t+1}|T_t)P\left(T_{t}| \Omega_{1:t}\right) d T_t
 \label{generalisedbayesrecursion}
-\end{equation}
-so that equations \eqref{bayesrecursion} and \eqref{bayesstaterecursion} would correspond to $T_t=\left<\tau_{1:t},\theta\right>$ and $T_t=\left<\sigma_t,\theta\right>$ respectively. The unobserved measure becomes
-\begin{equation}
-\mathbb{E}_{P(T_N|\Omega)}(\Lambda(T_N)) = \int \Lambda(T_N) P(T_N|\Omega_{1:N}) dT_N
-\end{equation}
-This holds for any sequence of functions $T_t(\tau_{1:t},\theta)$ such that 
+}\end{equation}
+\DIFadd{so that equations }\eqref{bayesrecursion} \DIFadd{and }\eqref{bayesstaterecursion} \DIFadd{would correspond to $T_t=\left<\tau_{1:t},\theta\right>$ and $T_t=\left<\sigma_t,\theta\right>$ respectively. The unobserved measure becomes
+}\begin{equation}
+\DIFadd{\mathbb{E}_{P(T_N|\Omega)}(\Lambda(T_N)) = \int \Lambda(T_N) P(T_N|\Omega_{1:N}) dT_N
+}\end{equation}
+\DIFadd{This holds for any sequence of functions $T_t(\tau_{1:t},\theta)$ such that 
+}\[
+\DIFadd{P(\Omega_t|T_t(\tau_{1:t},\theta)) = P(\Omega_t|\tau_t)
+}\]
 \[
-P(\Omega_t|T_t(\tau_{1:t},\theta)) = P(\Omega_t|\tau_t)
-\]
+\DIFadd{P(T_{t+1}(\tau'_{1:t+1},\theta')|T_{t}(\tau_{1:t},\theta)) = \delta_{\theta'}(\theta)\delta_{\tau'_{1:t}}(\tau_{1:t})P(\tau_{t+1}|\tau_{1:t},\theta)
+}\]
 \[
-P(T_{t+1}(\tau'_{1:t+1},\theta')|T_{t}(\tau_{1:t},\theta)) = \delta_{\theta'}(\theta)\delta_{\tau'_{1:t}}(\tau_{1:t})P(\tau_{t+1}|\tau_{1:t},\theta)
-\]
-\[
-\Lambda(T_N(\tau_{1:N},\theta)) = \Lambda(\tau_{1:N},\theta)
-\]
-and to terminate the recursion we define $\Omega_{1:0}$ to be the null condition, $\tau_{1:0}$ to be the empty trajectory $\emptyset$ and
-\[
-P(T_0(\emptyset,\theta)) = P(T_0(\emptyset,\theta)|\Omega_{1:0}) = P(\theta)
-\]
+\DIFadd{\Lambda(T_N(\tau_{1:N},\theta)) = \Lambda(\tau_{1:N},\theta)
+}\]
+\DIFadd{and to terminate the recursion we define $\Omega_{1:0}$ to be the null condition, $\tau_{1:0}$ to be the empty trajectory $\emptyset$ and
+}\[
+\DIFadd{P(T_0(\emptyset,\theta)) = P(T_0(\emptyset,\theta)|\Omega_{1:0}) = P(\theta)
+}\]
 
-This recursion can be solved if, given a set of samples $\left\{T_t^1 \dots T_t^R\right\}$ drawn from $P(T_t|\Omega_{1:t})$, we can generate a set of samples  $\left\{T_{t+1}^1 \dots T_{t+1}^R\right\}$ drawn from $P(T_{t+1}|\Omega_{1:t+1})$. This can be done with a simple algorithm known as sequential importance resampling which consists of the following steps:
-\begin{enumerate}
-\item Generate a set of samples $\left\{T^1_0 \dots T^R_0\right\}$ from the prior $P(T_0)$. Set $t=0$.
+\DIFadd{This recursion can be solved if, given a set of samples $\left\{T_t^1 \dots T_t^R\right\}$ drawn from $P(T_t|\Omega_{1:t})$, we can generate a set of samples  $\left\{T_{t+1}^1 \dots T_{t+1}^R\right\}$ drawn from $P(T_{t+1}|\Omega_{1:t+1})$. This can be done with a simple algorithm known as sequential importance resampling which consists of the following steps:
+}\begin{enumerate}
+\item \DIFadd{Generate a set of samples $\left\{T^1_0 \dots T^R_0\right\}$ from the prior $P(T_0)$. Set $t=0$.
+}
 
-\item For each sample $T_t^i$, generate a sample from $\hat{T}_{t+1}^i \sim P(T_{t+1}|T^i_t)$ by executing the ABM from the end state of $T^i_t$ to create a forecast $\hat{T}_{t+1}^i$.
+\item \DIFadd{For each sample $T_t^i$, generate a sample from $\hat{T}_{t+1}^i \sim P(T_{t+1}|T^i_t)$ by executing the ABM from the end state of $T^i_t$ to create a forecast $\hat{T}_{t+1}^i$.
+}
 
-\item Turn the forecast into an importance sample from the posterior by assigning a weight to each $\hat{T}_{t+1}^i$
-\[
-w_i = \frac{P(\Omega_{t+1}|\hat{T}_{t+1}^i)}{\sum_{j=1}^R P(\Omega_{t+1}|\hat{T}_{t+1}^j)}.
-\]
+\item \DIFadd{Turn the forecast into an importance sample from the posterior by assigning a weight to each $\hat{T}_{t+1}^i$
+}\[
+\DIFadd{w_i = \frac{P(\Omega_{t+1}|\hat{T}_{t+1}^i)}{\sum_{j=1}^R P(\Omega_{t+1}|\hat{T}_{t+1}^j)}.
+}\]
 
-\item Resample from the posterior by taking $R$ samples from the importance sampling approximation
-\begin{equation}
-P(T_{t+1}|\Omega_{1:t+1}) \approx  \sum_i w_i\delta_{\hat{T}_{t+1}^i}\left(T_{t+1}\right)
+\item \DIFadd{Resample from the posterior by taking $R$ samples from the importance sampling approximation
+}\begin{equation}
+\DIFadd{P(T_{t+1}|\Omega_{1:t+1}) \approx  \sum_i w_i\delta_{\hat{T}_{t+1}^i}\left(T_{t+1}\right)
 \label{importanceApprox}
-\end{equation}
-to give a new set of unweighted samples $\left\{T^1_{t+1} \dots T^R_{t+1}\right\}$. There are a few ways of performing this resampling \citep{douc2005comparison}, the simplest being to draw an integer $i\in[1,R]$ with probability $w_i$, returning the sample $\hat{T}_{t+1}^i$ then repeating $R$ times.
+}\end{equation}
+\DIFadd{to give a new set of unweighted samples $\left\{T^1_{t+1} \dots T^R_{t+1}\right\}$. There are a few ways of performing this resampling }\citep{douc2005comparison}\DIFadd{, the simplest being to draw an integer $i\in[1,R]$ with probability $w_i$, returning the sample $\hat{T}_{t+1}^i$ then repeating $R$ times.
+}
 
-\item Increment $t$ and repeat from step 2.
+\item \DIFadd{Increment $t$ and repeat from step 2.
+}
 
 \end{enumerate}
 
 
 \end{appendices}
+\DIFaddend 
 
 
 %\bibliographystyle{unsrtnat}
