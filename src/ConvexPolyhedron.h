@@ -15,50 +15,17 @@ template<class T>
 class ConvexPolyhedron: public std::vector<Constraint<T>> {
 public:
     ConvexPolyhedron(): std::vector<Constraint<T>>() {}
-    explicit ConvexPolyhedron(const std::vector<Constraint<T>> &constraints): std::vector<Constraint<T>>(constraints) {}
-    explicit ConvexPolyhedron(std::vector<Constraint<T>> &&constraints): std::vector<Constraint<T>>(constraints) {}
     ConvexPolyhedron(const std::initializer_list<Constraint<T>> &constraints): std::vector<Constraint<T>>(constraints) {}
 
     bool isValidSolution(const std::vector<T> &X) const {
         for(const Constraint<T> &constraint: *this) {
-            std::cout << "Checking if " << X << " satisfies " << constraint << std::endl;
-            if(!constraint.isValidSolution(X)) return false;
+            if(!constraint.isValidSolution(X)) {
+//                std::cout << X << " does not satisfy " << constraint << std::endl;
+                return false;
+            }
         }
         return true;
     }
-
-
-//    glp::Problem toLPProblem(const std::vector<double> &objective = std::vector<double>()) const {
-////        std::cout << "Constraints are:\n" << *this << std::endl;
-//        glp::Problem lp(*this);
-//        lp.advBasis();
-////        predPreyBasis(lp);
-//        lp.warmUp();
-//        lp.setObjective(objective);
-////        std::cout << "Problem is:\n" << lp << std::endl;
-//        return lp;
-//    }
-
-
-//    static void predPreyBasis(glp::Problem &lp) {
-//        // remove all fixed vars from basis
-//        int nFixed = 0;
-//        for(int i = 1; i <= lp.nConstraints(); i++) {
-//            if(lp.getRowType(i) == GLP_FX) {
-//                ++nFixed;
-//                lp.setRowStat(i, GLP_NL);
-//            }
-//
-//        }
-//        // add death as basic
-//        int eventId = lp.nVars() - PredPreyAgentBase::actDomainSize() + PredPreyAgentBase::ActNames::DIE + 1;
-//        while(nFixed > 0) {
-//            lp.setColStat(eventId, GLP_BS);
-//            --nFixed;
-//            eventId -= PredPreyAgentBase::actDomainSize();
-//        }
-//    }
-
 
 
     // the id of the highest variable in this polyhedron
@@ -71,17 +38,17 @@ public:
     }
 
     ConvexPolyhedron<T> &operator +=(const std::vector<Constraint<T>> &other) {
-        reserve(this->size()+other.size());
+        this->reserve(this->size()+other.size());
         for(const Constraint<T> &constraint: other) {
-            push_back(constraint);
+            this->push_back(constraint);
         }
         return *this;
     }
 
     ConvexPolyhedron<T> &operator +=(std::vector<Constraint<T>> &&other) {
-        reserve(this->size()+other.size());
+        this->reserve(this->size()+other.size());
         for(Constraint<T> &constraint: other) {
-            push_back(std::move(constraint));
+            this->push_back(std::move(constraint));
         }
         return *this;
     }

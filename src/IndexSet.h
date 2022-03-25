@@ -2,6 +2,9 @@
 // Allows O(1) member insertion, O(1) membership testing and efficient iteration
 // but no deletion other than clear()
 //
+// Also maintains the order of insertion, and provides an operator[] to access
+// the i'th inserted member.
+//
 // Works by having a vector of bools and a vector of members, so N shouldn't be
 // too big.
 //
@@ -19,13 +22,16 @@ protected:
     std::vector<int>    _members;   // list of members
 
 public:
-    explicit IndexSet(size_t maxIndex) : _isMember(maxIndex+1, false) { }
+    explicit IndexSet(size_t domainSize) : _isMember(domainSize, false) { }
 
-    void insert(int index) {
+    // returns true if the index was inserted, false if the index was already a member
+    bool insert(int index) {
         if(!_isMember[index]) {
             _isMember[index] = true;
             _members.push_back(index);
+            return true;
         }
+        return false;
     }
 
     void clear() {
@@ -42,6 +48,8 @@ public:
     auto rend() { return _members.rend(); }
 
     bool isMember(int index) { return _isMember[index]; }
+
+    int operator[](int indexOfMember) { return _members[indexOfMember]; }
 
 };
 

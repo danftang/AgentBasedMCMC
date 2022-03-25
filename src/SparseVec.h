@@ -131,7 +131,7 @@ void SparseVec<T>::clear() {
 template<class T>
 std::vector<T> SparseVec<T>::toDense() const {
     int vecSize = maxNonZeroIndex() + 1;
-    std::vector<double> denseVec(vecSize,0.0);
+    std::vector<T> denseVec(vecSize,0);
     for (int i = 0; i < sparseSize(); ++i) {
         denseVec[indices[i]] = values[i];
     }
@@ -140,7 +140,7 @@ std::vector<T> SparseVec<T>::toDense() const {
 
 template<class T>
 std::vector<T> SparseVec<T>::toDense(int dimension) const {
-    std::vector<double> denseVec(dimension,0.0);
+    std::vector<T> denseVec(dimension,0);
     for (int i = 0; i < sparseSize(); ++i) {
         denseVec[indices[i]] = values[i];
     }
@@ -151,7 +151,7 @@ std::vector<T> SparseVec<T>::toDense(int dimension) const {
 template<class T>
 std::ostream &operator<<(std::ostream &out, const SparseVec<T> &sVector) {
     for(auto entry: sVector) {
-        out << "[" << entry.index << "] -> " << entry.value << "  ";
+        out << "[" << entry.index << "] -> " << entry.getValue << "  ";
     }
     return out;
 }

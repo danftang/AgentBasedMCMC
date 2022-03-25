@@ -42,6 +42,10 @@ public:
          return pMove;
     }
 
+    std::vector<BinomialAgent<GRIDSIZE>> neighbours() {
+        return std::vector<BinomialAgent<GRIDSIZE>>();
+    }
+
 
     std::vector<BinomialAgent<GRIDSIZE>> consequences(Act act) const {
         if(act == 1) return {BinomialAgent<GRIDSIZE>((stateId + 1)%GRIDSIZE)};

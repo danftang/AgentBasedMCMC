@@ -33,7 +33,7 @@ public:
             agentState(time,agent),
             pObserveIfPresent(pObserveIfPresent)
     {
-        numberObserved = Random::nextBinomial(trajectory(time,agent), pObserveIfPresent);
+        numberObserved = Random::nextBinomial(trajectory[State<AGENT>(time,agent)], pObserveIfPresent);
     }
 
     BinomialObservation(int time, const AGENT &agent, double pObserveIfPresent, int realOccupationNumber):

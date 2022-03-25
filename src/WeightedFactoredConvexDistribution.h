@@ -12,6 +12,10 @@
 // and W(X) is an importance weight function that can be updated
 // by perturbations.
 //
+// IMPORTANCEFUNC should be a class which is a perturbable distribution with
+// logImportance() and perturb(SparseVec) member functions. The template acts as
+// a tag, the class will be instantiated once we convert to a sampler.
+//
 // Created by daniel on 17/03/2022.
 //
 
@@ -19,11 +23,42 @@
 #define ABMCMC_WEIGHTEDFACTOREDCONVEXDISTRIBUTION_H
 
 #include "FactoredConvexDistribution.h"
+#include "PerturbableFunction.h"
 
-template<class T, class IMPORTANCEFUNC>
+template<class T>
 class WeightedFactoredConvexDistribution: public FactoredConvexDistribution<T> {
 public:
-    IMPORTANCEFUNC importanceWeight;
+
+    std::function<std::unique_ptr<PerturbableFunction<T,double>>()> perturbableFunctionFactory;
+
+    explicit WeightedFactoredConvexDistribution(std::function<std::unique_ptr<PerturbableFunction<T,double>>()> perturbableFunctionFactory):
+    perturbableFunctionFactory(perturbableFunctionFactory) {}
+
+    WeightedFactoredConvexDistribution<T> operator *(const FactoredConvexDistribution<T> &factoredDist) && {
+        (*this) *= factoredDist;
+        return std::move(*this);
+    }
+
+    WeightedFactoredConvexDistribution<T> operator *(const FactoredConvexDistribution<T> &factoredDist) const & {
+        WeightedFactoredConvexDistribution<T> copyOfThis(*this);
+        copyOfThis *= factoredDist;
+        return std::move(copyOfThis);
+    }
+
+
+    WeightedFactoredConvexDistribution<T> &operator *=(const FactoredConvexDistribution<T> &factoredDist) {
+        FactoredConvexDistribution<T>::operator*=(factoredDist);
+        return *this;
+    }
+
+    friend WeightedFactoredConvexDistribution<T> operator *(const FactoredConvexDistribution<T> &lhs, WeightedFactoredConvexDistribution<T> &&rhs) {
+        return rhs * lhs;
+    }
+
+    friend WeightedFactoredConvexDistribution<T> operator *(const FactoredConvexDistribution<T> &lhs, const WeightedFactoredConvexDistribution<T> &rhs) {
+        return rhs * lhs;
+    }
+
 };
 
 

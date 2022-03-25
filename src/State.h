@@ -27,9 +27,29 @@ public:
     time(time),
     agent(agent) { }
 
-    ABM::occupation_type occupationUpperBound() const {
+    ABM::occupation_type fermionicOccupationUpperBound() const {
         assert(agent < incomingEventsByState.size());
-        return std::min(AGENT::actDomainSize(), incomingEventsByState[agent].size());
+        return AGENT::actDomainSize() < incomingEventsByState[agent].size()?AGENT::actDomainSize():incomingEventsByState[agent].size();
+    }
+
+
+    ABM::occupation_type forwardOccupation(const std::vector<ABM::occupation_type> &trajectory) const {
+        ABM::occupation_type occupation = 0;
+        int beginIndex = Event<AGENT>(time, agent, 0).id;
+        int endIndex = beginIndex + AGENT::actDomainSize();
+        for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
+            occupation += trajectory[eventId];
+        }
+        return occupation;
+    }
+
+
+    ABM::occupation_type backwardOccupation(const std::vector<ABM::occupation_type> &trajectory) const {
+        ABM::occupation_type occupation = 0;
+        for(const Event<AGENT> &incomingEvent : State<AGENT>::incomingEventsByState[agent]) {
+            occupation += trajectory[Event<AGENT>(time-1, incomingEvent.agent(), incomingEvent.act()).id];
+        }
+        return occupation;
     }
 
 

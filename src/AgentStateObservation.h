@@ -21,7 +21,7 @@ template<typename AGENT>
 class AgentStateObservation {
 public:
     State<AGENT> state;         // state that was observed
-    const double lowerBound;    // number actually observed
+    const ABM::occupation_type lowerBound;    // number actually observed
     const double pObserveIfPresent;
 
     AgentStateObservation() {};
@@ -47,31 +47,43 @@ public:
     }
 
 
-    double logLikelihood(double realOccupation) const {
-        double rRealOccupation = std::round(realOccupation);
-        if(rRealOccupation < lowerBound || rRealOccupation > upperBound()) return -INFINITY;
-        return log(likelihood(rRealOccupation));
+    double logLikelihood(ABM::occupation_type realOccupation) const {
+        if(realOccupation < lowerBound || realOccupation > upperBound()) return -std::numeric_limits<double>::infinity();
+        return log(likelihood(realOccupation));
     }
 
     // likelihood function
-    double likelihood(double realOccupation) const {
+    double likelihood(ABM::occupation_type realOccupation) const {
         return boost::math::pdf(boost::math::binomial(realOccupation, pObserveIfPresent), lowerBound);
     }
 
 
-    double upperBound() const { return pObserveIfPresent==1.0?lowerBound:state.occupationUpperBound(); }
+    ABM::occupation_type upperBound() const { return pObserveIfPresent==1.0?lowerBound: state.fermionicOccupationUpperBound(); }
 
 
-    [[nodiscard]] ConvexPolyhedron<ABM::occupation_type> support() const {
-        if(lowerBound > 0 || upperBound() < state.occupationUpperBound()) {
-            return ConvexPolyhedron<ABM::occupation_type>({ lowerBound <= 1*state <= upperBound() });
+//    [[nodiscard]] ConvexPolyhedron<ABM::occupation_type> support() const {
+//        if(lowerBound > 0 || upperBound() < state.occupationUpperBound()) {
+//            return ConvexPolyhedron<ABM::occupation_type>({ lowerBound <= 1*state <= upperBound() });
+//        }
+//        return {};
+//    }
+
+    Constraint<ABM::occupation_type> constraint() const {
+        if(lowerBound > 0 || upperBound() < state.fermionicOccupationUpperBound()) {
+            return { lowerBound <= 1*state <= upperBound() };
         }
         return {};
     }
 
+    std::function<double(ABM::occupation_type)> toLogProbFunction() const {
+        return [copy = *this](ABM::occupation_type realOccupation) {
+            return copy.logLikelihood(realOccupation);
+        };
+    }
+
 
     friend std::ostream &operator <<(std::ostream &out, const AgentStateObservation<AGENT> & observation) {
-        out << observation.state << " " << observation.lowerBound << " " << observation.pObserveIfPresent << " " << exp(observation.logPExpectation);
+        out << observation.state << " " << observation.lowerBound << " " << observation.pObserveIfPresent;
         return out;
     }
 

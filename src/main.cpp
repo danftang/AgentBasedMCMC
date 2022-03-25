@@ -25,26 +25,44 @@
 #include "BernoulliStartState.h"
 #include "ObservationLikelihood.h"
 #include "TrajectoryForecastDistribution.h"
+#include "SparseBasisSampler.h"
 
 void BinomialAgentAssimilation() {
     constexpr int nTimesteps = 2;
-    typedef BinomialAgent<nTimesteps+1> AGENT;
+    constexpr int gridsize = nTimesteps+1;
+    typedef BinomialAgent<gridsize> AGENT;
     constexpr int nSamplesPerWindow = 1000000;
     constexpr int nBurninSamples = 5000;
 
     BernoulliStartState<AGENT> PStartState([](AGENT agent) { return agent.stateId==0?1.0:0.1; });
-    std::cout << "Start state support is \n" << PStartState.constraints << std::endl;
+    std::cout << "Start state support is\n" << PStartState.constraints << std::endl;
 
-//    ObservationLikelihood<BinomialAgent> PObsGivenTrajectory(AgentStateObservation(State<BinomialAgent>(1, 0),1,0.9));
-//    TrajectoryForecastDistribution<BinomialAgent> PTrajectoryGivenStartState(nTimesteps);
+    for(const auto &factor : PStartState.factors) {
+        std::cout << "Factor is " << factor(0) << ", " << factor(1) << std::endl;
+    }
+
+
+    ObservationLikelihood<AGENT> PObsGivenTrajectory(AgentStateObservation(State<AGENT>(1, 0),1,0.9));
+    std::cout << "Likelihood support is\n" << PObsGivenTrajectory.constraints << std::endl;
+
+    TrajectoryForecastDistribution<AGENT> PTrajectoryGivenStartState(nTimesteps);
+    std::cout << "Forecast support is\n" << PTrajectoryGivenStartState.constraints << std::endl;
 //
 //    // WeightedFactoredConvexDistribution<BinomialAgent,int>
-//    auto posterior = PObsGivenTrajectory * PTrajectoryGivenStartState * PStartState;
+    auto posterior = PObsGivenTrajectory * PTrajectoryGivenStartState * PStartState;
+    std::cout << "Posterior support is\n" << posterior.constraints << std::endl;
 //
-//    std::cout << "Likelihood support is \n" << PObsGivenTrajectory << std::endl;
-//    std::cout << "Posterior support is \n" << posterior << std::endl;
-//
-//    SparseBasisSampler<int> sampler(posterior);
+    SparseBasisSampler sampler(posterior);
+    std::cout << "Constructed basis\n" << sampler << std::endl;
+
+    for(const auto &factor : posterior.factors) {
+        std::cout << "Factor is " << factor(0) << ", " << factor(1) << std::endl;
+    }
+
+    for(int s=0; s<50; ++s) {
+        const std::vector<ABM::occupation_type> &nextSample = sampler.nextSample();
+        std::cout << nextSample << " " << posterior.constraints.isValidSolution(nextSample) << std::endl;
+    }
 
     //...
 

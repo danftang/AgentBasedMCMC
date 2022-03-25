@@ -129,18 +129,11 @@ public:
 //    }
 
     // occupation number of an agent state at a particular time
-    // time must be between 0 and nTimesteps-1 (final state not implemented at present)
-    // use pre-multiply by agent state? (vector dot product)
-    value_type operator()(int time, const AGENT &agent) const {
-        int beginIndex = Event(time,agent,0);
-        assert(beginIndex < this->size()); // TODO: Implement final state occupation numbers
-        int endIndex = beginIndex + AGENT::actDomainSize();
-        value_type occupation = 0;
-        for(int eventId=beginIndex; eventId<endIndex; ++eventId) {
-            occupation += (*this)[eventId];
-        }
-        return occupation;
+    value_type operator[](const State<AGENT> &state) const {
+        assert(state.time >= 0 && state.time <= nTimesteps());
+        return(time < nTimesteps())?state.forwardOccupation(*this):state.backwardOccupation(*this);
     }
+
 
     // time slice for time is in [0...nTimesteps]
     // i.e. final state is implemented
@@ -228,6 +221,23 @@ public:
 ////        std::cout << "Trajectory trajectoryPrior = " << logP << std::endl;
 //        return logP;
 //    }
+
+
+    // Generate random set of observations of this trajectory
+    std::vector<AgentStateObservation<AGENT>> generateObservations(double pMakeObservation, double pObserveIfPresent) {
+        std::vector<AgentStateObservation<AGENT>> observations;
+        int T = nTimesteps();
+        for (int t=0; t<T;++t) {
+            for (int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+                if (Random::nextDouble() < pMakeObservation) {
+                    AGENT agent(agentId);
+                    int nObserved = Random::nextBinomial((*this)[State<AGENT>(t,agent)], pObserveIfPresent);
+                    observations.emplace_back(State<AGENT>(t,agent), nObserved, pObserveIfPresent);
+                    assert(observations.back().constraint().isValidSolution(*this));
+                }
+            }
+        }
+    }
 
 
     double logProb() const {

@@ -4,10 +4,19 @@
 
 #include <map>
 #include <iostream>
-#include "Constraint.h"
+
+class MyClass {
+public:
+    int x;
+
+};
+
+MyClass myFunc() {
+    MyClass m;
+    m.x = 1234;
+    return m;
+}
 
 int main(int argc, char *argv[]) {
-    Constraint<int> constraint = (3 <= 4*X(1) + 5*X(2) <= 6);
-    std::cout << constraint << std::endl;
-
+    std::cout << myFunc().x << std::endl;
 }
