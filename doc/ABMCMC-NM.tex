@@ -80,7 +80,7 @@ The paper is structured as follows: Section~\ref{sec:context} discusses the cont
 
 \section{Context}\label{sec:context}
 
-This section will outline the problem in more detail and discuss the drawbacks with the state-of-the-art approaches. It begins by outlining the general problem, which is common to most predictive ABM research, in more detail. 
+This section will outline the context in more detail and discuss the drawbacks with the state-of-the-art approaches. It begins by outlining the general problem, which is common to most predictive ABM research, in more detail. 
 
 \subsection{Overview}
 
@@ -177,7 +177,8 @@ Suppose we have a timestepping ABM that consists of agents with a finite number 
 	\item An \textit{action function}, $F: \mathbb{Z} \times \mathbb{Z} \to \mathbb{Z}^S$, which defines the effect of an action on the world such that $F(\psi, a)$ is an $S$ dimensional vector whose $i^{th}$ element gives the number of agents in state $\sigma_i$ that result from an agent in state $\sigma_\psi$ performing act $\alpha_a$ (including the final state of the acting agent).
 \end{itemize}
 
-As a simple illustration, we define the ``cat and mouse'' ABM which, using the definitions above, we define as follows: 
+
+As a simple illustration, we outline a hypothetical ``cat and mouse'' ABM that consists of a single cat and a single mouse situated on a $2*1$ cell environment. The cat moves between squares at random and the mouse tries to avoid the cat. Using the formulae above the model can be defined as follows:
 \begin{description}
 	\item[Agent states, $\mathcal{S}$.] An agent can be either a cat or a mouse and can be on one of two grid-squares, left or right, so \[\mathcal{S} = \left<\textrm{left-cat}, \textrm{right-cat}, \textrm{left-mouse}, \textrm{right-mouse} \right>\]. 
 
@@ -198,7 +199,7 @@ As a simple illustration, we define the ``cat and mouse'' ABM which, using the d
 	\]
 	 Here, the first line says that a cat will move or stay still with probability $0.5$, irrespective of other agents. The next line says that a mouse will stay still if there are no cats on the same gridsquare while the third line says that a mouse will move if there are any cats on the same gridsquare. Finally, the last line says that any other behaviours have zero probability.
 
-\item[Action function, $F$.] $F$ gives the result of an agent's actions. For example, $F(\psi=1, a=0)$ is the result of an agent in state $\psi=1$ (\textit{right cat}) performing the action $a=0$ (\textit{move)}, which is one cat in state $\psi=0$ (\textit{left cat}). So $F(1,0) = \{1,0,0,0\}$. This model is simple enough that we can write down $F$ explicitly for all $\psi$ and $a$:
+\item[Action function, $F$,] gives the result of an agent's actions. For example, $F(\psi=1, a=0)$ is the result of an agent in state $\psi=1$ (\textit{right cat}) performing the action $a=0$ (\textit{move)}, which results in one cat in state $\psi=0$ (\textit{left cat}). So $F(1,0) = \{1,0,0,0\}$. This model is simple enough that we can write down $F$ explicitly for all agent states, $\psi$, and actions, $a$:
 \[
 \begin{aligned}
 F(0, 0) &= \{0,1,0,0\}\\
@@ -213,13 +214,13 @@ F(3, 1) &= \{0,0,0,1\}\\
 \]
 \end{description}
 
-\subsection{A note on tensor notation}
+\subsection{Tensor Notation}
 
-In the rest of this paper we'll make use of multidimensional arrays. These are just arrays of numbers, like vectors or matrices, but arranged in any number of dimensions. Each array has a \textit{shape} which tells us how many dimensions it has and the number of elements in each dimension. For notational convenience, we'll distinguish between subscript dimensions and superscript dimensions\footnote{covariant and contravariant dimensions if you prefer} and will refer to the set of all arrays of a given shape with the symbol $\mathbb{R}$ adorned with the size of each subscript and superscript dimension.  So, for example, $\mathbb{R}^N_{SA}$ describes the set of all 3-dimensional arrays that have one superscript dimension of size $N$ and two subscript dimensions of sizes $S$ and $A$.
+In the rest of this paper we will make use of multidimensional arrays. These are just arrays of numbers, like vectors or matrices, but arranged in any number of dimensions. Each array has a \textit{shape} which tells us how many dimensions it has and the number of elements in each dimension. For notational convenience, we'll distinguish between subscript dimensions (covariant dimensions) and superscript dimensions (contravariant dimensions) and will refer to the set of all arrays of a given shape with the symbol $\mathbb{R}$ adorned with the size of each subscript and superscript dimension.  So, for example, $\mathbb{R}^N_{SA}$ describes the set of all 3-dimensional arrays that have one superscript dimension of size $N$ and two subscript dimensions of sizes $S$ and $A$.
 
 An element of an array is referred to by specifying the sub- and superscript coordinates of the element. For example if $T \in \mathbb{R}^N_{SA}$, then $T^t_{\psi a}$ refers to the element of $T$ that has coordinate $t$ in the superscript dimension and coordinates $(\psi,a)$ in the subscript dimensions. By convention, coordinates begin at 0.
 
-We'll also borrow from tensor notation by using the Einstein summation convention, meaning that if the same index symbol is repeated in sub- and superscript positions in a term, then a summation over that dimension is implied. So, for example if $X \in \mathbb{R}_8$ and $Y \in \mathbb{R}^8$ then
+We will also borrow from tensor notation by using the Einstein summation convention, meaning that if the same index symbol is repeated in sub- and superscript positions in a term, then a summation over that dimension is implied. So, for example if $X \in \mathbb{R}_8$ and $Y \in \mathbb{R}^8$ then
 \[
 X_\psi V^\psi \equiv \sum_{\psi=0}^7 X_\psi  V^\psi
 \]
@@ -235,16 +236,7 @@ We refer to \textit{slices} of an array by using the $*$ symbol in an index posi
 
 The symbols $\mathbf{0}$ and $\mathbf{1}$ represent arrays whose elements are all 0 or 1 respectively. Their shape should be unambiguous from the context.
 
-\subsection{Trajectories}
-
-\begin{figure}
-	\centering
-	\resizebox{0.5\textwidth}{!}{
-		\includegraphics[scale=0.5]{figs/catMouseSm}
-	}
-	\caption{A simple cat and mouse model.\label{fig:AB-MCMC-1}}
-\end{figure}
-
+\subsection{Trajectories and Constraints}
 
 Let a model timestep be an array $E \in \mathbb{R}_{SA}$ whose elements $e_{\psi a}$ are the number of agents in state $\psi$ that perform act $a$ in this timestep. For example, the timestep shown in Figure~\ref{fig:AB-MCMC-1} for the cat and mouse example would be
 \[
@@ -257,6 +249,14 @@ E = \kbordermatrix{
 }
 \]
 where one agent in state $\sigma_1$ (\textit{right cat}) performs action $\alpha_0$ (\textit{move}) and one agent in state $\sigma_2$ (\textit{left mouse}) performs action $\alpha_1$ (\textit{stay still}).
+
+\begin{figure}[ht]
+	\centering
+	\resizebox{0.5\textwidth}{!}{
+		\includegraphics[scale=0.5]{figs/catMouseSm}
+	}
+	\caption{A simple cat and mouse model.\label{fig:AB-MCMC-1}}
+\end{figure}
 
 Let a model trajectory, $T$, be an array in $\mathbb{R}^N_{SA}$ that represents $N$ timesteps of a model with $S$ agent states and $A$ actions, so that $T^t_{\psi a}$ denotes the $(\psi, a)^{th}$ element of the $t^{th}$ timestep matrix.
 
@@ -271,7 +271,7 @@ A trajectory must also be \textit{continuous} by which we mean that the number o
 \mathcal{C}^N_{SA}(F) = \left\{T\in\mathbb{R}^N_{SA}:  \forall \left(  1 \le \bar t < N\right): F^{\psi a}_{\phi} T^{t-1}_{\psi a} + I^t_\psi = \mathbf{1}^bT^{t}_{\phi b} \right\}
 \label{continuous}
 \end{equation}
-where $F \in \mathbb{R}^{SA}_S$ is the action array $F^{\psi a}_* = F(\psi, a)$ and $I^t_\psi$ is the number of boundary condition injections into state $\psi$ at time $t$. Note that this assumes that a timestep is performed by updating all agents in parallel, i.e. agents must act with no information about the actions of other agents in the same timestep. This is different from serial update, where agents are updated in a particular order within a timestep and have access to information about the actions of agents that come before them in the ordering. Note also that this assumes that agents in the same state are indistinguishable, i.e. if we swap two agents in the same state, the trajectory is unchanged.
+where $F \in \mathbb{R}^{SA}_S$ is the action array $F^{\psi a}_* = F(\psi, a)$ and $I^t_\psi$ is the number of boundary condition injections into state $\psi$ at time $t$. Note that this assumes that a timestep is performed by updating all agents in parallel, i.e. agents must act with no information about the actions of other agents in the same timestep. \textit{[XXXX Dan does this mean that something like the Schelling model couldn't be implemented? In that model agents only move if a cell is empty]} This is different from serial update, where agents are updated in a particular order within a timestep and have access to information about the actions of agents that come before them in the ordering. Note also that this assumes that agents in the same state are indistinguishable, i.e. if we swap two agents in the same state, the trajectory is unchanged. For most ABMs used in practice, the chance of having two agents with identical states will be $0$.
 
 
 So, we define the set of trajectories, $\mathcal{T}^N_{SA}(F)$, as set of arrays that satisfy \eqref{nonNegativeInt} and \eqref{continuous}.
@@ -281,7 +281,7 @@ So, we define the set of trajectories, $\mathcal{T}^N_{SA}(F)$, as set of arrays
 \end{equation}
 
 
-\subsection{The posterior}
+\subsection{The Posterior}
 
 Our goal is to generate samples from the Bayesian posterior over the trajectories, boundary conditions and model parameters, given a set of observations, $\Omega$
 \[
@@ -291,7 +291,7 @@ $P(T|\theta)$, can be decomposed into the product of conditionals for each times
 \[
 P\left(T,\theta \middle| \Omega\right) \propto  P(\Psi^0|\theta) \prod_{t,\psi} P(T^t_{\psi *} | \Psi^t,\psi,\theta)
 \]
-where $\Psi^t\in\mathbb{R}_S$ is the model state at the start of timestep $t$ and $P(\Psi^0|\theta)$ comes from the boundary conditions in $\theta$\footnote{for notational clarity we assume that all injections are at time $t=0$, but this can easily be extended to injections at any timestep by adding $I^t_\psi$, as defined in equation \eqref{continuous}, to the model state along with $T$ and $\theta$ and replacing $P(\Psi^0|\theta)$ with $P(I^t_\psi|\theta)$.}.  The term $P(T^t_{\psi *} | \Psi^t,\psi,\theta)$ is the probability that $\Psi^t_\psi$ agents starting in state $\psi$ will collectively perform the vector of actions $T^t_{\psi *}$. The probability that a single agent performs action $a$ is given by the agent timestep $\pi_\theta(\psi,\Psi^t,a)$ (where we've added the subscript $\theta$ to emphasise its possible dependence on the parameters). Since agent actions are simultaneous, the collective behaviour is just the multinomial distribution given the individual agent timestep probabilities
+where $\Psi^t\in\mathbb{R}_S$ is the model state at the start of timestep $t$ and $P(\Psi^0|\theta)$ comes from the boundary conditions in $\theta$\footnote{For notational clarity we assume that all injections are at time $t=0$, but this can easily be extended to injections at any timestep by adding $I^t_\psi$, as defined in equation \eqref{continuous}, to the model state along with $T$ and $\theta$ and replacing $P(\Psi^0|\theta)$ with $P(I^t_\psi|\theta)$.}.  The term $P(T^t_{\psi *} | \Psi^t,\psi,\theta)$ is the probability that $\Psi^t_\psi$ agents starting in state $\psi$ will collectively perform the vector of actions $T^t_{\psi *}$. The probability that a single agent performs action $a$ is given by the agent timestep $\pi_\theta(\psi,\Psi^t,a)$ (where we have added the subscript $\theta$ to emphasise its possible dependence on the parameters). Since agent actions are simultaneous, the collective behaviour is just the multinomial distribution given the individual agent timestep probabilities
 \begin{equation}
 P\left(T^t_{\psi *} \mid \Psi^t, \psi, \theta\right) = 
 \begin{cases}
