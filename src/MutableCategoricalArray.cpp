@@ -2,6 +2,7 @@
 // Created by daniel on 04/12/2021.
 //
 
+#include <ostream>
 #include "MutableCategoricalArray.h"
 
 std::uniform_real_distribution<double> MutableCategoricalArray::uniformDist(0.0,1.0);
@@ -46,3 +47,11 @@ int MutableCategoricalArray::highestOneBit(int i) {
     return i - (i >> 1);
 }
 
+std::ostream &operator <<(std::ostream &out, const MutableCategoricalArray &distribution) {
+    out << "{  ";
+    for(int i=0; i<distribution.size(); ++i) {
+        out << distribution.P(i) << "  ";
+    }
+    out << "}";
+    return out;
+}

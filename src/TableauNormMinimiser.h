@@ -16,25 +16,47 @@
 // as low as possible.
 //
 // Starting with a set of linear constraints on X
-// L <= CX <= U, DX = E, 0 <= X <= H
+// L <= CX <= U, DX = E, G <= X <= H
 // we introduce auxiliary variables, A, so that
-// (C -I)(X A)^T = (L E)^T,  0 <= (X A) <= (H U-L)
-// (D  0)
-// If D has M rows, we can choose any M linearly independent columns
-// and pivot so that they have only one non-zero element equal to -1.
-// to give
-// M(X A)^T + F = 0,  0 <= (X A) <= (H U-L)
-// where M has a total of |A| + M reduced columns (i.e. basic variables)
+// (C)(X) + ( 0) = (A), L <= A <= U, G <= X <= H
+// (D)      (-E)   (0)
 //
-// Given this, we can transform into the form
-// Q X_N + F = (X A), 0 <= (X A) <= (H U-L)
-// by taking basic variables over to the right-hand side and adding rows to Q
-// to insert the non-basic vars.
-// The columns of Q form the sparse basis so if M is sparse, so is Q.
+// If D has m rows, this class chooses m linearly independent columns
+// and pivots on rows in D so that M is left with all zeroes in those columns
+// and D is left as a (truncated) triangular with "diagonal" elements equal to -1
+// to give
+//
+// (M)(X) + F = (A), L <= A <= U, G <= X <= H
+// (J)          (0)
+//
+// where M has a total of m reduced columns. The reduced columns make the
+// corresponding elements of X into basic variables, the remainder being
+// non-basic.
+//
+// Given an assignment of values to non-basic variables, X_N, the basic variables,
+// X_B, and the auxilliary variables, A, are uniquely defined and can be found by
+// rearranging the columns of M and J so that
+//
+// (Q  0)(X_N) + F = (A), L <= A <= U, G_N <= X_N <= H_N, G_B <= X_B <= H_B
+// (R  T)(X_B)       (0)
+//
+// So that
+//
+// (Q)X_N + F = (A)   , L <= A <= U, G_N <= X_N < H_N, G_B <= X_B <= H_B
+// (R)          (X_B)
+//
+// where Q is M with the zero columns removed, X_N is X with the corresponding
+// basic variables removed, R is J with basic cols removed and X_B are the
+// basic variables.
 //
 // All fixed variables are assumed to be functions of integers only.
 // Pivoting only occurs on elements that have value +-1 to retain
 // integer coefficients.
+//
+// The non-basic columns of M and J form the sparse basis, so we want to pivot in
+// such a way as to maintain the sparsity of these matrices. We do this using a
+// greedy algorithm based on the Markovitz criterion. See
+//  Maros, I., 2002, "Computational techniques of the sipmlex method", Springer
 //
 // TODO: Need to maintain lower limits so that factors get correct values after
 //  reducing the space
@@ -46,7 +68,7 @@ public:
     static constexpr int maxVectorsToTest = 10;
 
 
-    class Column: public std::set<int> { // set of non-zero orw indices
+    class Column: public std::set<int> { // set of non-zero row indices (only non-reduced rows are stored)
     public:
         std::list<int>::iterator sparsityEntry; // iterator into colsBySaprsity entry
         bool isBasic;
@@ -58,7 +80,7 @@ public:
     class Row: public std::map<int,T> { // map from non-zero col index to element value
     public:
         std::list<int>::iterator sparsityEntry; // iterator into rowsBySaprsity entry
-        bool isActive;
+        bool isActive;                          // true if this row is an unreduced equality constraint
 
         Row(const SparseVec<T> &row, bool isActive);
 
@@ -68,20 +90,19 @@ public:
     std::vector<Column>     cols;   // tableau columns
     std::vector<Row>        rows;   // tableau rows
 
-    std::vector<int>            constraintIndexByCol;   // index of rectilinear constraints in original problem
-    std::vector<int>            constraintIndexByAuxiliary;   // index of auxiliary constraint in the original problem
-    std::vector<std::list<int>> colsBySparsity;     // only contains non-basic cols
-    std::vector<std::list<int>> rowsBySparsity;     // only contains active rows
-    std::vector<int>            basis;            // basic variables: -ve means auxiliary, otherwise col index
+    std::vector<std::list<int>> colsBySparsity;     // cols sorted by sparsity, only contains non-basic cols
+    std::vector<std::list<int>> rowsBySparsity;     // rows sorted by sparsity, only contains active rows
+    std::vector<int>            basis;            // basic variables by row. -ve means auxiliary, otherwise col index of basic var
     int                         nAuxiliaryVars;     // number of auxiliary variables
-    std::vector<T>              F;                  // aggregated value of all non-basic fixed vars
-    std::vector<T>              Hc;                  // upper bounds of columns
-    std::vector<T>              Ha;                  // upper bounds of auxiliaries
-
+    std::vector<T>              F;                  // constant in linear equation (see intro above)
+    std::vector<T>              L;                  // lower bounds by row (equalities are converted to zero)
+    std::vector<T>              U;                  // upper bounds by row (equalities are converted to zero)
 //    TableauNormMinimiser(glp::Problem &problem);
     TableauNormMinimiser(const ConvexPolyhedron<T> &problem);
 
     int nNonBasic() const { return cols.size() + nAuxiliaryVars - rows.size(); }
+
+    bool isEqualityConstraint(int i) const { return L[i] == U[i]; }
 
     void findMinimalBasis();
 
@@ -104,6 +125,7 @@ public:
     void setColBasic(int j, int i);
     void inactivateRow(int i);
 
+
     double meanColumnL0Norm() const;
     double meanColumnL1Norm() const;
 
@@ -111,24 +133,22 @@ public:
 
 template<class T>
 std::ostream &operator <<(std::ostream &out, const TableauNormMinimiser<T> &tableau) {
-    // show upper limits
-    out << "    \t \t";
-    for(int j=0; j<tableau.cols.size(); ++j) {
-        out << tableau.Hc[j] << "\t";
-    }
-    out << std::endl;
     // print tableau
     for(int i=0; i<tableau.rows.size(); ++i) {
-        out << "x(" << tableau.basis[i] << ")\t=\t";
+        out << tableau.L[i] << "\t<=\t";
+        if(!tableau.isEqualityConstraint(i)) {
+            out << "x(" << -tableau.basis[i] << ")";
+        } else {
+            out << "0   ";
+        }
+        out << "\t=\t";
         for(int j=0; j<tableau.cols.size(); ++j) {
             out << tableau(i,j) << "\t";
         }
-        out << "+\t" << tableau.F[i];
-        if(tableau.basis[i] < 0) out << " <= " << tableau.Ha[-tableau.basis[i]];
-        out << std::endl;
+        out << "+\t" << tableau.F[i] << " <= " << tableau.U[i] << std::endl;
     }
     // mark basic columns
-    out << "    \t \t";
+    out << " \t \t \t   \t \t";
     for(int j=0; j<tableau.cols.size(); ++j) {
         out << (tableau.cols[j].isBasic?"B\t":"-\t");
     }
@@ -148,44 +168,33 @@ TableauNormMinimiser<T>::TableauNormMinimiser(const ConvexPolyhedron<T> &problem
     basis.reserve(problem.size());
     F.reserve(problem.size());
     rows.reserve(problem.size());
-    Ha.reserve(problem.size());
-    Ha.push_back(0.0);
-    constraintIndexByAuxiliary.reserve(problem.size());
-    constraintIndexByAuxiliary.push_back(-1);
+    L.reserve(problem.size());
+    U.reserve(problem.size());
     int maxCol = 0; // maximum column id seen so far
     nAuxiliaryVars = 0;
     int constraintIndex = 0;
     for(const Constraint<T> &constraint: problem) {
-        if(constraint.coefficients.sparseSize() == 1) { // rectilinear limits, don't add row
-            assert(constraint.lowerBound == 0);
-            int xi = constraint.coefficients.indices[0];
-            if(Hc.size() < xi + 1) Hc.resize(xi+1);
-            Hc[xi] = constraint.upperBound/constraint.coefficients.values[0];
-            if(constraintIndexByCol.size() < xi+1) constraintIndexByCol.resize(xi+1,-1);
-            constraintIndexByCol[xi] = constraintIndex;
-            if(xi > maxCol) maxCol = xi;
-        } else { // normal tableau entry
-            bool isActive = (constraint.upperBound == constraint.lowerBound);
-            rows.push_back(Row(constraint.coefficients, isActive));
-            if (isActive) {
-                addRowSparsityEntry(rows.size()-1);
-                basis.push_back(0); // fixed var
-            } else {
-                basis.push_back(-(++nAuxiliaryVars));
-                Ha.push_back(constraint.upperBound - constraint.lowerBound);
-                constraintIndexByAuxiliary.push_back(constraintIndex);
-            }
-            F.push_back(-constraint.lowerBound); // lower bounds are all set to 0
-            int rowMaxCol = rows.back().rbegin()->first;
-            if(rowMaxCol > maxCol) maxCol = rowMaxCol;
+        bool isActive = (constraint.upperBound == constraint.lowerBound);
+        rows.push_back(Row(constraint.coefficients, isActive));
+        if (isActive) {
+            addRowSparsityEntry(rows.size()-1);
+            basis.push_back(INT_MAX); // fixed var
+            F.push_back(-constraint.lowerBound); // transform all equality constraints to form DX - E = 0
+            L.push_back(0);
+            U.push_back(0);
+        } else {
+            basis.push_back(-(++nAuxiliaryVars));
+            F.push_back(0);
+            L.push_back(constraint.lowerBound);
+            U.push_back(constraint.upperBound);
         }
+        int rowMaxCol = rows.back().rbegin()->first;
+        if(rowMaxCol > maxCol) maxCol = rowMaxCol;
         ++constraintIndex;
     }
 
-    Hc.resize(maxCol+1);
     cols.resize(maxCol +1);
-    constraintIndexByCol.resize(maxCol + 1,-1);
-    for(int j=1; j<=maxCol; ++j) assert(Hc[j] != 0); // no rectilinear limit given for non-basic j or fixed at 0
+    // Now fill column information from rows
     for(int i=0; i<rows.size(); ++i) {
         for(auto [j, v]: rows[i]) {
             cols[j].insert(i);
@@ -259,7 +268,7 @@ void TableauNormMinimiser<T>::pivot(int pi, int pj) {
     T Mpipj = rows[pi].at(pj);
 
     // remove sparsity entries of all affected rows and columns
-    for( auto [j, v] : rows[pi]) removeColSparsityEntry(j);
+    for(auto [j, v] : rows[pi]) removeColSparsityEntry(j);
 
     rows[pi] *= -1.0/Mpipj;     // divide row through to make the pivot point -1
     F[pi] *= -1.0/Mpipj;
@@ -287,6 +296,7 @@ void TableauNormMinimiser<T>::pivot(int pi, int pj) {
         }
     }
 
+    // re-add previously removed sparsity entries
     for(int i : cols[pj]) {
         if(i != pi) {
             rows[i].erase(pj);
@@ -295,7 +305,10 @@ void TableauNormMinimiser<T>::pivot(int pi, int pj) {
     }
     setColBasic(pj, pi);
     for(const auto [j, Mpij]: rows[pi]) {
-        if(j != pj) addColSparsityEntry(j);
+        if(j != pj) {
+            cols[j].erase(pi);  // cols[] only stores non-reduced rows
+            addColSparsityEntry(j);
+        }
     }
     inactivateRow(pi);
 }
@@ -431,11 +444,9 @@ double TableauNormMinimiser<T>::meanColumnL1Norm() const {
     double normSum = 0.0;
     int nNonBasic = 0;
     for(int j=0; j<cols.size(); ++j) {
-        if(!cols[j].isBasic) ++nNonBasic;
-    }
-    for(int i=0; i<rows.size(); ++i) {
-        for(const auto [j, Mij] : rows[i]) {
-            if(!cols[j].isBasic) normSum += fabs(Mij);
+        if(!cols[j].isBasic) {
+            ++nNonBasic;
+            for (int i: cols[j]) normSum += fabs(rows[i].at(j));
         }
     }
     return normSum / nNonBasic;

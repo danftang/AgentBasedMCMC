@@ -62,4 +62,17 @@ protected:
 };
 
 
+template<class T>
+std::ostream &operator <<(std::ostream &out, const FactoredConvexDistribution<T> &distribution) {
+    for(int i=0; i < distribution.constraints.size(); ++i) {
+        const Constraint<T> &constraint = distribution.constraints[i];
+        out << constraint << " [ ";
+        for(T Xi = constraint.lowerBound; Xi <= constraint.upperBound; Xi += 1) {
+            out << distribution.factors[i](Xi) << " ";
+        }
+        out << "]" << std::endl;
+    }
+    return out;
+}
+
 #endif //ABMCMC_FACTOREDCONVEXDISTRIBUTION_H

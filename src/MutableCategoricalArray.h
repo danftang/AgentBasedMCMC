@@ -113,6 +113,9 @@ protected:
 };
 
 
+std::ostream &operator <<(std::ostream &out, const MutableCategoricalArray &distribution);
+
+
 template<typename RNG>
 int MutableCategoricalArray::operator()(RNG &generator) {
     int index = 0;

@@ -35,29 +35,20 @@ void BinomialAgentAssimilation() {
     constexpr int nBurninSamples = 5000;
 
     BernoulliStartState<AGENT> PStartState([](AGENT agent) { return agent.stateId==0?1.0:0.1; });
-    std::cout << "Start state support is\n" << PStartState.constraints << std::endl;
-
-    for(const auto &factor : PStartState.factors) {
-        std::cout << "Factor is " << factor(0) << ", " << factor(1) << std::endl;
-    }
-
+    std::cout << "Start state support is\n" << PStartState << std::endl;
 
     ObservationLikelihood<AGENT> PObsGivenTrajectory(AgentStateObservation(State<AGENT>(1, 0),1,0.9));
-    std::cout << "Likelihood support is\n" << PObsGivenTrajectory.constraints << std::endl;
+    std::cout << "Likelihood support is\n" << PObsGivenTrajectory << std::endl;
 
     TrajectoryForecastDistribution<AGENT> PTrajectoryGivenStartState(nTimesteps);
-    std::cout << "Forecast support is\n" << PTrajectoryGivenStartState.constraints << std::endl;
+    std::cout << "Forecast support is\n" << PTrajectoryGivenStartState << std::endl;
 //
 //    // WeightedFactoredConvexDistribution<BinomialAgent,int>
-    auto posterior = PObsGivenTrajectory * PTrajectoryGivenStartState * PStartState;
-    std::cout << "Posterior support is\n" << posterior.constraints << std::endl;
+    auto posterior = PTrajectoryGivenStartState * PObsGivenTrajectory * PStartState;
+    std::cout << "Posterior support is\n" << posterior << std::endl;
 //
     SparseBasisSampler sampler(posterior);
     std::cout << "Constructed basis\n" << sampler << std::endl;
-
-    for(const auto &factor : posterior.factors) {
-        std::cout << "Factor is " << factor(0) << ", " << factor(1) << std::endl;
-    }
 
     for(int s=0; s<50; ++s) {
         const std::vector<ABM::occupation_type> &nextSample = sampler.nextSample();
