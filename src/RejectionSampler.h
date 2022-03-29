@@ -5,34 +5,31 @@
 #ifndef GLPKTEST_REJECTIONSAMPLER_H
 #define GLPKTEST_REJECTIONSAMPLER_H
 
+#include <functional>
+#include "ModelState.h"
 
-template<typename DOMAIN>
+template<class DOMAIN>
 class RejectionSampler {
 public:
-    const std::function<DOMAIN()> &   priorSampler;
-    const ConvexPMF<DOMAIN> &         likelihood;
+    std::function<DOMAIN()>                 priorSampler;
+    std::function<double(const DOMAIN &)>   likelihood;
 
-    RejectionSampler(const std::function<DOMAIN()> &priorSampler,const ConvexPMF<DOMAIN> &likelihood)
-    :
-    priorSampler(priorSampler),
-    likelihood(likelihood) { }
-
-//    template<typename AGENT>
-//    RejectionSampler(const AssimilationWindow<AGENT> &window)
-//    :
-//    priorSampler(window.priorSampler),
-//    likelihood(window.likelihoodPMF)
-//    { }
+    RejectionSampler(
+            std::function<DOMAIN()>                 PriorSampler,
+            std::function<double(const DOMAIN &)>   Likelihood
+    ) :
+     priorSampler(std::move(PriorSampler)),
+     likelihood(std::move(Likelihood)) { }
 
 
     // N.B. Only use this when likelihood is reasonably high
     DOMAIN operator()() {
-        DOMAIN sample = priorSampler();
-        while(Random::nextDouble() > likelihood.P(sample)) {
-//            std::cout << likelihood.P(sample) << " " << sample << std::endl;
+        DOMAIN sample=priorSampler();
+        while(Random::nextDouble() >= likelihood(sample)) {
+//            std::cout << "Rejecting sample " << sample << " with likelihood " << likelihood(sample) << std::endl;
             sample = priorSampler();
         }
-//        std::cout << "Got sample " << sample << std::endl;
+//        std::cout << "Accepted sample " << sample << " with likelihood " << likelihood(sample) << std::endl;
         return sample;
     }
 

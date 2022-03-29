@@ -134,6 +134,22 @@ public:
         return(time < nTimesteps())?state.forwardOccupation(*this):state.backwardOccupation(*this);
     }
 
+    value_type &operator[](const Event<AGENT> &event) {
+        return std::vector<value_type>::operator[](event.id);
+    }
+
+    value_type &operator[](int eventId) {
+        return std::vector<value_type>::operator[](eventId);
+    }
+
+//    value_type operator[](const Event<AGENT> &event) const {
+//        return (*this)[event.id];
+//    }
+//
+//    value_type operator[](int eventId) const {
+//        return std::vector<value_type>::operator[](eventId);
+//    }
+
 
     // time slice for time is in [0...nTimesteps]
     // i.e. final state is implemented
@@ -174,11 +190,11 @@ public:
     value_type occupationNumber(const State<AGENT> &agentState) const;
 
 
-    int nTimesteps() const { return (size()-1)/(AGENT::domainSize()*AGENT::actDomainSize()); }
+    int nTimesteps() const { return size()/(AGENT::domainSize()*AGENT::actDomainSize()); }
 
     int dimension() const { return size(); }
 
-    static int dimension(int nTimesteps) { return AGENT::domainSize()*AGENT::actDomainSize()*nTimesteps + 1; }
+    static int dimension(int nTimesteps) { return AGENT::domainSize()*AGENT::actDomainSize()*nTimesteps; }
 
     // Log probability given fixed start state, as defined by this trajectory
 //    double logProbOld() const {

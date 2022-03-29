@@ -9,6 +9,7 @@
 #include <functional>
 #include "Random.h"
 #include "ABM.h"
+#include "State.h"
 
 // represents occupation numbers of agent states in a single timestep.
 template<typename AGENT>
@@ -19,6 +20,18 @@ public:
 
     ModelState(std::vector<value_type> &&X): std::vector<value_type>(X) {
         assert(size() == AGENT::domainSize());
+    }
+
+    ModelState(const std::vector<ABM::occupation_type> &trajecotry, int time) : ModelState() {
+        int nTimesteps = trajecotry.size() / (AGENT::domainSize()*AGENT::actDomainSize());
+        assert(time>=0 && time<=nTimesteps);
+        if(time < nTimesteps) {
+            for (int stateId = 0; stateId < AGENT::domainSize(); ++stateId)
+                (*this)[stateId] = State<AGENT>(time,stateId).forwardOccupation(trajecotry);
+        } else {
+            for (int stateId = 0; stateId < AGENT::domainSize(); ++stateId)
+                (*this)[stateId] = State<AGENT>(time,stateId).backwardOccupation(trajecotry);
+        }
     }
 
     // ensure zero initialisation
@@ -80,12 +93,13 @@ public:
         return *this;
     }
 
-//    ModelState<AGENT> &operator /=(double denominator) {
-//        for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
-//            (*this)[agentId] /= denominator;
-//        }
-//        return *this;
-//    }
+    std::vector<double> operator /(double denominator) {
+        std::vector<double> probs(size());
+        for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+            probs[agentId] = (*this)[agentId] / denominator;
+        }
+        return probs;
+    }
 
 
     static ModelState<AGENT> randomPoissonState(const std::function<double (const AGENT &)> &pmf) {

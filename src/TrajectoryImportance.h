@@ -88,7 +88,7 @@ public:
 
 
     void undoLastPerturbation() {
-        std::cout << "undoing" << std::endl;
+//        std::cout << "undoing" << std::endl;
         if(staleStates.size() != stateOccupationsForUndo.size() || staleFactors.size() != factorValuesForUndo.size())
             throw("Trying to undo last perturbation, but last perturbation was not undoable");
         // undo state occupation perturbations...
@@ -110,6 +110,8 @@ public:
     double getValue(const std::vector<ABM::occupation_type> &eventTrajectory) {
 //        std::cout << "getting value" << std::endl;
         refresh(eventTrajectory);
+//        std::cout << "Importance is " << exp(totalLogProb) << std::endl;
+//        assert(totalLogProb == 0.0);
         return exp(totalLogProb);
     }
 
@@ -173,8 +175,8 @@ public:
                         if (actOccupation > 0) factorLogProb += actOccupation * log(actPMF[actId] / agent.marginalTimestep(actId));
                     }
                 }
-                totalLogProb += factorLogProb;
                 if(stateOccupation > 1) factorLogProb += lgamma(stateOccupation + 1.0);
+                totalLogProb += factorLogProb;
             }
         }
         stateOccupationsForUndo.clear();

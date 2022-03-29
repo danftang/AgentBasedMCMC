@@ -27,22 +27,24 @@
 #include "WeightedFactoredConvexDistribution.h"
 #include "TrajectoryImportance.h"
 #include "ABM.h"
+#include "Event.h"
 
 template <class AGENT>
 class TrajectoryForecastDistribution: public WeightedFactoredConvexDistribution<ABM::occupation_type> {
 public:
+    int nTimesteps;
 
-    explicit TrajectoryForecastDistribution(int nTimesteps):
-    WeightedFactoredConvexDistribution<ABM::occupation_type>( [nTimesteps]() {
-        return std::unique_ptr<PerturbableFunction<ABM::occupation_type,double>>(new TrajectoryImportance<AGENT>(nTimesteps));
+    explicit TrajectoryForecastDistribution(int NTimesteps): nTimesteps(NTimesteps),
+    WeightedFactoredConvexDistribution<ABM::occupation_type>( [NTimesteps]() {
+        return std::unique_ptr<PerturbableFunction<ABM::occupation_type,double>>(new TrajectoryImportance<AGENT>(NTimesteps));
     }) {
-        addActFermionicFactors(nTimesteps);
-        addContinuityConstraints(nTimesteps);
-        addInteractionConstraints(nTimesteps);
+        addActFermionicFactors();
+        addContinuityConstraints();
+        addInteractionConstraints();
     }
 
 
-    void addContinuityConstraints(int nTimesteps) {
+    void addContinuityConstraints() {
         for(int time = 1; time < nTimesteps; ++time) {
             for(int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
                 Constraint<ABM::occupation_type> constraint(0.0 ,0.0);
@@ -60,7 +62,7 @@ public:
     }
 
 
-    void addInteractionConstraints(int nTimesteps) {
+    void addInteractionConstraints() {
         for(int time = 0; time < nTimesteps; ++time) {
             for (int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
                 AGENT agent(agentState);
@@ -74,7 +76,7 @@ public:
     }
 
 
-    void addActFermionicFactors(int nTimesteps) {
+    void addActFermionicFactors() {
         for(int time = 0; time < nTimesteps; ++time) {
             for (int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
                 for (int act = 0; act < AGENT::actDomainSize(); ++act) {
@@ -91,21 +93,43 @@ public:
         }
     }
 
+    Trajectory<AGENT> nextSample(std::function<ModelState<AGENT>()> startStateSampler) {
+        Trajectory<AGENT> sample(nTimesteps);
+        bool isValid;
+        int nAttempts = 0;
+        do {
+            ModelState<AGENT> t0State = startStateSampler();
+            ModelState<AGENT> t1State;
+            isValid = true;
+            for (int t = 0; t < nTimesteps; ++t) {
+                for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+                    AGENT agent(agentId);
+                    int nAgents = t0State[agentId];
+                    for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+                        sample[Event<AGENT>(t, agent, actId)] = 0.0;
+                    }
+                    // now choose acts for each of nAgents from act Fermionic distribution
 
-//    static ConvexPolyhedron<ABM::occupation_type> stateOccupationNumbersAsAuxiliary(int nTimesteps) {
-//        ConvexPolyhedron<ABM::occupation_type> constraints;
-//        for(int time = 0; time < nTimesteps; ++time) {
-//            for (int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
-//                Constraint<ABM::occupation_type> & occupation = constraints.emplace_back(0.0, AGENT::actDomainSize()); // assumes act Fermionicity
-//                for (int act = 0; act < AGENT::actDomainSize(); ++act) {
-//                    occupation.coefficients.insert(Event<AGENT>(time,agentState,act), 1.0);
-//                }
-//            }
-//        }
-//        return constraints;
-//    }
-
-
+                    std::vector<double> actPMF = agent.timestep(t0State);
+                    ActFermionicDistribution actDistribution(actPMF);
+                    assert(nAgents <= actPMF.size());
+                    std::vector<bool> chosenActs = actDistribution.sampleUnordered(nAgents);
+                    for(int act=0; act < chosenActs.size(); ++act) {
+                        if(chosenActs[act]) {
+                            sample[Event<AGENT>(t, agent, act)] = 1.0;
+                            t1State += agent.consequences(act);
+                        }
+                    }
+                }
+                t0State.setToZero();
+                t0State.swap(t1State);
+            }
+            if (++nAttempts > 4000)
+                throw (std::runtime_error(
+                        "Can't create act-Fermionic trajectoryPrior sample of Trajectory. Too many agents for Fermionicity to be a good assumption."));
+        } while (!isValid);
+        return sample;
+    }
 
 protected:
 
@@ -135,22 +159,6 @@ protected:
             this->addFactor(lowerBoundConstraint);
         }
     }
-
-
-//    static std::vector<std::vector<Event<AGENT>>> consequencesByEndState() {
-//        std::vector<std::vector<Event<AGENT>>> endStateToEvents(AGENT::domainSize());
-//        std::vector<AGENT> consequences;
-//        for(int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
-//            AGENT agent(agentState);
-//            for (int act = 0; act < AGENT::actDomainSize(); ++act) {
-//                consequences = agent.consequences(act);
-//                for(const AGENT &endState: consequences) {
-//                    endStateToEvents[endState].push_back(Event(0,agent,act));
-//                }
-//            }
-//        }
-//        return endStateToEvents;
-//    }
 
 };
 

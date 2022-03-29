@@ -26,6 +26,10 @@
 #include "ObservationLikelihood.h"
 #include "TrajectoryForecastDistribution.h"
 #include "SparseBasisSampler.h"
+#include "diagnostics/AgentDataflow.h"
+#include "RejectionSampler.h"
+
+using namespace dataflow;
 
 void BinomialAgentAssimilation() {
     constexpr int nTimesteps = 2;
@@ -34,7 +38,9 @@ void BinomialAgentAssimilation() {
     constexpr int nSamplesPerWindow = 1000000;
     constexpr int nBurninSamples = 5000;
 
-    BernoulliStartState<AGENT> PStartState([](AGENT agent) { return agent.stateId==0?1.0:0.1; });
+    BernoulliStartState<AGENT> PStartState([startState = std::vector<double>({1.0,0.4,0.0})](AGENT agent) {
+        return startState[agent.stateId];
+    });
     std::cout << "Start state support is\n" << PStartState << std::endl;
 
     ObservationLikelihood<AGENT> PObsGivenTrajectory(AgentStateObservation(State<AGENT>(1, 0),1,0.9));
@@ -45,15 +51,39 @@ void BinomialAgentAssimilation() {
 //
 //    // WeightedFactoredConvexDistribution<BinomialAgent,int>
     auto posterior = PTrajectoryGivenStartState * PObsGivenTrajectory * PStartState;
+//    auto posterior = PTrajectoryGivenStartState * PStartState;
     std::cout << "Posterior support is\n" << posterior << std::endl;
 //
     SparseBasisSampler sampler(posterior);
     std::cout << "Constructed basis\n" << sampler << std::endl;
 
-    for(int s=0; s<50; ++s) {
-        const std::vector<ABM::occupation_type> &nextSample = sampler.nextSample();
-        std::cout << nextSample << " " << posterior.constraints.isValidSolution(nextSample) << std::endl;
+    for(int i=0; i < 100; ++i) {
+        assert(posterior.constraints.isValidSolution(sampler()));
     }
+
+    ModelState<AGENT> aggregateState;
+    sampler >>= Drop(1000) >>= Take(5000000) >>= TrajectoryToModelState<AGENT>(2) >>= Sum(aggregateState);
+    std::cout << "Aggregate state = " << aggregateState / 5000000.0 << std::endl;
+
+    RejectionSampler<Trajectory<AGENT>> rejectionSampler(
+            [& PStartState, &PTrajectoryGivenStartState]() {
+                return PTrajectoryGivenStartState.nextSample([& PStartState]() {return PStartState.nextSample();});
+            },
+            [& PObsGivenTrajectory](const Trajectory<AGENT> &X) {
+                return PObsGivenTrajectory(X);
+            });
+
+
+    ModelState<AGENT> rejectionAggregateState;
+    rejectionSampler >>= Take(1000000) >>= TrajectoryToModelState<AGENT>(2) >>= Sum(rejectionAggregateState);
+    std::cout << "Rejection aggregate state = " << rejectionAggregateState / 1000000.0 << std::endl;
+
+    std::cout << "Exact state = " << 0.5+0.1*0.25 << " " << 0.5 + 0.1*0.25 << " " << 0.1*0.5 << std::endl;
+
+//    for(int s=0; s<50; ++s) {
+//        const std::vector<ABM::occupation_type> &nextSample = sampler();
+//        std::cout << nextSample << " " << posterior.constraints.isValidSolution(nextSample) << std::endl;
+//    }
 
     //...
 

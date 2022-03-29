@@ -30,6 +30,18 @@ public:
             );
         }
     }
+
+    ModelState<AGENT> nextSample() {
+        ModelState<AGENT> sample;
+        for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+            if(Random::nextDouble() < exp(factors[agentId](1))) {
+                sample[agentId] = 1;
+            } else {
+                sample[agentId] = 0;
+            }
+        }
+        return sample;
+    }
 };
 
 

@@ -6,21 +6,32 @@
 #define GLPKTEST_DATAFLOW_H
 ////////////////////////////////////////////////////////////////////////////////////////
 // Implementation of the dataflow pipeline concept.
-// A dataflow pipeline here consists of a single producer, any number of transforms
-// and a single consumer. However, any of these components can start other pipelines
+//
+// CONCEPTS
+// --------
+// A PRODUCER is any object that can be called with no arguments to return a data object
+// If a producer returns a const reference, the referred-to object must persist until
+// the next call.
+//
+// A CONSUMER is any object that can be called with a const reference to a data object and
+// returns a boolean if the consumer is willing to accept more data.
+//
+// A TRANSFORMER is any object that can be called with a downstream consumer and an
+// upstream data item, and returns a boolean that is true if the consumer can accept
+// more data. The object should transform the upstream data in some way and feed it to the
+// supplied downstream consumer.
+//
+// A dataflow PIPELINE here consists of a single PRODUCER, any number of TRANSFORMERS
+// and a single CONSUMER. However, any of these components can start other pipelines
 // and in this way an acyclic graph can be built up (technically any acyclic graph if
 // we allow the addition of a "universal producer" and a "universal consumer" like in
 // minimum flow algorithms).
 //
-// CONCEPTS
-// --------
-// A producer is any object that can be called with no arguments to return a data object
-// If a producer returns a const reference, the referred-to object must persist until
-// the next call.
-// A consumer is any object that can be called with a const reference to a data object and
-// returns a boolean if the consumer is willing to accept more data.
-// A transformer is any object that can be called with an rvalue reference to the consumer
-// on it's downstream side and returns a consumer for its upstream side.
+// Elements are connected together using the '=>' operator, so for example, the code:
+//
+// producer => transform => consumer;
+//
+// would describe the typical pipeline.
 //
 // TODO: Better to have a consumer be an object that takes a producer, and a transform
 //  be an object that takes a producer and returns a producer? This makes type inference
@@ -151,6 +162,11 @@ namespace dataflow {
         typedef void transform_tag;
     };
 
+
+    // Split is a CONSUMER that splits a datastream over any number of consumers,
+    // sending a copy of each data item to each consumer until all consumers have closed
+    // the connection
+    // e.g. producer => Split(consumer1, consumer 2)
     template<typename... CONSUMERS>
     class Split {
     public:
@@ -175,6 +191,7 @@ namespace dataflow {
     };
 
 
+    // Take is a TRANSFORM that takes 'n' data items and then closes the connection
     class Take: public Transform {
     public:
         int countDown;
@@ -188,6 +205,8 @@ namespace dataflow {
         }
     };
 
+
+    // Map is a TRANSFORM that allows any function to be used in a dataflow pipeline
     template<typename FUNC, typename = typename unary_function_traits<FUNC>::is_valid_tag>
     class Map: public Transform {
     public:
@@ -205,6 +224,8 @@ namespace dataflow {
     };
 
 
+    // Drop is a TRANSFORM that drops the first 'n' data items then passes
+    // data downstream
     class Drop: public Transform {
     public:
         int n;
@@ -239,6 +260,8 @@ namespace dataflow {
         }
     };
 
+    // Repeatedly collects 'n' data items, packages them into a vector and sends them downstream
+    //
     // TODO: can we get type inference here?
     //  Would it require a separation of connection and data processing steps, or could we use template templates?
     template<typename DATA>
@@ -263,6 +286,7 @@ namespace dataflow {
 
     };
 
+    // Sends the first 'n' data items to one consumer, then the rest to another
     template<typename FIRSTCONSUMER,typename LASTCONSUMER>
     class SwitchAfter {
     public:
@@ -311,6 +335,9 @@ namespace dataflow {
 //    };
 
 
+    // Sends data items to the first in an ordered list of consumers
+    // until that consumer closes the connection, then sends data to
+    // the next consumer in the list...etc...
     template<typename... CONSUMERS>
     class SwitchOnClose {
     public:
@@ -338,6 +365,7 @@ namespace dataflow {
     };
 
 
+    // Sums data elements to a supplied accumulator
     template<typename DATA>
     class Sum {
     public:
@@ -352,6 +380,22 @@ namespace dataflow {
     };
 
 
+    class ToOstream {
+    public:
+        std::ostream &out;
+        std::string   delimiter;
+
+        ToOstream(std::ostream &stream, std::string Delimiter = "\n"): out(stream), delimiter(Delimiter) {}
+
+        template<class DATA>
+        bool operator()(const DATA &item) {
+            out << item << delimiter;
+            return true;
+        }
+
+    };
+
+    // saves data to a vector
     template<typename T>
     auto save(std::vector<T> &vectorLog) {
         return [&vectorLog](const T &item) {
@@ -360,6 +404,8 @@ namespace dataflow {
         };
     }
 
+
+    // saves data to a valarray, closes connection when full
     template<typename T>
     auto save(std::valarray<T> &log) {
         return [&log,i=0](const T &item) mutable {

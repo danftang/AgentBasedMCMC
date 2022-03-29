@@ -53,6 +53,17 @@ public:
         return std::move(factoredDist);
     }
 
+    // returns probability at point X
+    double operator()(const std::vector<T> &X) {
+        double logP = 0.0;
+        for(int i=0; i < factors.size(); ++i) {
+            T Ai = constraints[i].coefficients * X;
+            if(constraints[i].lowerBound > Ai || Ai > constraints[i].upperBound) return 0.0;
+            logP += factors[i](Ai);
+        }
+        return exp(logP);
+    }
+
 
 
 protected:
