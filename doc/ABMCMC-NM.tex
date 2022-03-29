@@ -333,7 +333,7 @@ P\left(\omega(T)=v\right)
 \section{Approximating the Support of the Posterior}\label{sec:approx_support}
 %##########################################
 
-Recall that the aim of this work is to develop a method that will allow us to sample from the posterior of an agent-based model to estimate the state of a system using the most up-to-date information from a model \textit{and} some recent observations. The most significant barrier preventing this, as discussed in Section~\ref{sec:context}, is that it is very difficult to find model trajectories that have some chance (however small) of matching our observations. The problem could be simplified by averaging or aggregating the observations, but here we avoid this so as not to risk the identifiability/equifinality problem (finding the `wrong' model that is nevertheless able to generate realistic-looking aggregate patterns). We are instead interested in using direct observations of individuals in the system, such as ``at time $t$ we detected $n$ predators in region $x$''. 
+Recall that the aim of this work is to develop a method that will allow us to sample from the posterior of an agent-based model to estimate the state of a system using the most up-to-date information from a model \textit{and} some recent observations. The most significant barrier preventing this, as discussed in Section~\ref{sec:context}, is that it is very difficult to find model trajectories that have some chance (however small) of matching our observations. The problem could be simplified by averaging or aggregating the observations, but here we avoid this so as not to risk the identifiability/equifinality problem (finding the `wrong' model that is nevertheless able to generate realistic-looking aggregate patterns). We are instead interested in using direct observations of individuals in the system, such as ``at time $t$ we detected a predator in region $x$''. \textit{[XXXX Dan I'd like to discuss this briefly. I am trying to avoid the criticism that we got in another paper that we should just use aggregate data, but may have gotten the wrong end of the stick about the observations here. (Easier to explain in person)]}
 
 More formally, the problem is that sampling from \eqref{posterior} (the ABM posterior) is difficult because it is hard to find proposal trajectories that have non-zero probability. Our strategy to solve this problem is to first derive an expression for a volume of trajectory/parameter space that bounds the support of the posterior, $\supp(P(T,\theta|\Omega))$, i.e. the set of trajectory/parameter $\left<T,\theta\right>$ pairs that have non-zero posterior probability. If we choose a bounding volume that it is easy to sample from and is a relatively tight approximation of $\supp(P(T|\Omega)))$ then there is a good chance that a sample drawn from the volume will have non-zero probability. The bounding volume does not need to be exact, it just needs to tight enough to make it easier to find a non-zero probability sample.
 
@@ -476,20 +476,20 @@ for each timestep $t=0$ and $t=1$.
 
 Taken together, these constraints define a polyhedron that bounds the set of (Fermionic) trajectories for the cat and mouse ABM.
 
-\section{Sampling from the posterior}\label{sec:posterior_sampling}
+\section{Sampling from the Posterior}\label{sec:posterior_sampling}
 %#################################################
 
-Having shown how to approximate $\supp(P(T,\theta|\Omega))$ as a mixed-integer polyhedron, we now need to devise a way to use this to sample from $P(T,\theta|\Omega)$.
+The previous section showed how to approximate the support for the posterior ($\supp(P(T,\theta|\Omega))$) as a mixed-integer polyhedron. Without this, sampling from the posterior would be almost impossible because the vast majority of possible model trajectories would be refuted by the observations. Having estimated $\supp(P(T,\theta|\Omega))$), we can be confident that model trajectories we sample have a non-zero probability of being consistent with the observations. The final stage in the process of constructing the ABM posterior is to devise a way to use $\supp(P(T,\theta|\Omega))$ to sample from $P(T,\theta|\Omega)$. \textit{[XXXX Could you add a sentence to say that this is hard? Basically I think you've devised a v. clever solution, and there is no harm in emphasising ]}
 
 \citet{baumert2009discrete} presents a very general algorithm for sampling from any weighted subset of integer points within a bounding hyper-rectangle. The algorithm relies on sampling points on a random walk. However, in our case the number of valid trajectories is a vanishingly small proportion of the number of integer points in the smallest bounding hyper-rectangle, so a random walk is unlikely to come across any valid trajectories. Universal hashing \citep{meel2016constrained} provides a promising alternative but we have found that this technique does not scale to the number of dimensions needed for our application.
 
-The Metropolis-Hastings algorithm is another well known and widely used sampling algorithm and this is the approach we use here. To do this we need to define
+The Metropolis-Hastings algorithm is another well known and widely used sampling algorithm and this is the approach we use here. To do this we need to define:
 \begin{itemize}
-\item a set of Markov states, $\mathcal{M}$
+\item a set of Markov states, $\mathcal{M}$;
 
-\item a probability distribution $P: \mathcal{M} \to \mathbb{R}$ which gives the probability of each Markov state (this need not be normalised as the Metropolis Hastings algorithm only ever needs probability ratios)
+\item a probability distribution $P: \mathcal{M} \to \mathbb{R}$ which gives the probability of each Markov state (this need not be normalised as the Metropolis Hastings algorithm only ever needs probability ratios);
 
-\item a stochastic proposal function $f:\mathcal{M} \to \mathcal{M}$ from which we can generate proposal transitions from one Markov state to another
+\item a stochastic proposal function $f:\mathcal{M} \to \mathcal{M}$ from which we can generate proposal transitions from one Markov state to another;
 
 \item a mapping $E:\mathcal{M} \to \mathbb{R}^T_{SA} \times \mathbb{T}$ which maps Markov states to trajectories and parameter values so we can recover the sample.
 \end{itemize}
@@ -503,7 +503,7 @@ In order to be of use in practice, the proposal function, $f$, must have the fol
 	\item Given a current Markov state, there should be computationally efficient procedure to generate a proposal and calculate its acceptance probability. 
 \end{itemize}
 
-\subsection{The set of Markov states}
+\subsection{The Set of Markov States}
 %#############################################
 
 Given a polyhedron, we split the constraints into two sets: equalities (i.e. those whose lower and upper bound have the same value) and inequalities (i.e. those whose lower and upper bounds differ):
@@ -543,14 +543,14 @@ V = Q^{-1}{B^{-1}E \choose \mathbf{0}}, \, M = Q^{-1}{-B^{-1}N \choose \mathbf{1
 X = V + MX_N
 \label{markovtotrajectory}
 \end{equation}
-In section \ref{basis} we show how to choose $X_B$ to ensure that $B$ has an inverse and the integer dimensions of $X_B$ remain integer as long as the integer dimensions of $X_N$ are integer. Given this, then the original polyhedron is equivalent to the reduced dimension polyhedron
+In Section \ref{basis} we show how to choose $X_B$ to ensure that $B$ has an inverse and the integer dimensions of $X_B$ remain integer as long as the integer dimensions of $X_N$ are integer. Given this, then the original polyhedron is equivalent to the reduced dimension polyhedron
 \begin{equation}
 \mathcal{P}' = \left\{X_N \in \mathbb{Z}^{N'} \times \mathbb{R}^{M'}: L-CV \le  CMX_N \le U-CV\right\}
 \label{reducedPolySupport}
 \end{equation}
 where $N'$ and $M'$ are the number of integer and real-valued elements remaining in $X_N$.
 
-Since $Q$ is just a permutation matrix, $X_N$ and $X_B$ can be bound within hyper-rectangles by transforming the $\mathcal{P}$-bounding hyper-rectangle, $H$, from section \ref{BPoly}
+Since $Q$ is just a permutation matrix, $X_N$ and $X_B$ can be bound within hyper-rectangles by transforming the $\mathcal{P}$-bounding hyper-rectangle, $H$, from Section \ref{BPoly}
 \[
 QH = {H_B \choose H_N}
 \]
@@ -560,9 +560,9 @@ So, $X_N$ is bound by $0 \le X_N \le H_N$. Given this, we define the set of Mark
 \]
 where each Markov state, $X_N$, is mapped to a unique trajectory, $X$, using \eqref{markovtotrajectory}.
 
-\subsection{The probability of a Markov state}
+\subsection{The Probability of a Markov State}
 
-Given a Markov state, $X_N$, that satisfies $0 \le X_N \le H_N$, the associated trajectory given by equation \eqref{markovtotrajectory} is guaranteed to satisfy all the equality constraints. However, there is no guarantee that the basic variables given by eq \eqref{basicvars} will be within their bounds $0 \le X_B \le H_B$ or that the constraints $L \le CX \le U$ will be satisfied. To deal with this we introduce the concept of \textit{infeasibility} which is a measure of the extent to which a Markov state fails to satisfy these constraints.
+Given a Markov state, $X_N$, that satisfies $0 \le X_N \le H_N$, the associated trajectory given by equation \eqref{markovtotrajectory} is guaranteed to satisfy all the equality constraints. However, there is no guarantee that the basic variables given by \eqref{basicvars} will be within their bounds $0 \le X_B \le H_B$ or that the constraints $L \le CX \le U$ will be satisfied. To deal with this we introduce the concept of \textit{infeasibility} which is a measure of the extent to which a Markov state fails to satisfy these constraints.
 
 Let the infeasibility function $\iota(l,x,u)$ be defined to be equal to 0 if $l < x < u$ or equal to the distance to the nearest bound otherwise
 \[
@@ -581,7 +581,7 @@ now define the infeasibility of a model state, $X$, be the sum of infeasibilitie
 \[
 \iota(X) = \iota(L, CX, U) + \iota(0, X, H)
 \]
-this implies that a Markov state has an infeasibility of $\iota(V + MX_N)$. If this infeasibility is zero, then all the constraints are satisfied and the (unnormalised) probability of the Markov state is defined to be equal to the joint probability, which is proportional to the posterior
+This implies that a Markov state has an infeasibility of $\iota(V + MX_N)$. If this infeasibility is zero, then all the constraints are satisfied and the (unnormalised) probability of the Markov state is defined to be equal to the joint probability, which is proportional to the posterior
 \[
 P(X_N) = P(X=V + MX_N,\Omega) = P(T,\theta|\Omega)P(\Omega)
 \]
@@ -683,7 +683,7 @@ When $X_N$ is infeasible $\frac{P_\iota(X_N)}{P(X_N)} = 1$. When $X_N$ is feasib
 
 \subsection{Choosing a basis}
 \label{basis}
-The definition of the Markov chain depends on a partition of the model state into basic and non-basic variables such that $B$ in equation \eqref{basicvars} has an inverse, $B^{-1}$, and if $X_N \in \mathbb{Z}^{N'} \times \mathbb{R}^{M'}$ then $X \in \mathbb{Z}^{N} \times \mathbb{R}^{M}$ (i.e. if $X_N$ has all integers in the correct elements then so does $X$). In general there exist many partitions that satisfy these requirements so it remains to define a method of choosing one. The choice of basis affects the efficiency of trajectory transitions via:
+The definition of the Markov chain depends on a partition of the model state into basic and non-basic variables such that $B$ in Equation \eqref{basicvars} has an inverse, $B^{-1}$, and if $X_N \in \mathbb{Z}^{N'} \times \mathbb{R}^{M'}$ then $X \in \mathbb{Z}^{N} \times \mathbb{R}^{M}$ (i.e. if $X_N$ has all integers in the correct elements then so does $X$). In general there exist many partitions that satisfy these requirements so it remains to define a method of choosing one. The choice of basis affects the efficiency of trajectory transitions via:
 \begin{itemize}
 \item the computational cost of recomputing $S(X_N)$
 
@@ -692,11 +692,9 @@ The definition of the Markov chain depends on a partition of the model state int
 \item the mixing rate of the Markov chain, since the choice of basis affects the way the probability distribution in $X$ space is projected into $X_N$ space.
 \end{itemize}
 
-Taking each in turn, $S(X_N)$ depends only on ratios of $P_\iota$. However, if we project $S(X_N)$ into the augmented state space $X_a = {X \choose CX} = {I \choose C}(V + MX_N)$ of $g_a$ (equation \eqref{augmentedG}) then the $P_\iota$s can be expressed as a product of functions on elements of $X_a$. So, when recalculating the sum in equation \eqref{transitionSum} after a transition from $X_N$ to $X_N + \delta e_i$, the only terms that change are those from $X_N + \delta e_j \in \mathbb{D}(X_N)$ such that the non-zero elements of ${I \choose C}(\delta Me_j)$ intersect with the non-zero elements of ${I \choose C}(\delta Me_i)$. So, if we choose a basis such that ${M \choose CM}$ is sparse then re-calculation of $S(X_N)$ will only require a few terms to be recalculated and so will be more efficient. A binary tree data structure can be used to efficiently update and draw from the probability distribution over transitions in equation \eqref{transitionProb} while also keeping track of $S(X_N)$ \citep{TangMutableCategorical}.
+Taking each in turn, $S(X_N)$ depends only on ratios of $P_\iota$. However, if we project $S(X_N)$ into the augmented state space $X_a = {X \choose CX} = {I \choose C}(V + MX_N)$ of $g_a$ \eqref{augmentedG} then the $P_\iota$s can be expressed as a product of functions on elements of $X_a$. So, when recalculating the sum in \eqref{transitionSum} after a transition from $X_N$ to $X_N + \delta e_i$, the only terms that change are those from $X_N + \delta e_j \in \mathbb{D}(X_N)$ such that the non-zero elements of ${I \choose C}(\delta Me_j)$ intersect with the non-zero elements of ${I \choose C}(\delta Me_i)$. So, if we choose a basis such that ${M \choose CM}$ is sparse then re-calculation of $S(X_N)$ will only require a few terms to be recalculated and so will be more efficient. A binary tree data structure can be used to efficiently update and draw from the probability distribution over transitions in \eqref{transitionProb} while also keeping track of $S(X_N)$ \citep{TangMutableCategorical}. This same idea extends to the ratio $\frac{S(X_N)}{S(X'_N)}$. If ${M \choose CM}$ is sparse, and also short, then we should expect the ratio of sums to be close to 1.
 
-This same idea extends to the ratio $\frac{S(X_N)}{S(X'_N)}$. If ${M \choose CM}$ is sparse, and also short, then we should expect the ratio of sums to be close to 1.
-
-The Markov chain will also mix better if the columns of ${M \choose CM}$ are short. \citet{mihelich2018maximum} shows that the Kolmogorov-Sinai entropy of the Markov process is a good proxy for its mixing speed. In the context of our algorithm the entropy is higher if the neighbours of a Markov state have similar probability, all else being equal. If ${M \choose CM}$ is sparse and short then we expect the probability of adjecent Markov states to be similar.
+The Markov chain will also mix more effectively if the columns of ${M \choose CM}$ are short. \citet{mihelich2018maximum} shows that the Kolmogorov-Sinai entropy of the Markov process is a good proxy for its mixing speed. In the context of our algorithm the entropy is higher if the neighbours of a Markov state have similar probability, all else being equal. If ${M \choose CM}$ is sparse and short then we expect the probability of adjecent Markov states to be similar.
 
 [TODO: Finding a short basis is lattice reduction, which is hard?]
 
@@ -720,7 +718,7 @@ then
 
 Our aim is to mark variables from $X$ as basic one at a time. Once complete, the remaining variables will make up the non-basic variables, $X_N$.
 
-Given a set of constraints in the form \eqref{jointconstraints}, we mark the $j^{th}$ element of $X$ as basic and the $i^{th}$ equality constraint as ``reduced'' by choosing an element $W^i_j$ to be a \textit{pivot point} and performing Gaussian elimination on the $j^{th}$ column of $W$ so that $W^i_j$ is the only non-zero element in the column $W_j$. So
+Given a set of constraints in the form of \eqref{jointconstraints}, we mark the $j^{th}$ element of $X$ as basic and the $i^{th}$ equality constraint as ``reduced'' by choosing an element $W^i_j$ to be a \textit{pivot point} and performing Gaussian elimination on the $j^{th}$ column of $W$ so that $W^i_j$ is the only non-zero element in the column $W_j$. So
 \[
 {\mathbf{0} \choose L} \le GWX - GF \le {\mathbf{0} \choose U}
 \]
@@ -751,13 +749,15 @@ This defines a set of valid pivot points at each elimination step. In order to d
 \[
 \mu = (\left|W_j\right|_0-1)(\left|W^i\right|_0-1)
 \]
- elements, where $\left|\cdot\right|_0$ is the L0-norm (i.e. the number of non-zero elements in a vector or matrix). So, this gives an upper bound on $\left|WG\right|_0 - \left|G\right|_0$, the change in L0-norm (or reduction in sparsity) of $W$ when we pivot on $W^i_j$. It has been found that choosing $W^i_j$ to be the element that minimises $\mu$ (known as the Markowitz criterion) is a computationally efficient way of maintaining the sparsity of a matrix while performing Gaussian elimination \citep*{markowitz1957elimination, suhl1990computing, maros2002computational}. So, in order to find a sparse basis, we calculate the set of valid pivot points, choose the point that minimises $\mu$, perform the pivot and repeat until no more valid pivot points remain. \citet{suhl1990computing} shows how to perform this in a computationally efficient way.
+ elements, where $\left|\cdot\right|_0$ is the L0-norm (i.e. the number of non-zero elements in a vector or matrix). So, this gives an upper bound on $\left|WG\right|_0 - \left|G\right|_0$; the change in L0-norm (or reduction in sparsity) of $W$ when we pivot on $W^i_j$. It has been found that choosing $W^i_j$ to be the element that minimises $\mu$ (known as the Markowitz criterion) is a computationally efficient way of maintaining the sparsity of a matrix while performing Gaussian elimination \citep*{markowitz1957elimination, suhl1990computing, maros2002computational}. So, in order to find a sparse basis, we calculate the set of valid pivot points, choose the point that minimises $\mu$, perform the pivot and repeat until no more valid pivot points remain. \citet{suhl1990computing} show how to perform this in a computationally efficient way.
 
 \section{Spatial predator-prey demonstration}\label{sec:demonstration}
 
-We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey'' agents. At each timestep a prey agent either moves to an adjacent grid-square (i.e. up, down, left or right with equal probability), dies or gives birth to another prey agent on the an adjacent grid-square. Predators also either move to an adjacent grid-square, die or give birth. However, predators only give birth when there is at least one prey on an adjacent grid-square. In addition, if a prey has any predators on adjacent grid-squares there is a chance it may be eaten. The probability of each behaviour is shown in table \ref{rates}.
+We demonstrate the above techniques on hypothetical \textit{predator-prey} model. The demonstration is analogous to a hypothetical real-world study of animal movements in their natural habitat. We imagine that sensors are placed in the environment to detect the presence of an animal (predator or prey), and we combine the data from these sensors with an agent-based model of animal movements to create a posterior estimate for their current locations. %To complicated the situation, we assume that the predator's prey are not observed by our sensors, so their behaviour in the model must be inferred.
 
-\begin{table}
+The environment consists of a 32x32 grid of ``predator'' and ``prey'' agents. At each timestep a prey agent either moves to an adjacent grid-square (i.e. up, down, left or right with equal probability), dies or gives birth to another prey agent on an adjacent grid-square (again chosen with equal probability). Predators also either move to an adjacent grid-square, die or give birth. However, predators only give birth when there is at least one prey on an adjacent grid-square. In addition, if a prey has any predators on adjacent grid-squares there is a chance it may be eaten. The probability of each behaviour, shown in Table~\ref{rates}, has been calibrated so that the model an reaches equilibrium where neither population of agents will die out entirely.
+
+\begin{table}[ht]
 	\begin{center}
 		\begin{tabular}{llllc}
 		\hline
@@ -785,7 +785,18 @@ We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey''
 	\label{rates}
 \end{table}
 
-\begin{figure}
+
+
+
+
+
+Simulated observation data were generated by performing a forward simulation of the model. The number of predators and prey in each gridsquare at the start of the simulation was drawn from a Poisson distribution with rate parameter $\lambda = 0.05$. The model was then simulated forward for 16 timesteps. At each timestep, each gridsquare was observed with a probability of 0.02. If an observation was made, the number of predators in the gridsquare was observed. In order to demonstrate assimilation with observational noise, each predator was observed with probability 0.9 (i.e. the number observed was drawn from a Binomial distribution) although our algorithm can also assimilate observations with no noise. The same procedure was then repeated for prey.
+
+Four separate Markov chains of 1,500,000 samples each were generated from the posterior using the method described above. The start state for each chain was drawn from the prior (i.e. model trajectory without any observations). The first 200,000 samples of each chain were discarded and the remaining samples were split into first and last halves to give 8 sample sequences in total. 
+
+In order to assess the convergence of the chains, a set of summary statistics were calculated for each sample of each chain. The summary statistics consisted of the total number of agents within the shaded regions shown in Figure~\ref{figRegions} measured at the end of the last timestep of the trajectory. This arrangement of regions was chosen in order to capture the convergence at different spatial scales.
+
+\begin{figure}[ht]
 	\centering
 	\resizebox{0.5\textwidth}{!}{
 		\includegraphics[scale=0.5]{figs/gridRegionsSm.png}
@@ -794,30 +805,7 @@ We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey''
 	\label{figRegions}
 \end{figure}
 
-\begin{figure}
-	\centering
-	\resizebox{0.8\textwidth}{!}{
-		\includegraphics{figs/PredPrey32-16-graph.png}
-	}
-	\caption{Mean autocorrelation for each scalar of the summary statistics, averaged over all chains.}
-	\label{figAutocorrelation}
-\end{figure}
-
-\begin{figure}
-	\centering
-	\resizebox{0.8\textwidth}{!}{
-		\includegraphics{figs/PredPrey32-16-map.png}
-	}
-	\caption{Mean number of agents in each gridsquare after the last timestep, averaged over all samples. Blue represents predator, red represents prey. The dots represent the final positions of agents in the simulation from which the observations were generated. The background colour of each square has red/blue intensity proportional to the log of the mean number of prey/predators in that square, respectively.}
-	\label{figEndState}
-\end{figure}
-
-
-Simulated observation data was generated by performing a forward simulation of the model. The number of predators and prey in each gridsquare at the start of the simulation was drawn from a Poisson distribution with rate parameter $\lambda = 0.05$. The model was then simulated forward for 16 timesteps. At each timestep, each gridsquare was observed with a probability of 0.02. If an observation was made, the number of predators in the gridsquare was observed. In order to demonstrate assimilation with observational noise, each predator was observed with probability 0.9 (i.e. the number observed was drawn from a Binomial distribution. Note that our algorithm can also assimilate observations with no noise). The same procedure was then repeated for prey.
-
-Four separate Markov chains of 1,500,000 samples each were generated from the posterior using the method described above. The start state for each chain was drawn from the prior (i.e. model trajectory without any observations). The first 200,000 samples of each chain were discarded and the remaining samples were split into first and last halves to give 8 sample sequences in total. 
-
-In order to assess the convergence of the chains, a set of summary statistics were calculated for each sample of each chain. The summary statistics consisted of the total number of agents within the shaded regions shown in figure \ref{figRegions} measured at the end of the last timestep of the trajectory. This arrangement of regions was chosen in order to capture the convergence at different spatial scales. From the summary statistics, we calculated the the Gelman-Rubin diagnostic \cite{gelman1992inference}, and approximated the autocorrelation at various time lags. Using the notation $x_{ij}$ to refer to a scalar statistic of the $i^{th}$ sample of the $j^{th}$ sequence, given $m$ sequences of $n$ samples each, let $\bar{x}_j$ be the mean of the $j^{th}$ sequence and $\bar{x}$ be the mean over all sequences
+From the summary statistics, we calculated the the Gelman-Rubin diagnostic \cite{gelman1992inference}, and approximated the autocorrelation at various time lags. Using the notation $x_{ij}$ to refer to a scalar statistic of the $i^{th}$ sample of the $j^{th}$ sequence, given $m$ sequences of $n$ samples each, let $\bar{x}_j$ be the mean of the $j^{th}$ sequence and $\bar{x}$ be the mean over all sequences
 \[
 \bar{x}_j = \frac{1}{n}\sum_{i=1}^n x_{ij}, \bar{x} = \frac{1}{m}\sum_{j=1}^m \bar{x}_j
 \]
@@ -858,9 +846,29 @@ where the sum runs until $\hat{\rho}_t \le 0$. This approximates of the number o
 
 [TODO: what was the effective sample size?]
 
-Finally, figure \ref{figEndState} shows the mean number of agents at the end of the simulation, averaged over all samples. This is a visual way of showing that the observations have given rise to a posterior that gives some information about the true positions of the agents.
+
+\begin{figure}
+	\centering
+	\resizebox{0.8\textwidth}{!}{
+		\includegraphics{figs/PredPrey32-16-graph.png}
+	}
+	\caption{Mean autocorrelation for each scalar of the summary statistics, averaged over all chains.}
+	\label{figAutocorrelation}
+\end{figure}
+
+Finally, Figure \ref{figEndState} shows the mean number of agents at the end of the simulation, averaged over all samples. This is a visual way of showing that the observations have given rise to a posterior that gives some information about the true positions of the agents.
 
 [Show convergence with problem size/number of constraints or with grid-size / number of timesteps (number of agents?)]
+
+\begin{figure}[ht]
+	\centering
+	\resizebox{0.8\textwidth}{!}{
+		\includegraphics{figs/PredPrey32-16-map.png}
+	}
+	\caption{Mean number of agents in each gridsquare after the last timestep, averaged over all samples. Blue represents predator, red represents prey. The dots represent the final positions of agents in the simulation from which the observations were generated. The background colour of each square has red/blue intensity proportional to the log of the mean number of prey/predators in that square, respectively.}
+	\label{figEndState}
+\end{figure}
+
 
 \section{Discussion} 
 \label{discussion}
