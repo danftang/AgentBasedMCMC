@@ -1,3 +1,7 @@
+// Calculates the log of the ratio P(X)/P_i(X) between the real probability and the
+// log-linear approximation of the forecast given the start state.
+//
+// This amounts to \sum_{t \psi a} (\Psi^t_\psi)! log(\pi(\psi, \Psi^t, a)/c^t_{\psi a})
 //
 // Created by daniel on 15/03/2022.
 //
@@ -26,6 +30,7 @@ public:
     bool                         perturbationsHeldForUndo; //
     std::vector<ABM::occupation_type>   stateOccupationsForUndo;
     std::vector<double>                 factorValuesForUndo;
+    double                       totalLogProbForUndo;
 
 //    TrajectoryImportance(const Trajectory<AGENT> &eventTrajectory):
 //        eventTrajectory(eventTrajectory),
@@ -70,6 +75,7 @@ public:
             clearPerturbations();
             clearUndoInformation();
         }
+        totalLogProbForUndo = totalLogProb;
         for(int i : perturbedIndices) {
             if(i < eventTrajecotrySize) {
                 Event<AGENT> changedEvent(i);
@@ -102,6 +108,7 @@ public:
         for(int nnz=0; nnz < staleFactors.size(); ++nnz) {
             stateLogProbs[staleFactors[nnz]] = factorValuesForUndo[nnz];
         }
+        totalLogProb = totalLogProbForUndo;
         clearPerturbations();
         clearUndoInformation();
     }
@@ -126,6 +133,7 @@ public:
     void refresh(const std::vector<ABM::occupation_type> &eventTrajectory) {
 //        std::cout << "refreshing" << std::endl;
         if(perturbationsHeldForUndo) return;
+//        std::cout << "refreshing, initial importance = " << exp(totalLogProb) << std::endl;
         // first update all state occupation numbers
         for(int stateId: staleStates) {
             int time = stateId / AGENT::domainSize();
@@ -136,24 +144,29 @@ public:
         for(int stateId: staleFactors) {
             int time = stateId / AGENT::domainSize();
             AGENT agent = stateId % AGENT::domainSize();
-            std::vector<double> actPMF = agent.timestep(stateTrajectory[time]);
             int stateOccupation = stateTrajectory[time][agent];
-            if(stateOccupation >= 0) {
-                double newLogP = lgamma(stateOccupation + 1.0); // log of Phi factorial
+//            std::cout << "state occupation = " << stateOccupation << " time = " << time << " agent = " << agent << std::endl;
+            double newLogP = 0.0;
+            if(stateOccupation > 0) {
+                std::vector<double> actPMF = agent.timestep(stateTrajectory[time]);
+                if(stateOccupation > 1) newLogP = lgamma(stateOccupation + 1.0); // log of Phi factorial
                 for (int act = 0; act < AGENT::actDomainSize(); ++act) {
                     int actOccupation = eventTrajectory[Event<AGENT>(time, agent, act).id];
+                    assert(actPMF[act] == agent.marginalTimestep(act));
                     if(actOccupation > 0 && actPMF[act] > 0.0)
                         newLogP += actOccupation * log(actPMF[act] / agent.marginalTimestep(act));
                 }
-                totalLogProb += newLogP - stateLogProbs[stateId];
-                stateLogProbs[stateId] = newLogP;
             }
+//            std::cout << "newLogP = " << newLogP << " oldLogP = " << stateLogProbs[stateId] << std::endl;
+            totalLogProb += newLogP - stateLogProbs[stateId];
+            stateLogProbs[stateId] = newLogP;
         }
         if(hasUndoInformation()) {
             perturbationsHeldForUndo = true;
         } else {
             clearPerturbations();
         }
+//        std::cout << "Final importance = " << exp(totalLogProb) << std::endl;
     }
 
     // sets up log probs and state trajectory (non-incremental)

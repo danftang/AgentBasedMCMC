@@ -33,9 +33,9 @@ public:
         return {1.0-pMove, pMove};
     }
 
-    std::vector<double> marginalTimestep() const {
-        return {1.0-pMove, pMove};
-    }
+//    std::vector<double> marginalTimestep() const {
+//        return {1.0-pMove, pMove};
+//    }
 
     double marginalTimestep(Act act) const {
          if(act == 0) return 1.0-pMove;

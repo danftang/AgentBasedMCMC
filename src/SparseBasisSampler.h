@@ -244,10 +244,8 @@ const std::vector<T> &SparseBasisSampler<T>::operator()() {
             }
 
             double proposedImportance = importanceFunc->getValue(X);
-//            if(proposedImportance != 1.0) std::cout << proposedImportance << std::endl;
-//            assert(proposedImportance == 1.0);
             double ratioOfSums = proposal.calcRatioOfSums(basisDistribution);
-            double acceptance = ratioOfSums;// * currentImportance / proposedImportance; // TODO: Change this back!!
+            double acceptance = ratioOfSums * proposedImportance / currentImportance;
 
 //            std::cout << "Ratio of sums = " << ratioOfSums << " acceptance = " << acceptance << std::endl;
 
@@ -266,7 +264,7 @@ const std::vector<T> &SparseBasisSampler<T>::operator()() {
             }
         } else {                                // --- transition to infeasible state
             double ratioOfSums = proposal.calcRatioOfSums(basisDistribution);
-            double acceptance = ratioOfSums; // * currentImportance; // TODO: Change this back!!
+            double acceptance = ratioOfSums / currentImportance;
 //            std::cout << "Ratio of sums = " << ratioOfSums << " acceptance = " << acceptance << std::endl;
             if (Random::nextDouble() < acceptance) {     // --- accept ---
 //                std::cout << "Accepting infeasible" << std::endl;
