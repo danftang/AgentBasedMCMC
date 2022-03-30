@@ -74,6 +74,8 @@ public:
     int nRows() const { return rows.size(); }
     int nCols() const { return cols.size(); }
 
+    static double DEtoBasisProb(double DE) { return DE<0.0?exp(DE):1.0; } // convert change in energy of a column to probability of proposal
+
 protected:
 //    Proposal makeProposal();
     void insert(int i,int j,T entry) {
@@ -146,7 +148,7 @@ SparseBasisSampler<T>::SparseBasisSampler(
                 insert(basisi, basisj, Mij);
                 currentDE[basisj] += energy(basisi, X[basisi] + delta[basisj] * Mij) - currentE[basisi];
             }
-            basisDistribution.set(basisj, currentDE[basisj]<0.0?exp(currentDE[basisj]):1.0);
+            basisDistribution.set(basisj, DEtoBasisProb(currentDE[basisj]));
             std::cout << "Initial DE[" << basisj << "] = " << currentDE[basisj] << std::endl;
             ++basisj;
         }
@@ -243,9 +245,9 @@ const std::vector<T> &SparseBasisSampler<T>::operator()() {
 
             double proposedImportance = importanceFunc->getValue(X);
 //            if(proposedImportance != 1.0) std::cout << proposedImportance << std::endl;
-            assert(proposedImportance == 1.0);
+//            assert(proposedImportance == 1.0);
             double ratioOfSums = proposal.calcRatioOfSums(basisDistribution);
-            double acceptance = ratioOfSums * currentImportance / proposedImportance;
+            double acceptance = ratioOfSums;// * currentImportance / proposedImportance; // TODO: Change this back!!
 
 //            std::cout << "Ratio of sums = " << ratioOfSums << " acceptance = " << acceptance << std::endl;
 
@@ -264,7 +266,7 @@ const std::vector<T> &SparseBasisSampler<T>::operator()() {
             }
         } else {                                // --- transition to infeasible state
             double ratioOfSums = proposal.calcRatioOfSums(basisDistribution);
-            double acceptance = ratioOfSums * currentImportance;
+            double acceptance = ratioOfSums; // * currentImportance; // TODO: Change this back!!
 //            std::cout << "Ratio of sums = " << ratioOfSums << " acceptance = " << acceptance << std::endl;
             if (Random::nextDouble() < acceptance) {     // --- accept ---
 //                std::cout << "Accepting infeasible" << std::endl;
@@ -292,8 +294,9 @@ template<class T>
 double SparseBasisSampler<T>::Proposal::calcRatioOfSums(const MutableCategoricalArray &basisDistribution) {
     double changeInSum = 0.0;
     for(const auto [changedj, newDeltaEj]: changedDE) {
+//        std::cout << "newDeltaEj = " << newDeltaEj << std::endl;
         double oldPj = basisDistribution[changedj];
-        changeInSum += (newDeltaEj>0.0?exp(-newDeltaEj):1.0) - oldPj;
+        changeInSum += SparseBasisSampler<T>::DEtoBasisProb(newDeltaEj) - oldPj;
     }
     double ratio = basisDistribution.sum()/(basisDistribution.sum() + changeInSum);
 //    std::cout << ratio << std::endl;
@@ -350,7 +353,7 @@ void SparseBasisSampler<T>::applyProposal(const Proposal &proposal, bool updateX
 
     for(const auto [changedj, newDeltaEj]: proposal.changedDE) {
         currentDE[changedj] = newDeltaEj;
-        basisDistribution[changedj] = newDeltaEj<0.0?exp(newDeltaEj):1.0;
+        basisDistribution[changedj] = DEtoBasisProb(newDeltaEj);
     }
     delta[proposal.proposedj] *= -1;
 }

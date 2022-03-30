@@ -38,7 +38,7 @@ void BinomialAgentAssimilation() {
     constexpr int nSamplesPerWindow = 1000000;
     constexpr int nBurninSamples = 5000;
 
-    BernoulliStartState<AGENT> PStartState([startState = std::vector<double>({1.0,0.4,0.0})](AGENT agent) {
+    BernoulliStartState<AGENT> PStartState([startState = std::vector<double>({1.0,0.1,0.0})](AGENT agent) {
         return startState[agent.stateId];
     });
     std::cout << "Start state support is\n" << PStartState << std::endl;
