@@ -29,12 +29,12 @@ public:
 
 
     // the id of the highest variable in this polyhedron
-    int dimension() {
+    int dimension() const {
         int dim = 0;
         for(const Constraint<T> &constraint: *this) {
             dim = std::max(dim,constraint.coefficients.maxNonZeroIndex());
         }
-        return dim;
+        return dim+1;
     }
 
     ConvexPolyhedron<T> &operator +=(const std::vector<Constraint<T>> &other) {

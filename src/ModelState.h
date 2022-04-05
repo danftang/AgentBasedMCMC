@@ -7,9 +7,11 @@
 
 #include <map>
 #include <functional>
+#include <valarray>
 #include "Random.h"
 #include "ABM.h"
 #include "State.h"
+// #include "Trajectory.h"
 
 // represents occupation numbers of agent states in a single timestep.
 template<typename AGENT>
@@ -22,17 +24,20 @@ public:
         assert(size() == AGENT::domainSize());
     }
 
-    ModelState(const std::vector<ABM::occupation_type> &trajecotry, int time) : ModelState() {
-        int nTimesteps = trajecotry.size() / (AGENT::domainSize()*AGENT::actDomainSize());
+
+    ModelState(const std::vector<ABM::occupation_type> &trajectory, int nTimesteps, int time) : ModelState() {
         assert(time>=0 && time<=nTimesteps);
         if(time < nTimesteps) {
             for (int stateId = 0; stateId < AGENT::domainSize(); ++stateId)
-                (*this)[stateId] = State<AGENT>(time,stateId).forwardOccupation(trajecotry);
+                (*this)[stateId] = State<AGENT>(time,stateId).forwardOccupation(trajectory);
         } else {
             for (int stateId = 0; stateId < AGENT::domainSize(); ++stateId)
-                (*this)[stateId] = State<AGENT>(time,stateId).backwardOccupation(trajecotry);
+                (*this)[stateId] = State<AGENT>(time,stateId).backwardOccupation(trajectory);
         }
     }
+
+//    ModelState(const Trajectory<AGENT> &trajectory, int time): ModelState(trajectory, trajectory.nTimesteps(), time) {}
+
 
     // ensure zero initialisation
 //    double &operator[](const AGENT &agent) {
@@ -93,10 +98,18 @@ public:
         return *this;
     }
 
-    std::vector<double> operator /(double denominator) {
-        std::vector<double> probs(size());
+    std::valarray<double> operator /(double denominator) {
+        std::valarray<double> probs(size());
         for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
             probs[agentId] = (*this)[agentId] / denominator;
+        }
+        return probs;
+    }
+
+    std::valarray<double> operator *(double multiplier) {
+        std::valarray<double> probs(size());
+        for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+            probs[agentId] = (*this)[agentId] * multiplier;
         }
         return probs;
     }

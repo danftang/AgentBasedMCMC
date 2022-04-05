@@ -12,6 +12,7 @@
 #define ABMCMC_FACTOREDCONVEXDISTRIBUTION_H
 
 #include <functional>
+#include <cmath>
 #include "ConvexPolyhedron.h"
 
 template<class T>
@@ -54,17 +55,20 @@ public:
     }
 
     // returns probability at point X
-    double operator()(const std::vector<T> &X) {
-        double logP = 0.0;
-        for(int i=0; i < factors.size(); ++i) {
-            T Ai = constraints[i].coefficients * X;
-            if(constraints[i].lowerBound > Ai || Ai > constraints[i].upperBound) return 0.0;
-            logP += factors[i](Ai);
-        }
-        return exp(logP);
+    double P(const std::vector<T> &X) const {
+        return exp(logP(X));
     }
 
 
+    double logP(const std::vector<T> &X) const {
+        double logP = 0.0;
+        for(int i=0; i < factors.size(); ++i) {
+            T Ai = constraints[i].coefficients * X;
+            if(constraints[i].lowerBound > Ai || Ai > constraints[i].upperBound) return -std::numeric_limits<double>::infinity();
+            logP += factors[i](Ai);
+        }
+        return logP;
+    }
 
 protected:
 
@@ -77,11 +81,9 @@ template<class T>
 std::ostream &operator <<(std::ostream &out, const FactoredConvexDistribution<T> &distribution) {
     for(int i=0; i < distribution.constraints.size(); ++i) {
         const Constraint<T> &constraint = distribution.constraints[i];
-        out << constraint << " [ ";
-        for(T Xi = constraint.lowerBound; Xi <= constraint.upperBound; Xi += 1) {
-            out << distribution.factors[i](Xi) << " ";
-        }
-        out << "]" << std::endl;
+        out << constraint << "\t["
+            << exp(distribution.factors[i](constraint.lowerBound)) << " ... "
+            << exp(distribution.factors[i](constraint.upperBound)) << "]" << std::endl;
     }
     return out;
 }

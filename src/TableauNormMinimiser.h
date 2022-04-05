@@ -174,8 +174,9 @@ TableauNormMinimiser<T>::TableauNormMinimiser(const ConvexPolyhedron<T> &problem
     nAuxiliaryVars = 0;
     int constraintIndex = 0;
     for(const Constraint<T> &constraint: problem) {
+//        std::cout << "Processing " << constraint << std::endl;
         bool isActive = (constraint.upperBound == constraint.lowerBound);
-        rows.push_back(Row(constraint.coefficients, isActive));
+        rows.emplace_back(constraint.coefficients, isActive);
         if (isActive) {
             addRowSparsityEntry(rows.size()-1);
             basis.push_back(INT_MAX); // fixed var
@@ -188,6 +189,7 @@ TableauNormMinimiser<T>::TableauNormMinimiser(const ConvexPolyhedron<T> &problem
             L.push_back(constraint.lowerBound);
             U.push_back(constraint.upperBound);
         }
+        assert(rows.back().size() > 0);
         int rowMaxCol = rows.back().rbegin()->first;
         if(rowMaxCol > maxCol) maxCol = rowMaxCol;
         ++constraintIndex;
@@ -203,7 +205,7 @@ TableauNormMinimiser<T>::TableauNormMinimiser(const ConvexPolyhedron<T> &problem
     for(int j=0; j<=maxCol; ++j) {
         addColSparsityEntry(j);
     }
-    std::cout << "Constructed tableau:" << std::endl << *this << std::endl;
+//    std::cout << "Constructed tableau:" << std::endl << *this << std::endl;
     std::cout << "Initial mean L0 norm = " << meanColumnL0Norm() << std::endl;
     std::cout << "Initial L1 norm = " << meanColumnL1Norm() << std::endl;
     findMinimalBasis();
@@ -217,7 +219,7 @@ void TableauNormMinimiser<T>::findMinimalBasis() {
 //        std::cout << minimalBasis << std::endl;
 //        std::cout << rowsBySparsity << std::endl;
     }
-    std::cout << "Minimised tableau:" << std::endl << *this << std::endl;
+//    std::cout << "Minimised tableau:" << std::endl << *this << std::endl;
     std::cout << "Reduced mean L0 norm = " << meanColumnL0Norm() << std::endl;
     std::cout << "Reduced L1 norm = " << meanColumnL1Norm() << std::endl;
 

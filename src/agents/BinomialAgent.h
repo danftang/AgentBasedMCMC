@@ -15,7 +15,7 @@
 template<int GRIDSIZE>
 class BinomialAgent {
 public:
-    static double pMove; // probability of moving right
+    static const double pMove; // probability of moving right
 
     typedef int Act;
 
@@ -32,10 +32,6 @@ public:
     std::vector<double> timestep(const ModelState<BinomialAgent> &others) const {
         return {1.0-pMove, pMove};
     }
-
-//    std::vector<double> marginalTimestep() const {
-//        return {1.0-pMove, pMove};
-//    }
 
     double marginalTimestep(Act act) const {
          if(act == 0) return 1.0-pMove;
@@ -62,7 +58,6 @@ public:
 };
 
 template<int GRIDSIZE>
-double BinomialAgent<GRIDSIZE>::pMove = 0.5;
-
+const double BinomialAgent<GRIDSIZE>::pMove = 0.5;
 
 #endif //GLPKTEST_BINOMIALAGENT_H

@@ -26,8 +26,9 @@ public:
         assert((this->size()-1)%(AGENT::domainSize()*AGENT::actDomainSize()) == 0);
     }
 
-    explicit Trajectory(const std::vector<value_type> &lvalue): std::vector<value_type>(lvalue) {
-        assert((this->size()-1)%(AGENT::domainSize()*AGENT::actDomainSize()) == 0);
+    explicit Trajectory(const std::vector<value_type> &lvalue, int nTimesteps): std::vector<value_type>(lvalue) {
+        resize(nTimesteps*AGENT::domainSize()*AGENT::actDomainSize(),0);
+//        assert((this->size()-1)%(AGENT::domainSize()*AGENT::actDomainSize()) == 0);
     }
 
     // execute forward from a given start state distribution, choosing a exactEndState with probability
@@ -68,60 +69,60 @@ public:
 //    }
 
 
-    Trajectory(int nTimesteps, const std::function<std::vector<double>()> &startStateSampler) : Trajectory(nTimesteps) {
-        bool isValid;
-        int nAttempts = 0;
-        do {
-            ModelState<AGENT> t0State = startStateSampler();
-            ModelState<AGENT> t1State;
-            isValid = true;
-            for (int t = 0; t < nTimesteps; ++t) {
-                for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
-                    AGENT agent(agentId);
-                    int nAgents = t0State[agentId];
-                    for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
-                        (*this)[Event(t, agent, actId)] = 0.0;
-                    }
-                    // now choose acts for each of nAgents from act Fermionic distribution
-
-                    std::vector<double> actPMF = agent.timestep(t0State);
-                    ActFermionicDistribution actDistribution(actPMF);
-                    assert(nAgents <= actPMF.size());
-                    std::vector<bool> chosenActs = actDistribution.sampleUnordered(nAgents);
-                    for(int act=0; act < chosenActs.size(); ++act) {
-                        if(chosenActs[act]) {
-                            int event = Event(t, agent, act);
-                            (*this)[event] = 1.0;
-                            t1State += agent.consequences(act);
-                        }
-                    }
-
+//    Trajectory(int nTimesteps, const std::function<std::vector<double>()> &startStateSampler) : Trajectory(nTimesteps) {
+//        bool isValid;
+//        int nAttempts = 0;
+//        do {
+//            ModelState<AGENT> t0State = startStateSampler();
+//            ModelState<AGENT> t1State;
+//            isValid = true;
+//            for (int t = 0; t < nTimesteps; ++t) {
+//                for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+//                    AGENT agent(agentId);
+//                    int nAgents = t0State[agentId];
+//                    for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+//                        (*this)[Event(t, agent, actId)] = 0.0;
+//                    }
+//                    // now choose acts for each of nAgents from act Fermionic distribution
+//
 //                    std::vector<double> actPMF = agent.timestep(t0State);
-//                    std::discrete_distribution<int> actDistribution(actPMF.begin(), actPMF.end());
-//                    for(int m=0; m <nAgents; ++m) { // TODO: replace with ActFermionicDistribution
-//                        int chosenAct = actDistribution(Random::gen);
-//                        int event = Event(t, agent, chosenAct);
-//                        if((*this)[event] == 0.0) {
+//                    ActFermionicDistribution actDistribution(actPMF);
+//                    assert(nAgents <= actPMF.size());
+//                    std::vector<bool> chosenActs = actDistribution.sampleUnordered(nAgents);
+//                    for(int act=0; act < chosenActs.size(); ++act) {
+//                        if(chosenActs[act]) {
+//                            int event = Event(t, agent, act);
 //                            (*this)[event] = 1.0;
-//                            assert(event < size());
-//                            t1State += agent.consequences(chosenAct);
-//                        } else { // reject
-//                            isValid = false;
-//                            m = nAgents;
-//                            agentId = AGENT::domainSize();
-//                            t = nTimesteps;
+//                            t1State += agent.consequences(act);
 //                        }
 //                    }
-
-                }
-                t0State.setToZero();
-                t0State.swap(t1State);
-            }
-            if (++nAttempts > 4000)
-                throw (std::runtime_error(
-                        "Can't create act-Fermionic trajectoryPrior sample of Trajectory. Too many agents for Fermionicity to be a good assumption."));
-        } while (!isValid);
-    }
+//
+////                    std::vector<double> actPMF = agent.timestep(t0State);
+////                    std::discrete_distribution<int> actDistribution(actPMF.begin(), actPMF.end());
+////                    for(int m=0; m <nAgents; ++m) { // TODO: replace with ActFermionicDistribution
+////                        int chosenAct = actDistribution(Random::gen);
+////                        int event = Event(t, agent, chosenAct);
+////                        if((*this)[event] == 0.0) {
+////                            (*this)[event] = 1.0;
+////                            assert(event < size());
+////                            t1State += agent.consequences(chosenAct);
+////                        } else { // reject
+////                            isValid = false;
+////                            m = nAgents;
+////                            agentId = AGENT::domainSize();
+////                            t = nTimesteps;
+////                        }
+////                    }
+//
+//                }
+//                t0State.setToZero();
+//                t0State.swap(t1State);
+//            }
+//            if (++nAttempts > 4000)
+//                throw (std::runtime_error(
+//                        "Can't create act-Fermionic trajectoryPrior sample of Trajectory. Too many agents for Fermionicity to be a good assumption."));
+//        } while (!isValid);
+//    }
 
     // event count (use Event(time,agent,act) instead)
 //    double operator()(int time, const AGENT &agent, const typename AGENT::Act &act) const {
@@ -131,7 +132,7 @@ public:
     // occupation number of an agent state at a particular time
     value_type operator[](const State<AGENT> &state) const {
         assert(state.time >= 0 && state.time <= nTimesteps());
-        return(time < nTimesteps())?state.forwardOccupation(*this):state.backwardOccupation(*this);
+        return(state.time < nTimesteps())?state.forwardOccupation(*this):state.backwardOccupation(*this);
     }
 
     value_type &operator[](const Event<AGENT> &event) {
@@ -154,32 +155,33 @@ public:
     // time slice for time is in [0...nTimesteps]
     // i.e. final state is implemented
     // use ModelState constructor instead?
-    ModelState<AGENT> operator()(int time) const {
-        assert(time>=0 && time<=nTimesteps());
-        if(time == nTimesteps()) return endState();
-        ModelState<AGENT> timeslice;
-        int beginIndex = Event(time,AGENT(0),0);
-        int endIndex = beginIndex + AGENT::actDomainSize() * AGENT::domainSize();
-        for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
-            if (value_type occupation = (*this)[eventId]; occupation > 0)
-                timeslice[Event<AGENT>(eventId).agent()] += occupation;
-        }
-        return timeslice;
-    }
+//    ModelState<AGENT> operator()(int time) const {
+//        assert(time>=0 && time<=nTimesteps());
+//        if(time == nTimesteps()) return endState();
+//        ModelState<AGENT> timeslice;
+//        int beginIndex = Event(time,AGENT(0),0);
+//        int endIndex = beginIndex + AGENT::actDomainSize() * AGENT::domainSize();
+//        for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
+//            if (value_type occupation = (*this)[eventId]; occupation > 0)
+//                timeslice[Event<AGENT>(eventId).agent()] += occupation;
+//        }
+//        return timeslice;
+//    }
 
 
     ModelState<AGENT> endState() const {
-        ModelState<AGENT> timeslice;
-        int beginIndex = Event(nTimesteps()-1,AGENT(0),0);
-        int endIndex = beginIndex + AGENT::actDomainSize() * AGENT::domainSize();
-        for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
-            if (value_type occupation = (*this)[eventId]; occupation != 0) {
-                for(const AGENT &consequence : Event<AGENT>(eventId).consequences()) {
-                    timeslice[consequence] += occupation;
-                }
-            }
-        }
-        return timeslice;
+        return ModelState<AGENT>(*this, nTimesteps(), nTimesteps());
+//        ModelState<AGENT> timeslice;
+//        int beginIndex = Event(nTimesteps()-1,AGENT(0),0);
+//        int endIndex = beginIndex + AGENT::actDomainSize() * AGENT::domainSize();
+//        for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
+//            if (value_type occupation = (*this)[eventId]; occupation != 0) {
+//                for(const AGENT &consequence : Event<AGENT>(eventId).consequences()) {
+//                    timeslice[consequence] += occupation;
+//                }
+//            }
+//        }
+//        return timeslice;
     }
 
 
@@ -240,54 +242,54 @@ public:
 
 
     // Generate random set of observations of this trajectory
-    std::vector<AgentStateObservation<AGENT>> generateObservations(double pMakeObservation, double pObserveIfPresent) {
-        std::vector<AgentStateObservation<AGENT>> observations;
-        int T = nTimesteps();
-        for (int t=0; t<T;++t) {
-            for (int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
-                if (Random::nextDouble() < pMakeObservation) {
-                    AGENT agent(agentId);
-                    int nObserved = Random::nextBinomial((*this)[State<AGENT>(t,agent)], pObserveIfPresent);
-                    observations.emplace_back(State<AGENT>(t,agent), nObserved, pObserveIfPresent);
-                    assert(observations.back().constraint().isValidSolution(*this));
-                }
-            }
-        }
-    }
+//    std::vector<AgentStateObservation<AGENT>> generateObservations(double pMakeObservation, double pObserveIfPresent) {
+//        std::vector<AgentStateObservation<AGENT>> observations;
+//        int T = nTimesteps();
+//        for (int t=0; t<T;++t) {
+//            for (int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+//                if (Random::nextDouble() < pMakeObservation) {
+//                    AGENT agent(agentId);
+//                    int nObserved = Random::nextBinomial((*this)[State<AGENT>(t,agent)], pObserveIfPresent);
+//                    observations.emplace_back(State<AGENT>(t,agent), nObserved, pObserveIfPresent);
+//                    assert(observations.back().constraint().isValidSolution(*this));
+//                }
+//            }
+//        }
+//    }
 
 
-    double logProb() const {
-        StateTrajectory<AGENT> stateTrajectory(*this);
-        double logP = 0.0;
-        int tEnd = nTimesteps();
-        for (int t = 0; t < tEnd; ++t) {
-            for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
-                double agentOccupation = stateTrajectory[t][agentId];
-                if(agentOccupation > 0) {
-                    double agentStateLogP = 0.0;
-                    std::vector<double> actPMF = AGENT(agentId).timestep(stateTrajectory[t]);
-                    double clampedAgentOccupation = 0.0;
-                    do {
-                        agentStateLogP = 0.0;
-                        for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
-                            double actOccupation = (*this)[Event<AGENT>(t, agentId, actId)];
-                            if (actOccupation < 0) actOccupation = 0.0;
-                            else if (actOccupation > 1.0) actOccupation = 1.0; // Clamp to Fermionic limits
-                            if (actOccupation > 0.0) {
-                                clampedAgentOccupation += actOccupation;
-                                agentStateLogP += actOccupation * log(actPMF[actId]);
-                            }
-                        }
-                        if (agentStateLogP <= -DBL_MAX) actPMF = AGENT(agentId).marginalTimestep();
-                    } while(agentStateLogP <= -DBL_MAX);
-                    logP += agentStateLogP;
-                    if(clampedAgentOccupation > 1.0) logP += lgamma(clampedAgentOccupation + 1.0); // multiply by multinomial
-                }
-            }
-        }
-//        assert(fabs(logP - logProbOld()) < 1e-8);
-        return logP;
-    }
+//    double logProb() const {
+//        StateTrajectory<AGENT> stateTrajectory(*this);
+//        double logP = 0.0;
+//        int tEnd = nTimesteps();
+//        for (int t = 0; t < tEnd; ++t) {
+//            for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
+//                double agentOccupation = stateTrajectory[t][agentId];
+//                if(agentOccupation > 0) {
+//                    double agentStateLogP = 0.0;
+//                    std::vector<double> actPMF = AGENT(agentId).timestep(stateTrajectory[t]);
+//                    double clampedAgentOccupation = 0.0;
+//                    do {
+//                        agentStateLogP = 0.0;
+//                        for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+//                            double actOccupation = (*this)[Event<AGENT>(t, agentId, actId)];
+//                            if (actOccupation < 0) actOccupation = 0.0;
+//                            else if (actOccupation > 1.0) actOccupation = 1.0; // Clamp to Fermionic limits
+//                            if (actOccupation > 0.0) {
+//                                clampedAgentOccupation += actOccupation;
+//                                agentStateLogP += actOccupation * log(actPMF[actId]);
+//                            }
+//                        }
+//                        if (agentStateLogP <= -DBL_MAX) actPMF = AGENT(agentId).marginalTimestep();
+//                    } while(agentStateLogP <= -DBL_MAX);
+//                    logP += agentStateLogP;
+//                    if(clampedAgentOccupation > 1.0) logP += lgamma(clampedAgentOccupation + 1.0); // multiply by multinomial
+//                }
+//            }
+//        }
+////        assert(fabs(logP - logProbOld()) < 1e-8);
+//        return logP;
+//    }
 
 
     Trajectory<AGENT> slice(int fromTimestep, int nTimesteps) const {
@@ -300,11 +302,11 @@ public:
     }
 
 
-    static double logProb(const std::vector<double> &X) {
-        assert(X.size() % (AGENT::domainSize()*AGENT::actDomainSize()) == 0);
-        const Trajectory<AGENT> &T = reinterpret_cast<const Trajectory<AGENT> &>(X);
-        return T.logProb();
-    }
+//    static double logProb(const std::vector<double> &X) {
+//        assert(X.size() % (AGENT::domainSize()*AGENT::actDomainSize()) == 0);
+//        const Trajectory<AGENT> &T = reinterpret_cast<const Trajectory<AGENT> &>(X);
+//        return T.logProb();
+//    }
 
 //    friend std::ostream &operator <<(std::ostream &out, const Trajectory<AGENT> &exactEndState) {
 //        Trajectory sortedTrajectory(exactEndState);
@@ -322,33 +324,33 @@ public:
 //        return out;
 //    }
 
-    static std::function<Trajectory<AGENT>()> priorSampler(int nTimesteps, std::function<ModelState<AGENT>()> startStateSampler) {
-        return [startStateSampler = std::move(startStateSampler),nTimesteps]() {
-            return Trajectory<AGENT>(nTimesteps, startStateSampler);
-        };
-    }
+//    static std::function<Trajectory<AGENT>()> priorSampler(int nTimesteps, std::function<ModelState<AGENT>()> startStateSampler) {
+//        return [startStateSampler = std::move(startStateSampler),nTimesteps]() {
+//            return Trajectory<AGENT>(nTimesteps, startStateSampler);
+//        };
+//    }
 
 
-    static std::vector<double> marginalLogProbsByEvent(int nTimesteps) {
-        std::vector<double> marginals(Trajectory<AGENT>::dimension(nTimesteps));
-        marginals[0] = 0.0;
-        for(int t=0; t<nTimesteps; ++t) {
-            for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
-                std::vector<double> agentMarginals = AGENT(agentId).marginalTimestep();
-                for(int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
-                    marginals[Event<AGENT>(t,agentId, actId)] = log(agentMarginals[actId]);
-                }
-            }
-        }
-        return marginals;
-    }
+//    static std::vector<double> marginalLogProbsByEvent(int nTimesteps) {
+//        std::vector<double> marginals(Trajectory<AGENT>::dimension(nTimesteps));
+//        marginals[0] = 0.0;
+//        for(int t=0; t<nTimesteps; ++t) {
+//            for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
+//                std::vector<double> agentMarginals = AGENT(agentId).marginalTimestep();
+//                for(int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+//                    marginals[Event<AGENT>(t,agentId, actId)] = log(agentMarginals[actId]);
+//                }
+//            }
+//        }
+//        return marginals;
+//    }
 
 private:
     friend class boost::serialization::access;
 
     template <typename Archive>
     void serialize(Archive &ar, const unsigned int version) {
-        ar & static_cast<std::vector<double> &>(*this);
+        ar & static_cast<std::vector<value_type> &>(*this);
     }
 
 

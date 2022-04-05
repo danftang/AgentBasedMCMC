@@ -24,6 +24,7 @@
 #include <vector>
 #include "TableauNormMinimiser.h"
 #include "MutableCategoricalArray.h"
+#include "MCMCStatistics.h"
 
 // TODO: need to generalise marginalGradE to general function, get rid of X (now in importance function),
 //  integrate importance function and finish construction from WeightedFactoredConvexDistribution.
@@ -31,7 +32,10 @@
 template<class T>
 class SparseBasisSampler {
 public:
-    static constexpr double   kappa = 2.5; // (+ve) rate of decay of probability outside the hyper-rectangle
+//    static constexpr double   kappa = 2.0; // (+ve) rate of decay of probability outside the hyper-rectangle
+
+    double   kappa; // (+ve) rate of decay of probability outside the hyper-rectangle
+
 
     // tableau
     std::vector<SparseVec<T>>   cols;   // the basis vectors
@@ -46,10 +50,11 @@ public:
     std::vector<double>         currentDE;      // change in (-ve) energy by flipping the value of the j'th column
     std::vector<double>         currentE;       // current (-ve) energy of i'th row
     T                           currentInfeasibility;
-    double                      currentLogPiota; // log of marginalised probability, equal to minus the total current energy
     double                      currentImportance; // real prob over estimated prob of current state (=1 if infeasible)
 
     std::unique_ptr<PerturbableFunction<T,double>>    importanceFunc;
+
+    MCMCStatistics              stats;
 
     class Proposal {
     public:
@@ -60,14 +65,15 @@ public:
         std::vector<T>          changedXValues;  // new values of elements of X, by sparse index of j'th basis
         std::map<int,double>    changedDE;       // change in Delta-Energy by column
         T                       infeasibility;   // proposed infeasibility
-        double                  logPiota;        // proposed log P_i
 
         double calcRatioOfSums(const MutableCategoricalArray &basisDistribution);
     };
 
-    SparseBasisSampler(const TableauNormMinimiser<T> &tableau, const std::vector<std::function<double(T)>> &tableauFactors, std::unique_ptr<PerturbableFunction<T,double>> &&importanceFunc);
+    SparseBasisSampler(const TableauNormMinimiser<T> &tableau, const std::vector<std::function<double(T)>> &tableauFactors, std::unique_ptr<PerturbableFunction<T,double>> &&importanceFunc, const std::vector<T> &initialState, double Kappa);
 
-    explicit SparseBasisSampler(const WeightedFactoredConvexDistribution<T> &distribution);
+    SparseBasisSampler(const WeightedFactoredConvexDistribution<T> &distribution, const std::vector<T> & initialState, double Kappa);
+
+    SparseBasisSampler(const WeightedFactoredConvexDistribution<T> &distribution, double Kappa);
 
     const std::vector<T> &operator()();
 
@@ -75,6 +81,7 @@ public:
     int nCols() const { return cols.size(); }
 
     static double DEtoBasisProb(double DE) { return DE<0.0?exp(DE):1.0; } // convert change in energy of a column to probability of proposal
+//    static double DEtoBasisProb(double DE) { return exp(0.5*DE); } // convert change in energy of a column to probability of proposal
 
 protected:
 //    Proposal makeProposal();
@@ -98,25 +105,26 @@ template<class T>
 SparseBasisSampler<T>::SparseBasisSampler(
         const TableauNormMinimiser<T> &tableau,
         const std::vector<std::function<double(T)>> &tableaufactors,
-        std::unique_ptr<PerturbableFunction<T,double>> &&importance):
+        std::unique_ptr<PerturbableFunction<T,double>> &&importance,
+        const std::vector<T> &initialState,
+        double Kappa):
+        kappa(Kappa),
         cols(tableau.nNonBasic()),
         rows(tableau.nAuxiliaryVars),
-        delta(cols.size(), 1),
         basisDistribution(cols.size()),
         importanceFunc(std::move(importance)),
         currentDE(cols.size(),0.0),
-        currentInfeasibility(0),
-        currentLogPiota(0.0)
+        currentInfeasibility(0)
+//        currentLogPiota(0.0)
 {
     std::vector<int> tableauRowToBasisRow; // map from tableau row index to this row index, -1 means equality constraint
     tableauRowToBasisRow.reserve(tableau.rows.size());
-    int basisi = 0;
     L.reserve(rows.size());
     U.reserve(rows.size());
     factors.reserve(rows.size());
     X.reserve(rows.size());
-    currentE.reserve(rows.size());
-    for(int i=0; i<tableau.rows.size(); ++i) {
+    delta.reserve(cols.size());
+    for(int basisi=0, i=0; i<tableau.rows.size(); ++i) {
         if(tableau.isEqualityConstraint(i)) {
             tableauRowToBasisRow[i] = -1;
         } else {
@@ -126,35 +134,52 @@ SparseBasisSampler<T>::SparseBasisSampler(
             U.push_back(tableau.U[i]);
             factors.push_back(tableaufactors[i]);
             X.push_back(tableau.F[i]); // start with all X_N = 0
-            currentE.push_back(energy(basisi, X.back()));
-            currentInfeasibility += infeasibility(basisi, X.back());
-            currentLogPiota += currentE[basisi];
-            std::cout << "Initial E[" << basisi << "] = " << currentE[basisi] << " " << X[basisi] << std::endl;
             ++basisi;
         }
     }
-    std::cout << "initial currentInfeasibility = " << currentInfeasibility << std::endl;
-    assert(basisi == tableau.nAuxiliaryVars);
+//    std::cout << "initial currentInfeasibility = " << currentInfeasibility << std::endl;
+    assert(factors.size() == tableau.nAuxiliaryVars);
 
     // transfer tableau over to this
-    int basisj = 0;
-    for(int j=0; j<tableau.cols.size(); ++j) {
+    for(int basisj=0, j=0; j<tableau.cols.size(); ++j) {
         if(!tableau.cols[j].isBasic) {
             cols[basisj].reserve(tableau.cols[j].size());
+            delta.push_back((initialState.size()>j && initialState[j]>0)?-1:1);
             for(auto i : tableau.cols[j]) {
                 int basisi = tableauRowToBasisRow[i];
                 assert(basisi != -1);
                 T Mij = tableau.rows[i].at(j);
                 insert(basisi, basisj, Mij);
-                currentDE[basisj] += energy(basisi, X[basisi] + delta[basisj] * Mij) - currentE[basisi];
             }
             basisDistribution.set(basisj, DEtoBasisProb(currentDE[basisj]));
-            std::cout << "Initial DE[" << basisj << "] = " << currentDE[basisj] << std::endl;
             ++basisj;
         }
     }
-    std::cout << "Initial basisDistribution" << basisDistribution << std::endl;
-    assert(basisj == tableau.nNonBasic());
+//    std::cout << "Initial basisDistribution" << basisDistribution << std::endl;
+    assert(delta.size() == tableau.nNonBasic());
+
+    // initialise X, currentE, currentInfeasibility and currentLogPiota
+    currentE.reserve(rows.size());
+    for(int basisi=0; basisi < rows.size(); ++basisi) {
+        const SparseVec<T> &row = rows[basisi];
+        for(int nzj=0; nzj < row.sparseSize(); ++nzj) {
+            if(delta[row.indices[nzj]] == -1) X[basisi] += row.values[nzj];
+        }
+        currentE.push_back(energy(basisi, X[basisi]));
+        currentInfeasibility += infeasibility(basisi, X[basisi]);
+//        currentLogPiota += currentE[basisi];
+//        std::cout << "Initial E[" << basisi << "] = " << currentE[basisi] << " " << X[basisi] << std::endl;
+    }
+
+    // initialise DE
+    for(int basisj=0; basisj< cols.size(); ++basisj) {
+        const SparseVec<T> &col = cols[basisj];
+        for(int nzi = 0; nzi < col.sparseSize(); ++nzi) {
+            int basisi = col.indices[nzi];
+            currentDE[basisj] += energy(basisi, X[basisi] + delta[basisj] * col.values[nzi]) - currentE[basisi];
+        }
+//        std::cout << "Initial DE[" << basisj << "] = " << currentDE[basisj] << std::endl;
+    }
 
     // initialise importanceFunc and currentImportance
     importanceFunc->setState(X);
@@ -167,9 +192,25 @@ SparseBasisSampler<T>::SparseBasisSampler(
 
 
 template<class T>
-SparseBasisSampler<T>::SparseBasisSampler(const WeightedFactoredConvexDistribution<T> &distribution):
-        SparseBasisSampler(TableauNormMinimiser<T>(distribution.constraints), distribution.factors, distribution.perturbableFunctionFactory())
+SparseBasisSampler<T>::SparseBasisSampler(const WeightedFactoredConvexDistribution<T> &distribution, const std::vector<T> &initialState, double Kappa):
+        SparseBasisSampler(
+                TableauNormMinimiser<T>(distribution.constraints),
+                distribution.factors,
+                distribution.perturbableFunctionFactory(),
+                initialState,
+                Kappa)
 { }
+
+template<class T>
+SparseBasisSampler<T>::SparseBasisSampler(const WeightedFactoredConvexDistribution<T> &distribution, double Kappa):
+        SparseBasisSampler(
+                TableauNormMinimiser<T>(distribution.constraints),
+                distribution.factors,
+                distribution.perturbableFunctionFactory(),
+                std::vector<T>(),
+                Kappa)
+{ }
+
 
 //template<class T>
 //void SparseBasisSampler<T>::initProbabilities() {
@@ -224,6 +265,7 @@ SparseBasisSampler<T>::SparseBasisSampler(const WeightedFactoredConvexDistributi
 //}
 
 
+// Take a sample
 template<class T>
 const std::vector<T> &SparseBasisSampler<T>::operator()() {
 
@@ -232,8 +274,7 @@ const std::vector<T> &SparseBasisSampler<T>::operator()() {
 
         Proposal proposal(*this);
 
-//        std::cout << "Got proposal col=" << proposal.proposedj << " inf=" << proposal.infeasibility << " DE="
-//                  << currentDE[proposal.proposedj] << std::endl;
+//        std::cout << "Got proposal col=" << proposal.proposedj << " inf=" << proposal.infeasibility << " DE=" << currentDE[proposal.proposedj] << std::endl;
 
         if (proposal.infeasibility == 0) {       // --- transition to feasible state
 
@@ -244,6 +285,7 @@ const std::vector<T> &SparseBasisSampler<T>::operator()() {
             }
 
             double proposedImportance = importanceFunc->getValue(X);
+//            std::cout << "Proposed importance = " << proposedImportance << std::endl;
             double ratioOfSums = proposal.calcRatioOfSums(basisDistribution);
             double acceptance = ratioOfSums * proposedImportance / currentImportance;
 
@@ -252,6 +294,7 @@ const std::vector<T> &SparseBasisSampler<T>::operator()() {
             if (Random::nextDouble() < acceptance) {     // --- accept ---
 //                std::cout << "Accepting feasible" << std::endl;
                 currentImportance = proposedImportance;
+                stats.addSample(true, currentInfeasibility == 0, true);
                 applyProposal(proposal, false);
             } else {                                    // --- reject ---
 //                std::cout << "rejecting feasible" << std::endl;
@@ -261,18 +304,21 @@ const std::vector<T> &SparseBasisSampler<T>::operator()() {
                 }
                 // undo changes to importanceFunc
                 importanceFunc->undoLastPerturbation();
+                stats.addSample(false, currentInfeasibility == 0, true);
             }
         } else {                                // --- transition to infeasible state
             double ratioOfSums = proposal.calcRatioOfSums(basisDistribution);
             double acceptance = ratioOfSums / currentImportance;
 //            std::cout << "Ratio of sums = " << ratioOfSums << " acceptance = " << acceptance << std::endl;
             if (Random::nextDouble() < acceptance) {     // --- accept ---
-//                std::cout << "Accepting infeasible" << std::endl;
+//                std::cout << "Accepting infeasible proposal inf=" << proposal.infeasibility << std::endl;
                 currentImportance = 1.0;
+                stats.addSample(true, currentInfeasibility == 0, false);
                 applyProposal(proposal, true);
                 importanceFunc->perturb(X, proposal.changedXIndices);
-            } else {
-//                std::cout << "rejecting infeasible" << std::endl;
+            } else {                                    // --- reject ---
+//                std::cout << "rejecting infeasible proposal inf=" << proposal.infeasibility << std::endl;
+                stats.addSample(false, currentInfeasibility == 0, false);
             }
         }
     } while(currentInfeasibility > 0);
@@ -306,7 +352,7 @@ template<class T>
 SparseBasisSampler<T>::Proposal::Proposal(SparseBasisSampler<T> &parent):
 proposedj(parent.basisDistribution(Random::gen)),
 infeasibility(parent.currentInfeasibility),
-logPiota(parent.currentLogPiota),
+//logPiota(parent.currentLogPiota),
 changedXIndices(parent.cols[proposedj].indices)
 {
     const SparseVec<T> &proposedBasis = parent.cols[proposedj];
@@ -319,7 +365,7 @@ changedXIndices(parent.cols[proposedj].indices)
         T newXi = parent.X[i] + deltaXi; // the value of X[i] after swapping col j;
         changedXValues.push_back(newXi);
         double deltaEi = parent.energy(i, newXi) - parent.currentE[i]; // change in energy of row i by flipping column j
-        logPiota += deltaEi;
+//        logPiota += deltaEi;
         infeasibility += parent.infeasibility(i, newXi) - parent.infeasibility(i, parent.X[i]);
         const SparseVec<T> &row = parent.rows[i];
         for (int nzj = 0; nzj < row.sparseSize(); ++nzj) {
@@ -340,7 +386,7 @@ changedXIndices(parent.cols[proposedj].indices)
 // to deltaE caused by the pivot.
 template<class T>
 void SparseBasisSampler<T>::applyProposal(const Proposal &proposal, bool updateX) {
-    currentLogPiota = proposal.logPiota;
+//    currentLogPiota = proposal.logPiota;
     currentInfeasibility = proposal.infeasibility;
 
     for(int nzi=0; nzi<proposal.changedXIndices.size(); ++nzi) {
@@ -374,11 +420,9 @@ std::ostream &operator <<(std::ostream &out, const SparseBasisSampler<T> &basis)
         for(int j=0; j<basis.nCols(); ++j) {
             out << row[j] << "\t";
         }
-        out << "<=\t" << basis.U[i] << "\t[ ";
-        for(T Xi = basis.L[i]; Xi <= basis.U[i]; Xi += 1) {
-            out << basis.factors[i](Xi) << "  ";
-        }
-        out << "]" << std::endl;
+        out << "<=\t" << basis.U[i] << "\t["
+            << exp(basis.factors[i](basis.L[i])) << " ... "
+            << exp(basis.factors[i](basis.U[i])) << "]" << std::endl;
     }
     return out;
 }

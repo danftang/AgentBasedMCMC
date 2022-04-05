@@ -18,7 +18,7 @@ template<class AGENT>
 class TrajectoryImportance: public PerturbableFunction<ABM::occupation_type,double> {
 public:
 
-//    Trajectory<AGENT>            eventTrajectory;
+    double                       alpha;// = 1.5;// 2.0;  // amplitude of P_i
     StateTrajectory<AGENT>       stateTrajectory;
     std::vector<double>          stateLogProbs;     // factors in the log probability by stateId
     double                       totalLogProb;
@@ -32,6 +32,7 @@ public:
     std::vector<double>                 factorValuesForUndo;
     double                       totalLogProbForUndo;
 
+
 //    TrajectoryImportance(const Trajectory<AGENT> &eventTrajectory):
 //        eventTrajectory(eventTrajectory),
 //        stateTrajectory(eventTrajectory),
@@ -41,7 +42,8 @@ public:
 //        initLogProbs();
 //    }
 
-    TrajectoryImportance(int nTimesteps):
+    TrajectoryImportance(int nTimesteps, double alpha):
+            alpha(alpha),
             stateTrajectory(nTimesteps),
             stateLogProbs(nTimesteps*AGENT::domainSize(),0.0),
             staleStates(stateLogProbs.size()),
@@ -152,12 +154,12 @@ public:
                 if(stateOccupation > 1) newLogP = lgamma(stateOccupation + 1.0); // log of Phi factorial
                 for (int act = 0; act < AGENT::actDomainSize(); ++act) {
                     int actOccupation = eventTrajectory[Event<AGENT>(time, agent, act).id];
-                    assert(actPMF[act] == agent.marginalTimestep(act));
                     if(actOccupation > 0 && actPMF[act] > 0.0)
                         newLogP += actOccupation * log(actPMF[act] / agent.marginalTimestep(act));
                 }
             }
 //            std::cout << "newLogP = " << newLogP << " oldLogP = " << stateLogProbs[stateId] << std::endl;
+            assert(newLogP != NAN);
             totalLogProb += newLogP - stateLogProbs[stateId];
             stateLogProbs[stateId] = newLogP;
         }
@@ -171,7 +173,7 @@ public:
 
     // sets up log probs and state trajectory (non-incremental)
     void setState(const std::vector<ABM::occupation_type> &eventTrajectory) {
-        totalLogProb = 0.0;
+        totalLogProb = -log(alpha);
         for (int t = 0; t < nTimesteps(); ++t) {
             for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
                 stateTrajectory[t][agentId] = State<AGENT>(t,agentId).forwardOccupation(eventTrajectory);
@@ -185,7 +187,7 @@ public:
                     std::vector<double> actPMF = agent.timestep(stateTrajectory[t]);
                     for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
                         double actOccupation = eventTrajectory[Event<AGENT>(t, agentId, actId).id];
-                        if (actOccupation > 0) factorLogProb += actOccupation * log(actPMF[actId] / agent.marginalTimestep(actId));
+                        if (actOccupation > 0 && actPMF[actId] > 0.0) factorLogProb += actOccupation * log(actPMF[actId] / agent.marginalTimestep(actId));
                     }
                 }
                 if(stateOccupation > 1) factorLogProb += lgamma(stateOccupation + 1.0);

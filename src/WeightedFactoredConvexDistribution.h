@@ -31,6 +31,8 @@ public:
 
     std::function<std::unique_ptr<PerturbableFunction<T,double>>()> perturbableFunctionFactory;
 
+    WeightedFactoredConvexDistribution()=default;
+
     explicit WeightedFactoredConvexDistribution(std::function<std::unique_ptr<PerturbableFunction<T,double>>()> perturbableFunctionFactory):
     perturbableFunctionFactory(perturbableFunctionFactory) {}
 
@@ -57,6 +59,20 @@ public:
 
     friend WeightedFactoredConvexDistribution<T> operator *(const FactoredConvexDistribution<T> &lhs, const WeightedFactoredConvexDistribution<T> &rhs) {
         return rhs * lhs;
+    }
+
+    double P(const std::vector<T> &X) const {
+        return FactoredConvexDistribution<T>::P(X) * importance(X);
+    }
+
+    double logP(const std::vector<T> &X) const {
+        return FactoredConvexDistribution<T>::logP(X) + log(importance(X));
+    }
+
+    double importance(const std::vector<T> &X) const {
+        std::unique_ptr<PerturbableFunction<T,double>> importance = perturbableFunctionFactory();
+        importance->setState(X);
+        return(importance->getValue(X));
     }
 
 };

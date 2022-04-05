@@ -20,23 +20,24 @@
 // Created by daniel on 17/03/2022.
 //
 
-#ifndef ABMCMC_TRAJECTORYFORECASTDISTRIBUTION_H
-#define ABMCMC_TRAJECTORYFORECASTDISTRIBUTION_H
+#ifndef ABMCMC_FORECAST_H
+#define ABMCMC_FORECAST_H
 
 
 #include "WeightedFactoredConvexDistribution.h"
 #include "TrajectoryImportance.h"
 #include "ABM.h"
 #include "Event.h"
+#include "StartStateDistribution.h"
 
 template <class AGENT>
-class TrajectoryForecastDistribution: public WeightedFactoredConvexDistribution<ABM::occupation_type> {
+class Forecast: public WeightedFactoredConvexDistribution<ABM::occupation_type> {
 public:
     int nTimesteps;
 
-    explicit TrajectoryForecastDistribution(int NTimesteps): nTimesteps(NTimesteps),
-    WeightedFactoredConvexDistribution<ABM::occupation_type>( [NTimesteps]() {
-        return std::unique_ptr<PerturbableFunction<ABM::occupation_type,double>>(new TrajectoryImportance<AGENT>(NTimesteps));
+    explicit Forecast(int NTimesteps, double alpha): nTimesteps(NTimesteps),
+                                       WeightedFactoredConvexDistribution<ABM::occupation_type>( [NTimesteps, alpha]() {
+        return std::unique_ptr<PerturbableFunction<ABM::occupation_type,double>>(new TrajectoryImportance<AGENT>(NTimesteps, alpha));
     }) {
         addActFermionicFactors();
         addContinuityConstraints();
@@ -93,12 +94,16 @@ public:
         }
     }
 
-    Trajectory<AGENT> nextSample(std::function<ModelState<AGENT>()> startStateSampler) {
+    Trajectory<AGENT> nextSample(const StartStateDistribution<AGENT> &startStateDist) const {
+        return nextSample(startStateDist, nTimesteps);
+    }
+
+    static Trajectory<AGENT> nextSample(const StartStateDistribution<AGENT> &startStateDist, int nTimesteps) {
         Trajectory<AGENT> sample(nTimesteps);
         bool isValid;
         int nAttempts = 0;
         do {
-            ModelState<AGENT> t0State = startStateSampler();
+            ModelState<AGENT> t0State = startStateDist.nextSample();
             ModelState<AGENT> t1State;
             isValid = true;
             for (int t = 0; t < nTimesteps; ++t) {
@@ -111,9 +116,12 @@ public:
                     // now choose acts for each of nAgents from act Fermionic distribution
 
                     std::vector<double> actPMF = agent.timestep(t0State);
+//                    std::cout << "Got act distribution " << actPMF << std::endl;
                     ActFermionicDistribution actDistribution(actPMF);
-                    assert(nAgents <= actPMF.size());
+//                    assert(nAgents <= actPMF.size());
                     std::vector<bool> chosenActs = actDistribution.sampleUnordered(nAgents);
+//                    std::cout << "choosing " << nAgents << " " << chosenActs << std::endl;
+                    if(chosenActs.size() == 0) isValid = false;
                     for(int act=0; act < chosenActs.size(); ++act) {
                         if(chosenActs[act]) {
                             sample[Event<AGENT>(t, agent, act)] = 1.0;
@@ -163,4 +171,4 @@ protected:
 };
 
 
-#endif //ABMCMC_TRAJECTORYFORECASTDISTRIBUTION_H
+#endif //ABMCMC_FORECAST_H

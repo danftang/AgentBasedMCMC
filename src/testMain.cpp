@@ -14,10 +14,11 @@ public:
     MyClass(const MyClass &copy) { std::cout << "MyClass copy constructor" << std::endl;}
     MyClass(MyClass &&move) { std::cout << "MyClass move constructor" << std::endl;}
 
+    int myFunc() { return x; }
+
 };
 
 class MyDerived: public MyClass {
-
 };
 
 bool myFunc(const MyClass &m) {

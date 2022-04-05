@@ -21,8 +21,8 @@ template<typename AGENT>
 class AgentStateObservation {
 public:
     State<AGENT> state;         // state that was observed
-    const ABM::occupation_type lowerBound;    // number actually observed
-    const double pObserveIfPresent;
+    ABM::occupation_type lowerBound;    // number actually observed
+    double pObserveIfPresent;
 
     AgentStateObservation() {};
 
@@ -69,10 +69,7 @@ public:
 //    }
 
     Constraint<ABM::occupation_type> constraint() const {
-        if(lowerBound > 0 || upperBound() < state.fermionicOccupationUpperBound()) {
             return { lowerBound <= 1*state <= upperBound() };
-        }
-        return {};
     }
 
     std::function<double(ABM::occupation_type)> toLogProbFunction() const {
@@ -83,7 +80,7 @@ public:
 
 
     friend std::ostream &operator <<(std::ostream &out, const AgentStateObservation<AGENT> & observation) {
-        out << observation.state << " " << observation.lowerBound << " " << observation.pObserveIfPresent;
+        out << observation.state << " n=" << observation.lowerBound << " p=" << observation.pObserveIfPresent;
         return out;
     }
 

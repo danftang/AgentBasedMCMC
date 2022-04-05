@@ -5,27 +5,32 @@
 #ifndef GLPKTEST_EXACTSOLVER_H
 #define GLPKTEST_EXACTSOLVER_H
 
+#include <valarray>
 #include "BinarySolutionSet.h"
+#include "ModelState.h"
+#include "WeightedFactoredConvexDistribution.h"
+#include "StlStream.h"
 
 template<typename AGENT>
 class ExactSolver {
 public:
-    ModelState<AGENT> exactEndState;
+    std::map<std::vector<ABM::occupation_type>,double> pmf;
 
-    ExactSolver(const ConvexPMF<Trajectory<AGENT>> &pmf) {
+    ExactSolver(const WeightedFactoredConvexDistribution<ABM::occupation_type> &distribution) {
         double marginalP = 0.0;
-        for(const std::vector<double> &sol: BinarySolutionSet(pmf.convexSupport, pmf.nDimensions)) {
-            const Trajectory<AGENT> &traj = reinterpret_cast<const Trajectory<AGENT> &>(sol);
-            double logP = pmf.logP(traj);
-            double jointP = exp(logP);
+        int nTimesteps = distribution.constraints.dimension() / (AGENT::domainSize() * AGENT::actDomainSize());
+        for(const std::vector<ABM::occupation_type> &solution: BinarySolutionSet<ABM::occupation_type>(distribution.constraints)) {
+            // const Trajectory<AGENT> &traj = reinterpret_cast<const Trajectory<AGENT> &>(sol);
+            double jointP = distribution.P(solution);
+//            std::cout << "Got solution " << solution << " p=" << jointP << std::endl;
+            pmf[solution] = jointP;
             marginalP += jointP;
-            assert(!isnan(logP));
-//            std::cout << traj << " " << jointP << " " << logP << std::endl;
-            ModelState<AGENT> endState = traj.endState();
-            endState *= jointP;
-            exactEndState += endState;
+            ModelState<AGENT> endState(solution, nTimesteps, nTimesteps);
         }
-        exactEndState *= 1.0 / marginalP;
+        for(auto it=pmf.begin(); it != pmf.end(); ++it) {
+            it->second /= marginalP;
+//            std::cout << it->first << " p=" << it->second << std::endl;
+        }
     }
 
 //    ExactSolver(const AssimilationWindow<AGENT> &window): ExactSolver(window.posterior) {

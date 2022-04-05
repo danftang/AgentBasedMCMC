@@ -15,25 +15,36 @@ class MultiChainStats: public std::vector<ChainStats> {
 public:
     std::string cpuinfo;
     double kappa;
-//    double kappaCol;
+    double alpha;
     std::string problemDescription;
     long execTimeMilliSeconds;
 
-    MultiChainStats(std::string description=""):
-//        kappaCol(decltype(SimplexMCMC::proposalFunction)::kappaCol),
-        kappa(decltype(SimplexMCMC::proposalFunction)::kappa),
+
+    MultiChainStats(double Kappa, double Alpha, std::string description=""):
+        kappa(Kappa),
+        alpha(Alpha),
         problemDescription(std::move(description)) {
 
     }
 
-    MultiChainStats &operator +=(MultiChainStats &&other) {
-        reserve(size()+other.size());
-        for(ChainStats &chain: other) {
+    MultiChainStats &operator +=(std::vector<ChainStats> &&chains) {
+        reserve(size()+chains.size());
+        for(ChainStats &chain: chains) {
             if(this->size()>0) assert(chain.nSamples() == this->nSamples()); // all chains should be of the same length
             this->push_back(std::move(chain));
         }
         return *this;
     }
+
+    MultiChainStats &operator +=(const std::vector<ChainStats> &chains) {
+        reserve(size()+chains.size());
+        for(const ChainStats &chain: chains) {
+            if(this->size()>0) assert(chain.nSamples() == this->nSamples()); // all chains should be of the same length
+            this->push_back(chain);
+        }
+        return *this;
+    }
+
 
     int nSamples() const {
         return size()==0?0:front().nSamples();
@@ -45,14 +56,16 @@ public:
         return size()==0?0:front().dimension();
     }
 
-    std::vector<double> meanEndState() {
-        std::vector<double> mean = (*this)[0].meanEndState;
+    std::valarray<double> meanEndState() {
+        std::valarray<double> mean = (*this)[0].meanEndState;
         for(int j=1; j<size(); ++j) {
-            for(int i=0; i<mean.size(); ++i) {
-                mean[i] += (*this)[j].meanEndState[i];
-            }
+            mean += (*this)[j].meanEndState;
+//            for(int i=0; i<mean.size(); ++i) {
+//                mean[i] += (*this)[j].meanEndState[i];
+//            }
         }
-        for(int i=0; i<mean.size(); ++i) mean[i] /= size();
+//        for(int i=0; i<mean.size(); ++i) mean[i] /= size();
+        mean /= size();
         return mean;
     }
 
@@ -206,14 +219,8 @@ public:
         for(const ChainStats &chain: multiChainStats) {
             out << " " << chain.meanVariance.nSamples << " " << chain.meanVariance.sum << " " << chain.meanVariance.sumOfSquares << " " << chain.varioStride << " " << chain.vario << std::endl;
 //            out << chain.nextSample << std::endl;
-            std::cout << "Feasible MCMC stats:" << std::endl;
-            std::cout << chain.feasibleStats << std::endl;
-            std::cout << "Infeasible MCMC stats:" << std::endl;
-            std::cout << chain.infeasibleStats << std::endl;
-            std::cout << "Infeasible proportion = "
-                      << chain.infeasibleStats.nSamples*100.0/(chain.feasibleStats.nSamples + chain.infeasibleStats.nSamples)
-                      << "%" << std::endl << std::endl;
-
+            std::cout << "MCMC stats:" << std::endl;
+            std::cout << chain.stats << std::endl;
         }
         return out;
     }

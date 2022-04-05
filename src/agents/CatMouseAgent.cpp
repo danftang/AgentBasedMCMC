@@ -3,7 +3,6 @@
 //
 
 #include "CatMouseAgent.h"
-#include "../State.h"
 
 // returns LogPMF over acts
 std::vector<double> CatMouseAgent::timestep(const ModelState<CatMouseAgent> &others) const {
@@ -25,17 +24,11 @@ std::vector<double> CatMouseAgent::timestep(const ModelState<CatMouseAgent> &oth
 }
 
 
-std::vector<double> CatMouseAgent::marginalTimestep() const {
-    std::vector<double> actPmf(actDomainSize());
-
+double CatMouseAgent::marginalTimestep(Act act) const {
     if (type() == CAT) {
-        actPmf[MOVE] = pCatMove;
-        actPmf[STAYPUT] = 1.0 - pCatMove;
-    } else {
-        actPmf[MOVE] = 1.0;     // given that all constraints are satisfied
-        actPmf[STAYPUT] = 1.0;
+        if(act == MOVE) return pCatMove; else return 1.0 - pCatMove;
     }
-    return actPmf;
+    return 1.0;
 }
 
 
@@ -49,7 +42,7 @@ std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) const {
 
 
 // result of static analysis of timestep member function...
-std::vector<glp::Constraint> CatMouseAgent::constraints(int time, Act act) const {
+std::vector<Constraint<ABM::occupation_type>> CatMouseAgent::constraints(int time, Act act) const {
     if(type() == MOUSE) {
         if(act == MOVE) {
             return std::vector({ 1.0*State(time,CatMouseAgent(CAT, position())) >= 1 });
@@ -57,6 +50,11 @@ std::vector<glp::Constraint> CatMouseAgent::constraints(int time, Act act) const
             return std::vector({ 1.0*State(time,CatMouseAgent(CAT, position())) <= 0 });
         }
     } else {
-        return std::vector<glp::Constraint>();
+        return std::vector<Constraint<ABM::occupation_type>>();
     }
+}
+
+std::vector<CatMouseAgent> CatMouseAgent::neighbours() {
+    if(type() == CAT) return { CatMouseAgent(MOUSE, position()) };
+    return {};
 }

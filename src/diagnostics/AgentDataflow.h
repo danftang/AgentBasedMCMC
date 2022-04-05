@@ -15,11 +15,17 @@ namespace dataflow {
     class TrajectoryToModelState: public Transform {
     public:
         int time;
-        TrajectoryToModelState(int Time): time(Time) { }
+        int nTimesteps;
+
+        TrajectoryToModelState(int NTimesteps, int Time): time(Time), nTimesteps(NTimesteps) {
+            assert(Time <= NTimesteps && Time >= 0);
+        }
 
         // consumer doesn't have to take r-value, compiler will do whatever conversion is necessary.
-        bool operator()(std::function<bool(ModelState<AGENT> &&)> modelStateConsumer, const std::vector<ABM::occupation_type> &trajectory) {
-            return modelStateConsumer(ModelState<AGENT>(trajectory, time));
+        template<class CONSUMER>
+        bool operator()(CONSUMER &modelStateConsumer, const std::vector<ABM::occupation_type> &trajectory) {
+//            std::cout << "Converting trajectory " << trajectory << " to model state " << ModelState<AGENT>(trajectory, nTimesteps, time) << std::endl;
+            return modelStateConsumer(ModelState<AGENT>(trajectory, nTimesteps, time));
         }
 
     };

@@ -11,61 +11,58 @@
 #include "StlStream.h"
 #include "StateTrajectory.h"
 #include "AgentStateObservation.h"
-#include "BernoulliModelState.h"
-#include "PoissonModelState.h"
 #include "agents/PredPreyAgent.h"
+#include "Prior.h"
+#include "Likelihood.h"
+#include "BernoulliStartState.h"
 
 template<int GRIDSIZE>
 class PredPreyProblem {
 public:
-    double pPredator;
-    double pPrey;
+    double                              pPredator;
+    double                              pPrey;
+    double                              kappa;
+    double                              alpha;
+    Prior<PredPreyAgent<GRIDSIZE>>      prior;
     Trajectory<PredPreyAgent<GRIDSIZE>> realTrajectory;
-    std::vector<AgentStateObservation<PredPreyAgent<GRIDSIZE>>> observations;
+    Likelihood<PredPreyAgent<GRIDSIZE>> likelihood;
+    WeightedFactoredConvexDistribution<ABM::occupation_type> posterior;
 
     PredPreyProblem(): realTrajectory(0) {}
 
-    PredPreyProblem(int nTimesteps, double pPredator, double pPrey, double pMakeObservation, double pObserveIfPresent):
+    PredPreyProblem(int nTimesteps, double pPredator, double pPrey, double pMakeObservation, double pObserveIfPresent, double kappa, double alpha):
     pPredator(pPredator),
     pPrey(pPrey),
-    realTrajectory(nTimesteps, startStatePrior().sampler()),
-    observations(AgentStateObservation<PredPreyAgent<GRIDSIZE>>::generateObservations(realTrajectory, pMakeObservation, pObserveIfPresent)) {
+    kappa(kappa),
+    alpha(alpha),
+    prior(nTimesteps, startStatePrior(), alpha),
+    realTrajectory(prior.nextSample()),
+    likelihood(realTrajectory, pMakeObservation, pObserveIfPresent),
+    posterior(likelihood * prior) {
     }
 
 
     auto startStatePrior() const {
-        return PoissonModelState<PredPreyAgent<GRIDSIZE>>([pPredator = pPredator, pPrey = pPrey](PredPreyAgent<GRIDSIZE> agent) {
-            return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
-        });
-//        return BernoulliModelState<PredPreyAgent<GRIDSIZE>>([pPredator = pPredator, pPrey = pPrey](PredPreyAgent<GRIDSIZE> agent) {
+//        return PoissonStartState<PredPreyAgent<GRIDSIZE>>([pPredator = pPredator, pPrey = pPrey](PredPreyAgent<GRIDSIZE> agent) {
 //            return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
 //        });
+        return BernoulliStartState<PredPreyAgent<GRIDSIZE>>([pPredator = pPredator, pPrey = pPrey](PredPreyAgent<GRIDSIZE> agent) {
+            return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
+        });
     }
 
-    ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> prior() const {
-        return ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>>(nTimesteps(), startStatePrior().PMF());
-    }
-
-    std::function<Trajectory<PredPreyAgent<GRIDSIZE>>()> priorSampler() const {
-        return Trajectory<PredPreyAgent<GRIDSIZE>>::priorSampler(nTimesteps(), startStatePrior().sampler());
-    }
-
-    ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> likelihood() const {
-        return ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>>::likelihood(nTimesteps(), observations);
-    }
-
-    ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> posterior() const {
-        return likelihood() * prior();
-    }
 
     int nTimesteps() const { return realTrajectory.nTimesteps(); }
+
 
     friend std::ostream &operator <<(std::ostream &out, const PredPreyProblem &predPreyProblem) {
         out << "pPredator: " << predPreyProblem.pPredator << std::endl;
         out << "pPrey: " << predPreyProblem.pPrey << std::endl;
+        out << "kappa: " << predPreyProblem.kappa << std::endl;
+        out << "alpha: " << predPreyProblem.alpha << std::endl;
         out << "(Gridsize x Timesteps): " << GRIDSIZE << " x " << predPreyProblem.nTimesteps() << std::endl;
         out << "Real trajectory: " << predPreyProblem.realTrajectory << std::endl;
-        out << "Observations: " << predPreyProblem.observations << std::endl;
+        out << "Observations: " << predPreyProblem.likelihood.observations << std::endl;
         return out;
     }
 
@@ -73,9 +70,26 @@ private:
     friend class boost::serialization::access;
 
     template <typename Archive>
-    void serialize(Archive &ar, const unsigned int version) {
-        ar & pPredator & pPrey & realTrajectory & observations;
+    void load(Archive &ar, const unsigned int version) {
+        std::vector<AgentStateObservation<PredPreyAgent<GRIDSIZE>>> observations;
+        ar & pPredator & pPrey & kappa & alpha & realTrajectory & observations;
+        prior = Prior<PredPreyAgent<GRIDSIZE>>(realTrajectory.nTimesteps(), startStatePrior(), alpha);
+        likelihood = Likelihood<PredPreyAgent<GRIDSIZE>>(observations);
+        posterior = likelihood * prior;
     }
+
+    template <typename Archive>
+    void save(Archive &ar, const unsigned int version) const {
+        ar & pPredator & pPrey & kappa & alpha & realTrajectory & likelihood.observations;
+    }
+
+    BOOST_SERIALIZATION_SPLIT_MEMBER();
+
+
+//    template <typename Archive>
+//    void serialize(Archive &ar, const unsigned int version) {
+//        ar & pPredator & pPrey & realTrajectory & likelihood.observations;
+//    }
 
 };
 

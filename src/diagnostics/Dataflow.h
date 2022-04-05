@@ -162,6 +162,23 @@ namespace dataflow {
         typedef void transform_tag;
     };
 
+    // Map is a TRANSFORM that allows any function to be used in a dataflow pipeline
+    template<typename FUNC, typename = typename unary_function_traits<FUNC>::is_valid_tag>
+    class Map: public Transform {
+    public:
+        FUNC mapFunc;
+
+        typedef typename unary_function_traits<FUNC>::argument_type upstream_type;
+
+        Map(FUNC mapFunction): mapFunc(mapFunction) { }
+
+        // requires that
+        template<typename CONSUMER>
+        bool operator()(CONSUMER &downstreamConsumer, const upstream_type &item) {
+            return downstreamConsumer(mapFunc(item));
+        }
+    };
+
 
     // Split is a CONSUMER that splits a datastream over any number of consumers,
     // sending a copy of each data item to each consumer until all consumers have closed
@@ -205,23 +222,6 @@ namespace dataflow {
         }
     };
 
-
-    // Map is a TRANSFORM that allows any function to be used in a dataflow pipeline
-    template<typename FUNC, typename = typename unary_function_traits<FUNC>::is_valid_tag>
-    class Map: public Transform {
-    public:
-        FUNC mapFunc;
-
-        typedef typename unary_function_traits<FUNC>::argument_type upstream_type;
-
-        Map(FUNC mapFunction): mapFunc(mapFunction) { }
-
-        // requires that
-        template<typename CONSUMER>
-        bool operator()(CONSUMER &downstreamConsumer, const upstream_type &item) {
-            return downstreamConsumer(mapFunc(item));
-        }
-    };
 
 
     // Drop is a TRANSFORM that drops the first 'n' data items then passes

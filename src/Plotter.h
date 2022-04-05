@@ -14,7 +14,7 @@ class Plotter: public Gnuplot {
 public:
 
     template<int GRIDSIZE>
-    void plot(const ModelState<PredPreyAgent<GRIDSIZE>> &realState, const std::vector<double> &analysis, std::string title="Model state") {
+    void plot(const ModelState<PredPreyAgent<GRIDSIZE>> &realState, const std::valarray<double> &analysis, std::string title="Model state") {
         typedef std::tuple<double, double, double, double, double> HeatRecord;
         std::vector <std::vector<HeatRecord>> heatData;
         std::vector <std::tuple<double, double, double>> pointData;

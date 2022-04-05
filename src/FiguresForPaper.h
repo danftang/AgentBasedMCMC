@@ -9,9 +9,9 @@
 #include <thread>
 #include "PredPreyProblem.h"
 #include "diagnostics/MultiChainStats.h"
-#include "diagnostics/Dataflow.h"
+#include "diagnostics/AgentDataflow.h"
 #include "Plotter.h"
-#include "MCMCSampler.h"
+#include "SparseBasisSampler.h"
 
 class FiguresForPaper {
 public:
@@ -22,26 +22,26 @@ public:
         plotStats<GRIDSIZE>(nTimesteps);
     }
 
-    static void generateAllProblemFiles() {
-        for (int nTimesteps = 2; nTimesteps <= 16; nTimesteps *= 2) {
-            generateStandardProblemFile<8>(nTimesteps);
-            generateStandardProblemFile<16>(nTimesteps);
-            generateStandardProblemFile<32>(nTimesteps);
-        }
-    }
+//    static void generateAllProblemFiles() {
+//        for (int nTimesteps = 2; nTimesteps <= 16; nTimesteps *= 2) {
+//            generateStandardProblemFile<8>(nTimesteps);
+//            generateStandardProblemFile<16>(nTimesteps);
+//            generateStandardProblemFile<32>(nTimesteps);
+//        }
+//    }
 
     template<int GRIDSIZE>
-    static void generateStandardProblemFile(int nTimesteps)  {
+    static void generateStandardProblemFile(int nTimesteps, double kappa, double alpha)  {
         constexpr double pPredator = 0.05; // (0.08 + 10.24/(GRIDSIZE*GRIDSIZE))/3.0;
         constexpr double pPrey = 0.05; // 2.0*pPredator;
-        constexpr double pMakeObservation = 0.02;
+        constexpr double pMakeObservation = 0.04;
         constexpr double pObserveIfPresent = 0.9;
         std::string probFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".prob";
         std::ofstream probFile(probFilename);
         boost::archive::binary_oarchive probArchive(probFile);
 
         Random::gen.seed(1234);
-        PredPreyProblem<GRIDSIZE> problem(nTimesteps, pPredator, pPrey, pMakeObservation, pObserveIfPresent);
+        PredPreyProblem<GRIDSIZE> problem(nTimesteps, pPredator, pPrey, pMakeObservation, pObserveIfPresent, kappa, alpha);
         std::cout << problem << std::endl;
         probArchive << problem;
     }
@@ -62,15 +62,18 @@ public:
         std::cout << "Loaded problem" << std::endl;
         std::cout << problem;
 
+        TableauNormMinimiser<ABM::occupation_type> basisTableau(problem.posterior.constraints);
+//        std::cout << "Tableau = \n" << basisTableau << std::endl;
+
         auto startTime = std::chrono::steady_clock::now();
 
-        std::future<MultiChainStats> futureResults[nThreads];
+        std::future<std::vector<ChainStats>> futureResults[nThreads];
         for(int thread = 0; thread < nThreads; ++thread) {
-            futureResults[thread] = std::async(&startStatsThread<GRIDSIZE>, problem.posterior(), problem.priorSampler()());
+            futureResults[thread] = std::async(&startStatsThread<GRIDSIZE>, problem, basisTableau, problem.prior.nextSample());
         }
 
 
-        MultiChainStats multiChainStats(problemFilename);
+        MultiChainStats multiChainStats(problem.kappa, problem.alpha, problemFilename);
         multiChainStats.reserve(2*nThreads);
         for(int thread=0; thread<nThreads; ++thread) {
             futureResults[thread].wait();
@@ -85,71 +88,104 @@ public:
         if(!statFile.good()) throw("Can't open stats probFile to save results.");
         boost::archive::binary_oarchive statArchive(statFile);
         statArchive << multiChainStats;
-//        std::cout << std::endl << "Saved stats" << std::endl;
-//        std::cout << multiChainStats;
+////        std::cout << std::endl << "Saved stats" << std::endl;
+////        std::cout << multiChainStats;
     }
 
     template<int GRIDSIZE>
-    static MultiChainStats startStatsThread(ConvexPMF<Trajectory<PredPreyAgent<GRIDSIZE>>> posterior, Trajectory<PredPreyAgent<GRIDSIZE>> startState) {
+    static std::vector<ChainStats> startStatsThread(const PredPreyProblem<GRIDSIZE> &problem, const TableauNormMinimiser<ABM::occupation_type> &tableau, std::vector<ABM::occupation_type> initialState) {
         using namespace dataflow;
-        constexpr int nSamples = 1500000; // must be an even number
+        constexpr int nSamples = 100000; // must be an even number
         assert((nSamples&1) == 0);
         const double maxLagProportion = 0.5;
         const int nLags = 100;
-        constexpr int nBurnIn = 200000;//nSamples*0.25;
-        auto trajectoryToEnergy = [](const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory) { return -trajectory.logProb(); };
-        auto trajectoryToEndState = [](const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory) { return trajectory.endState(); };
-        MCMCSampler sampler(posterior, startState, Trajectory<PredPreyAgent<GRIDSIZE>>::marginalLogProbsByEvent(startState.nTimesteps()));
+        constexpr int nBurnIn = 1000;//nSamples*0.25;
+//        Trajectory<PredPreyAgent<GRIDSIZE>> initialState = problem.prior.nextSample();
+        int nTimesteps = problem.nTimesteps();
+        SparseBasisSampler sampler(tableau, problem.posterior.factors, problem.posterior.perturbableFunctionFactory(), initialState, problem.kappa);
 
         std::valarray<std::valarray<double>> firstSynopsisSamples(nSamples/2);
         std::valarray<std::valarray<double>> lastSynopsisSamples(nSamples/2);
         ModelState<PredPreyAgent<GRIDSIZE>> firstMeanEndState;
         ModelState<PredPreyAgent<GRIDSIZE>> lastMeanEndState;
-        std::valarray<Trajectory<PredPreyAgent<GRIDSIZE>>> firstNextSample(Trajectory<PredPreyAgent<GRIDSIZE>>(0),1);
-        std::valarray<Trajectory<PredPreyAgent<GRIDSIZE>>> lastNextSample(Trajectory<PredPreyAgent<GRIDSIZE>>(0),1);
 
         sampler >>= Drop(nBurnIn)
+                >>= TrajectoryToModelState<PredPreyAgent<GRIDSIZE>>(nTimesteps, nTimesteps)
                 >>= SwitchOnClose {
                         Split {
                                 Map{ synopsis<GRIDSIZE> } >>= save(firstSynopsisSamples),
-                                Take(nSamples/2) >>= Map{ trajectoryToEndState } >>= Sum(firstMeanEndState)
+                                Take(nSamples/2) >>= Sum<ModelState<PredPreyAgent<GRIDSIZE>>>(firstMeanEndState)
                         },
-                        save(firstNextSample),
                         Split{
                                 Map{ synopsis<GRIDSIZE> } >>= save(lastSynopsisSamples),
-                                Take(nSamples/2) >>= Map{ trajectoryToEndState } >>= Sum(firstMeanEndState)
+                                Take(nSamples/2) >>= Sum<ModelState<PredPreyAgent<GRIDSIZE>>>(firstMeanEndState)
                         },
-                        save(lastNextSample)
                 };
 
-        std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
-        std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;
-        std::cout << "Infeasible proportion = " << sampler.simplex.infeasibleStatistics.nSamples*100.0/(sampler.simplex.feasibleStatistics.nSamples + sampler.simplex.infeasibleStatistics.nSamples) << "%" << std::endl << std::endl;
+        std::cout << "Stats =\n" << sampler.stats << std::endl;
 
-        firstMeanEndState /= nSamples/2;
-        lastMeanEndState /= nSamples/2;
+        std::valarray<double> meanEndState1 = firstMeanEndState / (nSamples/2.0);
+        std::valarray<double> meanEndState2 = lastMeanEndState / (nSamples/2.0);
 
-        MultiChainStats stats;
+        std::vector<ChainStats> stats;
         stats.reserve(2);
         stats.emplace_back(
                 std::move(firstSynopsisSamples),
                 nLags,
                 maxLagProportion,
-                std::move(firstMeanEndState),
-                std::move(firstNextSample[0]),
-                sampler.simplex.feasibleStatistics,
-                sampler.simplex.infeasibleStatistics);
+                std::move(meanEndState1),
+//                std::move(firstNextSample[0]),
+                sampler.stats);
         stats.emplace_back(
                 std::move(lastSynopsisSamples),
                 nLags,
                 maxLagProportion,
-                std::move(lastMeanEndState),
-                std::move(lastNextSample[0]),
-                sampler.simplex.feasibleStatistics,
-                sampler.simplex.infeasibleStatistics);
+                std::move(meanEndState2),
+//                std::move(lastNextSample[0]),
+                sampler.stats);
         //    std::cout << stats << std::endl;
         return std::move(stats);
     }
+
+
+    template<int GRIDSIZE>
+    static void singleThreadStats(int nTimesteps) {
+        std::string problemFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".prob";
+        std::string statFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".stat";
+        constexpr int nThreads = 4;
+
+        std::ifstream probFile(problemFilename);
+        if(!probFile.good()) throw("Can't open problem probFile for this geometry. Run generateStandardProblemFile first.");
+        boost::archive::binary_iarchive probArchive(probFile);
+        PredPreyProblem<GRIDSIZE> problem;
+        probArchive >> problem;
+
+        std::cout << "Loaded problem" << std::endl;
+        std::cout << problem;
+
+        TableauNormMinimiser<ABM::occupation_type> basisTableau(problem.posterior.constraints);
+//        std::cout << "Tableau = \n" << basisTableau << std::endl;
+
+        auto startTime = std::chrono::steady_clock::now();
+
+        std::vector<ChainStats> stats = startStatsThread<GRIDSIZE>(problem, basisTableau, problem.prior.nextSample());
+
+//        MultiChainStats multiChainStats(problem.kappa, problem.alpha, problemFilename);
+//        multiChainStats.reserve(2);
+//        multiChainStats += stats;
+//        auto endTime = std::chrono::steady_clock::now();
+//
+//        multiChainStats.execTimeMilliSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+//
+////        std::ofstream statFile(statFilename);
+////        if(!statFile.good()) throw("Can't open stats probFile to save results.");
+////        boost::archive::binary_oarchive statArchive(statFile);
+////        statArchive << multiChainStats;
+//
+////        std::cout << std::endl << "Saved stats" << std::endl;
+//        std::cout << multiChainStats;
+    }
+
 
     template<int GRIDSIZE>
     static void plotStats(int nTimesteps) {
@@ -157,7 +193,7 @@ public:
         std::ifstream statFile(statFilename);
         if(!statFile.good()) throw("Can't open stats probFile. Maybe you haven't run the analysis for this geometry yet.");
         boost::archive::binary_iarchive statArchive(statFile);
-        MultiChainStats stats;
+        MultiChainStats stats(0.0,0.0,"");
         statArchive >> stats;
 
         std::string probFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".prob";
@@ -193,7 +229,7 @@ public:
         // Print scale reduction and effective samples
         std::valarray<double> neff = stats.effectiveSamples();
         std::valarray<double> ineff = (stats.nSamples()*1.0)/neff;
-        double execTimePerSample = stats.execTimeMilliSeconds * 2.0 / (stats.front().feasibleStats.nSamples*stats.size());
+        double execTimePerSample = stats.execTimeMilliSeconds * 2.0 / (stats.front().stats.nSamples()*stats.size());
         std::cout << "Summary statistics for " << GRIDSIZE << " x " << nTimesteps << std::endl;
         std::cout << "Potential scale reduction: " << stats.potentialScaleReduction() << std::endl;
         std::cout << "Actual number of samples per chain: " << stats.nSamples() << std::endl;
@@ -259,9 +295,9 @@ public:
 
 
     template<int GRIDSIZE>
-    static std::valarray<double> synopsis(const Trajectory<PredPreyAgent<GRIDSIZE>> &trajectory) {
+    static std::valarray<double> synopsis(const ModelState<PredPreyAgent<GRIDSIZE>> &endState) {
         std::valarray<double> synopsis(floor(log2(GRIDSIZE)) -1);
-        ModelState<PredPreyAgent<GRIDSIZE>> endState = trajectory.endState();
+//        ModelState<PredPreyAgent<GRIDSIZE>> endState(trajectory, trajectory.nTimesteps(), trajectory.nTimesteps()); //.endState();
         int origin = 0;
         int varid = 0;
         for(int partitionSize = GRIDSIZE / 2; partitionSize > 1; partitionSize /=2) {

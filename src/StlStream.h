@@ -22,7 +22,28 @@
 //        decltype(std::declval<T>().end())
 //>> = true;
 
-template<typename T> std::ostream & operator <<(std::ostream &out, const std::list<T> &container);
+
+template<typename T>
+std::ostream & operator <<(std::ostream &out, const std::list<T> &container);
+
+template<typename T1, typename T2>
+std::ostream &operator <<(std::ostream &out, const std::pair<T1,T2> &pair);
+
+template<typename T>
+std::ostream & operator <<(std::ostream &out, const std::list<T> &container);
+
+template<typename T>
+std::ostream &operator <<(std::ostream &out, const std::valarray<T> &vec);
+
+template<typename KEY, typename VALUE>
+std::ostream &operator <<(std::ostream &out, const std::map<KEY,VALUE> &map);
+
+template<typename KEY, typename VALUE>
+std::ostream &operator <<(std::ostream &out, const std::multimap<KEY,VALUE> &map);
+
+template<typename I, intmax_t UNITS>
+std::ostream &operator <<(std::ostream &out, const std::chrono::duration<I,std::ratio<1,UNITS>> &duration);
+
 
 template<typename T>
 std::ostream & operator <<(std::ostream &out, const std::vector<T> &container) {
@@ -36,6 +57,7 @@ std::ostream & operator <<(std::ostream &out, const std::vector<T> &container) {
     return out;
 }
 
+
 template<typename T>
 std::ostream & operator <<(std::ostream &out, const std::list<T> &container) {
     out << "{";
@@ -47,18 +69,6 @@ std::ostream & operator <<(std::ostream &out, const std::list<T> &container) {
     out << "}";
     return out;
 }
-
-
-
-
-//template<typename T>
-//std::ostream &operator <<(std::ostream &out, const std::vector<T> &vec) {
-//    out << "{";
-//    for(int i=0; i<vec.size()-1; ++i) out << vec[i] << ", ";
-//    if(vec.size() > 0) out << vec[vec.size()-1];
-//    out << "}";
-//    return out;
-//}
 
 
 template<typename T>
@@ -92,14 +102,9 @@ std::ostream &operator <<(std::ostream &out, const std::multimap<KEY,VALUE> &map
 }
 
 
-template<typename T1, typename T2>
-std::ostream &operator <<(std::ostream &out, const std::pair<T1,T2> &pair) {
-    out << "(" << pair.first << ", " << pair.second << ")";
-    return out;
-}
 
 template<typename I, intmax_t UNITS>
-std::ostream &operator <<(std::ostream &out, const std::chrono::duration<I,std::ratio<1,UNITS>> duration) {
+std::ostream &operator <<(std::ostream &out, const std::chrono::duration<I,std::ratio<1,UNITS>> &duration) {
     long double count = duration.count();
     intmax_t units = UNITS;
     while(count >= 1000.0 && units >= 1000) {
@@ -115,5 +120,12 @@ std::ostream &operator <<(std::ostream &out, const std::chrono::duration<I,std::
     }
     return out;
 }
+
+template<typename T1, typename T2>
+std::ostream &operator <<(std::ostream &out, const std::pair<T1,T2> &pair) {
+    out << "(" << pair.first << ", " << pair.second << ")";
+    return out;
+}
+
 
 #endif //GLPKTEST_STLSTREAM_H
