@@ -12,7 +12,6 @@
 #include "StateTrajectory.h"
 #include "Random.h"
 #include "ActFermionicDistribution.h"
-#include "Sampler.h"
 #include "ABM.h"
 
 template<typename AGENT>
