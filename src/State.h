@@ -53,6 +53,17 @@ public:
     }
 
 
+    ABM::occupation_type fermionicBoundedForwardOccupation(const std::vector<ABM::occupation_type> &trajectory) const {
+        ABM::occupation_type occupation = 0;
+        int beginIndex = Event<AGENT>(time, agent, 0).id;
+        int endIndex = beginIndex + AGENT::actDomainSize();
+        for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
+            occupation += trajectory[eventId]>0?1:0;
+        }
+        return occupation;
+    }
+
+
     LinearSum<ABM::occupation_type> operator *(ABM::occupation_type c) const {
         LinearSum<ABM::occupation_type> eventVector;
         int beginIndex = Event<AGENT>(time, agent, 0).id;

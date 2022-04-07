@@ -2,6 +2,8 @@
 // Created by daniel on 30/03/2022.
 //
 
+#include <cmath>
+#include <iostream>
 #include "MCMCStatistics.h"
 
 MCMCStatistics::MCMCStatistics() {
@@ -10,7 +12,9 @@ MCMCStatistics::MCMCStatistics() {
 
 void MCMCStatistics::addSample(bool proposalAccepted, bool isCurrentlyFeasible, bool proposalIsFeasible) {
     ++nProposals[isCurrentlyFeasible][proposalIsFeasible];
-    if(proposalAccepted) ++nAccepted[isCurrentlyFeasible][proposalIsFeasible];
+    if(proposalAccepted) {
+        ++nAccepted[isCurrentlyFeasible][proposalIsFeasible];
+    }
 }
 
 void MCMCStatistics::reset() {
@@ -20,6 +24,7 @@ void MCMCStatistics::reset() {
             nAccepted[start][end] = 0;
         }
     }
+//    sumOfLogImportances = 0.0;
 }
 
 int MCMCStatistics::nSamples() const {
@@ -42,10 +47,16 @@ int MCMCStatistics::nFeasibleSamples() const {
     return nProposals[true][true] + nAccepted[false][true] + nRejected(true,false);
 }
 
+//double MCMCStatistics::meanImportance() const {
+//    return exp(sumOfLogImportances / (nProposals[true][false] + nProposals[true][true]));
+//}
+
 std::ostream &operator <<(std::ostream &out, const MCMCStatistics &stats) {
     out << "Total samples                    " << stats.nSamples() << std::endl;
     out << "Total feasible samples           " << stats.nFeasibleSamples() << std::endl;
+//    out << "Exp-log-mean importance          " << stats.meanImportance() <<  std::endl;
     out << "proportion infeasible            " << stats.nInfeasibleSamples()*100.0/stats.nSamples() << "%" << std::endl;
+    out << "mean feasible run-length         " << stats.nFeasibleSamples()/(stats.nAccepted[false][true]+1.0) << std::endl;
     out << "mean infeasible run-length       " << stats.nInfeasibleSamples()*1.0/stats.nAccepted[true][false] << std::endl;
     out << "mean acceptance                  " << stats.totalAccepted()*100.0/stats.nSamples() << "%" << std::endl;
     out << "   feasible-feasible             " << stats.nAccepted[true][true]*100.0/stats.nProposals[true][true] << "%" << std::endl;

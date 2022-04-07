@@ -123,16 +123,25 @@ std::vector<PredPreyAgent<GRIDSIZE>> PredPreyAgent<GRIDSIZE>::consequences(PredP
 template<int GRIDSIZE>
 std::vector<double> PredPreyAgent<GRIDSIZE>::timestep(const ModelState<PredPreyAgent<GRIDSIZE>> &others) const {
 
+//    static int nPredCalls = 0;
+//    static int nPreyCalls = 0;
+//    static int nPredNeighbour = 0;
+//    static int nPreyNeighbour = 0;
+
     std::vector<double> actDistribution(actDomainSize(),0.0);
     if (type() == PREDATOR) {
+//        nPredCalls++;
         actDistribution[DIE] = pPredDie;
-        if (surroundingCountOf(PREY, others) >= 1.0) {
+        if (surroundingCountOf(PREY, others) >= 1) {
+//            nPredNeighbour++;
             actDistribution[GIVEBIRTH] = pPredBirthGivenPrey;
         }
     } else {
+//        nPreyCalls++;
         actDistribution[GIVEBIRTH] = pPreyBirth;
         actDistribution[DIE] = pPreyDie;
-        if (surroundingCountOf(PREDATOR, others) >= 1.0) {
+        if (surroundingCountOf(PREDATOR, others) >= 1) {
+//            nPreyNeighbour++;
             actDistribution[DIE] += pPreyEatenGivenPred;
         }
     }
@@ -142,23 +151,26 @@ std::vector<double> PredPreyAgent<GRIDSIZE>::timestep(const ModelState<PredPreyA
     actDistribution[MOVELEFT] = moveProb;
     actDistribution[MOVERIGHT] = moveProb;
 
+//    std::cout << "PPredNeighbour = " << nPredNeighbour*1.0/nPredCalls << " PPreyNeighbour = " << nPreyNeighbour*1.0/nPreyCalls << std::endl;
+//    std::cout << "Total agents = " << (others * 1.0).sum() << std::endl;
     return actDistribution;
 }
 
 
-// Should be factored approximation of multinomial given that constraints are satisfied
+// Should be factored approximation of multinomial given an agent in start position and
+// that the constraints are satisfied
 // (i.e. given that the prob of this act is not zero)
 template<int GRIDSIZE>
 double PredPreyAgent<GRIDSIZE>::marginalTimestep(Act act) const {
-    constexpr double pPreyNeighbourGivenPred = 0.2;
-    constexpr double pPredNeighbourGivenPrey = 0.1;
+    constexpr double pPreyNeighbourGivenPred = (1.0-pNoPrey4);
+    constexpr double pPredNeighbourGivenPrey = (1.0-pNoPred4);
     constexpr double pPreyMove = 0.25 * (1.0 - pPreyDie - pPreyEatenGivenPred*pPredNeighbourGivenPrey - pPreyBirth);
     constexpr double pPredMove = 0.25 * (1.0 - pPredDie - pPredBirthGivenPrey*pPreyNeighbourGivenPred);
 
     if(type() == PREDATOR) {
         switch (act) {
             case DIE:       return pPredDie;
-            case GIVEBIRTH: return pPredBirthGivenPrey*pPreyNeighbourGivenPred;
+            case GIVEBIRTH: return pPredBirthGivenPrey; // assume feasible
         }
         return pPredMove;
     }
@@ -190,7 +202,7 @@ std::vector<PredPreyAgent<GRIDSIZE>> PredPreyAgent<GRIDSIZE>::neighbours() {
         PredPreyAgent<GRIDSIZE>(xLeft(),yPosition(),affectedType),
         PredPreyAgent<GRIDSIZE>(xRight(),yPosition(),affectedType),
         PredPreyAgent<GRIDSIZE>(xPosition(),yUp(),affectedType),
-        PredPreyAgent<GRIDSIZE>(yPosition(),yDown(),affectedType)
+        PredPreyAgent<GRIDSIZE>(xPosition(),yDown(),affectedType)
     };
 }
 

@@ -62,17 +62,17 @@ public:
     }
 
     double P(const std::vector<T> &X) const {
-        return FactoredConvexDistribution<T>::P(X) * importance(X);
+        return exp(logP(X));
     }
 
     double logP(const std::vector<T> &X) const {
-        return FactoredConvexDistribution<T>::logP(X) + log(importance(X));
+        return FactoredConvexDistribution<T>::logP(X) + logImportance(X);
     }
 
-    double importance(const std::vector<T> &X) const {
+    double logImportance(const std::vector<T> &X) const {
         std::unique_ptr<PerturbableFunction<T,double>> importance = perturbableFunctionFactory();
         importance->setState(X);
-        return(importance->getValue(X));
+        return(importance->getLogValue(X));
     }
 
 };

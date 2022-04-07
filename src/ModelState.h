@@ -98,7 +98,7 @@ public:
         return *this;
     }
 
-    std::valarray<double> operator /(double denominator) {
+    std::valarray<double> operator /(double denominator) const {
         std::valarray<double> probs(size());
         for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
             probs[agentId] = (*this)[agentId] / denominator;
@@ -106,7 +106,7 @@ public:
         return probs;
     }
 
-    std::valarray<double> operator *(double multiplier) {
+    std::valarray<double> operator *(double multiplier) const {
         std::valarray<double> probs(size());
         for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
             probs[agentId] = (*this)[agentId] * multiplier;

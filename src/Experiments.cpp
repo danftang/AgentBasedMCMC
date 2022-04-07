@@ -26,10 +26,9 @@ void Experiments::BinomialAgentSingleObservation() {
     constexpr int nSamples = 100000;
     constexpr int nBurnin = 100;
     constexpr int nRejectionSamples = 50000;
-    constexpr double kappa = 2.0;
-    constexpr double alpha = 2.0;
+    constexpr double kappa = 1.0;
 
-    doSingleObservationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa, alpha,
+    doSingleObservationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
                                   BernoulliStartState<BinomialAgent<GRIDSIZE>>({1.0, 0.1, 0.0}),
                                   AgentStateObservation(State<BinomialAgent<GRIDSIZE>>(1, 0),1,0.9));
     std::cout << "Exact state = " << 0.5+0.1*0.25 << " " << 0.5 + 0.1*0.25 << " " << 0.1*0.5 << std::endl;
@@ -41,10 +40,9 @@ void Experiments::CatMouseSingleObservation() {
     constexpr int nBurnin = 100;
     constexpr int nSamples = 200000;
     constexpr int nRejectionSamples = 200000;
-    constexpr double kappa = 2.0;
-    constexpr double alpha = 2.0;
+    constexpr double kappa = 1.75;
 
-    doSingleObservationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa, alpha,
+    doSingleObservationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
             BernoulliStartState<CatMouseAgent>({0.9, 0.1, 0.1, 0.9}),
             AgentStateObservation(State(1,CatMouseAgent(CatMouseAgent::CAT, CatMouseAgent::LEFT)),1,1.0));
 }
@@ -58,10 +56,9 @@ void Experiments::PredPreySingleObservation() {
     constexpr int nSamples = 500000; //250000;
     constexpr int nBurnin = 1000;
     constexpr int nRejectionSamples = 400000;
-    constexpr double kappa = 3.0;
-    constexpr double alpha = 1.5;
+    constexpr double kappa = 3.25;
 
-    doSingleObservationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa, alpha,
+    doSingleObservationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
             BernoulliStartState<PredPreyAgent<GRIDSIZE>>([](PredPreyAgent<GRIDSIZE> agent) {
                 return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
             }),
@@ -83,10 +80,9 @@ void Experiments::CatMouseAssimilation() {
     constexpr double pObserveIfPresent = 1.0;
     constexpr int nSamples = 200000;
     constexpr int nBurnin = 100;
-    constexpr double kappa = 2.0;
-    constexpr double alpha = 2.0;
+    constexpr double kappa = 1.25;
 
-    Prior<CatMouseAgent> prior(nTimesteps, BernoulliStartState<CatMouseAgent>({0.5, 0.5, 0.3, 0.3}), alpha);
+    Prior<CatMouseAgent> prior(nTimesteps, BernoulliStartState<CatMouseAgent>({0.5, 0.5, 0.3, 0.3}));
     std::cout << "Prior support is\n" << prior << std::endl;
 
     Trajectory<CatMouseAgent> realTrajectory = prior.nextSample();
@@ -124,10 +120,9 @@ void Experiments::CatMouseAssimilation() {
 template<class AGENT>
 void Experiments::doSingleObservationExperiment(int nTimesteps, int nBurnin, int nSamples, int nRejectionSamples,
                                                 double kappa,
-                                                double alpha,
                                                 const StartStateDistribution<AGENT> &startState,
                                                 const AgentStateObservation<AGENT> &observation) {
-    Prior<AGENT> prior(nTimesteps, startState, alpha);
+    Prior<AGENT> prior(nTimesteps, startState);
     std::cout << "Prior support is\n" << prior << std::endl;
 
     Likelihood<AGENT> likelihood(observation);
@@ -156,6 +151,9 @@ void Experiments::doSingleObservationExperiment(int nTimesteps, int nBurnin, int
     ModelState<AGENT> rejectionAggregateState;
     rejectionSampler >>= Take(nRejectionSamples) >>= TrajectoryToModelState<AGENT>(nTimesteps, nTimesteps) >>= Sum(rejectionAggregateState);
     std::cout << "Rejection state = " << rejectionAggregateState / nRejectionSamples << std::endl;
+    std::valarray<double> err = (aggregateState / nSamples) - (rejectionAggregateState / nRejectionSamples);
+    double rms = sqrt((err*err).sum()/err.size());
+    std::cout << "      RMS Error = " << rms << std::endl;
 }
 
 

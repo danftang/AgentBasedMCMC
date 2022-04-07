@@ -12,6 +12,7 @@ class MCMCStatistics {
 public:
     int nAccepted[2][2];    // number of proposals accepted by start feasibility and end feasibility
     int nProposals[2][2];   // total number of proposals by start feasibility and end feasibility
+//    double sumOfLogImportances;
 
     MCMCStatistics();
     void addSample(bool proposalAccepted, bool isCurrentlyFeasible, bool proposalIsFeasible);
@@ -22,6 +23,7 @@ public:
     int nRejected(bool startIsFeasible, bool proposalIsFeasible) const;
     int nInfeasibleSamples() const;
     int nFeasibleSamples() const;
+    double meanImportance() const;
 
 private:
     friend class boost::serialization::access;
@@ -30,6 +32,7 @@ private:
     void serialize(Archive &ar, const unsigned int version) {
         ar & nAccepted & nProposals;
     }
+
 };
 
 std::ostream &operator <<(std::ostream &out, const MCMCStatistics &stats);

@@ -11,10 +11,40 @@ int main(int argc, char *argv[]) {
 //    Experiments::CatMouseSingleObservation();
 //    Experiments::BinomialAgentSingleObservation();
 
-//    FiguresForPaper::generateStandardProblemFile<8>(4, 5.75, 2.0);
-//    FiguresForPaper::singleThreadStats<8>(4);
-//    FiguresForPaper::generateStats<8>(4);
-    FiguresForPaper::generateStatsAndPlot<8>(4);
+//    FiguresForPaper::generateStandardProblemFile<8>(4, 6.0);
+//    FiguresForPaper::singleThreadStats<8>(4,100000);
+//    FiguresForPaper::generateStatsAndPlot<8>(4, 200000);
+
+//    FiguresForPaper::generateStandardProblemFile<8>(8, 6.5);
+//    FiguresForPaper::singleThreadStats<8>(8,100000);
+//    FiguresForPaper::generateStatsAndPlot<8>(8, 500000);
+
+
+//    FiguresForPaper::generateStandardProblemFile<16>(4, 8.0);
+//    FiguresForPaper::singleThreadStats<16>(4);
+//    FiguresForPaper::generateStatsAndPlot<16>(4,1500000);
+//    FiguresForPaper::plotStats<16>(4);
+
+//    FiguresForPaper::generateStandardProblemFile<16>(8, 8.5);
+//    FiguresForPaper::singleThreadStats<16>(8,100000);
+//    FiguresForPaper::generateStatsAndPlot<16>(8, 2000000);
+
+//    FiguresForPaper::generateStandardProblemFile<16>(16, 9.0);
+//    FiguresForPaper::singleThreadStats<16>(16,100000);
+//    FiguresForPaper::generateStatsAndPlot<16>(16, 3000000);
+
+
+//    FiguresForPaper::generateStandardProblemFile<32>(4, 9.5);
+//    FiguresForPaper::singleThreadStats<32>(4,100000);
+//    FiguresForPaper::generateStatsAndPlot<32>(4,3000000);
+
+//    FiguresForPaper::generateStandardProblemFile<32>(8, 10.0);
+//    FiguresForPaper::singleThreadStats<32>(8,100000);
+//    FiguresForPaper::generateStatsAndPlot<32>(8,5000000);
+
+    FiguresForPaper::generateStandardProblemFile<32>(16, 10.0);
+//    FiguresForPaper::singleThreadStats<32>(16,100000);
+    FiguresForPaper::generateStatsAndPlot<32>(16, 6000000);
 
 
 //    FiguresForPaper::generateAllProblemFiles();

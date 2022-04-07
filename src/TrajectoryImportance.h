@@ -18,16 +18,16 @@ template<class AGENT>
 class TrajectoryImportance: public PerturbableFunction<ABM::occupation_type,double> {
 public:
 
-    double                       alpha;// = 1.5;// 2.0;  // amplitude of P_i
+//    double                       alpha;// = 1.5;// 2.0;  // amplitude of P_i
     StateTrajectory<AGENT>       stateTrajectory;
-    std::vector<double>          stateLogProbs;     // factors in the log probability by stateId
+    std::vector<double>          stateLogProbs;     // factors in the log probability by stateId()
     double                       totalLogProb;
     int                          eventTrajecotrySize;
 
-    IndexSet                     staleStates;     // elements of stateTrajectory that need updating, by stateId
-    IndexSet                     staleFactors;     // elements of stateLogProbs that need updating, by stateId
+    IndexSet                     staleStates;     // elements of stateTrajectory that need updating or undoing, by stateId
+    IndexSet                     staleFactors;     // elements of stateLogProbs that need updating or undoing, by stateId
 
-    bool                         perturbationsHeldForUndo; //
+    bool                         perturbationsHeldForUndo; // if true, stateTrajectory and stateLogProbs are up-to-date and staleStates and staleFactors are changes for undo.
     std::vector<ABM::occupation_type>   stateOccupationsForUndo;
     std::vector<double>                 factorValuesForUndo;
     double                       totalLogProbForUndo;
@@ -42,8 +42,8 @@ public:
 //        initLogProbs();
 //    }
 
-    TrajectoryImportance(int nTimesteps, double alpha):
-            alpha(alpha),
+    TrajectoryImportance(int nTimesteps):
+//            alpha(alpha),
             stateTrajectory(nTimesteps),
             stateLogProbs(nTimesteps*AGENT::domainSize(),0.0),
             staleStates(stateLogProbs.size()),
@@ -60,6 +60,7 @@ public:
         for(int i: perturbedIndices) {
             if(i < eventTrajecotrySize) {
                 Event<AGENT> changedEvent(i);
+//                std::cout << "Perturbing event " << changedEvent << std::endl;
                 int state = stateId(changedEvent.time(), changedEvent.agent());
                 staleStates.insert(state);
                 staleFactors.insert(state);
@@ -81,6 +82,7 @@ public:
         for(int i : perturbedIndices) {
             if(i < eventTrajecotrySize) {
                 Event<AGENT> changedEvent(i);
+//                std::cout << "Perturbing event " << changedEvent << std::endl;
                 int time = changedEvent.time();
                 AGENT agent = changedEvent.agent();
                 int state = stateId(time, agent);
@@ -116,12 +118,13 @@ public:
     }
 
     // log of P(X)/P_i(X)
-    double getValue(const std::vector<ABM::occupation_type> &eventTrajectory) {
+    double getLogValue(const std::vector<ABM::occupation_type> &eventTrajectory) {
 //        std::cout << "getting value" << std::endl;
         refresh(eventTrajectory);
 //        std::cout << "Importance is " << exp(totalLogProb) << std::endl;
 //        assert(totalLogProb == 0.0);
-        return exp(totalLogProb);
+//        sanityCheck(eventTrajectory);
+        return totalLogProb;
     }
 
 
@@ -140,26 +143,29 @@ public:
         for(int stateId: staleStates) {
             int time = stateId / AGENT::domainSize();
             int agent = stateId % AGENT::domainSize();
-            stateTrajectory[time][agent] = State<AGENT>(time,agent).forwardOccupation(eventTrajectory);
+//            std::cout << "Refreshing state occupation " << State<AGENT>(time,agent) << std::endl;
+            stateTrajectory[time][agent] = State<AGENT>(time,agent).fermionicBoundedForwardOccupation(eventTrajectory);
         }
         // now re-calculate factors
         for(int stateId: staleFactors) {
             int time = stateId / AGENT::domainSize();
             AGENT agent = stateId % AGENT::domainSize();
+//            std::cout << "Refreshing factor " << State<AGENT>(time,agent) << std::endl;
             int stateOccupation = stateTrajectory[time][agent];
 //            std::cout << "state occupation = " << stateOccupation << " time = " << time << " agent = " << agent << std::endl;
-            double newLogP = 0.0;
+            double newLogP = (stateOccupation > 1)?lgamma(stateOccupation + 1.0):0.0; // log of Phi factorial
             if(stateOccupation > 0) {
                 std::vector<double> actPMF = agent.timestep(stateTrajectory[time]);
-                if(stateOccupation > 1) newLogP = lgamma(stateOccupation + 1.0); // log of Phi factorial
                 for (int act = 0; act < AGENT::actDomainSize(); ++act) {
                     int actOccupation = eventTrajectory[Event<AGENT>(time, agent, act).id];
-                    if(actOccupation > 0 && actPMF[act] > 0.0)
-                        newLogP += actOccupation * log(actPMF[act] / agent.marginalTimestep(act));
+                    if(actOccupation > 0 && actPMF[act] > 0.0) {
+//                        std::cout << "agent =" << agent << " act =" << act << " P=" << actPMF[act] << " P_i=" << agent.marginalTimestep(act) << " P/P_i = " << actPMF[act] / agent.marginalTimestep(act) << std::endl;
+//                        newLogP += actOccupation * log(actPMF[act] / agent.marginalTimestep(act));
+                        newLogP += log(actPMF[act] / agent.marginalTimestep(act)); // Fermionic bounding
+                    }
                 }
             }
 //            std::cout << "newLogP = " << newLogP << " oldLogP = " << stateLogProbs[stateId] << std::endl;
-            assert(newLogP != NAN);
             totalLogProb += newLogP - stateLogProbs[stateId];
             stateLogProbs[stateId] = newLogP;
         }
@@ -173,25 +179,26 @@ public:
 
     // sets up log probs and state trajectory (non-incremental)
     void setState(const std::vector<ABM::occupation_type> &eventTrajectory) {
-        totalLogProb = -log(alpha);
+        totalLogProb = 0.0;//-log(alpha);
         for (int t = 0; t < nTimesteps(); ++t) {
             for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
-                stateTrajectory[t][agentId] = State<AGENT>(t,agentId).forwardOccupation(eventTrajectory);
+                stateTrajectory[t][agentId] = State<AGENT>(t,agentId).fermionicBoundedForwardOccupation(eventTrajectory);
             }
             for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
                 ABM::occupation_type stateOccupation = stateTrajectory[t][agentId];
-                double &factorLogProb = stateLogProbs[stateId(t,agentId)];
-                factorLogProb = 0.0;
                 if(stateOccupation > 0) {
+                    double &factorLogProb = stateLogProbs[stateId(t,agentId)];
+                    factorLogProb = (stateOccupation > 1)?lgamma(stateOccupation + 1.0):0.0;
                     AGENT agent(agentId);
                     std::vector<double> actPMF = agent.timestep(stateTrajectory[t]);
                     for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
                         double actOccupation = eventTrajectory[Event<AGENT>(t, agentId, actId).id];
-                        if (actOccupation > 0 && actPMF[actId] > 0.0) factorLogProb += actOccupation * log(actPMF[actId] / agent.marginalTimestep(actId));
+                        if (actOccupation > 0 && actPMF[actId] > 0.0) {
+                            factorLogProb += log(actPMF[actId] / agent.marginalTimestep(actId)); // Fermionic bounding
+                        }
                     }
+                    totalLogProb += factorLogProb;
                 }
-                if(stateOccupation > 1) factorLogProb += lgamma(stateOccupation + 1.0);
-                totalLogProb += factorLogProb;
             }
         }
         stateOccupationsForUndo.clear();
@@ -232,6 +239,36 @@ protected:
     }
 
     int stateId(int time, int agent) { return time * AGENT::domainSize() + agent; }
+
+    void sanityCheck(const std::vector<ABM::occupation_type> &eventTrajectory) {
+        double logP = 0.0;//-log(alpha);
+        int tEnd = nTimesteps();
+        for (int t = 0; t < tEnd; ++t) {
+            for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId)
+                assert(stateTrajectory[t][agentId] == State<AGENT>(t,agentId).fermionicBoundedForwardOccupation(eventTrajectory));
+            for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+                ABM::occupation_type stateOccupation = stateTrajectory[t][agentId];
+                if(stateOccupation > 0) {
+                    AGENT agent(agentId);
+                    std::vector<double> actPMF = agent.timestep(stateTrajectory[t]);
+                    double agentStateLogP = (stateOccupation > 1)?lgamma(stateOccupation + 1.0):0.0;
+                    for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+                        double actOccupation = eventTrajectory[Event<AGENT>(t, agentId, actId).id];
+                        if (actOccupation > 0 && actPMF[actId] > 0.0)
+                            agentStateLogP += log(actPMF[actId] / agent.marginalTimestep(actId)); // Fermionic bounding
+                    }
+                    assert(fabs(agentStateLogP - stateLogProbs[stateId(t,agentId)]) < 1e-5);
+                    logP += agentStateLogP;
+                }
+            }
+        }
+
+        if(fabs(logP - totalLogProb) > 1e-5) {
+            std::cout << "Failed totalLogProb sanity check. True logP = " << logP << " cached LogP = " << totalLogProb <<std::endl;
+        }
+//        std::cout << "Sanity check logP=" << logP << " cahchedLogProb=" << totalLogProb << std::endl;
+        assert(fabs(logP-totalLogProb) < 1e-5);
+    }
 };
 
 

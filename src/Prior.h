@@ -19,8 +19,8 @@ public:
 
     Prior(): nTimesteps(0) { }
 
-    Prior(int NTimesteps, StartStateDistribution<AGENT> StartState, double alpha):
-        WeightedFactoredConvexDistribution<ABM::occupation_type>(Forecast<AGENT>(NTimesteps, alpha) * StartState),
+    Prior(int NTimesteps, StartStateDistribution<AGENT> StartState):
+        WeightedFactoredConvexDistribution<ABM::occupation_type>(Forecast<AGENT>(NTimesteps) * StartState),
         nTimesteps(NTimesteps),
         startState(std::move(StartState))
     { }

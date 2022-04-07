@@ -35,9 +35,9 @@ class Forecast: public WeightedFactoredConvexDistribution<ABM::occupation_type> 
 public:
     int nTimesteps;
 
-    explicit Forecast(int NTimesteps, double alpha): nTimesteps(NTimesteps),
-                                       WeightedFactoredConvexDistribution<ABM::occupation_type>( [NTimesteps, alpha]() {
-        return std::unique_ptr<PerturbableFunction<ABM::occupation_type,double>>(new TrajectoryImportance<AGENT>(NTimesteps, alpha));
+    explicit Forecast(int NTimesteps): nTimesteps(NTimesteps),
+                                       WeightedFactoredConvexDistribution<ABM::occupation_type>( [NTimesteps]() {
+        return std::unique_ptr<PerturbableFunction<ABM::occupation_type,double>>(new TrajectoryImportance<AGENT>(NTimesteps));
     }) {
         addActFermionicFactors();
         addContinuityConstraints();

@@ -15,7 +15,7 @@ public:
     virtual void perturb(const std::vector<D> &stateBeforePerturbation,const std::vector<int> &perturbedIndices)=0;
     virtual void perturbWithUndo(const std::vector<D> &stateBeforePerturbation, const std::vector<int> &perturbedIndices)=0;
     virtual void undoLastPerturbation()=0; // returns an error if last perturbation was not undoable
-    virtual RANGE getValue(const std::vector<D> &currentState)=0;
+    virtual RANGE getLogValue(const std::vector<D> &currentState)=0;
     virtual void setState(const std::vector<D> &currentState)=0; // without assuming any elements are unchanged
 };
 

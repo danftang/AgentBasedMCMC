@@ -17,8 +17,8 @@ class FiguresForPaper {
 public:
 
     template<int GRIDSIZE>
-    static void generateStatsAndPlot(int nTimesteps) {
-        generateStats<GRIDSIZE>(nTimesteps);
+    static void generateStatsAndPlot(int nTimesteps, int nSamples) {
+        generateStats<GRIDSIZE>(nTimesteps, nSamples);
         plotStats<GRIDSIZE>(nTimesteps);
     }
 
@@ -31,27 +31,28 @@ public:
 //    }
 
     template<int GRIDSIZE>
-    static void generateStandardProblemFile(int nTimesteps, double kappa, double alpha)  {
-        constexpr double pPredator = 0.05; // (0.08 + 10.24/(GRIDSIZE*GRIDSIZE))/3.0;
-        constexpr double pPrey = 0.05; // 2.0*pPredator;
-        constexpr double pMakeObservation = 0.04;
-        constexpr double pObserveIfPresent = 0.9;
+    static void generateStandardProblemFile(int nTimesteps, double kappa)  {
+        constexpr double pPredator = 1.0-PredPreyAgent<GRIDSIZE>::pNoPred;
+        constexpr double pPrey = 1.0-PredPreyAgent<GRIDSIZE>::pNoPrey;
+        constexpr double pMakeObservation = 0.05;
+        constexpr double pObserveIfPresent = 1.0;//0.9;
         std::string probFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".prob";
         std::ofstream probFile(probFilename);
         boost::archive::binary_oarchive probArchive(probFile);
 
         Random::gen.seed(1234);
-        PredPreyProblem<GRIDSIZE> problem(nTimesteps, pPredator, pPrey, pMakeObservation, pObserveIfPresent, kappa, alpha);
+        PredPreyProblem<GRIDSIZE> problem(nTimesteps, pPredator, pPrey, pMakeObservation, pObserveIfPresent, kappa);
         std::cout << problem << std::endl;
         probArchive << problem;
     }
 
 
     template<int GRIDSIZE>
-    static void generateStats(int nTimesteps) {
+    static void generateStats(int nTimesteps, int nSamples) {
+        constexpr int nThreads = 4;
+
         std::string problemFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".prob";
         std::string statFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".stat";
-        constexpr int nThreads = 4;
 
         std::ifstream probFile(problemFilename);
         if(!probFile.good()) throw("Can't open problem probFile for this geometry. Run generateStandardProblemFile first.");
@@ -69,11 +70,11 @@ public:
 
         std::future<std::vector<ChainStats>> futureResults[nThreads];
         for(int thread = 0; thread < nThreads; ++thread) {
-            futureResults[thread] = std::async(&startStatsThread<GRIDSIZE>, problem, basisTableau, problem.prior.nextSample());
+            futureResults[thread] = std::async(&startStatsThread<GRIDSIZE>, problem, basisTableau, problem.prior.nextSample(), nSamples);
         }
 
 
-        MultiChainStats multiChainStats(problem.kappa, problem.alpha, problemFilename);
+        MultiChainStats multiChainStats(problem.kappa, problemFilename);
         multiChainStats.reserve(2*nThreads);
         for(int thread=0; thread<nThreads; ++thread) {
             futureResults[thread].wait();
@@ -93,15 +94,14 @@ public:
     }
 
     template<int GRIDSIZE>
-    static std::vector<ChainStats> startStatsThread(const PredPreyProblem<GRIDSIZE> &problem, const TableauNormMinimiser<ABM::occupation_type> &tableau, std::vector<ABM::occupation_type> initialState) {
+    static std::vector<ChainStats> startStatsThread(const PredPreyProblem<GRIDSIZE> &problem, const TableauNormMinimiser<ABM::occupation_type> &tableau, std::vector<ABM::occupation_type> initialState, int nSamples) {
         using namespace dataflow;
-        constexpr int nSamples = 100000; // must be an even number
-        assert((nSamples&1) == 0);
+
         const double maxLagProportion = 0.5;
         const int nLags = 100;
-        constexpr int nBurnIn = 1000;//nSamples*0.25;
-//        Trajectory<PredPreyAgent<GRIDSIZE>> initialState = problem.prior.nextSample();
+        const int nBurnIn = nSamples*0.1;
         int nTimesteps = problem.nTimesteps();
+
         SparseBasisSampler sampler(tableau, problem.posterior.factors, problem.posterior.perturbableFunctionFactory(), initialState, problem.kappa);
 
         std::valarray<std::valarray<double>> firstSynopsisSamples(nSamples/2);
@@ -124,8 +124,8 @@ public:
 
         std::cout << "Stats =\n" << sampler.stats << std::endl;
 
-        std::valarray<double> meanEndState1 = firstMeanEndState / (nSamples/2.0);
-        std::valarray<double> meanEndState2 = lastMeanEndState / (nSamples/2.0);
+        std::valarray<double> meanEndState1 = firstMeanEndState / (nSamples/2);
+        std::valarray<double> meanEndState2 = lastMeanEndState / (nSamples/2);
 
         std::vector<ChainStats> stats;
         stats.reserve(2);
@@ -134,14 +134,12 @@ public:
                 nLags,
                 maxLagProportion,
                 std::move(meanEndState1),
-//                std::move(firstNextSample[0]),
                 sampler.stats);
         stats.emplace_back(
                 std::move(lastSynopsisSamples),
                 nLags,
                 maxLagProportion,
                 std::move(meanEndState2),
-//                std::move(lastNextSample[0]),
                 sampler.stats);
         //    std::cout << stats << std::endl;
         return std::move(stats);
@@ -149,10 +147,10 @@ public:
 
 
     template<int GRIDSIZE>
-    static void singleThreadStats(int nTimesteps) {
+    static void singleThreadStats(int nTimesteps, int nSamples) {
+
         std::string problemFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".prob";
         std::string statFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".stat";
-        constexpr int nThreads = 4;
 
         std::ifstream probFile(problemFilename);
         if(!probFile.good()) throw("Can't open problem probFile for this geometry. Run generateStandardProblemFile first.");
@@ -168,12 +166,15 @@ public:
 
         auto startTime = std::chrono::steady_clock::now();
 
-        std::vector<ChainStats> stats = startStatsThread<GRIDSIZE>(problem, basisTableau, problem.prior.nextSample());
+        std::vector<ChainStats> stats = startStatsThread<GRIDSIZE>(problem, basisTableau, problem.prior.nextSample(), nSamples);
 
+        auto endTime = std::chrono::steady_clock::now();
+        auto execTimeMilliSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+
+        std::cout << "Executed in " << execTimeMilliSeconds << "ms" << std::endl;
 //        MultiChainStats multiChainStats(problem.kappa, problem.alpha, problemFilename);
 //        multiChainStats.reserve(2);
 //        multiChainStats += stats;
-//        auto endTime = std::chrono::steady_clock::now();
 //
 //        multiChainStats.execTimeMilliSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
 //
@@ -193,7 +194,7 @@ public:
         std::ifstream statFile(statFilename);
         if(!statFile.good()) throw("Can't open stats probFile. Maybe you haven't run the analysis for this geometry yet.");
         boost::archive::binary_iarchive statArchive(statFile);
-        MultiChainStats stats(0.0,0.0,"");
+        MultiChainStats stats(0.0,"");
         statArchive >> stats;
 
         std::string probFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".prob";
@@ -241,9 +242,11 @@ public:
 
         Plotter endStatePlotter;
         endStatePlotter.plot(problem.realTrajectory.endState(), stats.meanEndState(),"End state " + std::to_string(GRIDSIZE) + " x " + std::to_string(nTimesteps));
-        std::cout << "Press Enter to exit" << std::endl;
-        std::cin.get();
-//        while(acPlotter.is_open() || endStatePlotter.is_open());
+
+//        std::cout << "Press Enter to exit" << std::endl;
+//        std::cin.get();
+
+        //        while(acPlotter.is_open() || endStatePlotter.is_open());
     }
 
 //    template<int GRIDSIZE>

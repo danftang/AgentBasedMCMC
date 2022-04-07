@@ -15,14 +15,12 @@ class MultiChainStats: public std::vector<ChainStats> {
 public:
     std::string cpuinfo;
     double kappa;
-    double alpha;
     std::string problemDescription;
     long execTimeMilliSeconds;
 
 
-    MultiChainStats(double Kappa, double Alpha, std::string description=""):
+    MultiChainStats(double Kappa, std::string description=""):
         kappa(Kappa),
-        alpha(Alpha),
         problemDescription(std::move(description)) {
 
     }
@@ -211,7 +209,7 @@ public:
     friend std::ostream &operator <<(std::ostream &out, const MultiChainStats &multiChainStats) {
         out << "MultiChainStats for " << multiChainStats.problemDescription << " " <<  multiChainStats.nChains() << " chains with " << multiChainStats.nSamples() << " samples" << std::endl;
         out << multiChainStats.cpuinfo << std::endl;
-        out << " kappa = " << multiChainStats.kappa << std::endl;
+        out << "kappa = " << multiChainStats.kappa << std::endl;
         out << "Exec time = " << multiChainStats.execTimeMilliSeconds/1000.0 << "s" << std::endl;
         out << "W = " << multiChainStats.W() << std::endl;
         out << "B = " << multiChainStats.B() << std::endl;

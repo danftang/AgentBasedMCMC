@@ -19,9 +19,9 @@ public:
     using std::vector<ModelState<AGENT>>::operator [];
 
 
-    StateTrajectory(const std::vector<ABM::occupation_type> &eventTrajectory):
-    std::vector<ModelState<AGENT>>((eventTrajectory.size() - 1) / (AGENT::domainSize() * AGENT::actDomainSize())) {
-        for(int eventId=1; eventId < eventTrajectory.size(); ++eventId) {
+    StateTrajectory(const std::vector<ABM::occupation_type> &eventTrajectory, int nTimesteps):
+    std::vector<ModelState<AGENT>>(nTimesteps) {
+        for(int eventId=0; eventId < nTimesteps*AGENT::domainSize()*AGENT::actDomainSize(); ++eventId) {
             ABM::occupation_type occupation = eventTrajectory[eventId];
             if(occupation != 0) {
                 auto event = Event<AGENT>(eventId);

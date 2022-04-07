@@ -25,6 +25,7 @@
 #include "TableauNormMinimiser.h"
 #include "MutableCategoricalArray.h"
 #include "MCMCStatistics.h"
+#include "Random.h"
 
 // TODO: need to generalise marginalGradE to general function, get rid of X (now in importance function),
 //  integrate importance function and finish construction from WeightedFactoredConvexDistribution.
@@ -50,7 +51,7 @@ public:
     std::vector<double>         currentDE;      // change in (-ve) energy by flipping the value of the j'th column
     std::vector<double>         currentE;       // current (-ve) energy of i'th row
     T                           currentInfeasibility;
-    double                      currentImportance; // real prob over estimated prob of current state (=1 if infeasible)
+    double                      currentLogImportance; // real prob over estimated prob of current state (=1 if infeasible)
 
     std::unique_ptr<PerturbableFunction<T,double>>    importanceFunc;
 
@@ -75,7 +76,9 @@ public:
 
     SparseBasisSampler(const WeightedFactoredConvexDistribution<T> &distribution, double Kappa);
 
-    const std::vector<T> &operator()();
+    const std::vector<T> &operator()();     // take the next sample
+
+    void findInitialFeasibleSolution();     // make the current solution feasible
 
     int nRows() const { return rows.size(); }
     int nCols() const { return cols.size(); }
@@ -96,6 +99,9 @@ protected:
 
     void applyProposal(const Proposal &proposal, bool updateX);
 
+    const std::vector<T> &nextSampleWithInfeasibleImportance();
+
+    const std::vector<T> &nextSample();
 };
 
 
@@ -181,13 +187,11 @@ SparseBasisSampler<T>::SparseBasisSampler(
 //        std::cout << "Initial DE[" << basisj << "] = " << currentDE[basisj] << std::endl;
     }
 
+    findInitialFeasibleSolution();
+
     // initialise importanceFunc and currentImportance
     importanceFunc->setState(X);
-    if(currentInfeasibility == 0) {
-        currentImportance = importanceFunc->getValue(X);
-    } else {
-        currentImportance = 1.0;
-    }
+    currentLogImportance = importanceFunc->getLogValue(X);
 }
 
 
@@ -264,10 +268,15 @@ SparseBasisSampler<T>::SparseBasisSampler(const WeightedFactoredConvexDistributi
 //    return proposal;
 //}
 
-
 // Take a sample
 template<class T>
 const std::vector<T> &SparseBasisSampler<T>::operator()() {
+    return nextSampleWithInfeasibleImportance();
+}
+
+// Take a sample
+template<class T>
+const std::vector<T> &SparseBasisSampler<T>::nextSample() {
 
     do {
 //        std::cout << "Drawing proposal from distribution " << basisDistribution << "  " << currentDE << std::endl;
@@ -284,17 +293,16 @@ const std::vector<T> &SparseBasisSampler<T>::operator()() {
                 std::swap(X[proposal.changedXIndices[nzi]], proposal.changedXValues[nzi]);
             }
 
-            double proposedImportance = importanceFunc->getValue(X);
+            double proposedLogImportance = importanceFunc->getLogValue(X);
 //            std::cout << "Proposed importance = " << proposedImportance << std::endl;
             double ratioOfSums = proposal.calcRatioOfSums(basisDistribution);
-            double acceptance = ratioOfSums * proposedImportance / currentImportance;
-
+            double acceptance = exp(proposedLogImportance - currentLogImportance)*ratioOfSums;
 //            std::cout << "Ratio of sums = " << ratioOfSums << " acceptance = " << acceptance << std::endl;
 
             if (Random::nextDouble() < acceptance) {     // --- accept ---
 //                std::cout << "Accepting feasible" << std::endl;
-                currentImportance = proposedImportance;
                 stats.addSample(true, currentInfeasibility == 0, true);
+                currentLogImportance = proposedLogImportance;
                 applyProposal(proposal, false);
             } else {                                    // --- reject ---
 //                std::cout << "rejecting feasible" << std::endl;
@@ -307,13 +315,13 @@ const std::vector<T> &SparseBasisSampler<T>::operator()() {
                 stats.addSample(false, currentInfeasibility == 0, true);
             }
         } else {                                // --- transition to infeasible state
-            double ratioOfSums = proposal.calcRatioOfSums(basisDistribution);
-            double acceptance = ratioOfSums / currentImportance;
+            double logRatioOfSums = proposal.calcLogRatioOfSums(basisDistribution);
+            double logAcceptance = logRatioOfSums - currentLogImportance;
 //            std::cout << "Ratio of sums = " << ratioOfSums << " acceptance = " << acceptance << std::endl;
-            if (Random::nextDouble() < acceptance) {     // --- accept ---
+            if (Random::nextDouble() < exp(logAcceptance)) {     // --- accept ---
 //                std::cout << "Accepting infeasible proposal inf=" << proposal.infeasibility << std::endl;
-                currentImportance = 1.0;
                 stats.addSample(true, currentInfeasibility == 0, false);
+                currentLogImportance = 0.0;
                 applyProposal(proposal, true);
                 importanceFunc->perturb(X, proposal.changedXIndices);
             } else {                                    // --- reject ---
@@ -324,6 +332,63 @@ const std::vector<T> &SparseBasisSampler<T>::operator()() {
     } while(currentInfeasibility > 0);
     return X;
 }
+
+
+// Calculate importance for infeasible states as well as feasible
+template<class T>
+const std::vector<T> &SparseBasisSampler<T>::nextSampleWithInfeasibleImportance() {
+
+    do {
+//        std::cout << "Drawing proposal from distribution " << basisDistribution << "  " << currentDE << std::endl;
+        Proposal proposal(*this);
+
+//        std::cout << "Got proposal col=" << proposal.proposedj << " inf=" << proposal.infeasibility << " DE=" << currentDE[proposal.proposedj] << std::endl;
+
+        importanceFunc->perturbWithUndo(X, proposal.changedXIndices);
+        for (int nzi = 0; nzi < proposal.changedXIndices.size(); ++nzi) {
+            // update X and transform changedX into undo
+            std::swap(X[proposal.changedXIndices[nzi]], proposal.changedXValues[nzi]);
+        }
+
+        double proposedLogImportance = importanceFunc->getLogValue(X);
+//            std::cout << "Proposed importance = " << proposedImportance << std::endl;
+        double ratioOfSums = proposal.calcRatioOfSums(basisDistribution);
+        double acceptance = exp(proposedLogImportance - currentLogImportance)*ratioOfSums;
+
+//            std::cout << "Ratio of sums = " << ratioOfSums << " acceptance = " << acceptance << std::endl;
+
+        if (Random::nextDouble() < acceptance) {     // --- accept ---
+//                std::cout << "Accepting feasible" << std::endl;
+            stats.addSample(true, currentInfeasibility == 0, proposal.infeasibility == 0);
+            currentLogImportance = proposedLogImportance;
+            applyProposal(proposal, false);
+        } else {                                    // --- reject ---
+//                std::cout << "rejecting feasible" << std::endl;
+            // undo changes to X
+            for (int nzi = 0; nzi < proposal.changedXIndices.size(); ++nzi) {
+                X[proposal.changedXIndices[nzi]] = proposal.changedXValues[nzi];
+            }
+            // undo changes to importanceFunc
+            importanceFunc->undoLastPerturbation();
+            stats.addSample(false, currentInfeasibility == 0, proposal.infeasibility == 0);
+        }
+    } while (currentInfeasibility > 0);
+    return X;
+}
+
+
+// Makes the current solution feasible by choosing pivots from the raw column probability
+template<class T>
+void SparseBasisSampler<T>::findInitialFeasibleSolution() {
+    int iterations = 0;
+    while(currentInfeasibility > 0) {
+        Proposal proposal(*this);
+        applyProposal(proposal, true);
+        ++iterations;
+    }
+    std::cout << "Found feasible solution in " << iterations << " iterations" << std::endl;
+}
+
 
 template<class T>
 T SparseBasisSampler<T>::infeasibility(int i, T Xi) {
@@ -342,6 +407,7 @@ double SparseBasisSampler<T>::Proposal::calcRatioOfSums(const MutableCategorical
         double oldPj = basisDistribution[changedj];
         changeInSum += SparseBasisSampler<T>::DEtoBasisProb(newDeltaEj) - oldPj;
     }
+//    std::cout << "basis sum of probs = " << basisDistribution.sum() << std::endl;
     double ratio = basisDistribution.sum()/(basisDistribution.sum() + changeInSum);
 //    std::cout << ratio << std::endl;
     return ratio;

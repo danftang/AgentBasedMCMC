@@ -38,7 +38,6 @@ public:
             int nSamples,
             int nRejectionSamples,
             double kappa,
-            double alpha,
             const StartStateDistribution<AGENT> &startState,
             const AgentStateObservation<AGENT> &observation);
 

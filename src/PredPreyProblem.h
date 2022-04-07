@@ -22,7 +22,7 @@ public:
     double                              pPredator;
     double                              pPrey;
     double                              kappa;
-    double                              alpha;
+//    double                              alpha;
     Prior<PredPreyAgent<GRIDSIZE>>      prior;
     Trajectory<PredPreyAgent<GRIDSIZE>> realTrajectory;
     Likelihood<PredPreyAgent<GRIDSIZE>> likelihood;
@@ -30,12 +30,12 @@ public:
 
     PredPreyProblem(): realTrajectory(0) {}
 
-    PredPreyProblem(int nTimesteps, double pPredator, double pPrey, double pMakeObservation, double pObserveIfPresent, double kappa, double alpha):
+    PredPreyProblem(int nTimesteps, double pPredator, double pPrey, double pMakeObservation, double pObserveIfPresent, double kappa):
     pPredator(pPredator),
     pPrey(pPrey),
     kappa(kappa),
-    alpha(alpha),
-    prior(nTimesteps, startStatePrior(), alpha),
+//    alpha(alpha),
+    prior(nTimesteps, startStatePrior()),
     realTrajectory(prior.nextSample()),
     likelihood(realTrajectory, pMakeObservation, pObserveIfPresent),
     posterior(likelihood * prior) {
@@ -59,7 +59,6 @@ public:
         out << "pPredator: " << predPreyProblem.pPredator << std::endl;
         out << "pPrey: " << predPreyProblem.pPrey << std::endl;
         out << "kappa: " << predPreyProblem.kappa << std::endl;
-        out << "alpha: " << predPreyProblem.alpha << std::endl;
         out << "(Gridsize x Timesteps): " << GRIDSIZE << " x " << predPreyProblem.nTimesteps() << std::endl;
         out << "Real trajectory: " << predPreyProblem.realTrajectory << std::endl;
         out << "Observations: " << predPreyProblem.likelihood.observations << std::endl;
@@ -72,15 +71,15 @@ private:
     template <typename Archive>
     void load(Archive &ar, const unsigned int version) {
         std::vector<AgentStateObservation<PredPreyAgent<GRIDSIZE>>> observations;
-        ar & pPredator & pPrey & kappa & alpha & realTrajectory & observations;
-        prior = Prior<PredPreyAgent<GRIDSIZE>>(realTrajectory.nTimesteps(), startStatePrior(), alpha);
+        ar & pPredator & pPrey & kappa & realTrajectory & observations;
+        prior = Prior<PredPreyAgent<GRIDSIZE>>(realTrajectory.nTimesteps(), startStatePrior());
         likelihood = Likelihood<PredPreyAgent<GRIDSIZE>>(observations);
         posterior = likelihood * prior;
     }
 
     template <typename Archive>
     void save(Archive &ar, const unsigned int version) const {
-        ar & pPredator & pPrey & kappa & alpha & realTrajectory & likelihood.observations;
+        ar & pPredator & pPrey & kappa & realTrajectory & likelihood.observations;
     }
 
     BOOST_SERIALIZATION_SPLIT_MEMBER();
