@@ -101,7 +101,7 @@ protected:
 
     const std::vector<T> &nextSampleWithInfeasibleImportance();
 
-    const std::vector<T> &nextSample();
+//    const std::vector<T> &nextSample();
 };
 
 
@@ -275,63 +275,63 @@ const std::vector<T> &SparseBasisSampler<T>::operator()() {
 }
 
 // Take a sample
-template<class T>
-const std::vector<T> &SparseBasisSampler<T>::nextSample() {
-
-    do {
-//        std::cout << "Drawing proposal from distribution " << basisDistribution << "  " << currentDE << std::endl;
-
-        Proposal proposal(*this);
-
-//        std::cout << "Got proposal col=" << proposal.proposedj << " inf=" << proposal.infeasibility << " DE=" << currentDE[proposal.proposedj] << std::endl;
-
-        if (proposal.infeasibility == 0) {       // --- transition to feasible state
-
-            importanceFunc->perturbWithUndo(X, proposal.changedXIndices);
-            for (int nzi = 0; nzi < proposal.changedXIndices.size(); ++nzi) {
-                // update X and transform changedX into undo
-                std::swap(X[proposal.changedXIndices[nzi]], proposal.changedXValues[nzi]);
-            }
-
-            double proposedLogImportance = importanceFunc->getLogValue(X);
-//            std::cout << "Proposed importance = " << proposedImportance << std::endl;
-            double ratioOfSums = proposal.calcRatioOfSums(basisDistribution);
-            double acceptance = exp(proposedLogImportance - currentLogImportance)*ratioOfSums;
-//            std::cout << "Ratio of sums = " << ratioOfSums << " acceptance = " << acceptance << std::endl;
-
-            if (Random::nextDouble() < acceptance) {     // --- accept ---
-//                std::cout << "Accepting feasible" << std::endl;
-                stats.addSample(true, currentInfeasibility == 0, true);
-                currentLogImportance = proposedLogImportance;
-                applyProposal(proposal, false);
-            } else {                                    // --- reject ---
-//                std::cout << "rejecting feasible" << std::endl;
-                // undo changes to X
-                for (int nzi = 0; nzi < proposal.changedXIndices.size(); ++nzi) {
-                    X[proposal.changedXIndices[nzi]] = proposal.changedXValues[nzi];
-                }
-                // undo changes to importanceFunc
-                importanceFunc->undoLastPerturbation();
-                stats.addSample(false, currentInfeasibility == 0, true);
-            }
-        } else {                                // --- transition to infeasible state
-            double logRatioOfSums = proposal.calcLogRatioOfSums(basisDistribution);
-            double logAcceptance = logRatioOfSums - currentLogImportance;
-//            std::cout << "Ratio of sums = " << ratioOfSums << " acceptance = " << acceptance << std::endl;
-            if (Random::nextDouble() < exp(logAcceptance)) {     // --- accept ---
-//                std::cout << "Accepting infeasible proposal inf=" << proposal.infeasibility << std::endl;
-                stats.addSample(true, currentInfeasibility == 0, false);
-                currentLogImportance = 0.0;
-                applyProposal(proposal, true);
-                importanceFunc->perturb(X, proposal.changedXIndices);
-            } else {                                    // --- reject ---
-//                std::cout << "rejecting infeasible proposal inf=" << proposal.infeasibility << std::endl;
-                stats.addSample(false, currentInfeasibility == 0, false);
-            }
-        }
-    } while(currentInfeasibility > 0);
-    return X;
-}
+//template<class T>
+//const std::vector<T> &SparseBasisSampler<T>::nextSample() {
+//
+//    do {
+////        std::cout << "Drawing proposal from distribution " << basisDistribution << "  " << currentDE << std::endl;
+//
+//        Proposal proposal(*this);
+//
+////        std::cout << "Got proposal col=" << proposal.proposedj << " inf=" << proposal.infeasibility << " DE=" << currentDE[proposal.proposedj] << std::endl;
+//
+//        if (proposal.infeasibility == 0) {       // --- transition to feasible state
+//
+//            importanceFunc->perturbWithUndo(X, proposal.changedXIndices);
+//            for (int nzi = 0; nzi < proposal.changedXIndices.size(); ++nzi) {
+//                // update X and transform changedX into undo
+//                std::swap(X[proposal.changedXIndices[nzi]], proposal.changedXValues[nzi]);
+//            }
+//
+//            double proposedLogImportance = importanceFunc->getLogValue(X);
+////            std::cout << "Proposed importance = " << proposedImportance << std::endl;
+//            double ratioOfSums = proposal.calcRatioOfSums(basisDistribution);
+//            double acceptance = exp(proposedLogImportance - currentLogImportance)*ratioOfSums;
+////            std::cout << "Ratio of sums = " << ratioOfSums << " acceptance = " << acceptance << std::endl;
+//
+//            if (Random::nextDouble() < acceptance) {     // --- accept ---
+////                std::cout << "Accepting feasible" << std::endl;
+//                stats.addSample(true, currentInfeasibility == 0, true);
+//                currentLogImportance = proposedLogImportance;
+//                applyProposal(proposal, false);
+//            } else {                                    // --- reject ---
+////                std::cout << "rejecting feasible" << std::endl;
+//                // undo changes to X
+//                for (int nzi = 0; nzi < proposal.changedXIndices.size(); ++nzi) {
+//                    X[proposal.changedXIndices[nzi]] = proposal.changedXValues[nzi];
+//                }
+//                // undo changes to importanceFunc
+//                importanceFunc->undoLastPerturbation();
+//                stats.addSample(false, currentInfeasibility == 0, true);
+//            }
+//        } else {                                // --- transition to infeasible state
+//            double logRatioOfSums = proposal.calcLogRatioOfSums(basisDistribution);
+//            double logAcceptance = logRatioOfSums - currentLogImportance;
+////            std::cout << "Ratio of sums = " << ratioOfSums << " acceptance = " << acceptance << std::endl;
+//            if (Random::nextDouble() < exp(logAcceptance)) {     // --- accept ---
+////                std::cout << "Accepting infeasible proposal inf=" << proposal.infeasibility << std::endl;
+//                stats.addSample(true, currentInfeasibility == 0, false);
+//                currentLogImportance = 0.0;
+//                applyProposal(proposal, true);
+//                importanceFunc->perturb(X, proposal.changedXIndices);
+//            } else {                                    // --- reject ---
+////                std::cout << "rejecting infeasible proposal inf=" << proposal.infeasibility << std::endl;
+//                stats.addSample(false, currentInfeasibility == 0, false);
+//            }
+//        }
+//    } while(currentInfeasibility > 0);
+//    return X;
+//}
 
 
 // Calculate importance for infeasible states as well as feasible
@@ -344,7 +344,7 @@ const std::vector<T> &SparseBasisSampler<T>::nextSampleWithInfeasibleImportance(
 
 //        std::cout << "Got proposal col=" << proposal.proposedj << " inf=" << proposal.infeasibility << " DE=" << currentDE[proposal.proposedj] << std::endl;
 
-        importanceFunc->perturbWithUndo(X, proposal.changedXIndices);
+        importanceFunc->perturb(X, proposal.changedXIndices);
         for (int nzi = 0; nzi < proposal.changedXIndices.size(); ++nzi) {
             // update X and transform changedX into undo
             std::swap(X[proposal.changedXIndices[nzi]], proposal.changedXValues[nzi]);
@@ -369,7 +369,7 @@ const std::vector<T> &SparseBasisSampler<T>::nextSampleWithInfeasibleImportance(
                 X[proposal.changedXIndices[nzi]] = proposal.changedXValues[nzi];
             }
             // undo changes to importanceFunc
-            importanceFunc->undoLastPerturbation();
+            importanceFunc->undo();
             stats.addSample(false, currentInfeasibility == 0, proposal.infeasibility == 0);
         }
     } while (currentInfeasibility > 0);

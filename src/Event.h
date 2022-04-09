@@ -27,5 +27,10 @@ public:
     }
 };
 
+template<class AGENT>
+inline LinearSum<ABM::occupation_type> operator *(int coefficient, const Event<AGENT> &variable) {
+    return LinearSum<ABM::occupation_type>({ {variable.id, ABM::occupation_type(coefficient)} });
+}
+
 
 #endif //GLPKTEST_EVENT_H

@@ -28,7 +28,7 @@ public:
     MultiChainStats &operator +=(std::vector<ChainStats> &&chains) {
         reserve(size()+chains.size());
         for(ChainStats &chain: chains) {
-            if(this->size()>0) assert(chain.nSamples() == this->nSamples()); // all chains should be of the same length
+            if(this->size()>0) assert(chain.nSamples() == this->nSamplesPerChain()); // all chains should be of the same length
             this->push_back(std::move(chain));
         }
         return *this;
@@ -37,14 +37,14 @@ public:
     MultiChainStats &operator +=(const std::vector<ChainStats> &chains) {
         reserve(size()+chains.size());
         for(const ChainStats &chain: chains) {
-            if(this->size()>0) assert(chain.nSamples() == this->nSamples()); // all chains should be of the same length
+            if(this->size()>0) assert(chain.nSamples() == this->nSamplesPerChain()); // all chains should be of the same length
             this->push_back(chain);
         }
         return *this;
     }
 
 
-    int nSamples() const {
+    int nSamplesPerChain() const {
         return size()==0?0:front().nSamples();
     }
 
@@ -104,7 +104,7 @@ public:
                         (t < V.size())?(1.0 - V[t][d]/(2.0*vp)):-1.0
                         );
             }
-            neff[d] = nSamples()*nChains()/(1.0 + 2.0*front().varioStride*sumt);
+            neff[d] = nSamplesPerChain() * nChains() / (1.0 + 2.0 * front().varioStride * sumt);
         }
         return neff;
     }
@@ -147,7 +147,7 @@ public:
     //
     // R_hat = sqrt((n-1)/n + B/(nW))
     std::valarray<double> potentialScaleReduction() {
-        return sqrt((B() / (W()*(1.0*nSamples()))) + ((nSamples() -1.0)/nSamples()));
+        return sqrt((B() / (W()*(1.0 * nSamplesPerChain()))) + ((nSamplesPerChain() - 1.0) / nSamplesPerChain()));
     }
 
 
@@ -157,7 +157,7 @@ public:
     //
     // var+ = (n-1/n) W + (1/n) B
     std::valarray<double> varPlus() {
-        return W() * ((nSamples()-1.0)/nSamples()) + B() * (1.0/nSamples());
+        return W() * ((nSamplesPerChain() - 1.0) / nSamplesPerChain()) + B() * (1.0 / nSamplesPerChain());
     }
 
 
@@ -172,7 +172,7 @@ public:
             std::valarray<double> Dmu_m = chain.meanVariance.mean() - mu;
             variance += Dmu_m * Dmu_m;
         }
-        variance *= nSamples()/(nChains()-1);
+        variance *= nSamplesPerChain() / (nChains() - 1);
         return variance;
     }
 
@@ -207,7 +207,7 @@ public:
     }
 
     friend std::ostream &operator <<(std::ostream &out, const MultiChainStats &multiChainStats) {
-        out << "MultiChainStats for " << multiChainStats.problemDescription << " " <<  multiChainStats.nChains() << " chains with " << multiChainStats.nSamples() << " samples" << std::endl;
+        out << "MultiChainStats for " << multiChainStats.problemDescription << " " << multiChainStats.nChains() << " chains with " << multiChainStats.nSamplesPerChain() << " samples" << std::endl;
         out << multiChainStats.cpuinfo << std::endl;
         out << "kappa = " << multiChainStats.kappa << std::endl;
         out << "Exec time = " << multiChainStats.execTimeMilliSeconds/1000.0 << "s" << std::endl;

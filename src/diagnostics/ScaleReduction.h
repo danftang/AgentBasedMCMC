@@ -21,7 +21,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////
 std::valarray<double> gelmanScaleReduction(const std::vector<MeanAndVariance> &sampleStats) {
     if(sampleStats.size() == 0) return std::valarray<double>();
-    int n = sampleStats.front().nSamples;
+    int n = sampleStats.front().nSamplesPerChain;
     int m = sampleStats.size(); // number of chains
     int d = sampleStats.front().sum.size(); // dimension of a sample;
     std::valarray<double> allChainsMean(0.0, d);

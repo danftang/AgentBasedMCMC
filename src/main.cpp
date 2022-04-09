@@ -13,21 +13,22 @@ int main(int argc, char *argv[]) {
 
 //    FiguresForPaper::generateStandardProblemFile<8>(4, 6.0);
 //    FiguresForPaper::singleThreadStats<8>(4,100000);
-//    FiguresForPaper::generateStatsAndPlot<8>(4, 200000);
+//    FiguresForPaper::generateStatsAndPlot<8>(4, 100000);
 
 //    FiguresForPaper::generateStandardProblemFile<8>(8, 6.5);
 //    FiguresForPaper::singleThreadStats<8>(8,100000);
 //    FiguresForPaper::generateStatsAndPlot<8>(8, 500000);
 
 
-//    FiguresForPaper::generateStandardProblemFile<16>(4, 8.0);
-//    FiguresForPaper::singleThreadStats<16>(4);
-//    FiguresForPaper::generateStatsAndPlot<16>(4,1500000);
+//    FiguresForPaper::generateStandardProblemFile<16>(4, 6.0);
+//    FiguresForPaper::singleThreadStats<16>(4,100000);
+//    FiguresForPaper::generateStatsAndPlot<16>(4,100000);
 //    FiguresForPaper::plotStats<16>(4);
 
-//    FiguresForPaper::generateStandardProblemFile<16>(8, 8.5);
+//    FiguresForPaper::generateStandardProblemFile<16>(8, 7.75);
 //    FiguresForPaper::singleThreadStats<16>(8,100000);
-//    FiguresForPaper::generateStatsAndPlot<16>(8, 2000000);
+//    FiguresForPaper::generateStatsAndPlot<16>(8, 50000);
+//    FiguresForPaper::plotStats<16>(8);
 
 //    FiguresForPaper::generateStandardProblemFile<16>(16, 9.0);
 //    FiguresForPaper::singleThreadStats<16>(16,100000);
@@ -38,13 +39,13 @@ int main(int argc, char *argv[]) {
 //    FiguresForPaper::singleThreadStats<32>(4,100000);
 //    FiguresForPaper::generateStatsAndPlot<32>(4,3000000);
 
-//    FiguresForPaper::generateStandardProblemFile<32>(8, 10.0);
-//    FiguresForPaper::singleThreadStats<32>(8,100000);
+    FiguresForPaper::generateStandardProblemFile<32>(8, 10.0);
+    FiguresForPaper::singleThreadStats<32>(8,100000);
 //    FiguresForPaper::generateStatsAndPlot<32>(8,5000000);
 
-    FiguresForPaper::generateStandardProblemFile<32>(16, 10.0);
+//    FiguresForPaper::generateStandardProblemFile<32>(16, 10.0);
 //    FiguresForPaper::singleThreadStats<32>(16,100000);
-    FiguresForPaper::generateStatsAndPlot<32>(16, 6000000);
+//    FiguresForPaper::generateStatsAndPlot<32>(16, 6000000);
 
 
 //    FiguresForPaper::generateAllProblemFiles();

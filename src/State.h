@@ -27,6 +27,16 @@ public:
     time(time),
     agent(agent) { }
 
+    explicit State(int agentId): State(std::div(agentId,AGENT::domainSize())) {}
+
+    explicit State(std::div_t agentIdDivDomainSize): time(agentIdDivDomainSize.quot), agent(agentIdDivDomainSize.rem) { }
+
+
+    int id() const {
+        return time*AGENT::domainSize() + agent;
+    }
+
+
     ABM::occupation_type fermionicOccupationUpperBound() const {
         assert(agent < incomingEventsByState.size());
         return AGENT::actDomainSize() < incomingEventsByState[agent].size()?AGENT::actDomainSize():incomingEventsByState[agent].size();

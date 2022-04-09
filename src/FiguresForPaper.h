@@ -98,7 +98,7 @@ public:
         using namespace dataflow;
 
         const double maxLagProportion = 0.5;
-        const int nLags = 100;
+        const int nLags = 200;
         const int nBurnIn = nSamples*0.1;
         int nTimesteps = problem.nTimesteps();
 
@@ -229,15 +229,20 @@ public:
 
         // Print scale reduction and effective samples
         std::valarray<double> neff = stats.effectiveSamples();
-        std::valarray<double> ineff = (stats.nSamples()*1.0)/neff;
+        std::valarray<double> ineff = (stats.nSamplesPerChain() * 1.0) / neff;
         double execTimePerSample = stats.execTimeMilliSeconds * 2.0 / (stats.front().stats.nSamples()*stats.size());
+        double execTimePerFeasibleSample = stats.execTimeMilliSeconds * 1.0 / (stats.nSamplesPerChain() * stats.nChains());
         std::cout << "Summary statistics for " << GRIDSIZE << " x " << nTimesteps << std::endl;
+        std::cout << "Total exec time: " << stats.execTimeMilliSeconds << "ms" << std::endl;
         std::cout << "Potential scale reduction: " << stats.potentialScaleReduction() << std::endl;
-        std::cout << "Actual number of samples per chain: " << stats.nSamples() << std::endl;
-        std::cout << "Effective number of samples: " << neff << std::endl;
+        std::cout << "Actual number of samples per chain: " << stats.nSamplesPerChain() << std::endl;
+        std::cout << "Number of chains: " << stats.size() << std::endl;
+        std::cout << "Effective number of samples (per chain): " << neff << std::endl;
         std::cout << "Sample inefficiency factor: " << ineff << std::endl << std::endl;
-        std::cout << "Execution time per sample: " << execTimePerSample << "ms" << std::endl;
-        std::cout << "Mean execution time per effective sample: " << ineff.sum()*execTimePerSample/ineff.size() << "ms" << std::endl;
+        std::cout << "Execution time per sample (all threads): " << execTimePerSample << "ms" << std::endl;
+        std::cout << "Execution time per feasible sample (all threads): " << execTimePerFeasibleSample << "ms" << std::endl;
+//        std::cout << "Mean execution time per effective sample: " << ineff.sum()*execTimePerFeasibleSample/ineff.size() << "ms" << std::endl;
+        std::cout << "Execution time per (worst case) effective sample: " << stats.execTimeMilliSeconds/(neff.min()*stats.nChains()) << "ms" << std::endl;
         // plot end state
 
         Plotter endStatePlotter;

@@ -98,12 +98,12 @@ void Experiments::CatMouseAssimilation() {
         const std::vector<ABM::occupation_type> &sample = sampler();
         assert(posterior.constraints.isValidSolution(sample));
     }
-    std::map<std::vector<int>,double> pmf;
+    std::map<std::vector<ABM::occupation_type>,double> pmf;
     for(int s=0; s<nSamples; ++s) pmf[Trajectory<CatMouseAgent>(sampler(),nTimesteps)] += 1.0/nSamples;
     std::cout << sampler.stats;
 
     RejectionSampler<Trajectory<CatMouseAgent>> rejectionSampler(prior,likelihood);
-    std::map<std::vector<int>,double> rejectionPMF;
+    std::map<std::vector<ABM::occupation_type>,double> rejectionPMF;
     for(int s=0; s<nSamples; ++s) rejectionPMF[Trajectory<CatMouseAgent>(rejectionSampler(),nTimesteps)] += 1.0/nSamples;
 
     ExactSolver<CatMouseAgent> exactSolver(posterior);
@@ -256,8 +256,8 @@ void Experiments::doSingleObservationExperiment(int nTimesteps, int nBurnin, int
 //    std::vector<std::vector<double>> measureLog;
 //
 ////    sampler >>= Drop{nBurnIn} >>= Split {
-////            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter(nSamples/10, "Energy"),
-////            Take(nSamples) >>= Map { synopsis } >>= Split{
+////            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter(nSamplesPerChain/10, "Energy"),
+////            Take(nSamplesPerChain) >>= Map { synopsis } >>= Split{
 ////                    meanVariances.consumer(),
 ////                    save(measureLog)
 ////            }
@@ -306,8 +306,8 @@ void Experiments::doSingleObservationExperiment(int nTimesteps, int nBurnin, int
 //
 //
 ////    sampler >>= Split {
-////            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter(nSamples/10, "Energy"),
-////            Drop(nBurnIn) >>= Take((nSamples/2)*2) >>= Map { Experiments::Synopsis } >>= SwitchAfter {nSamples / 2,
+////            Thin(10) >>= Map { trajectoryToEnergy } >>= plot1DAfter(nSamplesPerChain/10, "Energy"),
+////            Drop(nBurnIn) >>= Take((nSamples/2)*2) >>= Map { Experiments::Synopsis } >>= SwitchAfter {nSamplesPerChain / 2,
 ////                    save(firstSynopsisSamples),
 ////                    save(lastSynopsisSamples)
 ////            }
@@ -672,7 +672,7 @@ void Experiments::doSingleObservationExperiment(int nTimesteps, int nBurnin, int
 //        trajHistogram.insert(sampler.nextSample());
 //    }
 //
-////    ModelStateSampleStatistics<CatMouseAgent> sampleStats(sampler, nSamples);
+////    ModelStateSampleStatistics<CatMouseAgent> sampleStats(sampler, nSamplesPerChain);
 //
 //    std::cout << "Feasible stats =\n" << sampler.simplex.feasibleStatistics << std::endl;
 //    std::cout << "Infeasible stats =\n" << sampler.simplex.infeasibleStatistics << std::endl;

@@ -81,6 +81,31 @@ Constraint<COEFF> operator >=(COEFF c, const LinearSum<COEFF> &linExp) {
 }
 
 template<class COEFF>
+std::enable_if_t<!std::is_same_v<COEFF,int>, Constraint<COEFF>>
+operator <=(const LinearSum<COEFF> &linExp, int c) {
+    return Constraint(std::numeric_limits<COEFF>::lowest(), linExp.toSparseVec(), COEFF(c));
+}
+
+template<class COEFF>
+std::enable_if_t<!std::is_same_v<COEFF,int>, Constraint<COEFF>>
+operator >=(const LinearSum<COEFF> &linExp, int c) {;
+    return Constraint(COEFF(c), linExp.toSparseVec(), std::numeric_limits<COEFF>::max());
+}
+
+template<class COEFF>
+std::enable_if_t<!std::is_same_v<COEFF,int>, Constraint<COEFF>>
+operator <=(int c, const LinearSum<COEFF> &linExp) {
+    return linExp >= c;
+}
+
+template<class COEFF>
+std::enable_if_t<!std::is_same_v<COEFF,int>, Constraint<COEFF>>
+operator >=(int c, const LinearSum<COEFF> &linExp) {
+    return linExp <= c;
+}
+
+
+template<class COEFF>
 std::ostream &operator <<(std::ostream &out, const Constraint<COEFF> &constraint) {
     out << constraint.lowerBound << " <= ";
     bool first = true;

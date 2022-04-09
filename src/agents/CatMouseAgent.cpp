@@ -45,9 +45,9 @@ std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) const {
 std::vector<Constraint<ABM::occupation_type>> CatMouseAgent::constraints(int time, Act act) const {
     if(type() == MOUSE) {
         if(act == MOVE) {
-            return std::vector({ 1.0*State(time,CatMouseAgent(CAT, position())) >= 1 });
+            return std::vector({ 1*State(time,CatMouseAgent(CAT, position())) >= 1 });
         } else {
-            return std::vector({ 1.0*State(time,CatMouseAgent(CAT, position())) <= 0 });
+            return std::vector({ 1*State(time,CatMouseAgent(CAT, position())) <= 0 });
         }
     } else {
         return std::vector<Constraint<ABM::occupation_type>>();
