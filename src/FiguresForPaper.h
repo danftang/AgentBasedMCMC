@@ -63,14 +63,16 @@ public:
         std::cout << "Loaded problem" << std::endl;
         std::cout << problem;
 
-        TableauNormMinimiser<ABM::occupation_type> basisTableau(problem.posterior.constraints);
+        problem.kappa = 5.0;
+
+//        TableauNormMinimiser<ABM::occupation_type> basisTableau(problem.posterior.constraints);
 //        std::cout << "Tableau = \n" << basisTableau << std::endl;
 
         auto startTime = std::chrono::steady_clock::now();
 
         std::future<std::vector<ChainStats>> futureResults[nThreads];
         for(int thread = 0; thread < nThreads; ++thread) {
-            futureResults[thread] = std::async(&startStatsThread<GRIDSIZE>, problem, basisTableau, problem.prior.nextSample(), nSamples);
+            futureResults[thread] = std::async(&startStatsThread<GRIDSIZE>, problem, problem.prior.nextSample(), nSamples);
         }
 
 
@@ -94,7 +96,7 @@ public:
     }
 
     template<int GRIDSIZE>
-    static std::vector<ChainStats> startStatsThread(const PredPreyProblem<GRIDSIZE> &problem, const TableauNormMinimiser<ABM::occupation_type> &tableau, std::vector<ABM::occupation_type> initialState, int nSamples) {
+    static std::vector<ChainStats> startStatsThread(const PredPreyProblem<GRIDSIZE> &problem, std::vector<ABM::occupation_type> initialState, int nSamples) {
         using namespace dataflow;
 
         const double maxLagProportion = 0.5;
@@ -102,7 +104,9 @@ public:
         const int nBurnIn = nSamples*0.1;
         int nTimesteps = problem.nTimesteps();
 
-        SparseBasisSampler sampler(tableau, problem.posterior.factors, problem.posterior.perturbableFunctionFactory(), initialState, problem.kappa);
+//        TableauNormMinimiser<ABM::occupation_type> tableau(problem.posterior.constraints);
+
+        SparseBasisSampler sampler(problem.tableau, problem.posterior.factors, problem.posterior.perturbableFunctionFactory(), initialState, problem.kappa);
 
         std::valarray<std::valarray<double>> firstSynopsisSamples(nSamples/2);
         std::valarray<std::valarray<double>> lastSynopsisSamples(nSamples/2);
@@ -161,12 +165,12 @@ public:
         std::cout << "Loaded problem" << std::endl;
         std::cout << problem;
 
-        TableauNormMinimiser<ABM::occupation_type> basisTableau(problem.posterior.constraints);
+//        TableauNormMinimiser<ABM::occupation_type> basisTableau(problem.posterior.constraints);
 //        std::cout << "Tableau = \n" << basisTableau << std::endl;
 
         auto startTime = std::chrono::steady_clock::now();
 
-        std::vector<ChainStats> stats = startStatsThread<GRIDSIZE>(problem, basisTableau, problem.prior.nextSample(), nSamples);
+        std::vector<ChainStats> stats = startStatsThread<GRIDSIZE>(problem, problem.prior.nextSample(), nSamples);
 
         auto endTime = std::chrono::steady_clock::now();
         auto execTimeMilliSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();

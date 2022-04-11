@@ -15,6 +15,7 @@
 #include "Prior.h"
 #include "Likelihood.h"
 #include "BernoulliStartState.h"
+#include "TableauNormMinimiser.h"
 
 template<int GRIDSIZE>
 class PredPreyProblem {
@@ -27,6 +28,7 @@ public:
     Trajectory<PredPreyAgent<GRIDSIZE>> realTrajectory;
     Likelihood<PredPreyAgent<GRIDSIZE>> likelihood;
     WeightedFactoredConvexDistribution<ABM::occupation_type> posterior;
+    TableauNormMinimiser<ABM::occupation_type> tableau;
 
     PredPreyProblem(): realTrajectory(0) {}
 
@@ -38,7 +40,9 @@ public:
     prior(nTimesteps, startStatePrior()),
     realTrajectory(prior.nextSample()),
     likelihood(realTrajectory, pMakeObservation, pObserveIfPresent),
-    posterior(likelihood * prior) {
+    posterior(likelihood * prior),
+    tableau(posterior.constraints) {
+        tableau.findMinimalBasis();
     }
 
 
@@ -71,7 +75,7 @@ private:
     template <typename Archive>
     void load(Archive &ar, const unsigned int version) {
         std::vector<AgentStateObservation<PredPreyAgent<GRIDSIZE>>> observations;
-        ar & pPredator & pPrey & kappa & realTrajectory & observations;
+        ar & pPredator & pPrey & kappa & realTrajectory & observations & tableau;
         prior = Prior<PredPreyAgent<GRIDSIZE>>(realTrajectory.nTimesteps(), startStatePrior());
         likelihood = Likelihood<PredPreyAgent<GRIDSIZE>>(observations);
         posterior = likelihood * prior;
@@ -79,7 +83,7 @@ private:
 
     template <typename Archive>
     void save(Archive &ar, const unsigned int version) const {
-        ar & pPredator & pPrey & kappa & realTrajectory & likelihood.observations;
+        ar & pPredator & pPrey & kappa & realTrajectory & likelihood.observations & tableau;
     }
 
     BOOST_SERIALIZATION_SPLIT_MEMBER();

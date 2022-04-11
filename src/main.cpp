@@ -19,6 +19,10 @@ int main(int argc, char *argv[]) {
 //    FiguresForPaper::singleThreadStats<8>(8,100000);
 //    FiguresForPaper::generateStatsAndPlot<8>(8, 500000);
 
+//    FiguresForPaper::generateStandardProblemFile<10>(5, 6.5);
+//    FiguresForPaper::singleThreadStats<10>(5,100000);
+//    FiguresForPaper::generateStatsAndPlot<10>(5, 100000);
+
 
 //    FiguresForPaper::generateStandardProblemFile<16>(4, 6.0);
 //    FiguresForPaper::singleThreadStats<16>(4,100000);
@@ -39,8 +43,8 @@ int main(int argc, char *argv[]) {
 //    FiguresForPaper::singleThreadStats<32>(4,100000);
 //    FiguresForPaper::generateStatsAndPlot<32>(4,3000000);
 
-    FiguresForPaper::generateStandardProblemFile<32>(8, 10.0);
-    FiguresForPaper::singleThreadStats<32>(8,100000);
+//    FiguresForPaper::generateStandardProblemFile<32>(8, 10.0);
+//    FiguresForPaper::singleThreadStats<32>(8,100000);
 //    FiguresForPaper::generateStatsAndPlot<32>(8,5000000);
 
 //    FiguresForPaper::generateStandardProblemFile<32>(16, 10.0);

@@ -9,6 +9,8 @@
 #include <vector>
 #include <map>
 #include <list>
+#include "boost/serialization/map.hpp"
+#include "boost/serialization/set.hpp"
 #include "ConvexPolyhedron.h"
 
 // Takes an LP Problem and finds the basis that pivots out as many
@@ -75,6 +77,14 @@ public:
 
 //        explicit Column(const SparseVec<double> &col);
         Column(): isBasic(false) {};
+    private:
+        friend class boost::serialization::access;
+
+        template <typename Archive>
+        void serialize(Archive &ar, const unsigned int version) {
+            ar & static_cast<std::set<int> &>(*this) & isBasic;
+            ar & isBasic;
+        }
     };
 
     class Row: public std::map<int,T> { // map from non-zero col index to element value
@@ -83,8 +93,16 @@ public:
         bool isActive;                          // true if this row is an unreduced equality constraint
 
         Row(const SparseVec<T> &row, bool isActive);
+        Row() {}
 
         Row &operator *=(T c);
+    private:
+        friend class boost::serialization::access;
+
+        template <typename Archive>
+        void serialize(Archive &ar, const unsigned int version) {
+            ar & static_cast<std::map<int,T> &>(*this) & isActive;
+        }
     };
 
     std::vector<Column>     cols;   // tableau columns
@@ -99,6 +117,8 @@ public:
     std::vector<T>              U;                  // upper bounds by row (equalities are converted to zero)
 //    TableauNormMinimiser(glp::Problem &problem);
     TableauNormMinimiser(const ConvexPolyhedron<T> &problem);
+
+    TableauNormMinimiser()=default;
 
     int nNonBasic() const { return cols.size() + nAuxiliaryVars - rows.size(); }
 
@@ -129,6 +149,13 @@ public:
     double meanColumnL0Norm() const;
     double meanColumnL1Norm() const;
 
+private:
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void serialize(Archive &ar, const unsigned int version) {
+        ar & cols & rows & basis & nAuxiliaryVars & F & L & U;
+    }
 };
 
 template<class T>
