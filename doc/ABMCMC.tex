@@ -70,7 +70,7 @@ The observations may contain aggregated or macro-scale measures and may be subje
 
 Letting $\Omega$ be our set of real-world observations, our aim can be expressed as the approximation of the expectation of some arbitrary, possibly vector-valued, unobserved measure, $\Lambda$, given the observations
 \begin{equation}
-\mathbb{E}_{P(\tau,\theta|\Omega)}(\Lambda(\tau,\theta)) = \int \Lambda(\tau,\theta) P(\tau,\theta|\Omega) d\tau d\theta
+\mathbb{E}_{P(\tau,\theta|\Omega)}(\Lambda(\tau,\theta)) = \int \Lambda(\tau,\theta) P(\tau,\theta|\Omega) d\tau d\theta.
 \label{expectation}
 \end{equation}
 This assumes that $\Lambda$ can be calculated from the model trajectory, the parameters and the boundary conditions\footnote{If this isn't the case then we're simply using the wrong model for our needs}. 
@@ -132,7 +132,7 @@ P\left(T_{t+1}| \Omega_{1:t+1}\right)
 \end{equation}
 so that equations \eqref{bayesrecursion} and \eqref{bayesstaterecursion} would correspond to $T_t=\left<\tau_{1:t},\theta\right>$ and $T_t=\left<\sigma_t,\theta\right>$ respectively. The unobserved measure becomes
 \begin{equation}
-\mathbb{E}_{P(T_N|\Omega)}(\Lambda(T_N)) = \int \Lambda(T_N) P(T_N|\Omega_{1:N}) dT_N
+\mathbb{E}_{P(T_N|\Omega)}(\Lambda(T_N)) = \int \Lambda(T_N) P(T_N|\Omega_{1:N}) dT_N.
 \end{equation}
 This holds for any sequence of functions $T_t(\tau_{1:t},\theta)$ such that 
 \[
@@ -146,7 +146,7 @@ P(T_{t+1}(\tau'_{1:t+1},\theta')|T_{t}(\tau_{1:t},\theta)) = \delta_{\theta'}(\t
 \]
 and to terminate the recursion we define $\Omega_{1:0}$ to be the null condition, $\tau_{1:0}$ to be the empty trajectory $\emptyset$ and
 \[
-P(T_0(\emptyset,\theta)) = P(T_0(\emptyset,\theta)|\Omega_{1:0}) = P(\theta)
+P(T_0(\emptyset,\theta)) = P(T_0(\emptyset,\theta)|\Omega_{1:0}) = P(\theta).
 \]
 
 This recursion can be solved if, given a set of samples $\left\{T_t^1 \dots T_t^R\right\}$ drawn from $P(T_t|\Omega_{1:t})$, we can generate a set of samples  $\left\{T_{t+1}^1 \dots T_{t+1}^R\right\}$ drawn from $P(T_{t+1}|\Omega_{1:t+1})$. This can be done with a simple algorithm known as sequential importance resampling which consists of the following steps:
@@ -253,7 +253,7 @@ An element of an array is referred to by specifying the sub- and superscript coo
 
 We'll also borrow from tensor notation by using the Einstein summation convention, meaning that if the same index symbol is repeated in sub- and superscript positions in a term, then a summation over that dimension is implied. So, for example if $X \in \mathbb{R}_8$ and $Y \in \mathbb{R}^8$ then
 \[
-X_\psi Y^\psi \equiv \sum_{\psi=0}^7 X_\psi  Y^\psi
+X_\psi Y^\psi \equiv \sum_{\psi=0}^7 X_\psi  Y^\psi.
 \]
 When the same symbol is repeated in the \textit{same} position, this implies universal quantification. For example if $Y\in R_8$ then
 \[
@@ -261,7 +261,7 @@ X_\psi = Y_\psi
 \]
 is equivalent to
 \[
-\forall (0 \le \psi < 8) : X_\psi = Y_\psi 
+\forall (0 \le \psi < 8) : X_\psi = Y_\psi.
 \]
 We refer to \textit{slices} of an array by using the $*$ symbol in an index position. So, for example if $T \in \mathbb{R}^N_{SA}$ then $T^t_{\psi *}$ refers to the 1-dimensional array in $\mathbb{R}_A$ comprised of the elements $\left<T^t_{\psi 0}...T^t_{\psi A-1}\right>$.
 
@@ -294,7 +294,7 @@ Let a model trajectory, $T$, be an array in $\mathbb{R}^N_{SA}$ that represents 
 
 An array must satisfy a number of constraints in order to be a valid trajectory of an ABM. Since the elements of a trajectory are counts of agents, they must be non-negative integers. We'll call this the \textit{non-negative integer constraint} and define the set of all non-negative integer tensors
 \begin{equation}
-\mathbb{N}^N_{SA} = \left\{ T \in \mathbb{R^N_{SA}}: T^t_{\psi a} \ge \mathbf{0}^t_{\psi a}, T^t_{\psi a} \in \mathbb{Z}\right\}
+\mathbb{N}^N_{SA} = \left\{ T \in \mathbb{R^N_{SA}}: T^t_{\psi a} \ge \mathbf{0}^t_{\psi a}, T^t_{\psi a} \in \mathbb{Z}\right\}.
 \label{nonNegativeInt}
 \end{equation}
 
@@ -308,7 +308,7 @@ where $F \in \mathbb{R}^{SA}_S$ is the action array $F^{\psi a}_* = F(\psi, a)$ 
 
 So, we define the set of trajectories, $\mathcal{T}^N_{SA}(F)$, as set of arrays that satisfy \eqref{nonNegativeInt} and \eqref{continuous}.
 \begin{equation}
-\mathcal{T}^N_{SA}(F) = \mathbb{N}^N_{SA} \cap \mathcal{C}^N_{SA}(F)
+\mathcal{T}^N_{SA}(F) = \mathbb{N}^N_{SA} \cap \mathcal{C}^N_{SA}(F).
 \label{SetOfTrajectories}
 \end{equation}
 
@@ -338,7 +338,7 @@ P(T|\theta) =
 P(\Psi^0 = T^0_{* c}\mathbf{1}^c|\theta)
 \prod_{t, \psi} \left(T^t_{\psi b} \mathbf{1}^b \right)!
 \prod_{a} \frac{\pi_\theta(\psi, T^{t}_{* d}\mathbf{1}^d,a)^{T^{t}_{\psi a}}}{T^{t}_{\psi a}!} & \text{if } T \in \mathcal{T}^N_{SA}(F) \\
-0 & \text{otherwise}\\
+0 & \text{otherwise.}\\
 \end{cases}
 \label{priorTrajectory}
 \end{equation}
@@ -427,7 +427,7 @@ So, if we let $\mathcal{P}(f)$ be a mixed integer polyhedron that contains $\sup
 & 
 \left(\mathcal{P}\left(\pi_\theta(\psi,T^t_{* b}\mathbf{1}^b,a)\right)
 \cup
-\left\{T: T^t_{\psi a} = 0\right\}\right)
+\left\{T: T^t_{\psi a} = 0\right\}\right).
 \\
 \end{aligned}
 \label{polyhedralSupport}
@@ -460,7 +460,7 @@ where $\overline{B}$ are upper bounds on the values of $CX$ in the hyper-rectang
 \]
 where $|C|$ here denotes an element-wise absolute value of a matrix and $\underline{B}$ are lower bounds on the values of $CX$ defined as
 \[
-\underline{B} = \frac{\left(C - \left|C\right|\right)H}{2}
+\underline{B} = \frac{\left(C - \left|C\right|\right)H}{2}.
 \]
 
 To see why this identity holds, note first that the constraints make $z$ into an indicator variable that is 0 if $X^i=0$ or 1 otherwise. When $z=1$ the first constraint on the right hand side of \eqref{implication} is equal to $CX \le U$ and the second is equal to $L \le CX$ so their intersection is $L \le  CX \le U$ as required, whereas when $z=0$ the constraints are equal to $\underline{B} \le CX \le \overline{B}$. But $\underline{B}$ and $\overline{B}$ are lower and upper bounds on the values of $CX$ in the hyper-rectangle so this is satisfied for all values $0 \le X \le H$ as required. 
@@ -473,12 +473,12 @@ As a simple illustration, consider a two-timestep trajectory of the cat and mous
 
 Working through \eqref{polyhedralSupport} term by term, the $\mathcal{T}^2_{4\,2}$ term is just the non-negative integer constraints and continuity constraints in \eqref{nonNegativeInt} and \eqref{continuous}, which are already in linear form. The second term is the support of the prior over the parameters which we ignore since there are no parameters. The next term is the support of the start state, since we're flipping a coin for each agent state at $t=0$, each state occupation must be at most 1, which can be expressed as
 \[
-\left\{T:T^0_{\psi 0} + T^0_{\psi 1} \le \mathbf{1}_{\psi}\right\}
+\left\{T:T^0_{\psi 0} + T^0_{\psi 1} \le \mathbf{1}_{\psi}\right\}.
 \]
 
 The fourth term is the support of the observation. Since we observe a cat in the left grid-square at time $t=1$ we add the constraint
 \[
-T^1_{0 0} + T^1_{0 1} = 1
+T^1_{0 0} + T^1_{0 1} = 1.
 \]
 The final term is the constraint due to agent interactions. The impossible interactions are a mouse staying put when there is a cat on the same gridsquare or moving when there are no cats, so we constrain against these
 \begin{equation}
@@ -516,13 +516,13 @@ Various methods of sampling from a mixed-integer polyhedron exist in the literat
 
 The Metropolis-Hastings algorithm is another well known and widely used sampling algorithm and this is the approach we take here. To do this we need to define
 \begin{itemize}
-\item a set of Markov states, $\mathcal{M}$
+\item a set of Markov states, $\mathcal{M}$ along with a mapping $E:\mathcal{M} \to \mathbb{R}^T_{SA} \times \mathbb{T}$ which maps Markov states to trajectories and parameter values so we can recover the sample.
 
 \item a probability distribution $P: \mathcal{M} \to \mathbb{R}$ which gives the probability of each Markov state (this need not be normalised as the Metropolis Hastings algorithm only ever needs probability ratios)
 
 \item a stochastic proposal function $f:\mathcal{M} \to \mathcal{M}$ from which we can generate proposal transitions from one Markov state to another
 
-\item a mapping $E:\mathcal{M} \to \mathbb{R}^T_{SA} \times \mathbb{T}$ which maps Markov states to trajectories and parameter values so we can recover the sample.
+\item 
 \end{itemize}
 
 In order to be of use in practice, the proposal function, $f$, must have the following properties:
@@ -539,13 +539,13 @@ In order to be of use in practice, the proposal function, $f$, must have the fol
 
 Given a polyhedron, we split the constraints into two sets: equalities (i.e. those whose lower and upper bound have the same value) and inequalities (i.e. those whose lower and upper bounds differ):
 \begin{equation}
-\mathcal{P} = \left\{X \in \mathbb{Z}^N \times \mathbb{R}^M: \left(L \le CX \le U\right) \cap \left(DX = E\right) \right\}
+\mathcal{P} = \left\{X \in \mathbb{Z}^N \times \mathbb{R}^M: \left(L \le CX \le U\right) \cap \left(DX = E\right) \right\}.
 \label{zPolySupport}
 \end{equation}
 
-Our aim will be to use the equality constraints to reduce the dimension of the problem.
+Our aim will be to use the equality constraints to reduce the dimension of the problem and so improve the efficiency of the algorithm.
 
-Suppose there are $N_e$ equality constraints (i.e. $E$ is an $N_e$ dimensional vector) and we partition the elements of $X$ into `basic' and `non-basic' elements, $X_B$ and $X_N$ respectively, so that there are exactly $N_e$ basic elements and $|X| - N_e$ non-basic elements (note that since the continuity constraints \eqref{continuous} are equality constraints then $N_e \ge (N-1)S$ ).
+Suppose there are $N_e$ equality constraints and we partition the elements of $X$ into `basic' and `non-basic' elements, $X_B$ and $X_N$ respectively, so that there are exactly $N_e$ basic elements and $|X| - N_e$ non-basic elements (note that since the continuity constraints \eqref{continuous} are equality constraints then there are always at least $(N-1)S$ basic elements).
 
 If we let $Q$ be a permutation matrix that separates the basic from non-basic elements so that
 \[
@@ -557,11 +557,11 @@ DX = DQ^{-1}{X_B \choose X_N} = \left(B \mid N\right){X_B \choose X_N} = E
 \]
 so
 \begin{equation}
-BX_B + NX_N = E
+BX_B + NX_N = E.
 \label{eqconstraints}
 \end{equation}
 
-Now, since there are $N_e$ basic variables and $N_e$ equality constraints, $B$ is square so if we choose the basic variables in such a way as to ensure that $B$ has an inverse then
+Now, since there are $N_e$ basic variables and $N_e$ equality constraints, $B$ is square so if we choose the basic variables to ensure that $B$ has an inverse then
 \begin{equation}
 X_B = B^{-1}(E - NX_N)
 \label{basicvars}
@@ -571,7 +571,7 @@ so letting
 V = Q^{-1}{B^{-1}E \choose \mathbf{0}}, \, M = Q^{-1}{-B^{-1}N \choose \mathbf{1}}
 \]
 \begin{equation}
-X = V + MX_N
+X = V + MX_N.
 \label{markovtotrajectory}
 \end{equation}
 In section \ref{basis} we'll show how to choose $X_B$ to ensure that $B$ has an inverse and the integer dimensions of $X_B$ remain integer as long as the integer dimensions of $X_N$ are integer. Given this, then the original polyhedron is equivalent to the reduced dimension polyhedron
@@ -583,13 +583,13 @@ where $N'$ and $M'$ are the number of integer and real-valued elements remaining
 
 Since $Q$ is just a permutation matrix, $X_N$ and $X_B$ can be bound within hyper-rectangles by transforming the $\mathcal{P}$-bounding hyper-rectangle, $H$, from section \ref{BPoly}
 \[
-QH = {H_B \choose H_N}
+QH = {H_B \choose H_N}.
 \]
 So, $X_N$ is bound by $0 \le X_N \le H_N$. Given this, we define the set of Markov states to be
 \[
-\mathcal{M} = \left\{ X_N: 0 \le X_N \le H_N \right\}
+\mathcal{M} = \left\{ X_N: 0 \le X_N \le H_N, \right\}
 \]
-where each Markov state, $X_N$, is mapped to a unique trajectory, $X$, using \eqref{markovtotrajectory}.
+where $\mathbb{T}$ is the set of  each Markov state, $X_N$, is mapped to a unique trajectory, $X$, using \eqref{markovtotrajectory}.
 
 \subsection{The probability of a Markov state}
 
@@ -601,20 +601,20 @@ Let the infeasibility function $\iota(l,x,u)$ be defined to be equal to 0 if $l 
 \begin{cases}
 x-u & \text{if }x>u\\
 l-x & \text{if }x<l\\
-0 & \text{otherwise}
+0 & \text{otherwise.}
 \end{cases}
 \]
-extend this concept to vectors by summing the infeasibility of each element so
+Extend this concept to vectors by summing the infeasibility of each element so
 \[
-\iota(L,X,U) = \sum_i \iota(L_i,X_i,U_i)
+\iota(L,X,U) = \sum_i \iota(L_i,X_i,U_i).
 \]
-now define the infeasibility of a model state, $X$, be the sum of infeasibilities of all constraints
+Now define the infeasibility of a model state, $X$, to be the sum of infeasibilities of all constraints
 \[
 \iota(X) = \iota(L, CX, U) + \iota(0, X, H)
 \]
 this implies that a Markov state has an infeasibility of $\iota(V + MX_N)$. If this infeasibility is zero, then all the constraints are satisfied and the (unnormalised) probability of the Markov state is defined to be equal to the joint probability, which is proportional to the posterior
 \[
-P(X_N) = P(X=V + MX_N,\Omega) = P(T,\theta|\Omega)P(\Omega)
+P(X_N) = P(X=V + MX_N,\Omega) = P(T,\theta|\Omega)P(\Omega).
 \]
 
 If the infeasibility is not zero, then the probability is defined in the following way. First define the \textit{clamp} function
@@ -627,7 +627,7 @@ x & \text{otherwise}
 \]
 and a \textit{clamped} trajectory
 \[
-\overline{\underline{X}} = \sum_i c(0,X_i,H_i)
+\overline{\underline{X}}_i = c(0,X_i,H_i).
 \]
 
 Next we introduce a function that is approximately equal to $P(T,\theta,\Omega)$ inside the polyhedron, but is also well defined and non-zero inside the whole hyper-rectangle $H$. We define the approximation as decomposable into functions on each individual agent act $T^t_{\psi a}$
@@ -678,9 +678,43 @@ P(Y) \propto e^{\frac{-E(X_N)}{\tau}}
 \end{equation}
 This is a Boltzmann distribution which describes a thermodynamic system at equilibrium with a heat bath of ``temperature'' $\tau$. It has been shown that simulations of thermodynamic systems of this type are able to solve large integer optimisation problems which are similar in structure to the one here \citep{kirkpatrick1983optimization}. In our case, we don't need to change the temperature during the sampling process, but we do need to choose a value for $\tau$. Higher temperatures will increase mixing in the Markov chain, but will also increase the proportion of time spent in infeasible states so we need to find a temperature that is high enough to ensure good mixing of the chain but low enough to ensure a reasonable proportion of samples are feasible. We have found that a good rule of thumb is to set the temperature so that 50\% of the samples in a chain are infeasible.
 
-\subsection{Transitions between Markov states}
+\subsection{The proposal function}
 
-Transitions between states always either perturb the trajectory or the parameters, never both. Trajectory perturbations change a single trajectory-element of $X_N$ by $\pm 1$. If the element is already on one of its bounds on the hyper-rectangle, $H_N$, it is only ever perturbed in the feasible direction. So, the set of trajectory perturbations from state $X_N$ is given by
+\subsubsection{Approximating the posterior}
+
+In order to form the proposal function, we first make an approximation of the target distribution, $P(X|\Omega)$, in the form
+\begin{equation}
+P(X|\Omega) \approx \tilde{P}(X|\Omega) = \prod_i \tilde{P}_i(Z_iX)
+\end{equation}
+where $Z_i$ are row vectors and $\tilde{P}_i$ are univariate factors of any form. We call this a \textit{linearly factorized distribution}.
+
+The first thing to note is that we can characterise the convex support of the posterior as a linearly factorized distribution in the following way: first define the infeasibility function $\iota(l,x,u)$ to be equal to 0 if $l < x < u$ or equal to the distance to the nearest bound otherwise
+\[
+\iota(l,x,u) =
+\begin{cases}
+x-u & \text{if }x>u\\
+l-x & \text{if }x<l\\
+0 & \text{otherwise.}
+\end{cases}
+\]
+Now, if we define a factor for each constraint in $C$
+\[
+\tilde{P}_i(C_iX) = e^{\frac{-\iota(L_i,C_iX,U_i)}{\tau}}
+\]
+then the product of these factors is a distribution that is 1 inside the polyhedron and that decays exponentially outside at a rate set by $\tau$.
+
+Turning our attention now to the distribution inside the polyhedron, if we look back at equation \eqref{posterior} we can see that the posterior of an ABM is already highly factorized. If the start-state distribution doesn't contain correlations between states then it can be factorized further into factors on the occupation number of each individual state, but state occupation numbers are linear functions of the trajectory so can be factors in a linearly factorized distribution. If the start-state distribution does contain correlations between states, then we can approximate it as a product of marginals over each state. Similarly with each individual observation. The multinomial term in equation \eqref{posterior} can be split into a factorial on a state occupation number, and a function on an individual agent act which we approximate as the linearly factorized
+\[
+\prod_{t, \psi}\left(T^t_{\psi b}\mathbf{1}^b\right)! \prod_a \frac{\tilde{\pi}_\theta(T^t_{\psi a})^{T^t_{\psi a}}}{T^t_{\psi a}!}
+\]
+where
+\[
+\tilde{\pi}_\theta(T^t_{\psi a}) = \int \pi_\theta(\psi, \Psi^t, a)P(\Psi^t | \Psi^t_\psi = 1, \pi_\theta(\psi, \Psi^t, a) \ne 0) d\Psi^t
+\]
+
+---------------------
+
+Proposed transitions between states always either perturb the trajectory or the parameters, never both. Trajectory perturbations change a single trajectory-element of $X_N$ by $\pm 1$. If the element is already on one of its bounds on the hyper-rectangle, $H_N$, it is only ever perturbed in the feasible direction. So, the set of trajectory perturbations from state $X_N$ is given by
 \[
 \mathcal{D}(X_N) = \left\{X'_N : X'_N = X_N + \delta e_i, 0 \le X'_N \le H_N, \delta \in \left\{+1,-1\right\}, i \in \mathcal{V} \right\}
 \]

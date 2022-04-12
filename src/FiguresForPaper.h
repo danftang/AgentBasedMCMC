@@ -63,7 +63,7 @@ public:
         std::cout << "Loaded problem" << std::endl;
         std::cout << problem;
 
-        problem.kappa = 5.0;
+//        problem.kappa = 5.0;
 
 //        TableauNormMinimiser<ABM::occupation_type> basisTableau(problem.posterior.constraints);
 //        std::cout << "Tableau = \n" << basisTableau << std::endl;
