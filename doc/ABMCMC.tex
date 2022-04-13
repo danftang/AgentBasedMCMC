@@ -518,11 +518,10 @@ The Metropolis-Hastings algorithm is another well known and widely used sampling
 \begin{itemize}
 \item a set of Markov states, $\mathcal{M}$ along with a mapping $E:\mathcal{M} \to \mathbb{R}^T_{SA} \times \mathbb{T}$ which maps Markov states to trajectories and parameter values so we can recover the sample.
 
-\item a probability distribution $P: \mathcal{M} \to \mathbb{R}$ which gives the probability of each Markov state (this need not be normalised as the Metropolis Hastings algorithm only ever needs probability ratios)
-
 \item a stochastic proposal function $f:\mathcal{M} \to \mathcal{M}$ from which we can generate proposal transitions from one Markov state to another
 
-\item 
+\item a probability distribution $P: \mathcal{M} \to \mathbb{R}$ which gives the probability of each Markov state (this need not be normalised as the Metropolis Hastings algorithm only ever needs probability ratios)
+
 \end{itemize}
 
 In order to be of use in practice, the proposal function, $f$, must have the following properties:
@@ -591,100 +590,16 @@ So, $X_N$ is bound by $0 \le X_N \le H_N$. Given this, we define the set of Mark
 \]
 where $\mathbb{T}$ is the set of  each Markov state, $X_N$, is mapped to a unique trajectory, $X$, using \eqref{markovtotrajectory}.
 
-\subsection{The probability of a Markov state}
-
-Given a Markov state, $X_N$, that satisfies $0 \le X_N \le H_N$, the associated trajectory given by equation \eqref{markovtotrajectory} is guaranteed to satisfy all the equality constraints. However, there is no guarantee that the basic variables given by eq \eqref{basicvars} will be within their bounds $0 \le X_B \le H_B$ or that the constraints $L \le CX \le U$ will be satisfied. To deal with this we introduce the concept of \textit{infeasibility} which is a measure of the extent to which a Markov state fails to satisfy these constraints.
-
-Let the infeasibility function $\iota(l,x,u)$ be defined to be equal to 0 if $l < x < u$ or equal to the distance to the nearest bound otherwise
-\[
-\iota(l,x,u) =
-\begin{cases}
-x-u & \text{if }x>u\\
-l-x & \text{if }x<l\\
-0 & \text{otherwise.}
-\end{cases}
-\]
-Extend this concept to vectors by summing the infeasibility of each element so
-\[
-\iota(L,X,U) = \sum_i \iota(L_i,X_i,U_i).
-\]
-Now define the infeasibility of a model state, $X$, to be the sum of infeasibilities of all constraints
-\[
-\iota(X) = \iota(L, CX, U) + \iota(0, X, H)
-\]
-this implies that a Markov state has an infeasibility of $\iota(V + MX_N)$. If this infeasibility is zero, then all the constraints are satisfied and the (unnormalised) probability of the Markov state is defined to be equal to the joint probability, which is proportional to the posterior
-\[
-P(X_N) = P(X=V + MX_N,\Omega) = P(T,\theta|\Omega)P(\Omega).
-\]
-
-If the infeasibility is not zero, then the probability is defined in the following way. First define the \textit{clamp} function
-\[
-c(l,x,u) \begin{cases}
-l & \text{if }x<l\\
-u & \text{if }x>u\\
-x & \text{otherwise}
-\end{cases}
-\]
-and a \textit{clamped} trajectory
-\[
-\overline{\underline{X}}_i = c(0,X_i,H_i).
-\]
-
-Next we introduce a function that is approximately equal to $P(T,\theta,\Omega)$ inside the polyhedron, but is also well defined and non-zero inside the whole hyper-rectangle $H$. We define the approximation as decomposable into functions on each individual agent act $T^t_{\psi a}$
-\[
-g(T,\theta) = \prod_{t,\psi,a} g^t_{\psi a}(T^t_{\psi a},\theta) \approx P(T,\Omega|\theta)P(\theta) = P(T,\theta,\Omega) \text{ if }\left<T,\theta\right>\text{ is feasible}
-\]
-Now let $R$ be a function that is 1 inside a hyper-rectangle $L \le X \le U$ and decays exponentially outside
-\[
-R(L,X,U) = e^{\frac{-\iota(L,X,U)}{\tau}}
-\]
-where $\tau$ is a tunable parameter that controls the rate of exponential decay.
-
-We now define an augmented function that combines these functions
-\begin{equation}
-g_a(X,A) = R\left(L,A,U\right)R(0,X,H)g\left(\hat{F}^t_{\psi a i}\overline{\underline{X}}^i, \hat{G}^j_i\overline{\underline{X}}^i\right)
-\label{augmentedG}
-\end{equation}
-so that we can define a function that approximates $P(X,\Omega)$ within the feasible region of $X$ and is exponentially attenuated outside that region, so 
-\[
-g(X) = g_a\left(X,CX\right) \approx P(T,\theta,|\Omega)
-\]
-
-For infeasible trajectories, we define the probability, $P_\iota$, to be
-\begin{equation}
-P_\iota(X_N) \propto g(V+MX_N)
-\label{loglinprob}
-\end{equation}
-
-This means that infeasible states have non-zero probability and the Markov chain will pass through some infeasible states.  However, if we just ignore these and only take samples from feasible states then we end up with samples from the true posterior. Allowing the Markov chain to pass through infeasible states has the advantage of ensuring that there exists a path between any two feasible states and improves mixing. When used in the context of a particle filter, it also solves the problem of unexpected observations that can't be generated by any particle, as we can allow the particles to become temporarily infeasible. The price we pay for this is the computational cost of moving through infeasible states that don't generate useful samples.
-
-The approximating functions $g^t_{\psi a}$ do not affect the stationary state of the Markov chain in the feasible region so can be any arbitrary function that is non-zero inside the hyper-rectangle. However, we'll see in the next section that a proposal is more likely to be accepted if the approximation is better, so a better approximation leads to a more efficient algorithm. We have found that approximating $g^t_{\psi a}$ as 
-\[
-g^t_{\psi a}(T^t_{\psi a},\theta) = \int P(T^t_{\psi a}|\theta')P(\theta')d\theta' \prod_{\left<\omega,v\right> \in \Omega} \int P(\omega(T)=v|T)P(T|\theta'')P(\theta'') dT  d\theta''
-\]
-gives acceptable performance. Note that the the product term is constant for all $g^t_{\psi a}$ and the $\theta$ dependence of $g^t_{\psi a}$ has been marginalised out; there may be model-specific ways of retaining some $\theta$ dependence as appropriate. The first integral can easily be found by sampling from the prior (i.e. drawing from $P(\theta)$  then drawing from $P(\Psi^0|\theta)$, then executing the model) and marginalising for each $t$, $\psi$ and $a$. Each of the integrals in the product term can also be approximated using the same samples from the prior.
-
-If we define the \textit{energy} of a Markov state to be
-\[
-E(X_N) =
-\begin{cases}
--\tau log(P(X_N)) & \text{if }  \iota(Y) = 0\\
--\tau log(P_\iota(X_N)) & \text{otherwise}
-\end{cases}
-\]
-then the probability of a Markov state can be written in the form
-\begin{equation}
-P(Y) \propto e^{\frac{-E(X_N)}{\tau}}
-\end{equation}
-This is a Boltzmann distribution which describes a thermodynamic system at equilibrium with a heat bath of ``temperature'' $\tau$. It has been shown that simulations of thermodynamic systems of this type are able to solve large integer optimisation problems which are similar in structure to the one here \citep{kirkpatrick1983optimization}. In our case, we don't need to change the temperature during the sampling process, but we do need to choose a value for $\tau$. Higher temperatures will increase mixing in the Markov chain, but will also increase the proportion of time spent in infeasible states so we need to find a temperature that is high enough to ensure good mixing of the chain but low enough to ensure a reasonable proportion of samples are feasible. We have found that a good rule of thumb is to set the temperature so that 50\% of the samples in a chain are infeasible.
 
 \subsection{The proposal function}
 
+The perturbation function chooses an element of $X_N$ and perturbs it. If it is an integer element, it's value is perturbed by $\pm 1$, if a real-valued element, it's value is rounded to the nearest integer, $\lfloor X_{Ni}\rceil$, then perturbed by $\pm 1 + \epsilon$ where $\epsilon$ is drawn with uniform probability from $[-0.5:0.5]$. Note that real valued variables should be scaled so that a perturbation of $\pm 1$ only changes $\tilde{P}(X|\Omega)$ by a small amount. If the rounded value of an element is already on one of its bounds on the hyper-rectangle, $H_N$, it is only ever perturbed in the feasible direction. We denote the set of all perturbed states of $X_N$ by $\mathcal{D}(X_N)$.
+
 \subsubsection{Approximating the posterior}
 
-In order to form the proposal function, we first make an approximation of the target distribution, $P(X|\Omega)$, in the form
+In order to define the probability of choosing a perturbation from $\mathcal{D}(X_N)$, we first make an approximation of the target distribution, $P(X_N|\Omega)$, in the form
 \begin{equation}
-P(X|\Omega) \approx \tilde{P}(X|\Omega) = \prod_i \tilde{P}_i(Z_iX)
+P(X_N|\Omega) \approx \tilde{P}(X_N) = \prod_i \tilde{P}_i(Z_iX_N)
 \end{equation}
 where $Z_i$ are row vectors and $\tilde{P}_i$ are univariate factors of any form. We call this a \textit{linearly factorized distribution}.
 
@@ -697,54 +612,74 @@ l-x & \text{if }x<l\\
 0 & \text{otherwise.}
 \end{cases}
 \]
-Now, if we define a factor for each constraint in $C$
-\[
-\tilde{P}_i(C_iX) = e^{\frac{-\iota(L_i,C_iX,U_i)}{\tau}}
-\]
+Now, given a set of constraints $L \le CX_N \le U$, if we define a factor for each constraint
+\begin{equation}
+\tilde{P}_i(C_iX_N) = e^{\frac{-\iota(L_i,C_iX,U_i)}{\tau}}
+\label{lfconstraints}
+\end{equation}
 then the product of these factors is a distribution that is 1 inside the polyhedron and that decays exponentially outside at a rate set by $\tau$.
 
-Turning our attention now to the distribution inside the polyhedron, if we look back at equation \eqref{posterior} we can see that the posterior of an ABM is already highly factorized. If the start-state distribution doesn't contain correlations between states then it can be factorized further into factors on the occupation number of each individual state, but state occupation numbers are linear functions of the trajectory so can be factors in a linearly factorized distribution. If the start-state distribution does contain correlations between states, then we can approximate it as a product of marginals over each state. Similarly with each individual observation. The multinomial term in equation \eqref{posterior} can be split into a factorial on a state occupation number, and a function on an individual agent act which we approximate as the linearly factorized
-\[
-\prod_{t, \psi}\left(T^t_{\psi b}\mathbf{1}^b\right)! \prod_a \frac{\tilde{\pi}_\theta(T^t_{\psi a})^{T^t_{\psi a}}}{T^t_{\psi a}!}
-\]
+Given a Markov state, $X_N$, that satisfies $0 \le X_N \le H_N$, the associated trajectory given by equation \eqref{markovtotrajectory} is guaranteed to satisfy all the equality constraints. However, there is no guarantee that the basic variables given by eq \eqref{basicvars} will be within their bounds $0 \le X_B \le H_B$ or that the constraints $L \le CX \le U$ will be satisfied. These constraints can be accounted for by adding a factor in the form \eqref{lfconstraints} for each constraint in equation \eqref{reducedPolySupport}.
+
+Turning our attention now to the distribution inside the polyhedron, if we look back at equation \eqref{posterior} we can see that the posterior of an ABM is already highly factorized. Note that all the factors other than possibly $P(\theta)$ are functions of linear transformations of X, though some are multivariate. Note also that a linearly factorized distribution can capture zero-order correlations by using the linear $Z_i$ transformations to rotate X, so we can create an approximation that captures each factor in \eqref{posterior} up to zero-order correlations. In many cases, this allows us to capture the posterior exactly.
+
+However, when considering the efficiency of the final algorithm, there is a trade off between the closeness of $\tilde{P}(X_N)$ to $P(X_N|\Omega)$ and the number of factors involved in its calculation. In our experiments, we have found we can attain very good acceptance probabilities with relatively simple renderings of $\tilde{P}(X_N)$. Start state and observations are often already uncorrelated functions of the state occupation numbers, so are already in the correct form. In our experiments, the multinomial term in equation \eqref{posterior} was approximated as the linearly factorized
+\begin{equation}
+\prod_{t, \psi}\left(T^t_{\psi b}\mathbf{1}^b\right)! \prod_a \frac{\tilde{\pi}^t_{\psi a}\,^{T^t_{\psi a}}}{T^t_{\psi a}!}
+\label{multinomialapprox}
+\end{equation}
 where
 \[
-\tilde{\pi}_\theta(T^t_{\psi a}) = \int \pi_\theta(\psi, \Psi^t, a)P(\Psi^t | \Psi^t_\psi = 1, \pi_\theta(\psi, \Psi^t, a) \ne 0) d\Psi^t
+\log(\tilde{\pi}^t_{\psi a}) = \frac{\int T^t_{\psi a}\log\left(\pi_\theta(\psi, \Psi^t, a)\right)P(T,\theta) dT d\theta}{\int T^t_{\psi a}P(T,\theta) dT d\theta}
 \]
+which can be calculated by drawing samples from the prior $P(T,\theta)$ and using Monte Carlo integration. This marginalises over $\theta$, but if $\pi_\theta$ has a particularly strong dependence on $\theta$ then it may be worth capturing some of that dependence by, for example, replacing the $T^t_{\psi a}$ term in \eqref{multinomialapprox} with $T^t_{\psi a} + R\theta$ for some row vector $R$, normalising and minimising the expectation of the difference between the log probabilities of the approximation and the true multinomial.
 
----------------------
+So, the final approximation, $\tilde{P}(X_N)$, is given by the product of the factors of the bounding convex polyhedron \eqref{lfconstraints}, the multinomial approximation \eqref{multinomialapprox} and the approximations of the observations, the start state (boundary conditions) and $P(\theta)$.
 
-Proposed transitions between states always either perturb the trajectory or the parameters, never both. Trajectory perturbations change a single trajectory-element of $X_N$ by $\pm 1$. If the element is already on one of its bounds on the hyper-rectangle, $H_N$, it is only ever perturbed in the feasible direction. So, the set of trajectory perturbations from state $X_N$ is given by
-\[
-\mathcal{D}(X_N) = \left\{X'_N : X'_N = X_N + \delta e_i, 0 \le X'_N \le H_N, \delta \in \left\{+1,-1\right\}, i \in \mathcal{V} \right\}
-\]
-where $e_i$ is the unit vector with a 1 in the $i^{th}$ element and $\mathcal{V}$ is the set of indices of $X_N$ that correspond to elements of the trajectory.
-
-The most appropriate set of parameter perturbations is highly model specific so it's difficult to give a universally applicable scheme. However, in the absence of any model-specific schemes, one very general way to do this is to consider only single-parameter perturbations. Integer parameters can be perturbed in the same way as trajectory perturbations, real-valued parameters can be perturbed by a Gaussian whose mean is 0 and whose standard deviation is some fraction of the range of the parameter in $H_N$. Any probability mass that falls outside of $H$ is interpreted as a transition back to the original state.
+Since some of the Markov states are infeasible, calculating $\tilde{P}$ for these states may require the evaluation of a factor on a value that is outside its domain (for example, \eqref{multinomialapprox} if $T^t_{\psi a}$ goes negative). In this case we choose the value at the nearest point that is within the domain.
 
 \subsubsection{The the probability of proposals}
 
-Given a Markov state, we choose a transition to another state by first choosing, with fixed probability, whether to perturb the trajectory or the parameters. This allows us to control the speed at which the trajectory changes compared to the parameters, it's likely that we'll want to update the trajectory more often than the parameters.
-
-For trajectory perturbations, given a current state $X_N$, associate a probability with each proposed state $X'_N \in \mathcal{D}(X_N)$
+Given an approximation, $\tilde{P}(X_N)$ and a current state, $X_N$, the proposal function chooses a transition to destination state $X'_N \in \mathcal{D}(X_N)$ with a probability given my
 \begin{equation}
-P(X_N \to X'_N) = \frac{\min\left(1, \frac{P_\iota(X'_N)}{P_\iota(X_N)}\right)}{S(X_N)} 
+P(X_N \to X'_N) = \frac{\min\left(1, \frac{\tilde{P}(X'_N)}{\tilde{P}(X_N)}\right)}{S(X_N)} 
 \label{transitionProb}
 \end{equation}
-where $P_\iota$ is the probability defined in \eqref{loglinprob} and
+where
 \begin{equation}
-S(X_N) = \sum_{X'_N \in \mathcal{D}(X_N)} \min\left(1, \frac{P_\iota(X'_N)}{P_\iota(X_N)}\right)
+S(X_N) = \sum_{X'_N \in \mathcal{D}(X_N)} \min\left(1, \frac{\tilde{P}(X'_N)}{\tilde{P}(X_N)}\right)
 \label{transitionSum}
 \end{equation}
 In the next section we'll see how to calculate this value efficiently.
 
-In order to choose a transition, we draw a destination state $X'_N \in \mathcal{D}(X_N)$ with probability $P(X_N \to X'_N)$. The Metropolis-Hastings acceptance probability is then
+\subsection{The probability of a Markov state}
+
+If a Markov state satisfies all the constraints in \eqref{reducedPolySupport} then the probability of the Markov state is defined to be equal to the true posterior given by \eqref{posterior}
+\[
+P(X_N) = P(X=V + MX_N|\Omega) = P(T,\theta|\Omega)
+\]
+
+If the constraints are not all satisfied, then the probability is defined as the product of the factors in \eqref{posterior} and the infeasibility factors of the form \eqref{lfconstraints}. If any factor in \eqref{posterior} becomes zero as a consequence of the infeasibility, then it is replaced by its linearly factorized approximation (which must be non-zero otherwise the state wouldn't have been proposed).
+
+This means that, as long as $\tau$ is finite, the Markov chain will pass through some infeasible states. However, if we just ignore these and only take samples from feasible states then we end up with samples from the true posterior. Allowing the Markov chain to pass through infeasible states has the advantage of ensuring that there exists a path between any two feasible states and improves mixing. When used in the context of a particle filter, it also solves the problem of unexpected observations that can't be generated by any particle, as we can allow the particles to become temporarily infeasible. The price we pay for this is the computational cost of moving through infeasible states that don't generate useful samples.
+
+From the Metropolis-Hastings algorithm, the probability of acceptance of the proposal is given by
 \[
 \alpha = 
 \min\left( 1, \frac{P(X'_N)P(X'_N \to X_N)}{P(X_N)P(X_N \to X'_N)} \right) = \min\left(1, 
-\frac{P_\iota(X_N)}{P(X_N)} \frac{P(X'_N)}{P_\iota(X'_N)}  \frac{S(X_N)}{S(X'_N)}\right)
+\frac{P(X'_N)}{P(X_N)} \frac{\tilde{P}(X_N)}{\tilde{P}(X'_N)}  \frac{S(X_N)}{S(X'_N)}\right)
 \]
-When $X_N$ is infeasible $\frac{P_\iota(X_N)}{P(X_N)} = 1$. When $X_N$ is feasible $P_\iota(X_N)$ approximates $P(X_N)$ so their ratio should be close to 1. Similarly for $X'_N$. Finally, we'll see in the next section that if we choose the basis carefully then $S(X_N)$ will not change very much between transitions so the ratio $ \frac{S(X_N)}{S(X'_N)}$ should also be close to 1 meaning that the acceptance probability should also be close to 1.
+Since $\tilde{P}(X_N)$ approximates $P(X_N)$ $\frac{P(X'_N)}{P(X_N)}, \frac{\tilde{P}(X_N)}{\tilde{P}(X'_N)}$ should be close to 1. We'll see in the next section that if we choose the basis carefully then $S(X_N)$ will not change very much between transitions so the ratio $ \frac{S(X_N)}{S(X'_N)}$ should also be close to 1 meaning that the acceptance probability should also be close to 1. In practice we have achieved around $80\%$ of proposals accepted.
+
+If we define the \textit{energy} of a Markov state to be
+\[
+E(X_N) = -\tau log(P(X_N))
+\]
+then the probability of a Markov state can be written in the form
+\begin{equation}
+P(Y) \propto e^{\frac{-E(X_N)}{\tau}}
+\end{equation}
+This is a Boltzmann distribution which describes a thermodynamic system at equilibrium with a heat bath of ``temperature'' $\tau$. It has been shown that simulations of thermodynamic systems of this type are able to solve large integer optimisation problems which are similar in structure to the one we're effectively solving here \citep{kirkpatrick1983optimization}. In our case, we don't need to change the temperature during the sampling process, but we do need to choose a value for $\tau$. Higher temperatures will increase mixing in the Markov chain, but will also increase the proportion of time spent in infeasible states so we need to find a temperature that is high enough to ensure good mixing of the chain and low enough to ensure that a reasonable proportion of samples are feasible. We have found that these two competing effects roughly cancel each other out when measuring the overall efficiency of the algorithm in effective samples per second, so the value of $\tau$ is not critical within a certain range. We have found that a good rule of thumb is to set the temperature so that 60-70\% of the samples in a chain are infeasible.
 
 \subsection{Choosing a basis}
 \label{basis}
