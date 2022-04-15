@@ -4,7 +4,7 @@
 
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
-\usepackage{hyperref}       % hyperlinks
+%\usepackage{hyperref}       % hyperlinks
 \usepackage{url}            % simple URL typesetting
 \usepackage{booktabs}       % professional-quality tables
 \usepackage{amsfonts}       % blackboard math symbols
@@ -52,11 +52,11 @@
 \begin{abstract}
 Every day, weather forecasting centres around the world receive noisy, incomplete observations of the atmosphere and use this data to update the state of their atmospheric models and forecasts. This process is known as data assimilation, data fusion or state estimation and is best expressed as Bayesian inference: given a set of observations, some prior beliefs and a model of the target system, what is the probability distribution of some set of unobserved measures or latent variables at some time, possibly in the future?
 
-While data assimilation has developed rapidly in some areas of application, relatively little progress has been made in performing data assimilation with agent-based models. This has hampered the use of agent based models to make quantitative claims about real-world systems.
+While data assimilation has developed rapidly in some areas of application, relatively little progress has been made in performing data assimilation with agent-based models. This has hampered the use of agent-based models to make quantitative claims about real-world systems.
 
-Here we present an algorithm that uses Markov-Chain-Monte-Carlo methods to generate samples of the trajectories of an agent based model over a window of time given a set of possibly noisy, aggregated and incomplete observations of the system. This can be used as-is, or as part of a sequential-MCMC algorithm.
+Here we present an algorithm that uses Markov-Chain-Monte-Carlo methods to generate samples of the trajectories of an agent-based model over a window of time given a set of possibly noisy, aggregated and incomplete observations of the system. This can be used as-is, or as part of a sequential-MCMC algorithm.
 
-Our algorithm is applicable to time-stepping agent based models whose agents have a finite set of states and a finite number of ways of acting on the world. As presented the algorithm is only practical for agents with a few bytes of internal state although we discuss ways of removing this restriction. We demonstrate the algorithm by performing data assimilation with an agent-based, spatial predator-prey model.
+Our algorithm is applicable to time-stepping, agent-based models whose agents have a finite set of states and a finite number of ways of acting on the world. As presented the algorithm is only practical for agents with a few bytes of internal state although we discuss ways of removing this restriction. We demonstrate the algorithm by performing data assimilation with an agent-based, spatial predator-prey model.
 \end{abstract}
 
 % keywords can be removed
@@ -80,9 +80,9 @@ Inserting Bayes' rule gives us
 \mathbb{E}_{P(\tau,\theta|\Omega)}(\Lambda(\tau,\theta)) = \int \Lambda(\tau,\theta) \frac{P(\Omega|\tau)P(\tau|\theta)P(\theta)}{P(\Omega)} d\tau d\theta
 \label{bayesassimilation}
 \end{equation}
-where $P(\theta)$ is our prior belief about the parameters and boundary conditions (after accounting for any micro-calibration data or other relevant direct observations we may have), $P(\tau|\theta)$ is our the trajectory forecast from our ABM and $P(\Omega|\tau)$ is the observation likelihood, which we assume is easy to calculate given a trajectory that covers the observed period. The prior probability of the observations, $P(\Omega)$, is just a normalising constant so is not usually explicitly calculated when sampling.
+where $P(\theta)$ is our prior belief about the parameters and boundary conditions (after accounting for any micro-calibration data or other relevant direct observations we may have), $P(\tau|\theta)$ is our the forecast from our ABM and $P(\Omega|\tau)$ is the observation likelihood, which we assume is easy to calculate given a trajectory that covers the observed period. The prior probability of the observations, $P(\Omega)$, is just a normalising constant so is not usually explicitly calculated when sampling.
 
-There are various approaches in the literature to solving this equation for ABMs. One strategy is to first transform the ABM into a simpler form, such as a set of partial differential equations \citep{lloyd_exploring_2016} or a graphical model \citep{liao2010integrated}, for which there exists a well known method of solving the problem. An alternative strategy is presented in \citet{tang2019data} where creation and annihilation operators are employed to describe an ABM and the integral in \eqref{bayesassimilation} is calculated using symbolic computation. However, the most popular strategy in the literature is to sample from the posterior, $P(\tau,\theta|\Omega)$, and use Monte Carlo integration. This is the technique we employ here.
+There are various approaches in the literature to solving this equation for ABMs. One strategy is to first transform the ABM into a simpler form, such as a set of partial differential equations \citep{lloyd_exploring_2016} or a graphical model \citep{liao2010integrated}, for which there exists a well known method of solving the problem. An alternative strategy is presented in \citet{tang2019data} where creation and annihilation operators are employed to describe the probability distributions and the integral in \eqref{bayesassimilation} is calculated using symbolic computation. However, the most popular strategy in the literature is to sample from the posterior, $P(\tau,\theta|\Omega)$, and use Monte Carlo integration. This is the technique we employ here.
 
 \subsection{Importance sampling from the prior}
 The simplest Monte Carlo approach would be to approximate $\mathbb{E}_{P(\tau,\theta|\Omega)}(\Lambda(\tau,\theta))$ using importance sampling as follows:
@@ -97,7 +97,7 @@ The simplest Monte Carlo approach would be to approximate $\mathbb{E}_{P(\tau,\t
 However, \citet{chatterjee2018sample} show that the information contained in the weighted samples reduces exponentially with the KL-divergence from the prior to the posterior, $D_{KL}\left(P(\tau,\theta|\Omega) \mid\mid P(\tau|\theta)P(\theta) \right)$. This divergence can be thought of as a measure of the information contained in the observations $\Omega$. In practice, in the case of ABMs, the observations usually contain enough information to make the set of weighted samples less informative than a single unweighted sample, even when $N$ is astronomically high. So this algorithm will not work unless the observations contain very little information.
 
 \subsection{Particle filtering}
-In the literature, the most popular way of solving \eqref{bayesassimilation} for ABMs is to use \textit{particle filtering}, also known as \textit{sequential monte carlo}. This splits the time period we're interested in into smaller, contiguous time windows with (not necessarily equidistant) end times $\left<t_1 \dots t_N\right>$ where $t_m < t_{m+1}$. The trajectory and observations are similarly split based on which window they occur in, $\tau = \left<\tau_1 \dots \tau_N\right>$ and $\Omega = \left<\Omega_1 \dots \Omega_N\right>$. The posterior distribution of the whole trajectory can then be split into the product of contributions from each window given the end state from the previous window, leading to a recursion relation
+In the literature, the most popular way of solving \eqref{bayesassimilation} for ABMs is to use \textit{particle filtering}, also known as \textit{sequential monte carlo}. This splits the time period we're interested in into smaller, contiguous time windows with (not necessarily equidistant) end times $\left<t_1 \dots t_N\right>$ where $t_m < t_{m+1}$. The trajectory and observations are similarly split based on which window they occur in, $\tau = \left<\tau_1 \dots \tau_N\right>$ and $\Omega = \left<\Omega_1 \dots \Omega_N\right>$. The posterior distribution of the whole trajectory can then be split into the product of contributions from each window given the distribution over the previous window, leading to a recursion relation
 \begin{equation}
 P\left(\tau_{1:t+1}, \theta | \Omega_{1:t+1}\right)
 =
@@ -107,7 +107,7 @@ P(\tau_{t+1}|\tau_{1:t},\theta) P\left(\tau_{1:t},\theta| \Omega_{1:t}\right)
 {	P(\Omega_{t+1}| \Omega_{1:t}) }
 \label{bayesrecursion}
 \end{equation}
-where $\tau_{1:t} = \left<\tau_1 \dots \tau_t\right>$ and $P(\tau_{t+1}|\tau_{1:t},\theta)$ is the probability that an execution of the ABM that starts with trajectory $\tau_{1:t}$ would go on to produce $\tau_{t+1}$ given the parameters/boundary conditions $\theta$. The final posterior $P(\tau_{1:N},\theta|\Omega_{1:N})$ can now be built up in steps, starting with the first window and moving to the last, using the recursion as we go and approximating each $P(\tau_{1:t+1}, \theta | \Omega_{1:t+1})$ as a set of samples. This makes the problem easier in two respects, firstly the dimension of the distributions we need to deal with at each recursion step are reduced since we're only concerned with the trajectory in one window at a time, secondly we split the information in the observations into smaller chunks, so at each recursion the information in $\Omega_t$ is more likely to be small enough to make it practical to perform importance sampling with the prior.
+where $\tau_{1:t} = \left<\tau_1 \dots \tau_t\right>$ and $P(\tau_{t+1}|\tau_{1:t},\theta)$ is the probability that an execution of the ABM that starts with trajectory $\tau_{1:t}$ would go on to produce $\tau_{t+1}$ given the parameters/boundary conditions $\theta$. The final posterior $P(\tau_{1:N},\theta|\Omega_{1:N})$ can now be built up in steps, starting with the first window and moving to the last, using the recursion as we go and approximating each $P(\tau_{1:t}, \theta | \Omega_{1:t})$ as a set of samples, or ``particles''. This makes the problem easier in two respects, firstly the dimension of the distributions we need to deal with at each recursion step are reduced since we're only concerned with the trajectory in one window at a time, secondly we split the information in the observations into smaller chunks, so at each recursion the information in $\Omega_t$ is more likely to be small enough to make it practical to perform importance sampling with the prior.
 
 If the unobserved measure of interest, $\Lambda$, depends only on the states of the agents, $\sigma_N$, at time $t_N$ and/or the parameters/boundary conditions, $\theta$, rather than on the full trajectory, $\tau_{1:N}$, then we can reduce the dimensionality even further by performing the recursion on model states rather than trajectories (where a model state tells us how many agents there are in each agent state). First arrange the windows so that each observation lies at the end of a window, then marginalise equation \eqref{bayesrecursion} over $\tau_{1:t+1}$ for a fixed $\sigma_{t+1}$ to get
 \begin{equation}
@@ -130,26 +130,9 @@ P\left(T_{t+1}| \Omega_{1:t+1}\right)
 \int P(T_{t+1}|T_t)P\left(T_{t}| \Omega_{1:t}\right) d T_t
 \label{generalisedbayesrecursion}
 \end{equation}
-so that equations \eqref{bayesrecursion} and \eqref{bayesstaterecursion} would correspond to $T_t=\left<\tau_{1:t},\theta\right>$ and $T_t=\left<\sigma_t,\theta\right>$ respectively. The unobserved measure becomes
-\begin{equation}
-\mathbb{E}_{P(T_N|\Omega)}(\Lambda(T_N)) = \int \Lambda(T_N) P(T_N|\Omega_{1:N}) dT_N.
-\end{equation}
-This holds for any sequence of functions $T_t(\tau_{1:t},\theta)$ such that 
-\[
-P(\Omega_t|T_t(\tau_{1:t},\theta)) = P(\Omega_t|\tau_t)
-\]
-\[
-P(T_{t+1}(\tau'_{1:t+1},\theta')|T_{t}(\tau_{1:t},\theta)) = \delta_{\theta'}(\theta)\delta_{\tau'_{1:t}}(\tau_{1:t})P(\tau_{t+1}|\tau_{1:t},\theta)
-\]
-\[
-\Lambda(T_N(\tau_{1:N},\theta)) = \Lambda(\tau_{1:N},\theta)
-\]
-and to terminate the recursion we define $\Omega_{1:0}$ to be the null condition, $\tau_{1:0}$ to be the empty trajectory $\emptyset$ and
-\[
-P(T_0(\emptyset,\theta)) = P(T_0(\emptyset,\theta)|\Omega_{1:0}) = P(\theta).
-\]
+so that equations \eqref{bayesrecursion} and \eqref{bayesstaterecursion} would correspond to $T_t=\left<\tau_{1:t},\theta\right>$ and $T_t=\left<\sigma_t,\theta\right>$ respectively.
 
-This recursion can be solved if, given a set of samples $\left\{T_t^1 \dots T_t^R\right\}$ drawn from $P(T_t|\Omega_{1:t})$, we can generate a set of samples  $\left\{T_{t+1}^1 \dots T_{t+1}^R\right\}$ drawn from $P(T_{t+1}|\Omega_{1:t+1})$. This can be done with a simple algorithm known as sequential importance resampling which consists of the following steps:
+A particle filter solves this recursion by taking a set of samples $\left\{T_t^1 \dots T_t^R\right\}$ drawn from $P(T_t|\Omega_{1:t})$, and generating a set of samples  $\left\{T_{t+1}^1 \dots T_{t+1}^R\right\}$ drawn from $P(T_{t+1}|\Omega_{1:t+1})$. The simplest algorithm to do this is known as sequential importance resampling which consists of the following steps:
 \begin{enumerate}
 \item Generate a set of samples $\left\{T^1_0 \dots T^R_0\right\}$ from the prior $P(T_0)$. Set $t=0$.
 
@@ -165,7 +148,7 @@ w_i = \frac{P(\Omega_{t+1}|\hat{T}_{t+1}^i)}{\sum_{j=1}^R P(\Omega_{t+1}|\hat{T}
 P(T_{t+1}|\Omega_{1:t+1}) \approx  \sum_i w_i\delta_{\hat{T}_{t+1}^i}\left(T_{t+1}\right)
 \label{importanceApprox}
 \end{equation}
-to give a new set of unweighted samples $\left\{T^1_{t+1} \dots T^R_{t+1}\right\}$. There are a few ways of performing this resampling \citep{douc2005comparison}, the simplest being to draw an integer $i\in[1,R]$ with probability $w_i$, returning the sample $\hat{T}_{t+1}^i$ then repeating $R$ times.
+to give a new set of unweighted samples $\left\{T^1_{t+1} \dots T^R_{t+1}\right\}$. There are a few ways of performing this resampling \citep{douc2005comparison}, the simplest being to draw an integer $i\in[1,R]$ with probability $w_i$, returning the sample $\hat{T}_{t+1}^i$ and repeating $R$ times.
 
 \item If $t<N$, increment $t$ and repeat from step 2.
 
@@ -173,23 +156,25 @@ to give a new set of unweighted samples $\left\{T^1_{t+1} \dots T^R_{t+1}\right\
 
 However, this algorithm suffers from the problem of \textit{sample impoverishment} \citep{li2014fight} or \textit{sample deprivation} which describes the situation when the resampling step leaves many particles in the same state, so the number of distinct samples in our sample set is much smaller than the total number of samples. This is because, as we've seen, after each importance sampling step the information in the observations causes the effective sample size to decrease and so the resampling step is likely to generate repeated samples. This loss of effective sampling size can accumulate and in practice as the number of windows increases, the number of particles required to maintain a desired accuracy increases exponentially. In the worst case, we encounter an observation that is impossible for all our samples and we end up with an effective sample size of zero. \citet{malleson_simulating_2020} show that sample impoverishment is an issue when applied to data assimilation with an ABM of crowd movement. \citet{khan2003efficient} encounter the same problem in a model of ant movement.
 
-To get a better understanding of impoverishment, suppose we use the above algorithm to generate a set of samples $\left\{\left<\tau_{1:N}^1,\theta^1\right> \dots \left<\tau_{1:N}^S,\theta^S\right>\right\}$ of the full trajectory $P(\tau_{1:N},\theta|\Omega_{1:N})$, from which we generate marginalisations over each window $W_t = \left\{\left<\tau_t^1,\theta^1\right> \dots \left<\tau_t^S,\theta^S\right>\right\}$. The repeated impoverishment at each step causes the number of distinct values in $W_{N-L}$ to decrease exponentially as the lag, L, increases (i.e. as we look further back in time). So we often find that all samples in $W_1$ have collapsed to a single value. The rate of impoverishment as we go back in time depends on the rate of flow of information from the observations. However, when considering the effect of this on samples from the final window $W_N$ (which is often all we care about) the model dynamics and observations between the $(N-L)^{th}$ and $N^{th}$ windows have the effect of making the samples form the $N^{th}$ window increasingly independent of the samples in the $(N-L)^{th}$ window as $L$ increases. So, as $L$ increases, the number of distinct samples in $W_{N-L}$ reduces, so we lose information about the true distribution of $P(\tau_{N-L},\theta|\Omega_{1:N})$, but at the same time the model dynamics and observations make $P(\tau_{N},\theta|\Omega_{1:N})$ increasingly independent of $P(\tau_{N-L},\theta|\Omega_{1:N})$ so we care less about impoverishment as $L$ increases. Impoverishment becomes a problem when the first effect dominates the second. Unfortunately every window's trajectory depends on the parameters, $\theta$, but these are sampled in the first window and never subsequently change, so after assimilating a few windows all samples are likely to have collapsed to the same value of $\theta$, giving us little information about the true distribution of the marginalised posterior $P(\theta|\Omega_{1:N})$. This is fine if the parameters are known at $t=0$, but if there is prior uncertainty in $\theta$ then impoverishment will be a problem \citep*{liu2001combined, andrieu2004particle}.
+To get a better understanding of impoverishment, suppose we use the above algorithm to generate a set of samples $\left\{\left<\tau_{1:N}^1,\theta^1\right> \dots \left<\tau_{1:N}^S,\theta^S\right>\right\}$ of the full trajectory $P(\tau_{1:N},\theta|\Omega_{1:N})$, from which we generate marginalisations over each window $W_t = \left\{\left<\tau_t^1,\theta^1\right> \dots \left<\tau_t^S,\theta^S\right>\right\}$. On the one hand, the repeated impoverishment at each step causes the number of distinct values in $W_{N-L}$ to decrease exponentially as the lag, L, increases (i.e. as we look further back in time), meaning we lose information about the true distribution of $P(\tau_{N-L},\theta|\Omega_{1:N})$. However, on the other hand, the model dynamics and observations make $P(\tau_{N},\theta|\Omega_{1:N})$ increasingly independent of $P(\tau_{N-L},\theta|\Omega_{1:N})$ as $L$ increases. So if all we care about is the final window (which is often the case) impoverishment only becomes a problem when the first effect (the rate of loss of information) dominates the second (the rate of increase in independence from the past).
+  
+Unfortunately every window's trajectory depends on the parameters, $\theta$, but these are sampled in the first window and never subsequently change, so after assimilating only a few windows all samples are likely to have collapsed to the same value of $\theta$, giving us little information about the true distribution of the marginalised posterior $P(\theta|\Omega_{1:N})$. This is fine if the parameters are known at $t=0$, but if there is prior uncertainty in $\theta$ and the observations don't reduce that uncertainty faster than the collapse in information contained in the samples, then impoverishment will be a problem \citep*{liu2001combined, andrieu2004particle}.
 
-A simple way of dealing with sample impoverishment is to add fixed noise to the particles at each step. This is known as roughening \citep*{gordon1993novel, li2014fight} and is equivalent to replacing the delta function in equation \eqref{importanceApprox} with some other function so we end up with a weighted kernel density estimation. \citet{kieu_dealing_2020} uses this technique in the context of an ABM of public transport. However, \citet{liu2001combined} shows that this leads to over-dispersion unless we ``shrink'' the samples towards their mean value. Whether kernel density estimation leads to a good approximation or not depends on the nature of the model and the chosen kernel but, as we shall see, this is certainly not always the case for ABMs. In general, the consequence of roughening is that a finite number of samples from a roughened particle filter is no longer a draw from the true posterior, when averaged over all possible draws of the same size, so we need to convince ourselves that the error introduced by the roughening process is small enough for our requirements; not always an easy task for an ABM.
+A simple way of dealing with sample impoverishment is to add fixed noise to the particles at each step. This is known as roughening \citep*{gordon1993novel, li2014fight} and is equivalent to replacing the delta function in equation \eqref{importanceApprox} with some other function so we end up with a weighted kernel density estimation. \citet{kieu_dealing_2020} uses this technique in the context of an ABM of public transport. However, \citet{liu2001combined} shows that this leads to over-dispersion unless we ``shrink'' the samples towards their mean value. Whether kernel density estimation leads to a good approximation or not depends on the nature of the model and the chosen kernel but this is certainly not always the case for ABMs. In general, the consequence of roughening is that a finite number of samples from a roughened particle filter is no longer a draw from the true posterior, when averaged over all possible draws of the same size, so we need to convince ourselves that the error introduced by the roughening process is small enough for our requirements; not always an easy task for an ABM.
 
-\citet{wang_data_2015} deals with sample impoverishment by using the samples at time $t$ to approximate the marginal probabilities over each individual agent $P(a_j)$ then drawing new samples from the product of the marginals $P(a_1 \dots a_n) = \prod_{j=1}^NP(a_j)$, i.e. sampling the state of the $j^{th}$ agent from the marginal $P(a_j)$. This improves sample diversity at the price of losing all correlations between agents. 
+\citet{wang_data_2015} deals with sample impoverishment in the context of ABM by using the samples at time $t$ to approximate the marginal probabilities over each individual agent $P(a_j)$ then drawing new samples from the product of the marginals $P(a_1 \dots a_n) = \prod_{j=1}^NP(a_j)$, i.e. sampling the state of the $j^{th}$ agent from the marginal $P(a_j)$. This improves sample diversity at the price of losing all correlations between agents. 
 
-In the context of ABMs, sample impoverishment can manifest in its most extreme form by generating particles that have zero weight and so contribute no information to the resampling step. This happens because a draw from the forecast of an ABM $P(T_{t+1}|T_t)$ often has an extremely high probability of having a likelihood,$P(\Omega_t|T_{t+1})$ of zero. For example, suppose we're tracking mobile phones by IMEI and receive intermittent signals from the phones identifying which cell they're in. Suppose for simplicity that if a phone is in a known cell at time $t$ then it could be in any of 8 cells at time $t+1$, each with equal prior probability. Suppose at time $t+1$ we get signals from 10 phones. Even if we know the exact model state at time $t$, the probability that a sample from the forecast at time $t+1$ has a non-zero likelihood is $8^{-10}$, about one in a billion. So sequential importance resampling will fail in a single step in this case.
+In the context of ABMs, sample impoverishment can manifest in its most extreme form by generating particles that have zero weight and so contribute no information to the resampling step. This happens because a draw from the forecast of an ABM $P(T_{t+1}|T_t)$ often has an extremely high probability of having a likelihood,$P(\Omega_t|T_{t+1})$ of zero. For example, suppose we're tracking mobile phones by IMEI and receive intermittent signals from the phones identifying which cell they're in. Suppose for simplicity that if a phone is in a known cell at time $t$ then it could be in any of 8 cells at time $t+1$, each with equal prior probability. Suppose at time $t+1$ we get signals from 10 phones. Even if we know the correct model state at time $t$, the probability that a sample from the forecast at time $t+1$ has a non-zero likelihood is $8^{-10}$, about one in a billion. So sequential importance resampling will fail in a single step in this case.
 
 \subsection{Kalman filtering}
 One potential solution to the problem of impoverishment is to assume that the distributions are Gaussian. This is the basis of the data assimilation algorithms that have had a great deal of success in geophysical models \citet*{carrassi2018data, talagrand_assimilation_1997, kalnay_atmospheric_2003, lewis_dynamic_2006}. If the forecast $P(T_{t+1}|\Omega_{1:t})$ and likelihood function $P(\Omega_{t+1}|T_{t+1})$ are multivariate Gaussians, the recursion in \eqref{generalisedbayesrecursion} can be solved analytically and new samples from the posterior can be generated even when the observations $\Omega_t$ are highly informative. This idea leads to the \textit{Ensemble Kalman filter} \citep{evensen2003ensemble} and the \textit{Unscented Kalman filter} \citep{wan2001unscented}, both of which have been applied to data assimilation in ABM \citep*{ward_dynamic_2016, clay_realtime_2020}.
 
-However, the Gaussian assumption is not usually a good one for ABMs. For example, suppose there is a sports hall containing $N$ people and we take the model state to be the $2N$ dimensional vector consisting of the $(x,y)$ coordinates of each person. Even if the initial state is distributed according to a $2N$ dimensional Gaussian distribution, the either/or decisions of the people can transform this into a multimodal distribution. Suppose two exists are opened on opposite sides of the hall and the people move towards the nearest exit. Each preson makes an either/or decision which exit to move towards based on their position, so we can think of the prior Gaussian as being partitioned into $2^N$ regions based on the set of decisions made by the agents. In the forecast distribution the probability mass in each of these regions will separate and move towards one of the $2^N$ model states where all agents are at one or other of the exits, creating a highly non-Gaussian distribution with $2^N$ modes. In addition, the likelihood function is often highly non-Gaussian in the this state space. For example, suppose there is a sensor at one of the exits that trips if any agents are close. Suppose for simplicity that there are just two agents so the model state space is $(x_1,y_1,x_2,y_2)$ and the origin of the agents' coordinate system is at the sensor. If the sensor trips, the likelihood function is zero everywhere except close to the perpendicular planes $(0,0,x_2,y_2)$ and $(x_1,y_1,0,0)$. This clearly isn't well approximated by any Gaussian. This is a consequence of the fact that we don't know which agent caused the sensor to trip, a problem known as the \textit{data association problem} \citep{lueck_who_2019}. This problem becomes superexponentially worse if we have multiple sensors. If there are $N$ agents and $M$ sensors the likelihood is the union of $\frac{N!}{(N-M)!}$ hyperplanes.
+However, the Gaussian assumption is not usually a good one for ABMs. For example, suppose there is a sports hall containing $N$ people and we take the model state to be the $2N$ dimensional vector consisting of the $(x,y)$ coordinates of each person. Even if the initial state is distributed according to a $2N$ dimensional Gaussian distribution, the either/or decisions of the people can quickly transform this into a multimodal distribution. Suppose two exists are opened on opposite sides of the hall and the people move towards the nearest exit. Each preson makes an either/or decision which exit to move towards based on their position, so we can think of the prior Gaussian as being partitioned into $2^N$ regions based on the set of decisions made by the agents. In the forecast distribution the probability mass in each of these $2^N$ regions will each move towards a different model state (one of the $2^N$ states where all agents are at one or other of the exits), creating a highly non-Gaussian distribution with $2^N$ modes. In addition, the likelihood function is often highly non-Gaussian in the this state space. For example, suppose there is a sensor at one of the exits that trips if any agents are close. Suppose for simplicity that there are just two agents so the model state space is $(x_1,y_1,x_2,y_2)$ and the origin of the agents' coordinate system is at the sensor. If the sensor trips, the likelihood function is zero everywhere except close to the perpendicular planes $(0,0,x_2,y_2)$ and $(x_1,y_1,0,0)$. This clearly isn't well approximated by any Gaussian. This is a consequence of the fact that we don't know which agent caused the sensor to trip, a problem known as the \textit{data association problem} \citep{lueck_who_2019}. This problem becomes superexponentially worse if we have multiple sensors. If there are $N$ agents and $M$ sensors the likelihood function is the union of $\frac{N!}{(N-M)!}$ hyperplanes.
 
 An alternative representation of the model state space is the \textit{occupation number} representation where each agent state becomes a dimension in the state space and the coordinate values give the number of agents in each state. In this representation Gaussians may be appropriate in some models if there are a large number of agents in every state. However, as the occupation numbers get smaller, an increasing proportion of a Gaussian approximation lies on states that contain negative occupation numbers, which is problematic as a negative occupation number has no natural meaning. In very high dimensions, the vast majority of the probability mass will lie in a region with at least one negative occupation number. Likelihood functions in this space can also be highly non-Gaussian. For example, the sensor in (a discretised version of) the sports hall example above would have a likelihood function that is a step function on the dimension that corresponds to the state close to the door.
 
 \subsection{Metropolis-Hastings}
-In the following sections we present a solution to these problems by using the Metropolis-Hastings algorithm to construct a Markov process whose stationary state is $P(\tau_{1:N},\theta|\Omega_{1:N})$. To our knowledge this has never been done before to perform data assimilation with an ABM. For small $N$ we can sample directly from this Markov process to get samples from the posterior. For larger $N$, or if we wish to perform \textit{online} data assimilation where the observations form a continuous, effectively endless stream, we propose using the Markov transition function as part of a Sequential MCMC or MCMC Particle Filter algorithm \citep*{finke2020limit, septier2009mcmc} which solve the problem of impoverishment by combining MCMC steps with particle filtering. There are many specific ways of doing this, unfortunately the most appropriate algorithm to use depends on the nature of the ABM dynamics, the likelihood function and the unobserved measure, $\Lambda$, so there's no silver bullet. In section \ref{discussion} we give some guidance by presenting some algorithms that are appropriate for application to ABMs.
+In the following sections we present a solution to these problems by using the Metropolis-Hastings algorithm to construct a Markov process whose stationary state is $P(\tau_{1:N},\theta|\Omega_{1:N})$. To our knowledge this has never been done before to perform data assimilation with an ABM. For small $N$ we can sample directly from this Markov process to get samples from the posterior. For larger $N$, or if we wish to perform \textit{online} data assimilation where the observations form a continuous, effectively endless stream, we propose using the Markov transition function as part of a Sequential MCMC or MCMC Particle Filter algorithm \citep*{finke2020limit, septier2009mcmc} which solves the problem of impoverishment by combining MCMC steps with particle filtering. There are many specific ways of doing this, unfortunately the most appropriate algorithm to use depends on the nature of the ABM dynamics, the likelihood function and the unobserved measure, $\Lambda$, so there's no silver bullet. In section \ref{discussion} we give some guidance by presenting some algorithms that are likely to be appropriate in the context of ABMs.
 
 Since the nature of an ABM's parameters is highly model-specific, in the following we focus on the treatment of the trajectory but in a way that is fully integrated with a model-specific treatment of the parameters for which we give more general design advice. In the case of state estimation (where the parameters are already known) the parameter specific part can be left out completely.
 
@@ -413,9 +398,9 @@ and
 \]
 where $\delta^{ij}$ and $\delta_{ij}$ are 1 if $i=j$ and 0 otherwise. In this way we can switch unambiguously between $X$ and $\left<T,\theta\right>$.
 
-From equation \ref{SetOfTrajectories} we can see immediately that the set of all trajectories, $\mathcal{T}^N_{SA}$, is is already defined as a set of linear constraints on $T$. The support of the prior $P(\theta)$ is usually of a simple form that can easily bounded, usually by a hyper-rectangle giving the range of each variable. The supports of the start state, $P(\Psi^0|\theta)$, the observations, $P(\omega(T)=v)$, and the agent actions, $\pi_\theta(\psi,T^t_{*b}\mathbf{1}^b,a)$, can often be easily expressed as linear constraints by hand. However, if this is not the case, each of the probability distributions can be expressed as computer programs. In practice, these computer programs will be simple and it will be possible to use a technique known as \textit{abstract interpretation} \citep{cousot1977abstract} using the domain of convex polyhedra \citep*{cousot1978automatic, becchi2018efficient, fukuda2020polyhedral} to efficiently calculate a convex polyhedron that bounds the support of the program. Software to perform abstract interpretation using convex polyhedra already exists \citep*{henry2012pagai, GN2021, jeannet2009apron, bagnara2008parma} and the technique has been used in applications such as compiler optimization \citep{nsjodin2009design} and verification of safety-critical systems \citep{halbwachs1997verification}. The programs may contain calls to a random number generator \texttt{Random()} that returns a random floating-point number $0 \le r < 1$. This can be represented in the polyhedral domain by introducing an real valued auxiliary variable, $r$, that satisfies $0 \le r < 1$ for each call to \texttt{Random()}. These auxiliary variables can be removed immediately using the abstract interpretation software to project the polyhedron back into the space of $X$. This relies on converting the polyhedron to its set of vertices \citep{motzkin1953double} and projecting the vertices, so the number of vertices must be of a tractable size. Alternatively, the auxiliary variables can be added to X and marginalised out when we take the samples.
+From equation \ref{SetOfTrajectories} we can see immediately that the set of all trajectories, $\mathcal{T}^N_{SA}$, is is already defined as a set of linear constraints on $T$. The support of the prior $P(\theta)$ is usually of a simple form that can easily bounded, usually by a hyper-rectangle giving the range of each variable. The supports of the start state, $P(\Psi^0|\theta)$, the observations, $P(\omega(T)=v)$, and the agent actions, $\pi_\theta(\psi,T^t_{*b}\mathbf{1}^b,a)$, can often be easily expressed as linear constraints by hand. However, if this is not the case, each of the probability distributions can be expressed as a computer program. In practice, these computer programs will be simple and it will be possible to use a technique known as \textit{abstract interpretation} \citep{cousot1977abstract} using the domain of convex polyhedra \citep*{cousot1978automatic, becchi2018efficient, fukuda2020polyhedral} to efficiently calculate a convex polyhedron that bounds the support of the program. Software to perform abstract interpretation using convex polyhedra already exists \citep*{henry2012pagai, GN2021, jeannet2009apron, bagnara2008parma} and the technique has been used in applications such as compiler optimization \citep{nsjodin2009design} and verification of safety-critical systems \citep{halbwachs1997verification}. The programs may contain calls to a random number generator \texttt{Random()} that returns a random floating-point number $0 \le r < 1$. This can be represented in the polyhedral domain by introducing an real valued auxiliary variable, $r$, that satisfies $0 \le r < 1$ for each call to \texttt{Random()}. These auxiliary variables can be removed immediately using the abstract interpretation software to project the polyhedron back into the space of $X$. This relies on converting the polyhedron to its set of vertices \citep{motzkin1953double} and projecting the vertices, so the number of vertices must be of a tractable size. Alternatively, the auxiliary variables can be added to X and marginalised out when we take the samples.
 
-If the number of agents is very much smaller than the number of agent states (which is often the case with agent based models) then we may be willing to make the assumption that in any timestep there is at most one agent performing a given action from a given start state (i.e. $\forall \psi, a, t: T^{\psi a}_t \in \{0,1\}$). Under this assumption, which we'll call the \textit{Fermionic assumption}, the set of \textit{Fermionic trajectories}, $\mathcal{F}^N_{SA} = \left\{T\in\mathcal{T}^N_{SA}: \forall \psi, a, t: T^{\psi a}_t \in \left\{0,1\right\}\right\}$, all lie on the corners of the unit hypercube. So the intersection of $\mathcal{F}^N_{SA}$ with any set is a convex polyhedron and $\supp(P(T|\Omega))$ can always be exactly represented as a mixed-integer polyhedron (although finding that polyhedron isn't always easy, abstract interpretation software will find a larger polyhedron that contains it).
+If the number of agents is very much smaller than the number of agent states (which is often the case with agent-based models) then we may be willing to make the assumption that in any timestep there is at most one agent performing a given action from a given start state (i.e. $\forall \psi, a, t: T^{\psi a}_t \in \{0,1\}$). Under this assumption, which we'll call the \textit{Fermionic assumption}, the set of \textit{Fermionic trajectories}, $\mathcal{F}^N_{SA} = \left\{T\in\mathcal{T}^N_{SA}: \forall \psi, a, t: T^{\psi a}_t \in \left\{0,1\right\}\right\}$, all lie on the corners of the unit hypercube. So the intersection of $\mathcal{F}^N_{SA}$ with any set is a convex polyhedron and $\supp(P(T|\Omega))$ can always be exactly represented as a mixed-integer polyhedron (although finding that polyhedron isn't always easy, abstract interpretation software can be used to find a larger polyhedron that contains it).
 
 So, if we let $\mathcal{P}(f)$ be a mixed integer polyhedron that contains $\supp(f)$ then from equation \eqref{support}
 \begin{equation}
@@ -465,7 +450,7 @@ where $|C|$ here denotes an element-wise absolute value of a matrix and $\underl
 
 To see why this identity holds, note first that the constraints make $z$ into an indicator variable that is 0 if $X^i=0$ or 1 otherwise. When $z=1$ the first constraint on the right hand side of \eqref{implication} is equal to $CX \le U$ and the second is equal to $L \le CX$ so their intersection is $L \le  CX \le U$ as required, whereas when $z=0$ the constraints are equal to $\underline{B} \le CX \le \overline{B}$. But $\underline{B}$ and $\overline{B}$ are lower and upper bounds on the values of $CX$ in the hyper-rectangle so this is satisfied for all values $0 \le X \le H$ as required. 
 
-There are two things worth noting here. Firstly if we make the Fermionic assumption then $z = X^i = T^t_{\psi a}$ so the auxiliary indicator variable becomes unnecessary. Secondly, we must bound $\mathcal{P}(\pi_\theta(\psi,T^t_{*b}\mathbf{1}^b,a))$ by a hyper-rectangle with its lower corner at the origin. In practice, this is not a problem as we can just make a change of variable, shifting any variables that don't have zero as lower bound and multiplying by -1 if necessary, and give an upper bound such that the probability of any $\left<T,\theta\right>$ of interest having any element larger than $H$ is small.
+There are two things worth noting here. Firstly if we make the Fermionic assumption then $z = X^i = T^t_{\psi a}$ so the auxiliary indicator variable becomes unnecessary. Secondly, we must bound $\mathcal{P}(\pi_\theta(\psi,T^t_{*b}\mathbf{1}^b,a))$ by a hyper-rectangle with its lower corner at the origin. In practice, this is not a problem as we can just make a change of variable, shifting any variables that don't have zero as lower bound and multiplying by -1 if necessary, and give an upper bound such that the probability of any $\left<T,\theta\right>$ of interest having any element larger than $H$ is negligible.
 
 So, by using \eqref{polyhedralSupport}, \eqref{intersection} and \eqref{implication} the support of the posterior can be reduced to a mixed-integer polyhedron.
 
@@ -512,7 +497,7 @@ Taken together, these constraints define a polyhedron that bounds the set of (Fe
 
 Having shown how to approximate $\supp(P(T,\theta|\Omega))$ as a mixed-integer polyhedron, we now show how to use this to sample from $P(T,\theta|\Omega)$.
 
-Various methods of sampling from a mixed-integer polyhedron exist in the literature. \citet{baumert2009discrete} presents a very general algorithm for sampling from any weighted subset of integer points within a bounding hyper-rectangle. The algorithm relies on sampling points on a random walk. However, in our case the number of valid trajectories is a vanishingly small proportion of the number of integer points in the smallest bounding hyper-rectangle, so a random walk is unlikely to come across any valid trajectories. Universal hashing \citep{meel2016constrained} provides a promising alternative but we have found that this technique doesn't scale to the number of dimensions needed for our application.
+Various methods of sampling from a mixed-integer polyhedron exist in the literature. \citet{baumert2009discrete} presents a very general algorithm for sampling from any weighted subset of integer points within a bounding hyper-rectangle. The algorithm relies on sampling points on a random walk. However, in our case the number of valid trajectories could be a vanishingly small proportion of the number of integer points in the smallest bounding hyper-rectangle, so a random walk would be unlikely to come across any valid trajectories. Universal hashing \citep{meel2016constrained} provides a promising alternative but we have found that this technique doesn't scale to the number of dimensions needed for our application.
 
 The Metropolis-Hastings algorithm is another well known and widely used sampling algorithm and this is the approach we take here. To do this we need to define
 \begin{itemize}
@@ -592,14 +577,35 @@ where $\mathbb{T}$ is the set of  each Markov state, $X_N$, is mapped to a uniqu
 
 
 \subsection{The proposal function}
+\label{theProposalFunction}
+In order to propose a new Markov state given a current state $X_N$, first choose an element of $X_N$ and a direction in which to perturb that element. This defines a \textit{rounded perturbed state}, $X'_N$,  which is equal to $X_N$ but with its $i^{th}$ element rounded to the nearest integer and perturbed by $\pm 1$. Only rounded perturbed states that remain inside the hyper-rectangle $H_N$ are considered. Note that real valued variables should be scaled so that a perturbation of $\pm 1$ only changes $P(X|\Omega)$ by a small amount, and their boundaries lie on an integer value plus 0.5. So, we can define the set of all valid perturbations
+\[
+\mathcal{D}(X_N) = \left\{\left<i,\delta\right> : X'_N = \lfloor X_N \rceil_i + \delta e_i, 0 \le X'_N \le H_N, \delta \in \left\{+1,-1\right\}, i \in \mathcal{V} \right\}
+\]
+where we use the notation $\lfloor . \rceil_i$ to denote the rounding of the $i^{th}$ element of a vector, $e_i$ is the unit vector with a 1 in the $i^{th}$ element and $\mathcal{V}$ is the set of indices of $X_N$.
 
-The perturbation function chooses an element of $X_N$ and perturbs it. If it is an integer element, it's value is perturbed by $\pm 1$, if a real-valued element, it's value is rounded to the nearest integer, $\lfloor X_{Ni}\rceil$, then perturbed by $\pm 1 + \epsilon$ where $\epsilon$ is drawn with uniform probability from $[-0.5:0.5]$. Note that real valued variables should be scaled so that a perturbation of $\pm 1$ only changes $\tilde{P}(X|\Omega)$ by a small amount. If the rounded value of an element is already on one of its bounds on the hyper-rectangle, $H_N$, it is only ever perturbed in the feasible direction. We denote the set of all perturbed states of $X_N$ by $\mathcal{D}(X_N)$.
+Assume for now that we have an approximation of the target distribution $\tilde{P}(X_N) \approx P(X_N|\Omega)$. Given a current state, $X_N$, the probability of choosing perturbation $\left<i,\delta\right> \in \mathcal{D}(X_N)$ is given by
+\begin{equation}
+P(X_N,i,\delta) = \frac{\min\left(1, \frac{\tilde{P}(\lfloor X_N \rceil_i + \delta e_i)}{\tilde{P}(\lfloor X_N \rceil_i)}\right)}{S(X_N)} 
+\label{transitionProb}
+\end{equation}
+where
+\begin{equation}
+S(X_N) = \sum_{\left<i,\delta\right> \in \mathcal{D}(X_N)} \min\left(1, \frac{\tilde{P}(\lfloor X_N \rceil_i + \delta e_i)}{\tilde{P}(\lfloor X_N \rceil_i)}\right)
+\label{transitionSum}
+\end{equation}
+
+Given a perturbation $\left<i,\delta\right>$, the final proposed state is given by
+\[
+X'_N = \lfloor X_N \rceil_i + (\delta + \epsilon)e_i
+\]
+where $\epsilon$ is a \textit{fractional perturbation} drawn with uniform probability from $[-0.5:0.5]$ if the $i^{th}$ element is real-valued or $\epsilon = 0$ if it is integer-valued.
 
 \subsubsection{Approximating the posterior}
 
-In order to define the probability of choosing a perturbation from $\mathcal{D}(X_N)$, we first make an approximation of the target distribution, $P(X_N|\Omega)$, in the form
+We approximate $P(X_N|\Omega)$, with a function of the form
 \begin{equation}
-P(X_N|\Omega) \approx \tilde{P}(X_N) = \prod_i \tilde{P}_i(Z_iX_N)
+\tilde{P}(X_N) = \prod_i \tilde{P}_i(Z_iX_N)
 \end{equation}
 where $Z_i$ are row vectors and $\tilde{P}_i$ are univariate factors of any form. We call this a \textit{linearly factorized distribution}.
 
@@ -614,16 +620,22 @@ l-x & \text{if }x<l\\
 \]
 Now, given a set of constraints $L \le CX_N \le U$, if we define a factor for each constraint
 \begin{equation}
-\tilde{P}_i(C_iX_N) = e^{\frac{-\iota(L_i,C_iX,U_i)}{\tau}}
+\tilde{P}_i(C_iX_N) = e^{\frac{-\iota(L_i,C_iX_N,U_i)}{\tau}}
+\end{equation}
+so that
+\begin{equation}
+\prod_i \tilde{P}_i(C_iX_N) = e^{\frac{-\sum_i \iota(L_i,C_iX_N,U_i)}{\tau}}
 \label{lfconstraints}
 \end{equation}
-then the product of these factors is a distribution that is 1 inside the polyhedron and that decays exponentially outside at a rate set by $\tau$.
+is a linearly factorized distribution that is 1 inside the polyhedron and that decays exponentially outside at a rate set by $\tau$.
 
-Given a Markov state, $X_N$, that satisfies $0 \le X_N \le H_N$, the associated trajectory given by equation \eqref{markovtotrajectory} is guaranteed to satisfy all the equality constraints. However, there is no guarantee that the basic variables given by eq \eqref{basicvars} will be within their bounds $0 \le X_B \le H_B$ or that the constraints $L \le CX \le U$ will be satisfied. These constraints can be accounted for by adding a factor in the form \eqref{lfconstraints} for each constraint in equation \eqref{reducedPolySupport}.
+Given a Markov state, $X_N$, we know that it satisfies $0 \le X_N \le H_N$ and the equality constraints $D(V+MX_N)=E$. However, there is no guarantee that the basic variables given by eq \eqref{basicvars} will be within their bounds $0 \le X_B \le H_B$ or that the constraints in \eqref{reducedPolySupport} will be satisfied. These constraints can be accounted for by including a factor in the form \eqref{lfconstraints} in our approximation $\tilde{P}(X_N)$.
 
-Turning our attention now to the distribution inside the polyhedron, if we look back at equation \eqref{posterior} we can see that the posterior of an ABM is already highly factorized. Note that all the factors other than possibly $P(\theta)$ are functions of linear transformations of X, though some are multivariate. Note also that a linearly factorized distribution can capture zero-order correlations by using the linear $Z_i$ transformations to rotate X, so we can create an approximation that captures each factor in \eqref{posterior} up to zero-order correlations. In many cases, this allows us to capture the posterior exactly.
+Equation \eqref{lfconstraints} is in the form of a Boltzmann distribution which describes a thermodynamic system, with an ``energy'' equal to the infeasibility of $X_N$, at equilibrium with a heat bath of ``temperature'' $\tau$. It has been shown that simulations of thermodynamic systems of this type are able to solve large linear integer optimisation problems like the one we're effectively solving here \citep{kirkpatrick1983optimization}. In our case, we don't need to change the temperature during the sampling process, but we do need to choose a value for $\tau$. Higher temperatures will increase mixing in the Markov chain, but will also increase the proportion of time spent in infeasible states so we need to find a temperature that is high enough to ensure good mixing of the chain and low enough to ensure that a reasonable proportion of samples are feasible. We have found that these two competing effects roughly cancel each other out when measuring the overall efficiency of the algorithm in effective samples per second, so the value of $\tau$ is not critical within a certain range. We have found that a good rule of thumb is to set the temperature so that 60-70\% of the samples in a chain are infeasible.
 
-However, when considering the efficiency of the final algorithm, there is a trade off between the closeness of $\tilde{P}(X_N)$ to $P(X_N|\Omega)$ and the number of factors involved in its calculation. In our experiments, we have found we can attain very good acceptance probabilities with relatively simple renderings of $\tilde{P}(X_N)$. Start state and observations are often already uncorrelated functions of the state occupation numbers, so are already in the correct form. In our experiments, the multinomial term in equation \eqref{posterior} was approximated as the linearly factorized
+Turning our attention now to the distribution inside the polyhedron, if we look back at equation \eqref{posterior} we can see that the posterior of an ABM is already highly factorized. Note that a linearly factorized distribution can capture zero-order correlations between linear transformations of $X_N$ by rotating $X_N$, so we can create an approximation that captures each factor in \eqref{posterior} up to zero-order correlations. In many cases, this allows us to capture the posterior exactly.
+
+However, when considering the efficiency of the final algorithm, there is a trade off between the closeness of $\tilde{P}(X_N)$ to $P(X_N|\Omega)$ and the number of factors involved in its calculation. In our experiments, we have found we can attain very good acceptance probabilities with relatively simple renderings of $\tilde{P}(X_N)$. The start state, likelihood function and prior over $\theta$ are often already uncorrelated functions of the elements of $\theta$ and the state occupation numbers, so are already in the correct form. This leaves only the multinomial term in equation \eqref{posterior} which, in our experiments, was approximated as the linearly factorized
 \begin{equation}
 \prod_{t, \psi}\left(T^t_{\psi b}\mathbf{1}^b\right)! \prod_a \frac{\tilde{\pi}^t_{\psi a}\,^{T^t_{\psi a}}}{T^t_{\psi a}!}
 \label{multinomialapprox}
@@ -638,73 +650,59 @@ So, the final approximation, $\tilde{P}(X_N)$, is given by the product of the fa
 
 Since some of the Markov states are infeasible, calculating $\tilde{P}$ for these states may require the evaluation of a factor on a value that is outside its domain (for example, \eqref{multinomialapprox} if $T^t_{\psi a}$ goes negative). In this case we choose the value at the nearest point that is within the domain.
 
-\subsubsection{The the probability of proposals}
-
-Given an approximation, $\tilde{P}(X_N)$ and a current state, $X_N$, the proposal function chooses a transition to destination state $X'_N \in \mathcal{D}(X_N)$ with a probability given my
-\begin{equation}
-P(X_N \to X'_N) = \frac{\min\left(1, \frac{\tilde{P}(X'_N)}{\tilde{P}(X_N)}\right)}{S(X_N)} 
-\label{transitionProb}
-\end{equation}
-where
-\begin{equation}
-S(X_N) = \sum_{X'_N \in \mathcal{D}(X_N)} \min\left(1, \frac{\tilde{P}(X'_N)}{\tilde{P}(X_N)}\right)
-\label{transitionSum}
-\end{equation}
-In the next section we'll see how to calculate this value efficiently.
 
 \subsection{The probability of a Markov state}
 
-If a Markov state satisfies all the constraints in \eqref{reducedPolySupport} then the probability of the Markov state is defined to be equal to the true posterior given by \eqref{posterior}
+If a Markov state satisfies all the constraints in \eqref{reducedPolySupport} then its probability is defined to be equal to the true posterior given by \eqref{posterior}
 \[
 P(X_N) = P(X=V + MX_N|\Omega) = P(T,\theta|\Omega)
 \]
 
-If the constraints are not all satisfied, then the probability is defined as the product of the factors in \eqref{posterior} and the infeasibility factors of the form \eqref{lfconstraints}. If any factor in \eqref{posterior} becomes zero as a consequence of the infeasibility, then it is replaced by its linearly factorized approximation (which must be non-zero otherwise the state wouldn't have been proposed).
+If the constraints are not all satisfied, then the probability is defined to be the product of the factors in \eqref{posterior} and the infeasibility factors of the form \eqref{lfconstraints}. If any factor in \eqref{posterior} becomes zero as a consequence of the infeasibility, then it is replaced by its linearly factorized approximation (which must be non-zero otherwise the state wouldn't have been proposed).
 
 This means that, as long as $\tau$ is finite, the Markov chain will pass through some infeasible states. However, if we just ignore these and only take samples from feasible states then we end up with samples from the true posterior. Allowing the Markov chain to pass through infeasible states has the advantage of ensuring that there exists a path between any two feasible states and improves mixing. When used in the context of a particle filter, it also solves the problem of unexpected observations that can't be generated by any particle, as we can allow the particles to become temporarily infeasible. The price we pay for this is the computational cost of moving through infeasible states that don't generate useful samples.
 
-From the Metropolis-Hastings algorithm, the probability of acceptance of the proposal is given by
+From the Metropolis-Hastings algorithm, the probability of accepting a proposal $X'_N = \lfloor X_N \rceil_i + (\delta + \epsilon)e_i$ is given by
 \[
 \alpha = 
-\min\left( 1, \frac{P(X'_N)P(X'_N \to X_N)}{P(X_N)P(X_N \to X'_N)} \right) = \min\left(1, 
-\frac{P(X'_N)}{P(X_N)} \frac{\tilde{P}(X_N)}{\tilde{P}(X'_N)}  \frac{S(X_N)}{S(X'_N)}\right)
+\min\left( 1, \frac{P(X'_N)P(X'_N, i, -\delta)}{P(X_N)P(X_N,i,\delta)} \right) = \min\left(1, 
+\frac{P(X'_N)}{P(X_N)} \frac{\tilde{P}(\lfloor X_N \rceil_i)}{\tilde{P}(\lfloor X'_N \rceil_i)}  \frac{S(X_N)}{S(X'_N)}\right)
 \]
-Since $\tilde{P}(X_N)$ approximates $P(X_N)$ $\frac{P(X'_N)}{P(X_N)}, \frac{\tilde{P}(X_N)}{\tilde{P}(X'_N)}$ should be close to 1. We'll see in the next section that if we choose the basis carefully then $S(X_N)$ will not change very much between transitions so the ratio $ \frac{S(X_N)}{S(X'_N)}$ should also be close to 1 meaning that the acceptance probability should also be close to 1. In practice we have achieved around $80\%$ of proposals accepted.
-
-If we define the \textit{energy} of a Markov state to be
-\[
-E(X_N) = -\tau log(P(X_N))
-\]
-then the probability of a Markov state can be written in the form
-\begin{equation}
-P(Y) \propto e^{\frac{-E(X_N)}{\tau}}
-\end{equation}
-This is a Boltzmann distribution which describes a thermodynamic system at equilibrium with a heat bath of ``temperature'' $\tau$. It has been shown that simulations of thermodynamic systems of this type are able to solve large integer optimisation problems which are similar in structure to the one we're effectively solving here \citep{kirkpatrick1983optimization}. In our case, we don't need to change the temperature during the sampling process, but we do need to choose a value for $\tau$. Higher temperatures will increase mixing in the Markov chain, but will also increase the proportion of time spent in infeasible states so we need to find a temperature that is high enough to ensure good mixing of the chain and low enough to ensure that a reasonable proportion of samples are feasible. We have found that these two competing effects roughly cancel each other out when measuring the overall efficiency of the algorithm in effective samples per second, so the value of $\tau$ is not critical within a certain range. We have found that a good rule of thumb is to set the temperature so that 60-70\% of the samples in a chain are infeasible.
+where $X'_N$ is the rounded perturbed state. Since $\tilde{P}(X_N)$ approximates $P(X_N)$ and $P(X'_N) \approx P(X''_N)$, $\frac{P(X''_N)}{P(X_N)}, \frac{\tilde{P}(X_N)}{\tilde{P}(X'_N)}$ should be close to 1. We'll see in the next section that if we choose the basis carefully then $S(X_N)$ will not change very much between transitions so the ratio $ \frac{S(X_N)}{S(X'_N)}$ should also be close to 1 meaning that the acceptance probability should also be close to 1. In our experiments around $80\%$ of proposals are accepted.
 
 \subsection{Choosing a basis}
 \label{basis}
-The definition of the Markov chain depends on a partition of the model state into basic and non-basic variables such that $B$ in equation \eqref{basicvars} has an inverse, $B^{-1}$, and if $X_N \in \mathbb{Z}^{N'} \times \mathbb{R}^{M'}$ then $X \in \mathbb{Z}^{N} \times \mathbb{R}^{M}$ (i.e. if $X_N$ has all integers in the correct elements then so does $X$). In general there exist many partitions that satisfy these requirements so it remains to define a method of choosing one. The choice of basis affects the efficiency of trajectory transitions via:
+Our definition of a Markov state depends on a partition of the trajectory and parameters into basic and non-basic variables such that $B$ in equation \eqref{basicvars} has an inverse, $B^{-1}$, and if $X_N \in \mathbb{Z}^{N'} \times \mathbb{R}^{M'}$ then $X \in \mathbb{Z}^{N} \times \mathbb{R}^{M}$ (i.e. if $X_N$ has all integers in the correct elements then so does $X$). In general there exist many partitions that satisfy these requirements so it remains to define a method of choosing one. The choice of basis affects the efficiency of the Markov chain via:
 \begin{itemize}
-\item the computational cost of recomputing $S(X_N)$
+\item the computational cost of updating the proposal probabilities $P(X_N,i,\delta)$ and the sum $S(X_N)$ after each transition.
 
-\item the probability that the proposal is accepted via the ratio of sums $S(X_N)/S(X'_N)$
+\item the effect of the ratio of sums $S(X_N)/S(X'_N)$ on the acceptance probability
 
 \item the mixing rate of the Markov chain, since the choice of basis affects the way the probability distribution in $X$ space is projected into $X_N$ space.
 \end{itemize}
 
-Taking each in turn, $S(X_N)$ depends only on ratios of $P_\iota$. However, if we project $S(X_N)$ into the augmented state space $X_a = {X \choose CX} = {I \choose C}(V + MX_N)$ of $g_a$ (equation \eqref{augmentedG}) then the $P_\iota$s can be expressed as a product of functions on elements of $X_a$. So, when recalculating the sum in equation \eqref{transitionSum} after a transition from $X_N$ to $X_N + \delta e_i$, the only terms that change are those from $X_N + \delta e_j \in \mathbb{D}(X_N)$ such that the non-zero elements of ${I \choose C}(\delta Me_j)$ intersect with the non-zero elements of ${I \choose C}(\delta Me_i)$. So, if we choose a basis such that ${M \choose CM}$ is sparse then re-calculation of $S(X_N)$ will only require a few terms to be recalculated and so will be more efficient. A binary tree data structure can be used to efficiently update and draw from the probability distribution over transitions in equation \eqref{transitionProb} while also keeping track of $S(X_N)$ \citep{TangMutableCategorical}.
+From \eqref{transitionProb} and \eqref{transitionSum} we see that in order to calculate $P(X_N,i,\delta)$ and $S(X_N)$ we need to calculate $\frac{\tilde{P}(\lfloor X_N \rceil_i + \delta e_i)}{\tilde{P}(\lfloor X_N \rceil_i)}$ for all $\left<i,\delta\right> \in \mathcal{D}(X_N)$.  Since $\tilde{P}$ is linearly factorised
+\[
+\frac{\tilde{P}(\lfloor X_N \rceil_i + \delta e_i)}{\tilde{P}(\lfloor X_N \rceil_i)} = \frac{\prod_j \tilde{P}_j(Z_j(\lfloor X_N \rceil_i + \delta e_i))}{\prod_j \tilde{P}_j(Z_j\lfloor X_N \rceil_i)} = \prod_{j : Z_je_i \ne 0} \frac{\tilde{P}_j(Z_j \lfloor X_N \rceil_i + \delta Z_j e_i))}{\tilde{P}_j(Z_j \lfloor X_N \rceil_i)}
+\]
 
-This same idea extends to the ratio $\frac{S(X_N)}{S(X'_N)}$. If ${M \choose CM}$ is sparse, and also short, then we should expect the ratio of sums to be close to 1.
+So, if we accept a perturbation $\left<k,\delta'\right>$, each term $P(X_N,i,\delta)$ needs to be updated 
+to $P(\lfloor X_N \rceil_k + (\delta'+\epsilon)e_k, i, \delta)$. However, this update only affects factors $\tilde{P}_j$ such that  $\left\{j : Z_j e_k\right\}$, so $P(X_N,i,\delta) \ne P(\lfloor X_N \rceil_k + (\delta'+\epsilon)e_k, i, \delta)$ only if $\left\{j : Z_je_i\right\}$ intersects with $\left\{j : Z_je_k\right\}$.
+If we let $Z$ be the matrix formed from the row vectors $Z_i$, then this is the same as saying that the non-zero elements of the $i^{th}$ column intersects with the non-zero elements of the $k^{th}$ column. So, if we choose a basis such that $Z$ is sparse, only a few $P(X_N,i,\delta)$ will need to be recalculated, resulting in greater efficiency. A binary sum-tree data structure can be used to efficiently update and draw from the probability distribution over transitions in equation \eqref{transitionProb} while also keeping track of $S(X_N)$ \citep{TangMutableCategorical}.
+ 
+The effect of $\frac{S(X_N)}{S(X'_N)}$ on the acceptance probability is also improved if $Z$ is sparse because only a small percentage of the terms in the sum change between $S(X_N)$ and $S(X'_N)$ so we should expect their ratio to be close to 1.
 
-The Markov chain will also mix better if the columns of ${M \choose CM}$ are short. \citet{mihelich2018maximum} shows that the Kolmogorov-Sinai entropy of the Markov process is a good proxy for its mixing speed. In the context of our algorithm the entropy is higher if the neighbours of a Markov state have similar probability, all else being equal. If ${M \choose CM}$ is sparse and short then we expect the probability of adjecent Markov states to be similar.
+The Markov chain will also mix better if the columns of $Z$ are sparse. \citet{mihelich2018maximum} shows that the Kolmogorov-Sinai entropy of the Markov process is a good proxy for its mixing speed. In the context of our algorithm the entropy is higher if the neighbours of a Markov state have similar probability, all else being equal. If $Z$ is sparse (and short) then the probability of adjecent Markov states are more likely to be similar.
 
-[TODO: Finding a short basis is lattice reduction, which is hard?]
-
-In order to find a sparse basis that maintains the integer elements, we use the following algorithm. Starting with a mixed-integer polyhedron expressed in the form
+In order to find a sparse basis that maintains the integer elements, we use the following algorithm. Start with a mixed-integer polyhedron expressed in the form
 \[
 \mathcal{P} = \left\{X \in \mathbb{Z}^N \times \mathbb{R}^M: L \le CX \le U \cap DX = E \right\}
 \]
-If we let
+so that $\tilde{P}$ can be expressed as a function on $X$, rather than $X_N$
+\[
+\tilde{P}(X) = \prod_i \tilde{P}_i(C_iX).
+\]
+In this form $C$ is usually sparse to start with, so our aim is to maintain that sparsity while using the equality constraints to reduce the dimension. If we let
 \[
 W= {D \choose C}
 \]
@@ -720,7 +718,7 @@ then
 
 Our aim is to mark variables from $X$ as basic one at a time. Once we're done, the remaining variables will make up the non-basic variables, $X_N$.
 
-Given a set of constraints in the form \eqref{jointconstraints}, we mark the $j^{th}$ element of $X$ as basic and the $i^{th}$ equality constraint as ``reduced'' by choosing an element $W^i_j$ to be a \textit{pivot point} and performing Gaussian elimination on the $j^{th}$ column of $W$ so that $W^i_j$ is the only non-zero element in the column $W_j$. So
+Given a set of constraints in the form \eqref{jointconstraints}, we mark the $j^{th}$ element of $X$ as basic and the $i^{th}$ equality constraint as ``reduced'' by choosing an element $W^i_j$ to be a \textit{pivot point} and performing Gaussian elimination on the $j^{th}$ column of $W$ so that $W^i_j$ is the only non-zero element in the column $W_j$. This can be done by pre-multiplying by $G$
 \[
 {\mathbf{0} \choose L} \le GWX - GF \le {\mathbf{0} \choose U}
 \]
@@ -745,17 +743,17 @@ Letting $\hat{W} = GW$ and $\hat{F} = GF$ recovers the canonical form
 \end{equation}
 but now with the $j^{th}$ element of $X$ marked as basic and the $i^{th}$ row of $\hat{W}$ marked as ``reduced''. We now repeat the process until no more equality constraints can be reduced.
 
-The use of Gaussian elimination here ensures that $B^{-1}$ exists. In order to ensure that $X_B$ has the correct integer structure, given that $X_N$ does, we add the requirement that we can only mark integer elements of $X$ as basic on a pivot point $W^i_j$ such that the row vector $W^i$ is zero on all non-integer columns and $W^i_j$ divides $W^i_k$ for all $k$ (so for rows that have a non-zero element on a real-valued column, we always eliminate on a real-valued column). This constraint ensures that a reduced equality constraint has the form $X_B^i = F_i - W^iX_N$ where $W^i$ is a row vector of integer coefficients on integer elements of $X_N$. If this constraint has any all-integer solution then $F$ must also be an integer. So, if $X_N$ has the correct integer structure, then $X_B^i$ is also an integer. Note that, even with this constraint, we can always eliminate all continuity constraints.
+The use of Gaussian elimination here ensures that $B^{-1}$ exists. In order to ensure that $X_B$ has the correct integer structure, given that $X_N$ does, we add the requirement that we can only mark integer elements of $X$ as basic on a pivot point $W^i_j$ such that the row vector $W^i$ is zero on all non-integer columns and $W^i_j$ divides $W^i_k$ for all $k$ (so for rows that have a non-zero element on a real-valued column, we always eliminate on a real-valued column). This requirement ensures that a reduced equality constraint has the form $X_B^i = F_i - W^iX_N$ where $W^i$ is a row vector of integer coefficients on integer elements of $X_N$. If this constraint has any all-integer solution then $F$ must also be an integer. So, if $X_N$ has the correct integer structure, then $X_B^i$ is also an integer. Note that, even with this requirement, we can always eliminate all continuity constraints.
 
 This defines a set of valid pivot points at each elimination step. In order to decide which point to choose, we note that when we pivot on $W^i_j$, $GW$ differs from $W$ in at most 
 \[
 \mu = (\left|W_j\right|_0-1)(\left|W^i\right|_0-1)
 \]
- elements, where $\left|\cdot\right|_0$ is the L0-norm (i.e. the number of non-zero elements in a vector or matrix). So, this gives an upper bound on $\left|WG\right|_0 - \left|G\right|_0$, the change in L0-norm (or reduction in sparsity) of $W$ when we pivot on $W^i_j$. It has been found that choosing $W^i_j$ to be the element that minimises $\mu$ (known as the Markowitz criterion) is a computationally efficient way of maintaining the sparsity of a matrix while performing Gaussian elimination \citep*{markowitz1957elimination, suhl1990computing, maros2002computational}. So, in order to find a sparse basis, we calculate the set of valid pivot points, choose the point that minimises $\mu$, perform the pivot and repeat until no more valid pivot points remain. \citet{suhl1990computing} shows how to perform this in a computationally efficient way.
+ elements, where $\left|\cdot\right|_0$ is the L0-norm (i.e. the number of non-zero elements in a vector or matrix). So, this gives an upper bound on $\left|WG\right|_0 - \left|G\right|_0$, the change in L0-norm (or reduction in sparsity) of $W$ when we pivot on $W^i_j$. It has been found that choosing $W^i_j$ to be the element that minimises $\mu$ (known as the Markowitz criterion) is a computationally efficient way of maintaining the sparsity of a matrix while performing Gaussian elimination \citep*{markowitz1957elimination, suhl1990computing, maros2002computational}. So, in order to find a sparse basis, we calculate the set of valid pivot points, choose the point that minimises $\mu$, perform the pivot and repeat until no more valid pivot points remain. \citet{suhl1990computing} presents a computationally efficient algorithm for doing this.
 
 \section{Spatial predator-prey demonstration}
 
-We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey'' agents. At each timestep a prey agent either moves to an adjacent grid-square (i.e. up, down, left or right with equal probability), dies or gives birth to another prey agent on the an adjacent grid-square. Predators also either move to an adjacent grid-square, die or give birth. However, predators only give birth when there is at least one prey on an adjacent grid-square. In addition, if a prey has any predators on adjacent grid-squares there is a chance it may be eaten. The probability of each behaviour is shown in table \ref{rates}.
+We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey'' agents. At each timestep a prey agent either moves to an adjacent grid-square (i.e. up, down, left or right with equal probability), dies or gives birth to another prey agent on the an adjacent grid-square. Predators also either move to an adjacent grid-square, die or give birth. However, predators only give birth when there is at least one prey on an adjacent grid-square. In addition, if a prey has any predators on adjacent grid-squares there is a chance it may be eaten. The probability of each behaviour is shown in table \ref{rates}. These were chosen to minimise the probability that either species becomes extinct.
 
 \begin{table}
 	\begin{center}
@@ -794,6 +792,13 @@ We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey''
 	\label{figRegions}
 \end{figure}
 
+
+Simulated observation data was generated by performing a forward simulation of the model. The number of predators and prey in each gridsquare at the start of the simulation was drawn from a Poisson distribution with rate parameter $\lambda = 0.05$.  The model was then simulated forward for 16 timesteps. At each timestep, for each gridsquare, the number of predators in that gridsquare was observed with a probability of 0.05. The observation was noiseless so the observed count was the true count. The same procedure was then repeated for prey.
+
+Four separate Markov chains were generated from the posterior using the MCMC algorithm described above. The start state for each chain was generated by drawing from the prior (i.e. model trajectory without any observations) then generating proposals as described in section \ref{theProposalFunction} and accepting them with probability 1 until a feasible state was reached. 1,500,000 samples were then taken from each chain, the first 200,000 of which were discarded. The remaining samples were split into first and last halves to give 8 sample sequences in total. 
+
+In order to assess the convergence of the chains, a set of summary statistics were calculated for each sample of each chain. The summary statistics consisted of the total number of agents within the shaded regions shown in figure \ref{figRegions} measured at the end of the last timestep. This arrangement of regions was chosen in order to capture the convergence at different spatial scales. From the summary statistics, we calculated the the Gelman-Rubin diagnostic \cite{gelman1992inference}. This gives a measure of the uncertainty in the standard deviation of the statistic due to the fact that we have only taken a finite number of samples. If this number is close to 1, then we have some justification in believing that we have taken enough samples. We also approximated the autocorrelation of each statistic at various time lags. A decline of autocorrelation to zero long before the lag reaches the total number of samples shows good convergence of the chain. We also approximated the number of effective samples in each chain, i.e. the number of samples from a perfect IID sampler that would give the same uncertainty in the mean of the statistic. Details on how these measures were calculated are given in section \ref{calculatingConvergenceStats} and our results are shown in figure \ref{figAutocorrelation} and table \ref{convergenceResults}.
+
 \begin{figure}
 	\centering
 	\resizebox{0.8\textwidth}{!}{
@@ -802,6 +807,22 @@ We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey''
 	\caption{Mean autocorrelation for each scalar of the summary statistics, averaged over all chains.}
 	\label{figAutocorrelation}
 \end{figure}
+
+\begin{table}
+	\begin{center}
+		\begin{tabular}{llllc}
+			\hline
+			Measure & statistic 1 & statistic 2 & statistic 3 & statistic 4\\
+			\hline
+			Gelman-Rubin & & & & \\
+			Effective samples & & & & \\
+			\hline
+		\end{tabular}
+	\end{center}
+	\caption{The Gelman Rubin diagnostic and effective number of samples for each statistic}
+	\label{convergenceResults}
+\end{table}
+
 
 \begin{figure}
 	\centering
@@ -812,55 +833,9 @@ We demonstrate the above techniques on a 32x32 grid of ``predator'' and ``prey''
 	\label{figEndState}
 \end{figure}
 
-
-Simulated observation data was generated by performing a forward simulation of the model. The number of predators and prey in each gridsquare at the start of the simulation was drawn from a Poisson distribution with rate parameter $\lambda = 0.05$. The model was then simulated forward for 16 timesteps. At each timestep, each gridsquare was observed with a probability of 0.02. If an observation was made, the number of predators in the gridsquare was observed. In order to demonstrate assimilation with observational noise, each predator was observed with probability 0.9 (i.e. the number observed was drawn from a Binomial distribution. Note that our algorithm can also assimilate observations with no noise). The same procedure was then repeated for prey.
-
-Four separate Markov chains of 1,500,000 samples each were generated from the posterior using the method described above. The start state for each chain was drawn from the prior (i.e. model trajectory without any observations). The first 200,000 samples of each chain were discarded and the remaining samples were split into first and last halves to give 8 sample sequences in total. 
-
-In order to assess the convergence of the chains, a set of summary statistics were calculated for each sample of each chain. The summary statistics consisted of the total number of agents within the shaded regions shown in figure \ref{figRegions} measured at the end of the last timestep of the trajectory. This arrangement of regions was chosen in order to capture the convergence at different spatial scales. From the summary statistics, we calculated the the Gelman-Rubin diagnostic \cite{gelman1992inference}, and approximated the autocorrelation at various time lags. Using the notation $x_{ij}$ to refer to a scalar statistic of the $i^{th}$ sample of the $j^{th}$ sequence, given $m$ sequences of $n$ samples each, let $\bar{x}_j$ be the mean of the $j^{th}$ sequence and $\bar{x}$ be the mean over all sequences
-\[
-\bar{x}_j = \frac{1}{n}\sum_{i=1}^n x_{ij}, \bar{x} = \frac{1}{m}\sum_{j=1}^m \bar{x}_j
-\]
-let $W$ be the within-sequence variance
-\[
-W = \frac{1}{m} \sum_{j=1}^m \frac{1}{n-1} \sum_{i=1}^n (x_{ij} - \bar{x}_j)^2
-\]
-and $B$ be the between-sequence variance
-\[
-B = \frac{n}{m-1}\sum_{j=1}^m (\bar{x}_j - \bar{x})^2
-\]
-Following\cite{gelman2013bayesian}, an overapproximation of the true variance of the statistic can be calculated as
-\[
-\widehat{\text{var}}^+ = \frac{n-1}{n}W + \frac{1}{n}B
-\]
-and the Gelman-Rubin statistic can be defined as
-\[
-\hat{R} = \sqrt{\frac{\widehat{\text{var}}^+}{W}}
-\]
-This gives a measure of the uncertainty in the standard deviation of the statistic due to the fact that we have only taken a finite number of samples. If this number is close to 1, then we have some justification in believing that we have taken enough samples.
-
-[TODO: what was R?]
-
-Also following\cite{gelman2013bayesian}, we approximated the autocorrelation as
-\[
-\hat{\rho}_t = 1 - \frac{V_t}{2\widehat{\text{var}}^+}
-\]
-where
-\[
-V_t = \frac{1}{n-t} \sum_{i=1}^{n-t} (x_i - x_{i+t})^2
-\]
-
-Figure \ref{figAutocorrelation} shows $\hat{\rho}_t$ as a function of $t$ for each scalar in the summary statistics. A decline of $\hat{\rho}_t$ to zero long before $t$ reaches the total number of samples, shows good convergence of the chain. The rate of this decline can be used to calculate the effective number of samples, defined as
-\[
-\hat{n}_e = \frac{mn}{1 + 2\sum_{t} \hat{\rho}_t}
-\]
-where the sum runs until $\hat{\rho}_t \le 0$. This approximates of the number of samples from a perfect IID sampler that would give the same uncertainty in the mean of the statistic.
-
-[TODO: what was the effective sample size?]
-
 Finally, figure \ref{figEndState} shows the mean number of agents at the end of the simulation, averaged over all samples. This is a visual way of showing that the observations have given rise to a posterior that gives some information about the true positions of the agents.
 
-[Show convergence with problem size/number of constraints or with grid-size / number of timesteps (number of agents?)]
+The code used to generate these results can be found at \url{https://github.com/danftang/AgentBasedMCMC}.
 
 \section{Discussion} 
 \label{discussion}
@@ -870,9 +845,9 @@ Finally, figure \ref{figEndState} shows the mean number of agents at the end of 
 
 If we would like to perform online data assimilation or assimilation over a long time period, the above algorithm can be used as part of a sequential MCMC algorithm.
 
-The \textit{Resample-Move} algorithm presented in \citet{gilks2001following} adds MCMC transitions to sequential importance resampling by adding a \textit{move} step after the resample step. At each move step each sample, $T^i_t = \left<\tau_{1:t}^i,\theta\right>$, is ``moved'' by initialising the Markov chain with $T^i_t$ and drawing a single new sample $T'^{i}_{t} \sim P(T_t|\Omega_{1:t})$. This solves the problem of particle impoverishment because even if multiple samples collapse to the same state during the resample step, the subsequent move step is likely to move them apart again. The algorithm remains exact because the samples coming out of the $m^{th}$ resample step are already distributed according to the target distribution, $P(T_t|\Omega_{1:t})$, but this is also the stationary distribution of the Markov transition so the moved samples are also distributed according to the target distribution.
+The \textit{Resample-Move} algorithm presented in \citet{gilks2001following} adds MCMC transitions to sequential importance resampling by adding a \textit{move} step after the resample step. At each move step each particle, $T^i_t = \left<\tau_{1:t}^i,\theta\right>$, is ``moved'' by initialising the Markov chain with $T^i_t$ and drawing a single new sample $T'^{i}_{t} \sim P(T_t|\Omega_{1:t})$. This solves the problem of particle impoverishment because even if multiple samples collapse to the same state during the resample step, the subsequent move step is likely to move them apart again. The algorithm remains exact because the samples coming out of the $m^{th}$ resample step are already distributed according to the target distribution, $P(T_t|\Omega_{1:t})$, but this is also the stationary distribution of the Markov transition so the moved samples are also distributed according to the target distribution.
 
-The Resample-Move algorithm still uses an importance sampling step which, as we have seen, is often difficult for ABMs because drawing from the prior will result in samples with zero weight. If this is the case, we can replace the draw from the prior with an draw from $P(T_{t+1}|\Omega_{1:{t+1}},T^i_t)$ using our MCMC algorithm for each sample $T^i_t$ from the previous timestep. The correct weight of the particle is then proportional to $P(\Omega_{t+1}|T^i_t)$ \citep{doucet2009tutorial}. Unfortunately we don't immediately know this value. If we're doing an assimilation step every timestep, or if the ABM is simple enough it may be possible to calculate this value analytically, however, often this is not possible.   \citet*{han2001markov, newton1994approximate, stefankovic2009adaptive} give a number of ways of approximating these values, at least up to a multiplicative constant (which is all we need).
+The Resample-Move algorithm still uses an importance sampling step which, as we have seen, is often difficult for ABMs because drawing from the prior will often result in samples with zero weight. If this is the case, we can replace the draw from the prior with an draw from $P(T_{t+1}|\Omega_{1:{t+1}},T^i_t)$ using our MCMC algorithm for each particle $T^i_t$ from the previous timestep. The correct weight of the particle is then proportional to $P(\Omega_{t+1}|T^i_t)$ \citep{doucet2009tutorial}. Unfortunately we don't immediately know this value. If we're doing an assimilation step every timestep, or if the ABM is simple enough, it may be possible to calculate this value analytically, however, often this is not possible.   \citet*{han2001markov, newton1994approximate, stefankovic2009adaptive} give a number of ways of approximating these values, at least up to a multiplicative constant (which is all we need).
 
 The calculation of $P(\Omega_{t+1}|T^i_t)$ can be avoided if, during the subsequent move step of the Resample-Move algorithm, we're willing to iterate the MCMC moves until convergence. In this case, the particles regain equal weighting through the MCMC moves. Since all particles end up with equal weight, there is no need for a resampling step. The disadvantage is that we need to iterate to convergence on each particle, so it is more computationally intensive. This scheme can be made more computationally efficient if we're content with samples from $P(T_{t-L}|\Omega_{1:t})$ for some time lag $L$, that is we're getting samples from the smoothed values at time $t-L$ which account for observations up to time $t$. In this case we take samples from $P(\tau_{1:t},\theta|\Omega_{1:t})$ and marginalise to get samples from $P(T_{t-L}|\Omega_{1:t})$. We now only need to iterate the MCMC moves until the marginalised values converge, but since a new observation $\Omega_{1:t+1}$ has much smaller effect on $T_{t-L+1}$ than on $T_{t+1}$ we expect to reach convergence of the marginal in fewer iterations for a fixed measure of convergence.
 
@@ -882,18 +857,59 @@ As the number of assimilated windows increases, there may come a point where we 
 
 This algorithm presented here is intended as the proof-of-concept of a novel approach to MCMC sampling from an ABM rather than a production-ready tool for use by practitioners. At present, the process of conversion from a specification of an agent timestep and a set of observation operators to a convex polyhedron that constrains the support of the posterior is either done by hand or by third party abstract interpretation tools. This process could be automated, taking as input a computer program that describes the behaviour of the agent and computer programs that describe the observation operators and generating a set of linear constraints for the support. Similarly, the temperature setting at present needs to be set by trial-and-error, whereas an automated warm-up or adaptive scheme would improve the algorithm's efficiency and usability.
 
-As presented, the algorithm is only applicable if the internal state of an agent is relatively small. This is because it depends on explicitly representing the probability of each Markov transition at each iteration. But the number of possible transitions is of the order of the number of basic variables, and this expands exponentially with the size of the internal state of an agent. So, if agents have a large amount of internal state it will become impractical to represent this distribution explicitly. However, this problem can be overcome by considering only a subset of basic variables for update at each iteration, in a similar way to \textit{partial pricing} in the simplex algorithm \citep{maros2002computational}. For example, given the current Markov state, only consider updating the non-basic variables that correspond to alternative actions of some agent in the current trajectory at some timestep. In this situation we also can't explicitly store the coefficients of the linear constraints, $C$, so in order to calculate the effect of a perturbation on the basic variables we'd calculate this on the fly from equations \eqref{nonNegativeInt} and \eqref{continuous}, the agent timestep function and the observation operators. Finding a good basis of non-basic variables could also be done on the fly for some subset of variables, or equality constraints could instead be left as-is as inequalities with equal lower and upper bounds. More work needs to be done exploring the relative efficiency of these options.
-
-[Under what circumstances can agent behaviour be approximated by convex polyhedron? If agent solves an NP complete problem then the delta PMF must map to a sparse polyhedron, for example]
-
-[extension to PPL]
+As presented, the algorithm is only applicable if the internal state of an agent is relatively small. This is because it depends on explicitly representing the probability of each Markov transition at each iteration. But the number of possible transitions is of the order of the number of non-basic variables, and this expands exponentially with the size of the internal state of an agent. So, if agents have a large amount of internal state it will become impractical to represent this distribution explicitly. However, this problem can be overcome by considering only a subset of non-basic variables for update at each iteration, in a similar way to \textit{partial pricing} in the simplex algorithm \citep{maros2002computational}. For example, given the current Markov state, only consider updating the non-basic variables that correspond to alternative actions of some agent in the current trajectory at some timestep. In this situation we also can't explicitly store the coefficients of the linear constraints, $C$, so in order to calculate the effect of a perturbation on the basic variables we'd calculate this on the fly from equations \eqref{nonNegativeInt} and \eqref{continuous}, the agent timestep function and the observation operators. Finding a good basis of non-basic variables could also be done on the fly for some subset of variables, or equality constraints could instead be left as-is as inequalities with equal lower and upper bounds. More work needs to be done exploring the relative efficiency of these options.
 
 \section{Conclusion}
 
-We described and demonstrated an algorithm to sample model trajectory / parameter setting pairs from the posterior distribution of an agent based model given a set of observations. This allows us to  perform Bayesian inference with ABMs and so perform data assimilation.
+We have described and demonstrated an algorithm to sample model trajectory / parameter setting pairs from the posterior distribution of an agent-based model given a set of observations. This allows us to  perform Bayesian inference with ABMs and so perform data assimilation.
 
-Data assimilation with agent based models is currently in its infancy, and more powerful techniques for performing Bayesian inference with ABM could transform the usefulness and applicability of these models.
+Data assimilation with agent-based models is currently in its infancy, and more powerful techniques for performing Bayesian inference with ABM could transform the usefulness and applicability of these models.
+	
+\appendix 
 
+\section{Calculation of convergence statistics}
+\label{calculatingConvergenceStats}
+Using the notation $x_{ij}$ to refer to a scalar statistic of the $i^{th}$ sample of the $j^{th}$ sequence, given $m$ sequences of $n$ samples each, let
+\[
+\bar{x}_j = \frac{1}{n}\sum_{i=1}^n x_{ij}
+\]
+be the mean of the $j^{th}$ sequence and
+\[
+\bar{x} = \frac{1}{m}\sum_{j=1}^m \bar{x}_j
+\]
+be the mean over all sequences.
+
+Let $W$ be the within-sequence variance
+\[
+W = \frac{1}{m} \sum_{j=1}^m \frac{1}{n-1} \sum_{i=1}^n (x_{ij} - \bar{x}_j)^2
+\]
+and $B$ be the between-sequence variance
+\[
+B = \frac{n}{m-1}\sum_{j=1}^m (\bar{x}_j - \bar{x})^2
+\]
+Following \cite{gelman2013bayesian}, an overapproximation of the true variance of the statistic can be calculated as
+\[
+\widehat{\text{var}}^+ = \frac{n-1}{n}W + \frac{1}{n}B
+\]
+and the Gelman-Rubin statistic can be defined as
+\[
+\hat{R} = \sqrt{\frac{\widehat{\text{var}}^+}{W}}
+\]
+
+Also following\cite{gelman2013bayesian}, we approximated the autocorrelation as
+\[
+\hat{\rho}_t = 1 - \frac{V_t}{2\widehat{\text{var}}^+}
+\]
+where
+\[
+V_t = \frac{1}{n-t} \sum_{i=1}^{n-t} (x_i - x_{i+t})^2.
+\]
+
+$\hat{\rho}_t$ can be used to calculate the effective number of samples using
+\[
+\hat{n}_e = \frac{mn}{1 + 2\sum_{t} \hat{\rho}_t}
+\]
+where the sum runs from $t=0$ until the first $t$ that $\hat{\rho}_t \le 0$.
 
 %\bibliographystyle{unsrtnat}
 %\bibliographystyle{apalike} 
