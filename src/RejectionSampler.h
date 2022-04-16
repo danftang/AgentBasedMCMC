@@ -24,7 +24,7 @@ public:
 
     template<class AGENT>
     RejectionSampler(Prior<AGENT> & Prior, Likelihood<AGENT> & Likelihood) :
-        priorSampler([&Prior]() { return Prior.nextSample(); }),
+        priorSampler([&Prior]() { return Prior.nextSample(true); }),
         likelihood([&Likelihood](const Trajectory<AGENT> &X) { return Likelihood.P(X); }) {
     }
 

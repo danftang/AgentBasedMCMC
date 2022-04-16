@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <boost/serialization/vector.hpp>
+#include <boost/archive/binary_iarchive.hpp>
 #include "Event.h"
 #include "StlStream.h"
 #include "StateTrajectory.h"
@@ -15,6 +16,7 @@
 #include "Prior.h"
 #include "Likelihood.h"
 #include "BernoulliStartState.h"
+#include "PoissonStartState.h"
 #include "TableauNormMinimiser.h"
 
 template<int GRIDSIZE>
@@ -32,13 +34,23 @@ public:
 
     PredPreyProblem(): realTrajectory(0) {}
 
+
+    PredPreyProblem(const std::string &filename): PredPreyProblem() {
+        std::ifstream probFile(filename);
+        if(!probFile.good()) throw("Can't open problem file " + filename);
+        boost::archive::binary_iarchive probArchive(probFile);
+        PredPreyProblem<GRIDSIZE> problem;
+        probArchive >> *this;
+    }
+
+
     PredPreyProblem(int nTimesteps, double pPredator, double pPrey, double pMakeObservation, double pObserveIfPresent, double kappa):
     pPredator(pPredator),
     pPrey(pPrey),
     kappa(kappa),
 //    alpha(alpha),
     prior(nTimesteps, startStatePrior()),
-    realTrajectory(prior.nextSample()),
+    realTrajectory(prior.nextSample(true)),
     likelihood(realTrajectory, pMakeObservation, pObserveIfPresent),
     posterior(likelihood * prior),
     tableau(posterior.constraints) {
@@ -57,6 +69,11 @@ public:
 
 
     int nTimesteps() const { return realTrajectory.nTimesteps(); }
+
+
+    void save(const std::string &filename) {
+
+    }
 
 
     friend std::ostream &operator <<(std::ostream &out, const PredPreyProblem &predPreyProblem) {

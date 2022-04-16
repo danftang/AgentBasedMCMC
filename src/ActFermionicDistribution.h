@@ -12,9 +12,10 @@
 #include "StlStream.h"
 
 // This is the distribution of acts of a number of act-fermionic agents
-// in the same state. Given m agents and a vector of act probabilities pi=<p_1...p_N>
+// in the same state. Given m agents in the same state and a vector of act
+// probabilities pi=<p_1...p_N>
 // then in the non-Fermionic case, the probability of an m-dimensional vector of acts
-// for each of the m agents, in order, A=<a_1...a_m> is given by
+// for all m agents, in order, A=<a_1...a_m> is given by
 //
 // P(A|pi) = \prod_{i=1}^m p_{a_i}
 //

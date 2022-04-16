@@ -72,7 +72,7 @@ public:
 
         std::future<std::vector<ChainStats>> futureResults[nThreads];
         for(int thread = 0; thread < nThreads; ++thread) {
-            futureResults[thread] = std::async(&startStatsThread<GRIDSIZE>, problem, problem.prior.nextSample(), nSamples);
+            futureResults[thread] = std::async(&startStatsThread<GRIDSIZE>, problem, problem.prior.nextSample(false), nSamples);
         }
 
 
@@ -165,12 +165,11 @@ public:
         std::cout << "Loaded problem" << std::endl;
         std::cout << problem;
 
-//        TableauNormMinimiser<ABM::occupation_type> basisTableau(problem.posterior.constraints);
-//        std::cout << "Tableau = \n" << basisTableau << std::endl;
+//        problem.kappa = 10.5;
 
         auto startTime = std::chrono::steady_clock::now();
 
-        std::vector<ChainStats> stats = startStatsThread<GRIDSIZE>(problem, problem.prior.nextSample(), nSamples);
+        std::vector<ChainStats> stats = startStatsThread<GRIDSIZE>(problem, problem.prior.nextSample(false), nSamples);
 
         auto endTime = std::chrono::steady_clock::now();
         auto execTimeMilliSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
@@ -193,7 +192,16 @@ public:
 
 
     template<int GRIDSIZE>
-    static void plotStats(int nTimesteps) {
+    static void plotProblemEndState(int nTimesteps) {
+        PredPreyProblem<GRIDSIZE> problem(filenamePrefix(GRIDSIZE, nTimesteps) + ".prob");
+        Plotter plotter;
+        plotter.plot(problem.realTrajectory.endState());
+    }
+
+
+
+    template<int GRIDSIZE>
+    static void plotStats(int nTimesteps, bool waitForKeypressToExit = false) {
         std::string statFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".stat";
         std::ifstream statFile(statFilename);
         if(!statFile.good()) throw("Can't open stats probFile. Maybe you haven't run the analysis for this geometry yet.");
@@ -213,9 +221,9 @@ public:
         std::valarray<std::valarray<double>> autocorrelation = stats.autocorrelation();
         int nDimensions = autocorrelation[0].size();
         double xStride = stats.front().varioStride;
-        acPlotter << "set title 'Autocorrelations " << GRIDSIZE << " x " << nTimesteps << "'\n";
+//        acPlotter << "set title 'Autocorrelations " << GRIDSIZE << " x " << nTimesteps << "'\n";
         acPlotter << "plot ";
-        for(int d=1; d<=nDimensions; ++d) acPlotter << "'-' using (" << xStride <<  "*$0):" << d << " with lines title 'synopsis " << d << "', ";
+        for(int d=1; d<=nDimensions; ++d) acPlotter << "'-' using (" << xStride <<  "*$0):" << d << " with lines title 'Statistic " << d << "', ";
         acPlotter << "0 with lines notitle\n";
         for(int d=1; d<=nDimensions; ++d) acPlotter.send1d(autocorrelation);
 
@@ -250,10 +258,13 @@ public:
         // plot end state
 
         Plotter endStatePlotter;
-        endStatePlotter.plot(problem.realTrajectory.endState(), stats.meanEndState(),"End state " + std::to_string(GRIDSIZE) + " x " + std::to_string(nTimesteps));
+//        endStatePlotter.plot(problem.realTrajectory.endState(), stats.meanEndState(),"End state " + std::to_string(GRIDSIZE) + " x " + std::to_string(nTimesteps));
+        endStatePlotter.plot(problem.realTrajectory.endState(), stats.meanEndState(),"");
 
-//        std::cout << "Press Enter to exit" << std::endl;
-//        std::cin.get();
+        if(waitForKeypressToExit) {
+            std::cout << "Press Enter to exit" << std::endl;
+            std::cin.get();
+        }
 
         //        while(acPlotter.is_open() || endStatePlotter.is_open());
     }

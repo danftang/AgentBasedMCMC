@@ -381,6 +381,12 @@ const std::vector<T> &SparseBasisSampler<T>::nextSampleWithInfeasibleImportance(
 template<class T>
 void SparseBasisSampler<T>::findInitialFeasibleSolution() {
     int iterations = 0;
+
+//    for(int burnin=0; burnin < 1000000; ++burnin) {  // TODO: JUST A TEST!!!!!!!!!!!!!!!
+//        Proposal proposal(*this);
+//        applyProposal(proposal, true);
+//    }
+
     while(currentInfeasibility > 0) {
         Proposal proposal(*this);
         applyProposal(proposal, true);

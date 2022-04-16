@@ -16,6 +16,7 @@
 #include "agents/PredPreyAgent.h"
 #include "Prior.h"
 #include "ExactSolver.h"
+#include "PoissonStartState.h"
 
 using namespace dataflow;
 
@@ -54,12 +55,12 @@ void Experiments::PredPreySingleObservation() {
     constexpr double pPredator = 0.1;//0.08;          // Bernoulli prob of predator in each gridsquare at t=0
     constexpr double pPrey = 2.0*pPredator;    // Bernoulli prob of prey in each gridsquare at t=0
     constexpr int nSamples = 500000; //250000;
-    constexpr int nBurnin = 1000;
-    constexpr int nRejectionSamples = 400000;
-    constexpr double kappa = 3.25;
+    constexpr int nBurnin = 10000;
+    constexpr int nRejectionSamples = 100000;
+    constexpr double kappa = 3.0;
 
     doSingleObservationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
-            BernoulliStartState<PredPreyAgent<GRIDSIZE>>([](PredPreyAgent<GRIDSIZE> agent) {
+            PoissonStartState<PredPreyAgent<GRIDSIZE>>([](PredPreyAgent<GRIDSIZE> agent) {
                 return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
             }),
             AgentStateObservation(State(1,PredPreyAgent<GRIDSIZE>(1, 1, PredPreyAgent<GRIDSIZE>::PREY)),1,1.0)
@@ -82,10 +83,10 @@ void Experiments::CatMouseAssimilation() {
     constexpr int nBurnin = 100;
     constexpr double kappa = 1.25;
 
-    Prior<CatMouseAgent> prior(nTimesteps, BernoulliStartState<CatMouseAgent>({0.5, 0.5, 0.3, 0.3}));
+    Prior<CatMouseAgent> prior(nTimesteps, PoissonStartState<CatMouseAgent>({0.5, 0.5, 0.3, 0.3}));
     std::cout << "Prior support is\n" << prior << std::endl;
 
-    Trajectory<CatMouseAgent> realTrajectory = prior.nextSample();
+    Trajectory<CatMouseAgent> realTrajectory = prior.nextSample(true);
 
     Likelihood<CatMouseAgent> likelihood(realTrajectory, pMakeObservation, pObserveIfPresent);
     std::cout << "Likelihood support is\n" << likelihood << std::endl;
@@ -104,7 +105,11 @@ void Experiments::CatMouseAssimilation() {
 
     RejectionSampler<Trajectory<CatMouseAgent>> rejectionSampler(prior,likelihood);
     std::map<std::vector<ABM::occupation_type>,double> rejectionPMF;
-    for(int s=0; s<nSamples; ++s) rejectionPMF[Trajectory<CatMouseAgent>(rejectionSampler(),nTimesteps)] += 1.0/nSamples;
+    for(int s=0; s<nSamples; ++s) {
+        Trajectory<CatMouseAgent> trajectory(rejectionSampler(),nTimesteps);
+//        std::cout << "Got trajectory " << trajectory << std::endl;
+        rejectionPMF[trajectory] += 1.0/nSamples;
+    }
 
     ExactSolver<CatMouseAgent> exactSolver(posterior);
     std::cout << "Comparison of exact / rejection / mcmc solutions:" << std::endl;

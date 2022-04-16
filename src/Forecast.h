@@ -94,11 +94,12 @@ public:
         }
     }
 
-    Trajectory<AGENT> nextSample(const StartStateDistribution<AGENT> &startStateDist) const {
-        return nextSample(startStateDist, nTimesteps);
+    Trajectory<AGENT> nextSample(const StartStateDistribution<AGENT> &startStateDist, bool isFermionic) const {
+        return nextSample(startStateDist, nTimesteps, isFermionic);
     }
 
-    static Trajectory<AGENT> nextSample(const StartStateDistribution<AGENT> &startStateDist, int nTimesteps) {
+    // assumes act-Fermionicity
+    static Trajectory<AGENT> nextSample(const StartStateDistribution<AGENT> &startStateDist, int nTimesteps, bool isFermionic) {
         Trajectory<AGENT> sample(nTimesteps);
         bool isValid;
         int nAttempts = 0;
@@ -117,22 +118,42 @@ public:
 
                     std::vector<double> actPMF = agent.timestep(t0State);
 //                    std::cout << "Got act distribution " << actPMF << std::endl;
-                    ActFermionicDistribution actDistribution(actPMF);
-//                    assert(nAgents <= actPMF.size());
-                    std::vector<bool> chosenActs = actDistribution.sampleUnordered(nAgents);
-//                    std::cout << "choosing " << nAgents << " " << chosenActs << std::endl;
-                    if(chosenActs.size() == 0) isValid = false;
-                    for(int act=0; act < chosenActs.size(); ++act) {
-                        if(chosenActs[act]) {
-                            sample[Event<AGENT>(t, agent, act)] = 1.0;
-                            t1State += agent.consequences(act);
+
+                    if(isFermionic) {
+                        std::vector<bool> chosenActs(actPMF.size(), false);
+                        for (int a = 0; a < nAgents; ++a) {
+                            int nextAct = Random::nextIntFromDiscrete(actPMF);
+                            if (isFermionic && chosenActs[nextAct]) {
+                                isValid = false;
+                            } else {
+                                chosenActs[nextAct] = true;
+                                sample[Event<AGENT>(t, agent, nextAct)] = 1;
+                                t1State += agent.consequences(nextAct);
+                            }
+                        }
+                        if(!isValid) {agentId = AGENT::domainSize(); t=nTimesteps;}
+                    } else {
+                        for (int a = 0; a < nAgents; ++a) {
+                            int nextAct = Random::nextIntFromDiscrete(actPMF);
+                            sample[Event<AGENT>(t, agent, nextAct)] += 1;
+                            t1State += agent.consequences(nextAct);
                         }
                     }
+
+//                    ActFermionicDistribution actDistribution(actPMF);
+//                    std::vector<bool> chosenActs = actDistribution.sampleUnordered(nAgents);
+////                    std::cout << "choosing " << nAgents << " " << chosenActs << std::endl;
+//                    if(chosenActs.size() == 0) { // more agents than non-zero probs
+//                        isValid = false;
+//                        agentId=AGENT::domainSize();
+//                        t=nTimesteps;
+//                    }
+
                 }
                 t0State.setToZero();
                 t0State.swap(t1State);
             }
-            if (++nAttempts > 4000)
+            if (++nAttempts > 40000)
                 throw (std::runtime_error(
                         "Can't create act-Fermionic trajectoryPrior sample of Trajectory. Too many agents for Fermionicity to be a good assumption."));
         } while (!isValid);

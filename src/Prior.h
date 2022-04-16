@@ -25,8 +25,8 @@ public:
         startState(std::move(StartState))
     { }
 
-    Trajectory<AGENT> nextSample() const {
-        return Forecast<AGENT>::nextSample(startState, nTimesteps);
+    Trajectory<AGENT> nextSample(bool isFermionic) const {
+        return Forecast<AGENT>::nextSample(startState, nTimesteps, isFermionic);
     }
 
 };
