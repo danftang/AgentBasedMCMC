@@ -27,8 +27,6 @@
 #include "MCMCStatistics.h"
 #include "Random.h"
 
-// TODO: need to generalise marginalGradE to general function, get rid of X (now in importance function),
-//  integrate importance function and finish construction from WeightedFactoredConvexDistribution.
 
 template<class T>
 class SparseBasisSampler {

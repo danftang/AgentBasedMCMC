@@ -85,10 +85,11 @@ int main(int argc, char *argv[]) {
 //    FiguresForPaper::singleThreadStats<32>(8,100000);
 //    FiguresForPaper::generateStatsAndPlot<32>(8,5000000);
 
-//    FiguresForPaper::generateStandardProblemFile<32>(16, 10.5);
-//    FiguresForPaper::singleThreadStats<32>(16,100000);
-//    FiguresForPaper::generateStatsAndPlot<32>(16, 12000000);
-    FiguresForPaper::plotStats<32>(16,true);
+//    FiguresForPaper<32,16>::generateStandardProblemFile(10.0);
+//    FiguresForPaper<32,16>::singleThreadStats(100000);
+//    FiguresForPaper<32,16>::generateStats(10000000);
+    FiguresForPaper<32,16>::plotStats(false);
+//    FiguresForPaper<32,16>::sampleTiming(1000000);
 
 //    FiguresForPaper::plotProblemEndState<32>(16);
 

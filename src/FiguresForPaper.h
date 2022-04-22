@@ -13,46 +13,32 @@
 #include "Plotter.h"
 #include "SparseBasisSampler.h"
 
+template<int GRIDSIZE, int TIMESTEPS>
 class FiguresForPaper {
 public:
 
-    template<int GRIDSIZE>
-    static void generateStatsAndPlot(int nTimesteps, int nSamples) {
-        generateStats<GRIDSIZE>(nTimesteps, nSamples);
-        plotStats<GRIDSIZE>(nTimesteps);
-    }
+    static const std::string filenamePrefix;
+    static const std::string problemFilename;
+    static const std::string statFilename;
 
-//    static void generateAllProblemFiles() {
-//        for (int nTimesteps = 2; nTimesteps <= 16; nTimesteps *= 2) {
-//            generateStandardProblemFile<8>(nTimesteps);
-//            generateStandardProblemFile<16>(nTimesteps);
-//            generateStandardProblemFile<32>(nTimesteps);
-//        }
-//    }
 
-    template<int GRIDSIZE>
-    static void generateStandardProblemFile(int nTimesteps, double kappa)  {
+    static void generateStandardProblemFile(double kappa)  {
         constexpr double pPredator = 1.0-PredPreyAgent<GRIDSIZE>::pNoPred;
         constexpr double pPrey = 1.0-PredPreyAgent<GRIDSIZE>::pNoPrey;
         constexpr double pMakeObservation = 0.05;
         constexpr double pObserveIfPresent = 1.0;//0.9;
-        std::string probFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".prob";
-        std::ofstream probFile(probFilename);
+        std::ofstream probFile(problemFilename);
         boost::archive::binary_oarchive probArchive(probFile);
 
         Random::gen.seed(1234);
-        PredPreyProblem<GRIDSIZE> problem(nTimesteps, pPredator, pPrey, pMakeObservation, pObserveIfPresent, kappa);
+        PredPreyProblem<GRIDSIZE> problem(TIMESTEPS, pPredator, pPrey, pMakeObservation, pObserveIfPresent, kappa);
         std::cout << problem << std::endl;
         probArchive << problem;
     }
 
 
-    template<int GRIDSIZE>
-    static void generateStats(int nTimesteps, int nSamples) {
+    static void generateStats(int nSamples) {
         constexpr int nThreads = 4;
-
-        std::string problemFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".prob";
-        std::string statFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".stat";
 
         std::ifstream probFile(problemFilename);
         if(!probFile.good()) throw("Can't open problem probFile for this geometry. Run generateStandardProblemFile first.");
@@ -72,7 +58,7 @@ public:
 
         std::future<std::vector<ChainStats>> futureResults[nThreads];
         for(int thread = 0; thread < nThreads; ++thread) {
-            futureResults[thread] = std::async(&startStatsThread<GRIDSIZE>, problem, problem.prior.nextSample(false), nSamples);
+            futureResults[thread] = std::async(&startStatsThread, problem, problem.prior.nextSample(false), nSamples);
         }
 
 
@@ -95,7 +81,7 @@ public:
 ////        std::cout << multiChainStats;
     }
 
-    template<int GRIDSIZE>
+
     static std::vector<ChainStats> startStatsThread(const PredPreyProblem<GRIDSIZE> &problem, std::vector<ABM::occupation_type> initialState, int nSamples) {
         using namespace dataflow;
 
@@ -117,11 +103,11 @@ public:
                 >>= TrajectoryToModelState<PredPreyAgent<GRIDSIZE>>(nTimesteps, nTimesteps)
                 >>= SwitchOnClose {
                         Split {
-                                Map{ synopsis<GRIDSIZE> } >>= save(firstSynopsisSamples),
+                                Map{ synopsis } >>= save(firstSynopsisSamples),
                                 Take(nSamples/2) >>= Sum<ModelState<PredPreyAgent<GRIDSIZE>>>(firstMeanEndState)
                         },
                         Split{
-                                Map{ synopsis<GRIDSIZE> } >>= save(lastSynopsisSamples),
+                                Map{ synopsis } >>= save(lastSynopsisSamples),
                                 Take(nSamples/2) >>= Sum<ModelState<PredPreyAgent<GRIDSIZE>>>(firstMeanEndState)
                         },
                 };
@@ -150,12 +136,7 @@ public:
     }
 
 
-    template<int GRIDSIZE>
-    static void singleThreadStats(int nTimesteps, int nSamples) {
-
-        std::string problemFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".prob";
-        std::string statFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".stat";
-
+    static void singleThreadStats(int nSamples) {
         std::ifstream probFile(problemFilename);
         if(!probFile.good()) throw("Can't open problem probFile for this geometry. Run generateStandardProblemFile first.");
         boost::archive::binary_iarchive probArchive(probFile);
@@ -175,46 +156,61 @@ public:
         auto execTimeMilliSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
 
         std::cout << "Executed in " << execTimeMilliSeconds << "ms" << std::endl;
-//        MultiChainStats multiChainStats(problem.kappa, problem.alpha, problemFilename);
-//        multiChainStats.reserve(2);
-//        multiChainStats += stats;
-//
-//        multiChainStats.execTimeMilliSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
-//
-////        std::ofstream statFile(statFilename);
-////        if(!statFile.good()) throw("Can't open stats probFile to save results.");
-////        boost::archive::binary_oarchive statArchive(statFile);
-////        statArchive << multiChainStats;
-//
-////        std::cout << std::endl << "Saved stats" << std::endl;
-//        std::cout << multiChainStats;
     }
 
 
-    template<int GRIDSIZE>
-    static void plotProblemEndState(int nTimesteps) {
-        PredPreyProblem<GRIDSIZE> problem(filenamePrefix(GRIDSIZE, nTimesteps) + ".prob");
+    static void sampleTiming(int nSamples) {
+        std::ifstream probFile(problemFilename);
+        if(!probFile.good()) throw("Can't open problem probFile for this geometry. Run generateStandardProblemFile first.");
+        boost::archive::binary_iarchive probArchive(probFile);
+        PredPreyProblem<GRIDSIZE> problem;
+        probArchive >> problem;
+
+        std::cout << "Loaded problem" << std::endl;
+        std::cout << problem;
+
+        std::cout << "Creating sampler..." << std::endl;
+        SparseBasisSampler<ABM::occupation_type> sampler(problem.tableau, problem.posterior.factors, problem.posterior.perturbableFunctionFactory(), problem.prior.nextSample(false), problem.kappa);
+
+        std::cout << "Burning in..." << std::endl;
+        for(int burnIn=0; burnIn<nSamples/4; ++burnIn) sampler();
+
+        std::cout << "Taking samples..." << std::endl;
+        auto startTime = std::chrono::steady_clock::now();
+        for(int s=0; s<nSamples; ++s) sampler();
+        auto endTime = std::chrono::steady_clock::now();
+        auto execTimeMilliSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+
+        const std::vector<ABM::occupation_type> sample = sampler();
+        std::cout << "Final state is " << std::vector<ABM::occupation_type>(sample.begin(), sample.begin() + 20) << "..." << std::endl;
+        std::cout << "Executed in " << execTimeMilliSeconds << "ms" << std::endl;
+        std::cout << "Time per feasible sample " << execTimeMilliSeconds*1.0/nSamples << "ms" << std::endl;
+
+    }
+
+
+    static void plotProblemEndState() {
+        PredPreyProblem<GRIDSIZE> problem(problemFilename);
         Plotter plotter;
         plotter.plot(problem.realTrajectory.endState());
     }
 
 
 
-    template<int GRIDSIZE>
-    static void plotStats(int nTimesteps, bool waitForKeypressToExit = false) {
-        std::string statFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".stat";
+    static void plotStats(bool waitForKeypressToExit = false) {
         std::ifstream statFile(statFilename);
         if(!statFile.good()) throw("Can't open stats probFile. Maybe you haven't run the analysis for this geometry yet.");
         boost::archive::binary_iarchive statArchive(statFile);
         MultiChainStats stats(0.0,"");
         statArchive >> stats;
 
-        std::string probFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".prob";
-        std::ifstream probFile(probFilename);
+        std::ifstream probFile(problemFilename);
         if(!probFile.good()) throw("Can't open problem probFile for this geometry. Odd because the stats probFile exists!");
         boost::archive::binary_iarchive probArchive(probFile);
         PredPreyProblem<GRIDSIZE> problem;
         probArchive >> problem;
+
+        std::cout << problem << std::endl;
 
         // plot autocorrelations
         Plotter acPlotter;
@@ -244,7 +240,7 @@ public:
         std::valarray<double> ineff = (stats.nSamplesPerChain() * 1.0) / neff;
         double execTimePerSample = stats.execTimeMilliSeconds * 2.0 / (stats.front().stats.nSamples()*stats.size());
         double execTimePerFeasibleSample = stats.execTimeMilliSeconds * 1.0 / (stats.nSamplesPerChain() * stats.nChains());
-        std::cout << "Summary statistics for " << GRIDSIZE << " x " << nTimesteps << std::endl;
+        std::cout << "Summary statistics for " << GRIDSIZE << " x " << TIMESTEPS << std::endl;
         std::cout << "Total exec time: " << stats.execTimeMilliSeconds << "ms" << std::endl;
         std::cout << "Potential scale reduction: " << stats.potentialScaleReduction() << std::endl;
         std::cout << "Actual number of samples per chain: " << stats.nSamplesPerChain() << std::endl;
@@ -317,7 +313,6 @@ public:
 
 
 
-    template<int GRIDSIZE>
     static std::valarray<double> synopsis(const ModelState<PredPreyAgent<GRIDSIZE>> &endState) {
         std::valarray<double> synopsis(floor(log2(GRIDSIZE)) -1);
 //        ModelState<PredPreyAgent<GRIDSIZE>> endState(trajectory, trajectory.nTimesteps(), trajectory.nTimesteps()); //.endState();
@@ -340,11 +335,20 @@ public:
         return synopsis;
     }
 
-    static std::string filenamePrefix(int gridsize, int timesteps) {
-        return "../data/PredPrey" + std::to_string(gridsize) + "-" + std::to_string(timesteps);
-    }
+//    static std::string filenamePrefix() {
+//        return "../data/PredPrey" + std::to_string(GRIDSIZE) + "-" + std::to_string(TIMESTEPS);
+//    }
 
 };
+
+template<int GRIDSIZE, int TIMESTEPS>
+const std::string FiguresForPaper<GRIDSIZE,TIMESTEPS>::filenamePrefix = "../data/PredPrey" + std::to_string(GRIDSIZE) + "-" + std::to_string(TIMESTEPS);
+
+template<int GRIDSIZE, int TIMESTEPS>
+const std::string FiguresForPaper<GRIDSIZE,TIMESTEPS>::problemFilename = FiguresForPaper<GRIDSIZE,TIMESTEPS>::filenamePrefix + ".prob";
+
+template<int GRIDSIZE, int TIMESTEPS>
+const std::string FiguresForPaper<GRIDSIZE,TIMESTEPS>::statFilename = FiguresForPaper<GRIDSIZE,TIMESTEPS>::filenamePrefix + ".stat";
 
 
 #endif //GLPKTEST_FIGURESFORPAPER_H

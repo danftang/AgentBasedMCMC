@@ -77,12 +77,14 @@ public:
 
 
     friend std::ostream &operator <<(std::ostream &out, const PredPreyProblem &predPreyProblem) {
+        out << "Real trajectory: " << predPreyProblem.realTrajectory << std::endl;
+        out << "Observations: " << predPreyProblem.likelihood.observations << std::endl;
         out << "pPredator: " << predPreyProblem.pPredator << std::endl;
         out << "pPrey: " << predPreyProblem.pPrey << std::endl;
         out << "kappa: " << predPreyProblem.kappa << std::endl;
         out << "(Gridsize x Timesteps): " << GRIDSIZE << " x " << predPreyProblem.nTimesteps() << std::endl;
-        out << "Real trajectory: " << predPreyProblem.realTrajectory << std::endl;
-        out << "Observations: " << predPreyProblem.likelihood.observations << std::endl;
+        out << "Basis mean L0 norm: " << predPreyProblem.tableau.meanColumnL0Norm() << std::endl;
+        out << "Basis dimension (rows x cols): " << predPreyProblem.tableau.rows.size() << " x " << predPreyProblem.tableau.cols.size() << std::endl;
         return out;
     }
 
