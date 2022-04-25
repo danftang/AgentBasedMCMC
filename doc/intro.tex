@@ -1,8 +1,0 @@
-% !TEX root = ABMCMC.tex
-In this paper we consider the problem of sampling from the posterior probability distribution of the time evolution of a dynamical system given an agent based model (ABM) of the system and a set of noisy, incomplete experimental observations of the system. We apply this to the problem of ``data assimilation'' i.e. the problem of using experimental observations to provide information about the time evolution of a system, including unobserved state variables.
-
-The discipline of data assimilation has developed rapidly in applications such as weather forecasting \cite{kalnay_atmospheric_2003} but relatively little progress has been made in developing data assimilation techniques that are applicable to agent based models. Data Assimilation in ABMs is challenging because ABMs consist of `agents' which often make discrete choices from a number of possible actions, meaning the space of model trajectories is not continuous and we cannot use assimilation techniques that require the gradient of the posterior. In addition, a set of observations will typically refute a large proportion of model trajectories, making it difficult to even identify trajectories that have non-zero probability, given the observations. This provides a challenge to algorithms based on sampling from the posterior.
-
-Here we present an algorithm that approximates the set of possible trajectories as a linear program and uses extensions of the algorithms used in linear programming to provide a proposal function for Markov-Chain-Monte-Carlo sampling. We demonstrate the new algorithm by performing data assimilation in an agent-based, spatial predator-prey model.
-
-
