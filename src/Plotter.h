@@ -19,8 +19,6 @@ public:
         std::vector <std::vector<HeatRecord>> heatData;
         std::vector <std::tuple<double, double, double>> pointData;
 
-//        ModelState <PredPreyAgent> realState = window.realTrajectory.endState();
-
         for (int x = 0; x < GRIDSIZE; ++x) {
             for (int y = 0; y < GRIDSIZE; ++y) {
                 int colour = 2 * (realState[PredPreyAgent<GRIDSIZE>(x, y, PredPreyAgent<GRIDSIZE>::PREDATOR)] > 0.0)

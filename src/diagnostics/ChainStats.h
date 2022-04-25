@@ -20,7 +20,6 @@ public:
     std::valarray<std::valarray<double>> vario;
     int varioStride;
     std::valarray<double> meanEndState;
-//    std::vector<double> nextSample;
     MCMCStatistics stats;
 
     ChainStats() {}
@@ -30,13 +29,11 @@ public:
                int nLags,
                double maxLagProportion,
                std::valarray<double> meanEndState,
-//               std::vector<double> nextSample,
                const MCMCStatistics &Stats) :
             meanVariance(std::move(synopsisSamples)),
             vario(variogram(synopsisSamples, nLags, maxLagProportion)),
             varioStride((maxLagProportion * synopsisSamples.size()) / (nLags - 1.0)),
             meanEndState(std::move(meanEndState)),
-//            nextSample(std::move(nextSample)),
             stats(Stats) {
     }
 

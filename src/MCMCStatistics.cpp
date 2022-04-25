@@ -2,7 +2,6 @@
 // Created by daniel on 30/03/2022.
 //
 
-#include <cmath>
 #include <iostream>
 #include "MCMCStatistics.h"
 
@@ -24,7 +23,6 @@ void MCMCStatistics::reset() {
             nAccepted[start][end] = 0;
         }
     }
-//    sumOfLogImportances = 0.0;
 }
 
 int MCMCStatistics::nSamples() const {
@@ -46,10 +44,6 @@ int MCMCStatistics::nInfeasibleSamples() const {
 int MCMCStatistics::nFeasibleSamples() const {
     return nProposals[true][true] + nAccepted[false][true] + nRejected(true,false);
 }
-
-//double MCMCStatistics::meanImportance() const {
-//    return exp(sumOfLogImportances / (nProposals[true][false] + nProposals[true][true]));
-//}
 
 std::ostream &operator <<(std::ostream &out, const MCMCStatistics &stats) {
     out << "Total samples                    " << stats.nSamples() << std::endl;

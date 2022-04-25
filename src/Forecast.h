@@ -117,7 +117,6 @@ public:
                     // now choose acts for each of nAgents from act Fermionic distribution
 
                     std::vector<double> actPMF = agent.timestep(t0State);
-//                    std::cout << "Got act distribution " << actPMF << std::endl;
 
                     if(isFermionic) {
                         std::vector<bool> chosenActs(actPMF.size(), false);
@@ -139,16 +138,6 @@ public:
                             t1State += agent.consequences(nextAct);
                         }
                     }
-
-//                    ActFermionicDistribution actDistribution(actPMF);
-//                    std::vector<bool> chosenActs = actDistribution.sampleUnordered(nAgents);
-////                    std::cout << "choosing " << nAgents << " " << chosenActs << std::endl;
-//                    if(chosenActs.size() == 0) { // more agents than non-zero probs
-//                        isValid = false;
-//                        agentId=AGENT::domainSize();
-//                        t=nTimesteps;
-//                    }
-
                 }
                 t0State.setToZero();
                 t0State.swap(t1State);

@@ -12,17 +12,6 @@
 #ifndef GLPKTEST_STLSTREAM_H
 #define GLPKTEST_STLSTREAM_H
 
-//template <typename T, typename=void>
-//static constexpr bool hasBeginEnd = false;
-
-
-//template <typename T>
-//static constexpr bool hasBeginEnd<T, std::void_t<
-//        decltype(std::declval<T>().begin()),
-//        decltype(std::declval<T>().end())
-//>> = true;
-
-
 template<typename T>
 std::ostream & operator <<(std::ostream &out, const std::list<T> &container);
 

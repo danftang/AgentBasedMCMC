@@ -85,14 +85,6 @@ public:
         // calculate one dimension at a time, as each dimension may have a different stopping t
         for(int d=0; d<dimension(); ++d) {
             double vp = varplus[d];
-//            int t = 1;
-//            double nextS = 2.0 - (V[1][d] + V[0][d])/(2.0*vp);
-//            double sumt = 0.0;
-//            while (nextS > 0.0) {
-//                sumt += nextS;
-//                t += 2;
-//                nextS =(t < V.size())?(2.0 - (V[t][d] + V[t-1][d])/(2.0*vp)):-1.0;
-//            }
             int t = 0;
             double nextS = 1.0 - V[0][d]/(2.0*vp);
             double sumt = 0.0;
@@ -216,7 +208,6 @@ public:
         out << "Samples   Sums    SumOfSquares    VarioStride     Vario" << std::endl;
         for(const ChainStats &chain: multiChainStats) {
             out << " " << chain.meanVariance.nSamples << " " << chain.meanVariance.sum << " " << chain.meanVariance.sumOfSquares << " " << chain.varioStride << " " << chain.vario << std::endl;
-//            out << chain.nextSample << std::endl;
             std::cout << "MCMC stats:" << std::endl;
             std::cout << chain.stats << std::endl;
         }

@@ -1,3 +1,4 @@
+// Represents various statistics on the performance of a Markov Chain
 //
 // Created by daniel on 30/03/2022.
 //
@@ -23,7 +24,6 @@ public:
     int nRejected(bool startIsFeasible, bool proposalIsFeasible) const;
     int nInfeasibleSamples() const;
     int nFeasibleSamples() const;
-    double meanImportance() const;
 
 private:
     friend class boost::serialization::access;

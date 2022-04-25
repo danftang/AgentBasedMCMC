@@ -31,8 +31,6 @@
 template<class T>
 class SparseBasisSampler {
 public:
-//    static constexpr double   kappa = 2.0; // (+ve) rate of decay of probability outside the hyper-rectangle
-
     double   kappa; // (+ve) rate of decay of probability outside the hyper-rectangle
 
 
@@ -119,7 +117,6 @@ SparseBasisSampler<T>::SparseBasisSampler(
         importanceFunc(std::move(importance)),
         currentDE(cols.size(),0.0),
         currentInfeasibility(0)
-//        currentLogPiota(0.0)
 {
     std::vector<int> tableauRowToBasisRow; // map from tableau row index to this row index, -1 means equality constraint
     tableauRowToBasisRow.reserve(tableau.rows.size());
@@ -141,7 +138,6 @@ SparseBasisSampler<T>::SparseBasisSampler(
             ++basisi;
         }
     }
-//    std::cout << "initial currentInfeasibility = " << currentInfeasibility << std::endl;
     assert(factors.size() == tableau.nAuxiliaryVars);
 
     // transfer tableau over to this
@@ -159,7 +155,6 @@ SparseBasisSampler<T>::SparseBasisSampler(
             ++basisj;
         }
     }
-//    std::cout << "Initial basisDistribution" << basisDistribution << std::endl;
     assert(delta.size() == tableau.nNonBasic());
 
     // initialise X, currentE, currentInfeasibility and currentLogPiota
@@ -171,8 +166,6 @@ SparseBasisSampler<T>::SparseBasisSampler(
         }
         currentE.push_back(energy(basisi, X[basisi]));
         currentInfeasibility += infeasibility(basisi, X[basisi]);
-//        currentLogPiota += currentE[basisi];
-//        std::cout << "Initial E[" << basisi << "] = " << currentE[basisi] << " " << X[basisi] << std::endl;
     }
 
     // initialise DE
@@ -182,7 +175,6 @@ SparseBasisSampler<T>::SparseBasisSampler(
             int basisi = col.indices[nzi];
             currentDE[basisj] += energy(basisi, X[basisi] + delta[basisj] * col.values[nzi]) - currentE[basisi];
         }
-//        std::cout << "Initial DE[" << basisj << "] = " << currentDE[basisj] << std::endl;
     }
 
     findInitialFeasibleSolution();
@@ -214,57 +206,6 @@ SparseBasisSampler<T>::SparseBasisSampler(const WeightedFactoredConvexDistributi
 { }
 
 
-//template<class T>
-//void SparseBasisSampler<T>::initProbabilities() {
-//    probContributions.resize(nCols());
-//    for(int j=0; j<nCols(); ++j) {
-//        probContributions[j].reserve(cols[j].sparseSize());
-//        double Pj = 1.0;
-//        for(int z=0; z < cols[j].sparseSize(); ++z) {
-//            int i = cols[j].indices[z];
-//            T Mij = cols[j].values[z];
-//            double Xiprime = X[i] + Mij * Delta[j];
-//            double contrib = std::min(1.0, marginalProbs(i, Xiprime)*iota(i, Xiprime)/(marginalProbs(i,X[i])*iota(i,X[i])));
-//            probContributions[j].push_back(contrib);
-//            Pj *= contrib;
-//        }
-//        basisDistribution.set(j, Pj);
-//    }
-//}
-
-
-//template<class T>
-//typename SparseBasisSampler<T>::Proposal SparseBasisSampler<T>::makeProposal() {
-//    Proposal proposal(currentInfeasibility, currentLogPiota);
-//
-//    int j = basisDistribution(Random::gen); // choose basis to perturb
-//    const SparseVec<T> &proposedBasis = cols[j];
-//    proposal.changedIndices = proposedBasis.indices;
-//    proposal.changedDE[j] = -currentDE[j];
-//    T dj = Delta[j];
-//    proposal.changedX.reserve(proposedBasis.sparseSize());
-//    for(int nzi=0; nzi < proposedBasis.sparseSize(); ++nzi) {
-//        int i = proposedBasis.indices[nzi]; // row that is affected by the change
-//        T deltaXi = proposedBasis.values[nzi] * dj;
-//        T newXi = X[i] + deltaXi; // the value of X[i] after swapping col j;
-//        proposal.changedX.push_back(newXi);
-//        double deltaEi = energy(i, newXi) - currentE[i]; // Energy of row i after flipping column j
-//        proposal.logPiota += deltaEi;
-//        proposal.infeasibility += infeasibility(i, newXi) - infeasibility(i, X[i]);
-//        const SparseVec<T> &row = rows[i];
-//        for (int nzj = 0; nzj < row.sparseSize(); ++nzj) {
-//            int updatej = row.indices[nzj];
-//            if(updatej != j) {
-//                auto [changedDEIterator, wasInserted] = proposal.changedDE.try_emplace(updatej, currentDE[updatej]);
-//                double deltaXiupdatej = row.values[nzj] * Delta[updatej]; // the change in X[i] on updating col updatej
-//                changedDEIterator->second +=
-//                        energy(i, newXi + deltaXiupdatej) - energy(i, X[i] + deltaXiupdatej) - deltaEi;
-//            }
-//        }
-//    }
-//
-//    return proposal;
-//}
 
 // Take a sample
 template<class T>
@@ -272,75 +213,13 @@ const std::vector<T> &SparseBasisSampler<T>::operator()() {
     return nextSampleWithInfeasibleImportance();
 }
 
-// Take a sample
-//template<class T>
-//const std::vector<T> &SparseBasisSampler<T>::nextSample() {
-//
-//    do {
-////        std::cout << "Drawing proposal from distribution " << basisDistribution << "  " << currentDE << std::endl;
-//
-//        Proposal proposal(*this);
-//
-////        std::cout << "Got proposal col=" << proposal.proposedj << " inf=" << proposal.infeasibility << " DE=" << currentDE[proposal.proposedj] << std::endl;
-//
-//        if (proposal.infeasibility == 0) {       // --- transition to feasible state
-//
-//            importanceFunc->perturbWithUndo(X, proposal.changedXIndices);
-//            for (int nzi = 0; nzi < proposal.changedXIndices.size(); ++nzi) {
-//                // update X and transform changedX into undo
-//                std::swap(X[proposal.changedXIndices[nzi]], proposal.changedXValues[nzi]);
-//            }
-//
-//            double proposedLogImportance = importanceFunc->getLogValue(X);
-////            std::cout << "Proposed importance = " << proposedImportance << std::endl;
-//            double ratioOfSums = proposal.calcRatioOfSums(basisDistribution);
-//            double acceptance = exp(proposedLogImportance - currentLogImportance)*ratioOfSums;
-////            std::cout << "Ratio of sums = " << ratioOfSums << " acceptance = " << acceptance << std::endl;
-//
-//            if (Random::nextDouble() < acceptance) {     // --- accept ---
-////                std::cout << "Accepting feasible" << std::endl;
-//                stats.addSample(true, currentInfeasibility == 0, true);
-//                currentLogImportance = proposedLogImportance;
-//                applyProposal(proposal, false);
-//            } else {                                    // --- reject ---
-////                std::cout << "rejecting feasible" << std::endl;
-//                // undo changes to X
-//                for (int nzi = 0; nzi < proposal.changedXIndices.size(); ++nzi) {
-//                    X[proposal.changedXIndices[nzi]] = proposal.changedXValues[nzi];
-//                }
-//                // undo changes to importanceFunc
-//                importanceFunc->undoLastPerturbation();
-//                stats.addSample(false, currentInfeasibility == 0, true);
-//            }
-//        } else {                                // --- transition to infeasible state
-//            double logRatioOfSums = proposal.calcLogRatioOfSums(basisDistribution);
-//            double logAcceptance = logRatioOfSums - currentLogImportance;
-////            std::cout << "Ratio of sums = " << ratioOfSums << " acceptance = " << acceptance << std::endl;
-//            if (Random::nextDouble() < exp(logAcceptance)) {     // --- accept ---
-////                std::cout << "Accepting infeasible proposal inf=" << proposal.infeasibility << std::endl;
-//                stats.addSample(true, currentInfeasibility == 0, false);
-//                currentLogImportance = 0.0;
-//                applyProposal(proposal, true);
-//                importanceFunc->perturb(X, proposal.changedXIndices);
-//            } else {                                    // --- reject ---
-////                std::cout << "rejecting infeasible proposal inf=" << proposal.infeasibility << std::endl;
-//                stats.addSample(false, currentInfeasibility == 0, false);
-//            }
-//        }
-//    } while(currentInfeasibility > 0);
-//    return X;
-//}
-
 
 // Calculate importance for infeasible states as well as feasible
 template<class T>
 const std::vector<T> &SparseBasisSampler<T>::nextSampleWithInfeasibleImportance() {
 
     do {
-//        std::cout << "Drawing proposal from distribution " << basisDistribution << "  " << currentDE << std::endl;
         Proposal proposal(*this);
-
-//        std::cout << "Got proposal col=" << proposal.proposedj << " inf=" << proposal.infeasibility << " DE=" << currentDE[proposal.proposedj] << std::endl;
 
         importanceFunc->perturb(X, proposal.changedXIndices);
         for (int nzi = 0; nzi < proposal.changedXIndices.size(); ++nzi) {
@@ -349,19 +228,14 @@ const std::vector<T> &SparseBasisSampler<T>::nextSampleWithInfeasibleImportance(
         }
 
         double proposedLogImportance = importanceFunc->getLogValue(X);
-//            std::cout << "Proposed importance = " << proposedImportance << std::endl;
         double ratioOfSums = proposal.calcRatioOfSums(basisDistribution);
         double acceptance = exp(proposedLogImportance - currentLogImportance)*ratioOfSums;
 
-//            std::cout << "Ratio of sums = " << ratioOfSums << " acceptance = " << acceptance << std::endl;
-
         if (Random::nextDouble() < acceptance) {     // --- accept ---
-//                std::cout << "Accepting feasible" << std::endl;
             stats.addSample(true, currentInfeasibility == 0, proposal.infeasibility == 0);
             currentLogImportance = proposedLogImportance;
             applyProposal(proposal, false);
         } else {                                    // --- reject ---
-//                std::cout << "rejecting feasible" << std::endl;
             // undo changes to X
             for (int nzi = 0; nzi < proposal.changedXIndices.size(); ++nzi) {
                 X[proposal.changedXIndices[nzi]] = proposal.changedXValues[nzi];
@@ -379,11 +253,6 @@ const std::vector<T> &SparseBasisSampler<T>::nextSampleWithInfeasibleImportance(
 template<class T>
 void SparseBasisSampler<T>::findInitialFeasibleSolution() {
     int iterations = 0;
-
-//    for(int burnin=0; burnin < 1000000; ++burnin) {  // TODO: JUST A TEST!!!!!!!!!!!!!!!
-//        Proposal proposal(*this);
-//        applyProposal(proposal, true);
-//    }
 
     while(currentInfeasibility > 0) {
         Proposal proposal(*this);
@@ -407,13 +276,10 @@ template<class T>
 double SparseBasisSampler<T>::Proposal::calcRatioOfSums(const MutableCategoricalArray &basisDistribution) {
     double changeInSum = 0.0;
     for(const auto [changedj, newDeltaEj]: changedDE) {
-//        std::cout << "newDeltaEj = " << newDeltaEj << std::endl;
         double oldPj = basisDistribution[changedj];
         changeInSum += SparseBasisSampler<T>::DEtoBasisProb(newDeltaEj) - oldPj;
     }
-//    std::cout << "basis sum of probs = " << basisDistribution.sum() << std::endl;
     double ratio = basisDistribution.sum()/(basisDistribution.sum() + changeInSum);
-//    std::cout << ratio << std::endl;
     return ratio;
 }
 
@@ -422,7 +288,6 @@ template<class T>
 SparseBasisSampler<T>::Proposal::Proposal(SparseBasisSampler<T> &parent):
 proposedj(parent.basisDistribution(Random::gen)),
 infeasibility(parent.currentInfeasibility),
-//logPiota(parent.currentLogPiota),
 changedXIndices(parent.cols[proposedj].indices)
 {
     const SparseVec<T> &proposedBasis = parent.cols[proposedj];
@@ -435,7 +300,6 @@ changedXIndices(parent.cols[proposedj].indices)
         T newXi = parent.X[i] + deltaXi; // the value of X[i] after swapping col j;
         changedXValues.push_back(newXi);
         double deltaEi = parent.energy(i, newXi) - parent.currentE[i]; // change in energy of row i by flipping column j
-//        logPiota += deltaEi;
         infeasibility += parent.infeasibility(i, newXi) - parent.infeasibility(i, parent.X[i]);
         const SparseVec<T> &row = parent.rows[i];
         for (int nzj = 0; nzj < row.sparseSize(); ++nzj) {
@@ -456,7 +320,6 @@ changedXIndices(parent.cols[proposedj].indices)
 // to deltaE caused by the pivot.
 template<class T>
 void SparseBasisSampler<T>::applyProposal(const Proposal &proposal, bool updateX) {
-//    currentLogPiota = proposal.logPiota;
     currentInfeasibility = proposal.infeasibility;
 
     for(int nzi=0; nzi<proposal.changedXIndices.size(); ++nzi) {
@@ -496,7 +359,6 @@ std::ostream &operator <<(std::ostream &out, const SparseBasisSampler<T> &basis)
     }
     return out;
 }
-
 
 
 #endif //ABMCMC_SPARSEBASISSAMPLER_H

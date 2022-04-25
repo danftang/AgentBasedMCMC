@@ -1,3 +1,6 @@
+// Represents a convex polyhedron defined as a set of linear constraints
+// L <= CX <= U
+// where C is a matrix and L and U are vectors
 //
 // Created by daniel on 30/07/2021.
 //

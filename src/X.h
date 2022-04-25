@@ -1,3 +1,4 @@
+// Represents a variable X_i for use with Constraint, LienarSum and ConvexPolyhedron
 //
 // Created by daniel on 26/04/2021.
 //
@@ -5,7 +6,6 @@
 #ifndef ABMCMC_X_H
 #define ABMCMC_X_H
 
-// Represents the id'th variable in a LinearSum
 class X {
 public:
     int id;
@@ -14,5 +14,5 @@ public:
 //    operator int() const { return id; }
 };
 
+#endif
 
-#endif //GLPKPP_X_H

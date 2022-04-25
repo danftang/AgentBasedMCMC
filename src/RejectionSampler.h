@@ -33,10 +33,8 @@ public:
     DOMAIN operator()() {
         DOMAIN sample=priorSampler();
         while(Random::nextDouble() >= likelihood(sample)) {
-//            std::cout << "Rejecting sample " << sample << " with likelihood " << likelihood(sample) << std::endl;
             sample = priorSampler();
         }
-//        std::cout << "Accepted sample " << sample << " with likelihood " << likelihood(sample) << std::endl;
         return sample;
     }
 

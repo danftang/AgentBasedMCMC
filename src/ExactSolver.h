@@ -1,6 +1,7 @@
+// Generates a map from all solutions of a WeightedFactoredDistribution to the
+// exact probability of the solution.
 //
 // Created by daniel on 19/08/2021.
-//
 
 #ifndef GLPKTEST_EXACTSOLVER_H
 #define GLPKTEST_EXACTSOLVER_H
@@ -20,22 +21,15 @@ public:
         double marginalP = 0.0;
         int nTimesteps = distribution.constraints.dimension() / (AGENT::domainSize() * AGENT::actDomainSize());
         for(const std::vector<ABM::occupation_type> &solution: BinarySolutionSet<ABM::occupation_type>(distribution.constraints)) {
-            // const Trajectory<AGENT> &traj = reinterpret_cast<const Trajectory<AGENT> &>(sol);
             double jointP = distribution.P(solution);
-//            std::cout << "Got solution " << solution << " p=" << jointP << std::endl;
             pmf[solution] = jointP;
             marginalP += jointP;
             ModelState<AGENT> endState(solution, nTimesteps, nTimesteps);
         }
         for(auto it=pmf.begin(); it != pmf.end(); ++it) {
             it->second /= marginalP;
-//            std::cout << it->first << " p=" << it->second << std::endl;
         }
     }
-
-//    ExactSolver(const AssimilationWindow<AGENT> &window): ExactSolver(window.posterior) {
-//
-//    }
 };
 
 

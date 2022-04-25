@@ -1,6 +1,6 @@
 // Likelihood function for an observation of the number of agents in a given state
 // at a given time.
-// The observation can be made imperfect in that present agents may not be
+// The observation can be made noisy in that present agents may not be
 // observed, but observed agents are always present (i.e. no false positives).
 //
 // So, the likelihood function is the Binomial distribution, with a fixed number of
@@ -20,9 +20,9 @@
 template<typename AGENT>
 class AgentStateObservation {
 public:
-    State<AGENT> state;         // state that was observed
+    State<AGENT> state;                 // state that was observed
     ABM::occupation_type lowerBound;    // number actually observed
-    double pObserveIfPresent;
+    double pObserveIfPresent;           // probability of observing an agent if it is present
 
     AgentStateObservation() {};
 
@@ -33,16 +33,6 @@ public:
     {
         assert(nObserved >= 0);
         assert(pObserveIfPresent > 0.0 && pObserveIfPresent <= 1.0);
-//        double p;
-//        double sumPsq = 0.0;
-//        double sumP = 0.0;
-//        int n=nObserved;
-//        do {
-//            p = P(n++);
-//            sumPsq += p*p;
-//            sumP += p;
-//        } while(p > 1e-6);
-//        logPExpectation = log(infeasibleExpectationFraction*sumPsq/(sumP*sumP));
         debug(std::cout << "Generating observation " << *this << std::endl);
     }
 
@@ -60,13 +50,6 @@ public:
 
     ABM::occupation_type upperBound() const { return pObserveIfPresent==1.0?lowerBound: state.fermionicOccupationUpperBound(); }
 
-
-//    [[nodiscard]] ConvexPolyhedron<ABM::occupation_type> support() const {
-//        if(lowerBound > 0 || upperBound() < state.occupationUpperBound()) {
-//            return ConvexPolyhedron<ABM::occupation_type>({ lowerBound <= 1*state <= upperBound() });
-//        }
-//        return {};
-//    }
 
     Constraint<ABM::occupation_type> constraint() const {
             return { lowerBound <= 1*state <= upperBound() };

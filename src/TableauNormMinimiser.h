@@ -135,10 +135,8 @@ public:
     int sparsestColInRow(int i);
     int sparsestRowInCol(int j);
 
-//    void updateRowSparsity(int i);
     void addRowSparsityEntry(int i);
     void removeRowSparsityEntry(int i);
-//    void updateColSparsity(int j);
     void addColSparsityEntry(int j);
     void removeColSparsityEntry(int j);
 
@@ -201,7 +199,6 @@ TableauNormMinimiser<T>::TableauNormMinimiser(const ConvexPolyhedron<T> &problem
     nAuxiliaryVars = 0;
     int constraintIndex = 0;
     for(const Constraint<T> &constraint: problem) {
-//        std::cout << "Processing " << constraint << std::endl;
         bool isActive = (constraint.upperBound == constraint.lowerBound);
         rows.emplace_back(constraint.coefficients, isActive);
         if (isActive) {
@@ -232,7 +229,6 @@ TableauNormMinimiser<T>::TableauNormMinimiser(const ConvexPolyhedron<T> &problem
     for(int j=0; j<=maxCol; ++j) {
         addColSparsityEntry(j);
     }
-//    std::cout << "Constructed tableau:" << std::endl << *this << std::endl;
     std::cout << "Initial mean L0 norm = " << meanColumnL0Norm() << std::endl;
     std::cout << "Initial L1 norm = " << meanColumnL1Norm() << std::endl;
     findMinimalBasis();
@@ -243,10 +239,7 @@ void TableauNormMinimiser<T>::findMinimalBasis() {
     while(!rowsBySparsity.empty()) {
         auto [i,j] = findMarkowitzPivot();
         pivot(i,j);
-//        std::cout << minimalBasis << std::endl;
-//        std::cout << rowsBySparsity << std::endl;
     }
-//    std::cout << "Minimised tableau:" << std::endl << *this << std::endl;
     std::cout << "Reduced mean L0 norm = " << meanColumnL0Norm() << std::endl;
     std::cout << "Reduced L1 norm = " << meanColumnL1Norm() << std::endl;
 
@@ -259,7 +252,6 @@ std::pair<int,int> TableauNormMinimiser<T>::findMarkowitzPivot() {
     int vectorsTested = 0;
     std::pair<int,int> bestPivot(-1,-1);
     while(k<colsBySparsity.size() && k<rowsBySparsity.size()) {
-//        std::cout << "k = " << k << std::endl;
         for(int j: colsBySparsity[k]) {
             int bestRow = sparsestRowInCol(j);
             if(bestRow != -1) {
@@ -293,7 +285,6 @@ std::pair<int,int> TableauNormMinimiser<T>::findMarkowitzPivot() {
 template<class T>
 void TableauNormMinimiser<T>::pivot(int pi, int pj) {
     assert(rows[pi].isActive);
-//    std::cout << "Pivoting at " << pi << " " << pj << std::endl;
     T Mpipj = rows[pi].at(pj);
 
     // remove sparsity entries of all affected rows and columns
@@ -341,16 +332,6 @@ void TableauNormMinimiser<T>::pivot(int pi, int pj) {
     }
     inactivateRow(pi);
 }
-
-
-//void TableauNormMinimiser::updateRowSparsity(int i) {
-//    Row &row = rows[i];
-//    if(row.sparseSize != row.size()) {
-//        removeRowSparsityEntry(i);
-//        addRowSparsityEntry(i);
-//    }
-//}
-
 
 
 template<class T>
@@ -436,7 +417,6 @@ int TableauNormMinimiser<T>::sparsestColInRow(int i) {
             minj = j;
         }
     }
-//    std::cout << "Considering pivot from row " << i << " " << minj << std::endl;
     return minj;
 }
 
@@ -451,7 +431,6 @@ int TableauNormMinimiser<T>::sparsestRowInCol(int j) {
             mini = i;
         }
     }
-//    std::cout << "Considering pivot " << mini << " from col " << j << std::endl;
     return mini;
 }
 

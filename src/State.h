@@ -93,15 +93,6 @@ public:
     }
 
 
-//    friend LinearSum &operator +=(LinearSum &sum, const std::pair<double,State<AGENT>> &stateTerm) {
-//        int beginIndex = Event(stateTerm.second.time, stateTerm.second.agent, 0);
-//        for(int actId=0; actId < AGENT::Act::domainSize; ++actId) {
-//            sum += LinearSum(stateTerm.first, beginIndex+actId);
-//        }
-//        return sum;
-//    }
-
-
     static std::vector<std::vector<Event<AGENT>>> calculateIncomingEventsByState() {
         std::vector<std::vector<Event<AGENT>>> endStateToEvents(AGENT::domainSize());
         std::vector<AGENT> consequences;
@@ -138,33 +129,7 @@ private:
 
 };
 
-
 template<typename AGENT>
 const std::vector<std::vector<Event<AGENT>>> State<AGENT>::incomingEventsByState = State<AGENT>::calculateIncomingEventsByState();
-
-//template<typename AGENT>
-//double State<AGENT>::backwardOccupationNumber(const std::vector<double> &trajectory) const {
-//    assert(time != 0);
-//    double occupation = 0;
-//    for(const Event<AGENT> &incomingEvent : incomingEventsByState[agent]) {
-//        occupation += trajectory[Event(time-1, incomingEvent.agent(), incomingEvent.act())];
-//    }
-//    return occupation;
-//}
-//
-//template<typename AGENT>
-//double State<AGENT>::forwardOccupationNumber(const std::vector<double> &trajectory) const {
-//    double occupation = 0;
-//    for(int act=0; act<AGENT::actDomainSize(); ++act) {
-//        occupation += trajectory[Event(time,agent,act)];
-//    }
-//    return occupation;
-//}
-//
-//template<typename AGENT>
-//double State<AGENT>::occupationNumber(const std::vector<double> &trajectory) const {
-//    if(trajectory.size() == Trajectory<AGENT>::dimension(time)) return backwardOccupationNumber(trajectory);
-//    return forwardOccupationNumber(trajectory);
-//}
 
 #endif //GLPKTEST_STATE_H

@@ -42,15 +42,11 @@ public:
             do {
                 ++solutionId;
                 recalculateTrajectory();
-//                std::cout << "Trying solution " << solution << std::endl;
             } while(solutionId < (1 << solution.size()) && !support.isValidSolution(solution));
             return *this;
         }
 
 
-//        bool operator ==(const Iterator &other) const {
-//            return solutionId == other.solutionId;
-//        }
 
         bool operator !=(const Iterator &other) const {
             return solutionId != other.solutionId;

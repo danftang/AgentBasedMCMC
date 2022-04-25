@@ -29,53 +29,53 @@
 // another valarray.
 //
 ////////////////////////////////////////////////////////////////////////////
-template<typename SAMPLE>
-std::valarray<SAMPLE> geyerAutocorrelation(const std::valarray<SAMPLE> &samples, int nLags=100, double maxLagProportion=0.5) {
-    std::valarray<SAMPLE> autocov(0.0 * samples[0], nLags);
-    SAMPLE meanSample = samples.sum()*(1.0/samples.size());
-    std::valarray<SAMPLE> Dx = samples - meanSample;
-
-    int stride = (maxLagProportion*samples.size())/(nLags-1.0);
-    for(int j = 0; j < autocov.size(); ++j) {
-        int t = j*stride;
-        for(int i=0; i+t < samples.size(); ++i) {
-            autocov[j] += Dx[i]*Dx[i+t];
-        }
-        autocov[j] /= samples.size();
-    }
-    return autocov;
-}
-
-std::valarray<std::valarray<double>> geyerAutocorrelation(const std::vector<std::vector<double>> &samples, int nLags=100, double maxLagProportion=0.9) {
-    std::valarray<std::valarray<double>> vaData(samples.size());
-    for(int i=0; i<samples.size(); ++i) {
-        vaData[i].resize(samples[i].size(),0.0);
-        for(int j=0; j<samples[i].size(); ++j) {
-            vaData[i][j] = samples[i][j];
-        }
-    }
-    return geyerAutocorrelation(vaData, nLags, maxLagProportion);
-}
-
-auto plotGeyerAutocorrelation(int nLags=100, double maxLagProportion=0.9) {
-    return [nLags, maxLagProportion](const std::vector<std::vector<double>> &samples) {
-        std::valarray<std::valarray<double>> vaData(samples.size());
-        for(int i=0; i<samples.size(); ++i) {
-            vaData[i].resize(samples[i].size(),0.0);
-            for(int j=0; j<samples[i].size(); ++j) {
-                vaData[i][j] = samples[i][j];
-            }
-        }
-        std::valarray<std::valarray<double>> autocorrelation = geyerAutocorrelation(vaData, nLags, maxLagProportion);
-        int stride = samples.size()*maxLagProportion/(nLags-1.0);
-        int maxLag = stride*(nLags-1);
-        std::cout << "Geyer autocorrelation: " << autocorrelation << std::endl;
-        Plotter gp;
-        gp.heatmap(autocorrelation, 0.5, autocorrelation[0].size()-0.5, 0.5*stride, maxLag + 0.5*stride);
-        return false;
-    };
-}
-
+//template<typename SAMPLE>
+//std::valarray<SAMPLE> geyerAutocorrelation(const std::valarray<SAMPLE> &samples, int nLags=100, double maxLagProportion=0.5) {
+//    std::valarray<SAMPLE> autocov(0.0 * samples[0], nLags);
+//    SAMPLE meanSample = samples.sum()*(1.0/samples.size());
+//    std::valarray<SAMPLE> Dx = samples - meanSample;
+//
+//    int stride = (maxLagProportion*samples.size())/(nLags-1.0);
+//    for(int j = 0; j < autocov.size(); ++j) {
+//        int t = j*stride;
+//        for(int i=0; i+t < samples.size(); ++i) {
+//            autocov[j] += Dx[i]*Dx[i+t];
+//        }
+//        autocov[j] /= samples.size();
+//    }
+//    return autocov;
+//}
+//
+//std::valarray<std::valarray<double>> geyerAutocorrelation(const std::vector<std::vector<double>> &samples, int nLags=100, double maxLagProportion=0.9) {
+//    std::valarray<std::valarray<double>> vaData(samples.size());
+//    for(int i=0; i<samples.size(); ++i) {
+//        vaData[i].resize(samples[i].size(),0.0);
+//        for(int j=0; j<samples[i].size(); ++j) {
+//            vaData[i][j] = samples[i][j];
+//        }
+//    }
+//    return geyerAutocorrelation(vaData, nLags, maxLagProportion);
+//}
+//
+//auto plotGeyerAutocorrelation(int nLags=100, double maxLagProportion=0.9) {
+//    return [nLags, maxLagProportion](const std::vector<std::vector<double>> &samples) {
+//        std::valarray<std::valarray<double>> vaData(samples.size());
+//        for(int i=0; i<samples.size(); ++i) {
+//            vaData[i].resize(samples[i].size(),0.0);
+//            for(int j=0; j<samples[i].size(); ++j) {
+//                vaData[i][j] = samples[i][j];
+//            }
+//        }
+//        std::valarray<std::valarray<double>> autocorrelation = geyerAutocorrelation(vaData, nLags, maxLagProportion);
+//        int stride = samples.size()*maxLagProportion/(nLags-1.0);
+//        int maxLag = stride*(nLags-1);
+//        std::cout << "Geyer autocorrelation: " << autocorrelation << std::endl;
+//        Plotter gp;
+//        gp.heatmap(autocorrelation, 0.5, autocorrelation[0].size()-0.5, 0.5*stride, maxLag + 0.5*stride);
+//        return false;
+//    };
+//}
+//
 
 
 #endif //GLPKTEST_AUTOCORRELATION_H

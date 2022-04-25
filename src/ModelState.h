@@ -1,3 +1,4 @@
+// represents occupation numbers of agent states in a single timestep.
 //
 // Created by daniel on 18/05/2021.
 //
@@ -11,9 +12,7 @@
 #include "Random.h"
 #include "ABM.h"
 #include "State.h"
-// #include "Trajectory.h"
 
-// represents occupation numbers of agent states in a single timestep.
 template<typename AGENT>
 class ModelState: public std::vector<ABM::occupation_type> {
 public:
@@ -35,25 +34,6 @@ public:
                 (*this)[stateId] = State<AGENT>(time,stateId).backwardOccupation(trajectory);
         }
     }
-
-//    ModelState(const Trajectory<AGENT> &trajectory, int time): ModelState(trajectory, trajectory.nTimesteps(), time) {}
-
-
-    // ensure zero initialisation
-//    double &operator[](const AGENT &agent) {
-//        auto iter = this->find(agent);
-//        if(iter == this->end()) {
-//            double &newEntry = std::map<AGENT,double>::operator[](agent);
-//            newEntry = 0.0;
-//            return newEntry;
-//        }
-//        return iter->second;
-//    }
-//
-//    double operator[](const AGENT &agent) const {
-//        auto iter = this->find(agent);
-//        return iter==this->end()?0.0:iter->second;
-//    }
 
     void setToZero() {
         for(int i=0; i<size(); ++i) (*this)[i] = 0;
@@ -123,14 +103,6 @@ public:
         }
         return state;
     }
-
-//    friend std::ostream &operator <<(std::ostream &out, const ModelState<AGENT> &modelState) {
-//        for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
-//            if(modelState[agentId] != 0.0) out << AGENT(agentId) << " -> " << modelState[agentId] << " ";
-//        }
-//        return  out;
-//    }
-
 };
 
 #endif //GLPKTEST_MODELSTATE_H

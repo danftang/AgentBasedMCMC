@@ -24,7 +24,6 @@ namespace dataflow {
         // consumer doesn't have to take r-value, compiler will do whatever conversion is necessary.
         template<class CONSUMER>
         bool operator()(CONSUMER &modelStateConsumer, const std::vector<ABM::occupation_type> &trajectory) {
-//            std::cout << "Converting trajectory " << trajectory << " to model state " << ModelState<AGENT>(trajectory, nTimesteps, time) << std::endl;
             return modelStateConsumer(ModelState<AGENT>(trajectory, nTimesteps, time));
         }
 

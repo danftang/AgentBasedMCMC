@@ -25,7 +25,6 @@ public:
     double                              pPredator;
     double                              pPrey;
     double                              kappa;
-//    double                              alpha;
     Prior<PredPreyAgent<GRIDSIZE>>      prior;
     Trajectory<PredPreyAgent<GRIDSIZE>> realTrajectory;
     Likelihood<PredPreyAgent<GRIDSIZE>> likelihood;
@@ -48,7 +47,6 @@ public:
     pPredator(pPredator),
     pPrey(pPrey),
     kappa(kappa),
-//    alpha(alpha),
     prior(nTimesteps, startStatePrior()),
     realTrajectory(prior.nextSample(true)),
     likelihood(realTrajectory, pMakeObservation, pObserveIfPresent),
@@ -106,12 +104,6 @@ private:
     }
 
     BOOST_SERIALIZATION_SPLIT_MEMBER();
-
-
-//    template <typename Archive>
-//    void serialize(Archive &ar, const unsigned int version) {
-//        ar & pPredator & pPrey & realTrajectory & likelihood.observations;
-//    }
 
 };
 

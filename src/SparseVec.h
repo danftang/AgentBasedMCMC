@@ -41,8 +41,6 @@ public:
     std::vector<T> toDense(int dimension) const;
     void insert(int i, T v);
     void clear();
-//    int capacity() const { return std::min(indices.capacity(),values.capacity()); }
-//    int nDimensions() const { return (int)values[0]; }
     void resize(size_t size) { indices.resize(size); values.resize(size); }
     void reserve(size_t n) { indices.reserve(n); values.reserve(n);}
 
@@ -85,7 +83,6 @@ public:
 
 protected:
     void swap(SparseVec<T> &rvalue) {
-//        std::cout << "Moving " << rvalue.indices << std::endl;
         indices.swap(rvalue.indices);
         values.swap(rvalue.values);
     }

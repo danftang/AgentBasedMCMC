@@ -1,4 +1,5 @@
-
+// Represents a single linear constraint l <= CX <= u
+// where C is a row vector and l and u are scalars.
 //
 // Created by daniel on 26/04/2021.
 //

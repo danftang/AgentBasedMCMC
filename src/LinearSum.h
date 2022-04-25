@@ -1,3 +1,4 @@
+// Represents a sum of terms sum_i c_ix_i
 //
 // Created by daniel on 26/04/2021.
 //
@@ -9,9 +10,6 @@
 #include <iomanip>
 #include "X.h"
 #include "SparseVec.h"
-
-// Represents a sum of terms sum_i c_ix_i
-//class Constraint;
 
 template<class T>
 class LinearSum {

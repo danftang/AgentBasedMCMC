@@ -49,11 +49,6 @@ public:
         std::cout << "Loaded problem" << std::endl;
         std::cout << problem;
 
-//        problem.kappa = 5.0;
-
-//        TableauNormMinimiser<ABM::occupation_type> basisTableau(problem.posterior.constraints);
-//        std::cout << "Tableau = \n" << basisTableau << std::endl;
-
         auto startTime = std::chrono::steady_clock::now();
 
         std::future<std::vector<ChainStats>> futureResults[nThreads];
@@ -77,8 +72,6 @@ public:
         if(!statFile.good()) throw("Can't open stats probFile to save results.");
         boost::archive::binary_oarchive statArchive(statFile);
         statArchive << multiChainStats;
-////        std::cout << std::endl << "Saved stats" << std::endl;
-////        std::cout << multiChainStats;
     }
 
 
@@ -89,8 +82,6 @@ public:
         const int nLags = 200;
         const int nBurnIn = nSamples*0.1;
         int nTimesteps = problem.nTimesteps();
-
-//        TableauNormMinimiser<ABM::occupation_type> tableau(problem.posterior.constraints);
 
         SparseBasisSampler sampler(problem.tableau, problem.posterior.factors, problem.posterior.perturbableFunctionFactory(), initialState, problem.kappa);
 
@@ -145,8 +136,6 @@ public:
 
         std::cout << "Loaded problem" << std::endl;
         std::cout << problem;
-
-//        problem.kappa = 10.5;
 
         auto startTime = std::chrono::steady_clock::now();
 
@@ -217,7 +206,6 @@ public:
         std::valarray<std::valarray<double>> autocorrelation = stats.autocorrelation();
         int nDimensions = autocorrelation[0].size();
         double xStride = stats.front().varioStride;
-//        acPlotter << "set title 'Autocorrelations " << GRIDSIZE << " x " << nTimesteps << "'\n";
         acPlotter << "plot ";
         for(int d=1; d<=nDimensions; ++d) acPlotter << "'-' using (" << xStride <<  "*$0):" << d << " with lines title 'Statistic " << d << "', ";
         acPlotter << "0 with lines notitle\n";
@@ -225,15 +213,6 @@ public:
 
         // Print MCMC stats
         std::cout << stats;
-//        for(const ChainStats &chain: stats) {
-//            std::cout << "Feasible MCMC stats:" << std::endl;
-//            std::cout << chain.feasibleStats << std::endl;
-//            std::cout << "Infeasible MCMC stats:" << std::endl;
-//            std::cout << chain.infeasibleStats << std::endl;
-//            std::cout << "Infeasible proportion = "
-//            << chain.infeasibleStats.nSamples*100.0/(chain.feasibleStats.nSamples + chain.infeasibleStats.nSamples)
-//            << "%" << std::endl << std::endl;
-//        }
 
         // Print scale reduction and effective samples
         std::valarray<double> neff = stats.effectiveSamples();
@@ -249,12 +228,10 @@ public:
         std::cout << "Sample inefficiency factor: " << ineff << std::endl << std::endl;
         std::cout << "Execution time per sample (all threads): " << execTimePerSample << "ms" << std::endl;
         std::cout << "Execution time per feasible sample (all threads): " << execTimePerFeasibleSample << "ms" << std::endl;
-//        std::cout << "Mean execution time per effective sample: " << ineff.sum()*execTimePerFeasibleSample/ineff.size() << "ms" << std::endl;
         std::cout << "Execution time per (worst case) effective sample: " << stats.execTimeMilliSeconds/(neff.min()*stats.nChains()) << "ms" << std::endl;
         // plot end state
 
         Plotter endStatePlotter;
-//        endStatePlotter.plot(problem.realTrajectory.endState(), stats.meanEndState(),"End state " + std::to_string(GRIDSIZE) + " x " + std::to_string(nTimesteps));
         endStatePlotter.plot(problem.realTrajectory.endState(), stats.meanEndState(),"");
 
         if(waitForKeypressToExit) {
@@ -262,60 +239,11 @@ public:
             std::cin.get();
         }
 
-        //        while(acPlotter.is_open() || endStatePlotter.is_open());
     }
-
-//    template<int GRIDSIZE>
-//    static void plotStatsToFile(int nTimesteps) {
-//        std::string statFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".stat";
-//        std::ifstream statFile(statFilename);
-//        if(!statFile.good()) throw("Can't open stats probFile. Maybe you haven't run the analysis for this geometry yet.");
-//        boost::archive::binary_iarchive statArchive(statFile);
-//        MultiChainStats stats;
-//        statArchive >> stats;
-//
-//        std::string probFilename = filenamePrefix(GRIDSIZE, nTimesteps) + ".prob";
-//        std::ifstream probFile(probFilename);
-//        if(!probFile.good()) throw("Can't open problem probFile for this geometry. Odd because the stats probFile exists!");
-//        boost::archive::binary_iarchive probArchive(probFile);
-//        PredPreyProblem<GRIDSIZE> problem;
-//        probArchive >> problem;
-//
-//        // plot autocorrelations
-//        Plotter acPlotter;
-//        std::valarray<std::valarray<double>> autocorrelation = stats.autocorrelation();
-//        int nDimensions = autocorrelation[0].size();
-//        double xStride = stats.front().varioStride;
-//        acPlotter << "set title 'Autocorrelations " << GRIDSIZE << " x " << nTimesteps << "'\n";
-//        acPlotter << "plot ";
-//        for(int d=1; d<=nDimensions; ++d) acPlotter << "'-' using (" << xStride <<  "*$0):" << d << " with lines title 'synopsis " << d << "', ";
-//        acPlotter << "0 with lines notitle\n";
-//        for(int d=1; d<=nDimensions; ++d) acPlotter.send1d(autocorrelation);
-//
-//        // Print MCMC stats
-//        std::cout << stats;
-//
-//        // Print scale reduction and effective samples
-//        std::valarray<double> neff = stats.effectiveSamples();
-//        std::valarray<double> ineff = (stats.nSamples()*1.0)/neff;
-//        double execTimePerSample = stats.execTimeMilliSeconds * 2.0 / (stats.front().feasibleStats.nSamples*stats.size());
-//        std::cout << "Summary statistics for " << GRIDSIZE << " x " << nTimesteps << std::endl;
-//        std::cout << "Potential scale reduction: " << stats.potentialScaleReduction() << std::endl;
-//        std::cout << "Actual number of samples per chain: " << stats.nSamples() << std::endl;
-//        std::cout << "Effective number of samples: " << neff << std::endl;
-//        std::cout << "Sample inefficiency factor: " << ineff << std::endl << std::endl;
-//        std::cout << "Execution time per sample: " << execTimePerSample << "ms" << std::endl;
-//        std::cout << "Mean execution time per effective sample: " << ineff.sum()*execTimePerSample/ineff.size() << "ms" << std::endl;
-//        // plot end state
-//
-//        Plotter().plot(problem.realTrajectory.endState(), stats.meanEndState(),"End state " + std::to_string(GRIDSIZE) + " x " + std::to_string(nTimesteps));
-//    }
-
 
 
     static std::valarray<double> synopsis(const ModelState<PredPreyAgent<GRIDSIZE>> &endState) {
         std::valarray<double> synopsis(floor(log2(GRIDSIZE)) -1);
-//        ModelState<PredPreyAgent<GRIDSIZE>> endState(trajectory, trajectory.nTimesteps(), trajectory.nTimesteps()); //.endState();
         int origin = 0;
         int varid = 0;
         for(int partitionSize = GRIDSIZE / 2; partitionSize > 1; partitionSize /=2) {
@@ -329,15 +257,10 @@ public:
             }
             assert(varid < synopsis.size());
             synopsis[varid++] = predOccupation + preyOccupation;
-//        synopsis[varid++] = preyOccupation;
             origin += partitionSize;
         }
         return synopsis;
     }
-
-//    static std::string filenamePrefix() {
-//        return "../data/PredPrey" + std::to_string(GRIDSIZE) + "-" + std::to_string(TIMESTEPS);
-//    }
 
 };
 
