@@ -2,7 +2,7 @@
 
 ![probabilityPlot](./doc/figs/endState.png "Probability distribution of agents")
 
-This is an implementation of the algorithm described in the paper [/doc/ABMCMC.pdf](./doc/ABMCMC.pdf) which allows Markov chain Monte Carlo sampling from the posterior distribution of an agent-based model given agent behaviour, a prior distribution over the boundary conditions and a set of observations.
+This is an implementation of the algorithm described in the paper [/doc/arxiv2205.01616.pdf](./doc/arxiv2205.01616.pdf) which allows Markov chain Monte Carlo sampling from the posterior distribution of an agent-based model given agent behaviour, a prior distribution over the boundary conditions and a set of observations.
 
 The code assumes that the model trajectory is act-Fermionic. See the paper for more details.
 
