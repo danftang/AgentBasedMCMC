@@ -6,13 +6,13 @@
 #ifndef ABMCMC_LIKELIHOOD_H
 #define ABMCMC_LIKELIHOOD_H
 
-#include "FactoredConvexDistribution.h"
 #include "ABM.h"
 #include "AgentStateObservation.h"
 #include "Trajectory.h"
+#include "ConstrainedFactorisedDistribution.h"
 
 template<class AGENT>
-class Likelihood: public FactoredConvexDistribution<ABM::occupation_type> {
+class Likelihood: public FactorisedDistribution<Trajectory<AGENT>> {
 public:
     std::vector<AgentStateObservation<AGENT>> observations;
 
@@ -46,17 +46,26 @@ public:
         }
     }
 
-
     void reserve(size_t size) {
-        FactoredConvexDistribution<ABM::occupation_type>::reserve(size);
+        this->logFactors.reserve(size);
         observations.reserve(size);
     }
 
 
     void addObservation(const AgentStateObservation<AGENT> &observation) {
-        addFactor(observation.constraint(), observation.toLogProbFunction());
         observations.push_back(observation);
+        this->addFactor(observations.back());
     }
+
+    friend std::ostream &operator <<(std::ostream &out, const Likelihood<AGENT> &likelihood) {
+        out << "{ ";
+        for(const AgentStateObservation<AGENT> &observation : likelihood.observations) {
+            out << observation << " ";
+        }
+        out << "}";
+        return out;
+    }
+
 };
 
 

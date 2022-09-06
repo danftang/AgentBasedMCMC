@@ -8,13 +8,13 @@ int main(int argc, char *argv[]) {
 //    FiguresForPaper<32,16>::generateStandardProblemFile(10.0);
 //    FiguresForPaper<32,16>::generateStats(10000000);
     /////////////// Plot figures 3 and 4 and print statistics for table 2
-    FiguresForPaper<32,16>::plotStats(false); // set to true to allow printing from plots.
+//    FiguresForPaper<32,16>::plotStats(false); // set to true to allow printing from plots.
 
     /////////////// Get timing for a sample on a single core
 //    FiguresForPaper<32,16>::sampleTiming(1000000);
 
     ////////////// Test MCMC against small, tractable examples
-//    Experiments::CatMouseAssimilation();
+    Experiments::CatMouseAssimilation();
 //    Experiments::PredPreySingleObservation();
 //    Experiments::CatMouseSingleObservation();
 //    Experiments::BinomialAgentSingleObservation();

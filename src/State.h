@@ -62,6 +62,16 @@ public:
         return occupation;
     }
 
+    std::vector<int> forwardOccupationDependencies() const {
+        std::vector<int> dependencies;
+        int beginIndex = Event<AGENT>(time, agent, 0).id;
+        int endIndex = beginIndex + AGENT::actDomainSize();
+        for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
+            dependencies.push_back(eventId);
+        }
+        return dependencies;
+    }
+
 
     ABM::occupation_type fermionicBoundedForwardOccupation(const std::vector<ABM::occupation_type> &trajectory) const {
         ABM::occupation_type occupation = 0;

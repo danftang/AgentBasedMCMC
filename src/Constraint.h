@@ -9,6 +9,7 @@
 
 #include "SparseVec.h"
 #include "LinearSum.h"
+#include "EqualityConstraint.h"
 
 template<class COEFF>
 class Constraint {
@@ -21,6 +22,7 @@ public:
     Constraint(): Constraint(std::numeric_limits<COEFF>::lowest(), std::numeric_limits<COEFF>::max()) {}
     Constraint(COEFF lowerBound, COEFF upperBound);
     Constraint(COEFF lowerBound, SparseVec<COEFF> coefficients, COEFF upperBound);
+    Constraint(EqualityConstraint<COEFF> eqConstraint);
 
     Constraint & operator <=(COEFF upperBound);
 
@@ -50,16 +52,12 @@ Constraint<COEFF>::Constraint(COEFF lowerBound, SparseVec<COEFF> sum, COEFF uppe
         upperBound(upperBound),
         lowerBound(lowerBound) { }
 
-
 template<class COEFF>
-Constraint<COEFF> operator ==(const LinearSum<COEFF> &linExp, COEFF c) {
-    return Constraint(c, linExp.toSparseVec(), c);
-}
+Constraint<COEFF>::Constraint(EqualityConstraint<COEFF> eqConstraint):
+        coefficients(std::move(eqConstraint.coefficients)),
+        upperBound(eqConstraint.constant),
+        lowerBound(eqConstraint.constant) {}
 
-template<class COEFF>
-Constraint<COEFF> operator ==(double c, const LinearSum<COEFF> &linExp) {
-    return linExp == c;
-}
 
 template<class COEFF>
 Constraint<COEFF> operator <=(const LinearSum<COEFF> &linExp, COEFF c) {

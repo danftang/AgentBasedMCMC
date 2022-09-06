@@ -17,6 +17,7 @@
 template<typename AGENT>
 class Trajectory: public std::vector<ABM::occupation_type> {
 public:
+    typedef ABM::occupation_type occupation_type;
 
     explicit Trajectory(int nTimesteps): std::vector<value_type>(dimension(nTimesteps)) { }
 
@@ -39,7 +40,15 @@ public:
         return std::vector<value_type>::operator[](event.id);
     }
 
+    const value_type &operator[](const Event<AGENT> &event) const {
+        return std::vector<value_type>::operator[](event.id);
+    }
+
     value_type &operator[](int eventId) {
+        return std::vector<value_type>::operator[](eventId);
+    }
+
+    const value_type &operator[](int eventId) const {
         return std::vector<value_type>::operator[](eventId);
     }
 
