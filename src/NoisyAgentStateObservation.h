@@ -19,37 +19,41 @@
 #include "ConstrainedFactorisedDistribution.h"
 
 template<typename AGENT>
-class AgentStateObservation: public SparseWidenedFunction<double, Trajectory<AGENT>> {
+class NoisyAgentStateObservation {
 public:
-    State<AGENT> state;                 // state that was observed
-    ABM::occupation_type lowerBound;    // number actually observed
-    double pObserveIfPresent;           // probability of observing an agent if it is present
+    const State<AGENT> state;                 // state that was observed
+    const ABM::occupation_type nObserved;     // number actually observed
+    const double pObserveIfPresent;           // probability of observing an agent if it is present
 
-    AgentStateObservation() {};
+    NoisyAgentStateObservation() {};
 
-    AgentStateObservation(const State<AGENT> &state, int nObserved, double pObserveIfPresent):
-            SparseWidenedFunction<double, Trajectory<AGENT>>(
-                    [this](const Trajectory<AGENT> &trajectory) {
-                        return this->widenedLogLikelihood(trajectory);
-                    },
-                    state.forwardOccupationDependencies()
-                    ),
+    NoisyAgentStateObservation(const State<AGENT> &state, ABM::occupation_type nObserved, double pObserveIfPresent):
             state(state),
-            lowerBound(nObserved),
+            nObserved(nObserved),
             pObserveIfPresent(pObserveIfPresent)
     {
         assert(nObserved >= 0);
-        assert(pObserveIfPresent > 0.0 && pObserveIfPresent <= 1.0);
-        debug(std::cout << "Generating observation " << *this << std::endl);
+        assert(pObserveIfPresent > 0.0 && pObserveIfPresent < 1.0); // if pObserveIfPresent = 1.0 use NoiselessAgentStateObservation
+//        debug(std::cout << "Generating observation " << *this << std::endl);
     }
 
-    std::pair<double,bool> widenedLogLikelihood(const Trajectory<AGENT> &trajecotry) const {
-        ABM::occupation_type realOccupation = trajecotry[state];
-        if(realOccupation < lowerBound) {
-            return std::pair(lowerBound*log(pObserveIfPresent) - ABM::kappa*(lowerBound - realOccupation),false);
-        }
-        return std::pair(log(boost::math::pdf(boost::math::binomial(realOccupation, pObserveIfPresent), lowerBound)),true);
+    SparseWidenedFunction<double, const Trajectory<AGENT> &> toSparseWidenedFunction() {
+        return SparseWidenedFunction<double, const Trajectory<AGENT> &>(
+        [state = state,nObserved = nObserved,pObserveIfPresent = pObserveIfPresent](const Trajectory<AGENT> &trajectory) {
+            return widenedLogLikelihood(state, nObserved, pObserveIfPresent, trajectory);
+        },
+        state.forwardOccupationDependencies()
+        );
     }
+
+    static std::pair<double,bool> widenedLogLikelihood(const State<AGENT> &state, ABM::occupation_type nObserved, double pObserveIfPresent, const Trajectory<AGENT> &trajecotry) {
+        ABM::occupation_type realOccupation = trajecotry[state];
+        if(realOccupation < nObserved) {
+            return std::pair(nObserved*log(pObserveIfPresent) - ABM::kappa*(nObserved - realOccupation),false);
+        }
+        return std::pair(log(boost::math::pdf(boost::math::binomial(realOccupation, pObserveIfPresent), nObserved)),true);
+    }
+
 
 
 //    double logLikelihood(ABM::occupation_type realOccupation) const {
@@ -77,8 +81,8 @@ public:
 //    }
 
 
-    friend std::ostream &operator <<(std::ostream &out, const AgentStateObservation<AGENT> & observation) {
-        out << observation.state << " n=" << observation.lowerBound << " p=" << observation.pObserveIfPresent;
+    friend std::ostream &operator <<(std::ostream &out, const NoisyAgentStateObservation<AGENT> & observation) {
+        out << observation.state << " n=" << observation.nObserved << " p=" << observation.pObserveIfPresent;
         return out;
     }
 
@@ -87,7 +91,7 @@ private:
 
     template <typename Archive>
     void serialize(Archive &ar, const unsigned int version) {
-        ar & state & lowerBound & pObserveIfPresent;
+        ar & state & nObserved & pObserveIfPresent;
     }
 
 

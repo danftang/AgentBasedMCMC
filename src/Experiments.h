@@ -29,7 +29,7 @@ public:
             int nRejectionSamples,
             double kappa,
             const StartStateDistribution<AGENT> &startState,
-            const AgentStateObservation<AGENT> &observation);
+            const NoisyAgentStateObservation<AGENT> &observation);
 };
 
 

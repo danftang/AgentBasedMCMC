@@ -23,66 +23,66 @@
 #include "SparseWidenedFunction.h"
 #include "FactorisedDistribution.h"
 
-template<class T>
+template<typename T, typename CONSTRAINTCOEFF>
 class ConstrainedFactorisedDistribution: public FactorisedDistribution<T> {
 public:
-    EqualityConstraints<T>                  constraints;        // linear constraints
+    std::vector<EqualityConstraint<CONSTRAINTCOEFF>>                  constraints;        // linear constraints
 
     virtual std::function<const T &()> sampler() {
         // TODO: Implement this
         return nullptr;
     }
 
-    void addConstraint(EqualityConstraint<T> constraint) {
+    void addConstraint(EqualityConstraint<CONSTRAINTCOEFF> constraint) {
         constraints.push_back(std::move(constraint));
     }
 
-    ConstrainedFactorisedDistribution<T> &operator *=(const ConstrainedFactorisedDistribution<T> &other) {
+    ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> &operator *=(const ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> &other) {
         constraints += other.constraints;
         FactorisedDistribution<T>::operator *=(other);
         return *this;
     }
 
-    ConstrainedFactorisedDistribution<T> &operator *=(const FactorisedDistribution<T> &other) {
+    ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> &operator *=(const FactorisedDistribution<T> &other) {
         FactorisedDistribution<T>::operator *=(other);
         return *this;
     }
 
 
-    ConstrainedFactorisedDistribution<T> operator *(const ConstrainedFactorisedDistribution<T> &factoredDist) && {
+    ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> operator *(const ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> &factoredDist) && {
         (*this) *= factoredDist;
         return std::move(*this);
     }
 
-    ConstrainedFactorisedDistribution<T> operator *(const FactorisedDistribution<T> &factoredDist) && {
+    ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> operator *(const FactorisedDistribution<T> &factoredDist) && {
         (*this) *= factoredDist;
         return std::move(*this);
     }
 
 
-    ConstrainedFactorisedDistribution<T> operator *(const ConstrainedFactorisedDistribution<T> &factoredDist) const & {
-        ConstrainedFactorisedDistribution<T> copyOfThis(*this);
+    ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> operator *(const ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> &factoredDist) const & {
+        ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> copyOfThis(*this);
         copyOfThis *= factoredDist;
         return copyOfThis;
     }
 
-    ConstrainedFactorisedDistribution<T> operator *(const FactorisedDistribution<T> &factoredDist) const & {
-        ConstrainedFactorisedDistribution<T> copyOfThis(*this);
+    ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> operator *(const FactorisedDistribution<T> &factoredDist) const & {
+        ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> copyOfThis(*this);
         copyOfThis *= factoredDist;
         return copyOfThis;
     }
 
 
-    ConstrainedFactorisedDistribution<T> operator *(ConstrainedFactorisedDistribution<T> &&factoredDist) const & {
+    ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> operator *(ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> &&factoredDist) const & {
         factoredDist *= *this;
         return std::move(factoredDist);
     }
 
-    friend ConstrainedFactorisedDistribution<T> operator *(const FactorisedDistribution<T> &fDist, const ConstrainedFactorisedDistribution<T> &cfDist) {
+    friend ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> operator *(const FactorisedDistribution<T> &fDist, const ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> &cfDist) {
         return cfDist * fDist;
     }
 
-    friend ConstrainedFactorisedDistribution<T> operator *(const FactorisedDistribution<T> &fDist, ConstrainedFactorisedDistribution<T> &&cfDist) {
+    friend ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> operator *(const FactorisedDistribution<T> &fDist, ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> &&cfDist) {
         return std::move(cfDist) * fDist;
     }
 

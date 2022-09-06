@@ -81,7 +81,7 @@ void Experiments::CatMouseAssimilation() {
     constexpr double kappa = 1.25;
 
 //    Prior<CatMouseAgent> prior(nTimesteps, PoissonStartState<CatMouseAgent>({0.5, 0.5, 0.3, 0.3}));
-    PoissonStartState<CatMouseAgent> prior({0.5, 0.5, 0.3, 0.3});
+    PoissonStartState<CatMouseAgent> prior({0.5, 0.5, 0.3, 0.3}); // TODO: This isn't the prior!!!
     std::cout << "Prior support is\n" << prior << std::endl;
 
     Trajectory<CatMouseAgent> realTrajectory = prior.nextSample(nTimesteps);
@@ -124,7 +124,7 @@ template<class AGENT>
 void Experiments::doSingleObservationExperiment(int nTimesteps, int nBurnin, int nSamples, int nRejectionSamples,
                                                 double kappa,
                                                 const StartStateDistribution<AGENT> &startState,
-                                                const AgentStateObservation<AGENT> &observation) {
+                                                const NoisyAgentStateObservation<AGENT> &observation) {
 //    Prior<AGENT> prior(nTimesteps, startState);
 //    std::cout << "Prior support is\n" << prior << std::endl;
 //

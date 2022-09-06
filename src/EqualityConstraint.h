@@ -22,11 +22,20 @@ public:
     bool isValidSolution(const std::vector<COEFF> &X) const {
         return coefficients * X == constant;
     }
+
+    friend std::ostream &operator <<(std::ostream &out, const EqualityConstraint<COEFF> &constraint) {
+        for(int i=0; i < constraint.coefficients.sparseSize(); ++i) {
+            out << constraint.coefficients.values[i] << "X" << constraint.coefficients.indices;
+            if(i != constraint.coefficients.sparseSize()-1) out << " + ";
+        }
+        out << " == " << constraint.constant;
+        return out;
+    }
 };
 
 template<class COEFF>
 EqualityConstraint<COEFF> operator ==(const LinearSum<COEFF> &linExp, COEFF c) {
-    return Constraint(linExp.toSparseVec(), c);
+    return EqualityConstraint<COEFF>(linExp.toSparseVec(), c);
 }
 
 template<class COEFF>

@@ -13,32 +13,13 @@
 #include "FactorisedDistribution.h"
 
 template<class AGENT>
-class PoissonStartState: public FactorisedDistribution<Trajectory<AGENT>> {
+class PoissonStartState: public FactorisedDistribution<const Trajectory<AGENT> &> {
 public:
 
     explicit PoissonStartState(std::function<double(AGENT)> agentToLambda) {
             this->logFactors.reserve(AGENT::domainSize());
             for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
-                double lambda = agentToLambda(AGENT(agentId));
-                double logLambda = log(lambda);
-
-//                int actIndices[AGENT::actDomainSize()];
-//                for(int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
-//                    actIndices[actId] = Event<AGENT>(0,agentId, actId).id;
-//                }
-
-                this->addFactor(
-                        SparseWidenedFunction<double, Trajectory<AGENT>>(
-                        [lambda,logLambda,agentId](const Trajectory<AGENT> &trajectory) {
-                            int occupation = 0;
-                            for(int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
-                                occupation += trajectory[Event<AGENT>(0,agentId,actId)];
-                            }
-                            return PoissonStartState<AGENT>::widenedLogPoisson(lambda, logLambda, occupation); // log of Poisson
-                        },
-                        State<AGENT>(0,agentId).forwardOccupationDependencies()
-                        )
-                );
+                addFactor(agentId, agentToLambda(AGENT(agentId)));
             }
     }
 
@@ -77,6 +58,46 @@ public:
         out << "}";
         return out;
     }
+
+    using FactorisedDistribution<const Trajectory<AGENT> &>::addFactor;
+
+    void addFactor(int agentId, double lambda) {
+        double logLambda = log(lambda);
+        addFactor(
+                SparseWidenedFunction<double,const Trajectory<AGENT> &>(
+                        [lambda,logLambda,agentId](const Trajectory<AGENT> &trajectory) {
+                            int occupation = 0;
+                            for(int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+                                occupation += trajectory[Event<AGENT>(0,agentId,actId)];
+                            }
+                            return PoissonStartState<AGENT>::widenedLogPoisson(lambda, logLambda, occupation); // log of Poisson
+                        },
+                        State<AGENT>(0,agentId).forwardOccupationDependencies()
+                )
+        );
+    }
+
+private:
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void load(Archive &ar, const unsigned int version) {
+        for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+            double lambda;
+            ar >> lambda;
+            addFactor(agentId, lambda);
+        }
+    }
+
+    template <typename Archive>
+    void save(Archive &ar, const unsigned int version) const {
+        Trajectory<AGENT> zeroTrajectory(1);
+        for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+            ar << this->logFactors[agentId].exactValue(zeroTrajectory);
+        }
+    }
+
+    BOOST_SERIALIZATION_SPLIT_MEMBER();
 };
 
 

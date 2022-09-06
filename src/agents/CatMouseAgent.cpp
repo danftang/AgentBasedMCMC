@@ -4,7 +4,7 @@
 
 #include "CatMouseAgent.h"
 
-// returns LogPMF over acts
+// returns LogPMF over acts given surrounding agents
 std::vector<double> CatMouseAgent::timestep(const ModelState<CatMouseAgent> &others) const {
     std::vector<double> actPmf(actDomainSize());
 

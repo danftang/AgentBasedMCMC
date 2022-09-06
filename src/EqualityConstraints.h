@@ -9,7 +9,7 @@
 #include "EqualityConstraint.h"
 
 template<class T>
-class EqualityConstraints: std::vector<EqualityConstraint<T>> {
+class EqualityConstraints: public std::vector<EqualityConstraint<T>> {
 public:
 
 };

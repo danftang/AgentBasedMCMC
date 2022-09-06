@@ -6,7 +6,8 @@
 
 class ABM {
 public:
-    typedef int occupation_type;    // data type used to store act- and state-occupation numbers
+    typedef int occupation_type;    // data type for act- and state-occupation numbers
+    typedef int coefficient_type;   // data type for constraints
     static constexpr double kappa = 1.0;
 };
 

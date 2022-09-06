@@ -64,7 +64,7 @@ public:
         double logP = 0.0;
         for(int i=0; i < factors.size(); ++i) {
             T Ai = constraints[i].coefficients * X;
-            if(constraints[i].lowerBound > Ai || Ai > constraints[i].upperBound) return -std::numeric_limits<double>::infinity();
+            if(constraints[i].nObserved > Ai || Ai > constraints[i].upperBound) return -std::numeric_limits<double>::infinity();
             logP += factors[i](Ai);
         }
         return logP;

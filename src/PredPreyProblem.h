@@ -11,7 +11,7 @@
 #include "Event.h"
 #include "StlStream.h"
 #include "StateTrajectory.h"
-#include "AgentStateObservation.h"
+#include "NoisyAgentStateObservation.h"
 #include "agents/PredPreyAgent.h"
 #include "Prior.h"
 #include "Likelihood.h"
@@ -76,7 +76,7 @@ public:
 
     friend std::ostream &operator <<(std::ostream &out, const PredPreyProblem &predPreyProblem) {
         out << "Real trajectory: " << predPreyProblem.realTrajectory << std::endl;
-        out << "Observations: " << predPreyProblem.likelihood.observations << std::endl;
+        out << "Observations: " << predPreyProblem.likelihood.noisyObservations << std::endl;
         out << "pPredator: " << predPreyProblem.pPredator << std::endl;
         out << "pPrey: " << predPreyProblem.pPrey << std::endl;
         out << "kappa: " << predPreyProblem.kappa << std::endl;
@@ -91,7 +91,7 @@ private:
 
     template <typename Archive>
     void load(Archive &ar, const unsigned int version) {
-        std::vector<AgentStateObservation<PredPreyAgent<GRIDSIZE>>> observations;
+        std::vector<NoisyAgentStateObservation<PredPreyAgent<GRIDSIZE>>> observations;
         ar & pPredator & pPrey & kappa & realTrajectory & observations & tableau;
         prior = Prior<PredPreyAgent<GRIDSIZE>>(realTrajectory.nTimesteps(), startStatePrior());
         likelihood = Likelihood<PredPreyAgent<GRIDSIZE>>(observations);
@@ -100,7 +100,7 @@ private:
 
     template <typename Archive>
     void save(Archive &ar, const unsigned int version) const {
-        ar & pPredator & pPrey & kappa & realTrajectory & likelihood.observations & tableau;
+        ar & pPredator & pPrey & kappa & realTrajectory & likelihood.noisyObservations & tableau;
     }
 
     BOOST_SERIALIZATION_SPLIT_MEMBER();

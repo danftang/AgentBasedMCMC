@@ -32,11 +32,6 @@ public:
     std::function<std::pair<OUT,bool>(ARGS)>    widenedFunction;
     std::vector<int>                            dependencies;
 
-    SparseWidenedFunction(std::function<std::pair<OUT,bool>(ARGS)> widenedFunction, std::initializer_list<int> dependencies):
-        widenedFunction(std::move(widenedFunction)),
-        dependencies(dependencies)
-    {
-    }
 
     SparseWidenedFunction(std::function<std::pair<OUT,bool>(ARGS)> widenedFunction, std::vector<int> dependencies):
             widenedFunction(std::move(widenedFunction)),
