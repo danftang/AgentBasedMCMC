@@ -23,6 +23,24 @@ std::vector<double> CatMouseAgent::timestep(const ModelState<CatMouseAgent> &oth
     return actPmf;
 }
 
+std::vector<double> CatMouseAgent::timestep(const Trajectory<CatMouseAgent> &others, int time) const {
+    std::vector<double> actPmf(actDomainSize());
+
+    if (type() == CAT) {
+        actPmf[MOVE] = pCatMove;
+        actPmf[STAYPUT] = 1.0 - pCatMove;
+    } else {
+        if (others[State(time, CatMouseAgent(CAT, position()))] >= 1.0) {
+            actPmf[MOVE] = 1.0;
+            actPmf[STAYPUT] = 0.0;
+        } else {
+            actPmf[MOVE] = 0.0;
+            actPmf[STAYPUT] = 1.0;
+        }
+    }
+    return actPmf;
+}
+
 
 double CatMouseAgent::marginalTimestep(Act act) const {
     if (type() == CAT) {

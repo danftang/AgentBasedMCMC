@@ -21,6 +21,7 @@
 #include <set>
 #include "../ModelState.h"
 #include "../Constraint.h"
+#include "../Trajectory.h"
 
 class CatMouseAgent {
 public:
@@ -56,6 +57,7 @@ public:
     Type type() const { return Type(stateId/2); }
 
     std::vector<double> timestep(const ModelState<CatMouseAgent> &others) const;
+    std::vector<double> timestep(const Trajectory<CatMouseAgent> &others, int time) const;
     double marginalTimestep(Act act) const;
     std::vector<CatMouseAgent> consequences(Act act) const; // the consequences of an act
     // returns the constraints implied by the given act

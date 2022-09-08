@@ -25,7 +25,7 @@ public:
 
     friend std::ostream &operator <<(std::ostream &out, const EqualityConstraint<COEFF> &constraint) {
         for(int i=0; i < constraint.coefficients.sparseSize(); ++i) {
-            out << constraint.coefficients.values[i] << "X" << constraint.coefficients.indices;
+            out << constraint.coefficients.values[i] << "X" << constraint.coefficients.indices[i];
             if(i != constraint.coefficients.sparseSize()-1) out << " + ";
         }
         out << " == " << constraint.constant;

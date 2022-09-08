@@ -26,7 +26,7 @@
 template<typename T, typename CONSTRAINTCOEFF>
 class ConstrainedFactorisedDistribution: public FactorisedDistribution<T> {
 public:
-    std::vector<EqualityConstraint<CONSTRAINTCOEFF>>                  constraints;        // linear constraints
+    EqualityConstraints<CONSTRAINTCOEFF>                  constraints;        // linear constraints
 
     virtual std::function<const T &()> sampler() {
         // TODO: Implement this

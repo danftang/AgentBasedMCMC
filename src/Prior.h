@@ -27,6 +27,13 @@ public:
     {
         addContinuityConstraints();
         addInteractionFactors();
+        addStartStateFactors();
+    }
+
+    void addStartStateFactors() {
+        for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+            addFactor(startState.getTrajectoryFactor(agentId));
+        }
     }
 
 
@@ -53,19 +60,18 @@ public:
             for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
                 State<AGENT> state(time, AGENT(agentId));
                 std::vector<int> actDependencies = state.forwardOccupationDependencies();
-                for(const AGENT &neighbour :state.agent.dependencies()) {
+                for(const AGENT &neighbour :state.agent.neighbours()) {
                     for(int neighbourAct: State<AGENT>(time, neighbour).forwardOccupationDependencies()) {
                         actDependencies.push_back(neighbourAct);
                     }
                 }
                 addFactor(
-                        SparseWidenedFunction<double, Trajectory<AGENT>>(
+                        SparseWidenedFunction<double, const Trajectory<AGENT> &>(
                                 [state](const Trajectory<AGENT> &trajectory) {
                                     return Prior<AGENT>::widenedAgentMultinomial(state, trajectory);
                                 },
-                                state.forwardOccupationDependencies()
-                            ),
-                            actDependencies
+                                actDependencies
+                            )
                         );
             }
         }
@@ -74,13 +80,13 @@ public:
 
     // Turns an agent timestep, pi(a, \Psi), unction into a function
     // \prod_a \pi(a, \Psi, \psi)^T^t_{\psi a}/T^t_{\psi a}!
-    // widened to decay exponentially over negative occupations and zero probability actions
+    // widened to decay (roughly) exponentially over negative occupations and zero probability actions
     static std::pair<double, bool> widenedAgentMultinomial(const State<AGENT> &state, const Trajectory<AGENT> &trajectory) {
         ABM::occupation_type stateOccupation = trajectory[state];
         double newLogP = (stateOccupation > 1)?lgamma(stateOccupation + 1.0):0.0; // log of Phi factorial
         bool exactValue = true;
         if(stateOccupation > 0) {
-            std::vector<double> actPMF = state.agent.timestep(trajectory);
+            std::vector<double> actPMF = state.agent.timestep(trajectory, state.time);
             for (int act = 0; act < AGENT::actDomainSize(); ++act) {
                 int actOccupation = trajectory[Event<AGENT>(state.time, state.agent, act)];
                 double pAct = actPMF[act];
@@ -101,7 +107,32 @@ public:
 
 
     Trajectory<AGENT> nextSample() const {
-        // TOSO: implement this
+        Trajectory<AGENT> sample(nTimesteps);
+        ModelState<AGENT> t0State = startState.nextSample();
+        ModelState<AGENT> t1State;
+        for (int t = 0; t < nTimesteps; ++t) {
+            for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+                AGENT agent(agentId);
+                int nAgents = t0State[agentId];
+                for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+                    sample[Event<AGENT>(t, agent, actId)] = 0.0;
+                }
+                std::vector<double> actPMF = agent.timestep(t0State);
+                for (int a = 0; a < nAgents; ++a) {
+                    int nextAct = Random::nextIntFromDiscrete(actPMF);
+                    sample[Event<AGENT>(t, agent, nextAct)] += 1;
+                    t1State += agent.consequences(nextAct);
+                }
+            }
+            t0State.setToZero();
+            t0State.swap(t1State);
+        }
+        return sample;
+    }
+
+    friend std::ostream &operator <<(std::ostream &out, const Prior &prior) {
+        out << "Prior timesteps = " << prior.nTimesteps << " Start state = " << prior.startState << std::endl;
+        return out;
     }
 
 };

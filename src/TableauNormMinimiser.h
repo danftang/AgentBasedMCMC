@@ -11,7 +11,7 @@
 #include <list>
 #include "boost/serialization/map.hpp"
 #include "boost/serialization/set.hpp"
-#include "ConvexPolyhedron.h"
+#include "EqualityConstraints.h"
 
 // Takes an LP Problem and finds the basis that pivots out as many
 // fixed-variables as possible, while attempting to keep the L0-norm of the tableau
@@ -24,7 +24,7 @@
 // (D)      (-E)   (0)
 //
 // If D has m rows, this class chooses m linearly independent columns
-// and pivots on rows in D so that M is left with all zeroes in those columns
+// and pivots on rows in D so that C is left with all zeroes in those columns
 // and D is left as a (truncated) triangular with "diagonal" elements equal to -1
 // to give
 //
@@ -60,8 +60,6 @@
 // greedy algorithm based on the Markovitz criterion. See
 //  Maros, I., 2002, "Computational techniques of the sipmlex method", Springer
 //
-// TODO: Need to maintain lower limits so that factors get correct values after
-//  reducing the space
 //
 template<class T>
 class TableauNormMinimiser {
@@ -111,20 +109,19 @@ public:
     std::vector<std::list<int>> colsBySparsity;     // cols sorted by sparsity, only contains non-basic cols
     std::vector<std::list<int>> rowsBySparsity;     // rows sorted by sparsity, only contains active rows
     std::vector<int>            basis;            // basic variables by row. -ve means auxiliary, otherwise col index of basic var
-    int                         nAuxiliaryVars;     // number of auxiliary variables
+//    int                         nAuxiliaryVars;     // number of auxiliary variables
     std::vector<T>              F;                  // constant in linear equation (see intro above)
-    std::vector<T>              L;                  // lower bounds by row (equalities are converted to zero)
-    std::vector<T>              U;                  // upper bounds by row (equalities are converted to zero)
+//    std::vector<T>              L;                  // lower bounds by row (equalities are converted to zero)
+//    std::vector<T>              U;                  // upper bounds by row (equalities are converted to zero)
 //    TableauNormMinimiser(glp::Problem &problem);
-    TableauNormMinimiser(const ConvexPolyhedron<T> &problem);
+    TableauNormMinimiser(const EqualityConstraints<T> &problem);
 
     TableauNormMinimiser()=default;
 
-    int nNonBasic() const { return cols.size() + nAuxiliaryVars - rows.size(); }
-
-    bool isEqualityConstraint(int i) const { return L[i] == U[i]; }
-
     void findMinimalBasis();
+    std::vector<SparseVec<T>> getMinimalBasisVectors();
+
+protected:
 
     double operator ()(int i, int j) const { auto it = rows[i].find(j); return it == rows[i].end()?0.0:it->second; }
 
@@ -143,7 +140,6 @@ public:
     void setColBasic(int j, int i);
     void inactivateRow(int i);
 
-
     double meanColumnL0Norm() const;
     double meanColumnL1Norm() const;
 
@@ -152,7 +148,7 @@ private:
 
     template <typename Archive>
     void serialize(Archive &ar, const unsigned int version) {
-        ar & cols & rows & basis & nAuxiliaryVars & F & L & U;
+        ar & cols & rows & basis & F;
     }
 };
 
@@ -161,11 +157,7 @@ std::ostream &operator <<(std::ostream &out, const TableauNormMinimiser<T> &tabl
     // print tableau
     for(int i=0; i<tableau.rows.size(); ++i) {
         out << tableau.L[i] << "\t<=\t";
-        if(!tableau.isEqualityConstraint(i)) {
-            out << "x(" << -tableau.basis[i] << ")";
-        } else {
-            out << "0   ";
-        }
+        out << "x(" << -tableau.basis[i] << ")";
         out << "\t=\t";
         for(int j=0; j<tableau.cols.size(); ++j) {
             out << tableau(i,j) << "\t";
@@ -188,35 +180,23 @@ std::ostream &operator <<(std::ostream &out, const TableauNormMinimiser<T> &tabl
 // (-L M)(1 X A)^T = 0, 0 <= A <= U-L
 // where the zero'th elelemet of (1 X A) is 1.
 template<class T>
-TableauNormMinimiser<T>::TableauNormMinimiser(const ConvexPolyhedron<T> &problem)
+TableauNormMinimiser<T>::TableauNormMinimiser(const EqualityConstraints<T> &problem)
 {
     basis.reserve(problem.size());
     F.reserve(problem.size());
     rows.reserve(problem.size());
-    L.reserve(problem.size());
-    U.reserve(problem.size());
     int maxCol = 0; // maximum column id seen so far
-    nAuxiliaryVars = 0;
-    int constraintIndex = 0;
-    for(const Constraint<T> &constraint: problem) {
-        bool isActive = (constraint.upperBound == constraint.lowerBound);
-        rows.emplace_back(constraint.coefficients, isActive);
-        if (isActive) {
-            addRowSparsityEntry(rows.size()-1);
-            basis.push_back(INT_MAX); // fixed var
-            F.push_back(-constraint.lowerBound); // transform all equality constraints to form DX - E = 0
-            L.push_back(0);
-            U.push_back(0);
-        } else {
-            basis.push_back(-(++nAuxiliaryVars));
-            F.push_back(0);
-            L.push_back(constraint.lowerBound);
-            U.push_back(constraint.upperBound);
-        }
+//    nAuxiliaryVars = 0;
+//    int constraintIndex = 0;
+    for(const EqualityConstraint<T> &constraint: problem) {
+        rows.emplace_back(constraint.coefficients, true);
+        addRowSparsityEntry(rows.size()-1);
+        basis.push_back(INT_MAX); // unreduced row
+        F.push_back(-constraint.constant); // transform all equality constraints to form DX - E = 0
         assert(rows.back().size() > 0);
         int rowMaxCol = rows.back().rbegin()->first;
         if(rowMaxCol > maxCol) maxCol = rowMaxCol;
-        ++constraintIndex;
+//        ++constraintIndex;
     }
 
     cols.resize(maxCol +1);
@@ -231,7 +211,7 @@ TableauNormMinimiser<T>::TableauNormMinimiser(const ConvexPolyhedron<T> &problem
     }
     std::cout << "Initial mean L0 norm = " << meanColumnL0Norm() << std::endl;
     std::cout << "Initial L1 norm = " << meanColumnL1Norm() << std::endl;
-    findMinimalBasis();
+//    findMinimalBasis();
 }
 
 template<class T>
@@ -458,6 +438,22 @@ double TableauNormMinimiser<T>::meanColumnL1Norm() const {
         }
     }
     return normSum / nNonBasic;
+}
+
+template<class T>
+std::vector<SparseVec<T>> TableauNormMinimiser<T>::getMinimalBasisVectors() {
+    findMinimalBasis();
+    std::vector<SparseVec<T>> basisVectors;
+    basisVectors.reserve(cols.size() - rows.size());
+    for(int j=0; j<cols.size(); ++j) {
+        if(!cols[j].isBasic) {
+            basisVectors.emplace_back();
+            SparseVec<T> &newBasis = basisVectors.back();
+            newBasis.insert(j,1);
+            for(int i: cols[j]) newBasis.insert(i, rows[i][j]);
+        }
+    }
+    return basisVectors;
 }
 
 

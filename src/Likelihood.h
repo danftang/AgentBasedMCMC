@@ -55,14 +55,12 @@ public:
 
 
     friend std::ostream &operator <<(std::ostream &out, const Likelihood<AGENT> &likelihood) {
-        out << "{ ";
         for(const EqualityConstraint<ABM::occupation_type> &noiselessObservation : likelihood.constraints) {
-            out << noiselessObservation << " ";
+            out << noiselessObservation << std::endl;
         }
         for(const NoisyAgentStateObservation<AGENT> &observation : likelihood.noisyObservations) {
-            out << observation << " ";
+            out << observation << std::endl;
         }
-        out << "}";
         return out;
     }
 

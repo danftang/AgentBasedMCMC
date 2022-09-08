@@ -154,4 +154,5 @@ std::ostream &operator<<(std::ostream &out, const SparseVec<T> &sVector) {
 }
 
 
+
 #endif //GLPKTEST_SPARSEVEC_H

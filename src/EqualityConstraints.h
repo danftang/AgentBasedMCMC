@@ -11,7 +11,10 @@
 template<class T>
 class EqualityConstraints: public std::vector<EqualityConstraint<T>> {
 public:
-
+    EqualityConstraints<T> &operator +=(const EqualityConstraints<T> &other) {
+        this->insert(this->end(), other.begin(), other.end());
+        return *this;
+    }
 };
 
 

@@ -80,11 +80,10 @@ void Experiments::CatMouseAssimilation() {
     constexpr int nBurnin = 100;
     constexpr double kappa = 1.25;
 
-//    Prior<CatMouseAgent> prior(nTimesteps, PoissonStartState<CatMouseAgent>({0.5, 0.5, 0.3, 0.3}));
-    PoissonStartState<CatMouseAgent> prior({0.5, 0.5, 0.3, 0.3}); // TODO: This isn't the prior!!!
+    Prior<CatMouseAgent> prior(nTimesteps, PoissonStartState<CatMouseAgent>({0.5, 0.5, 0.3, 0.3}));
     std::cout << "Prior support is\n" << prior << std::endl;
 
-    Trajectory<CatMouseAgent> realTrajectory = prior.nextSample(nTimesteps);
+    Trajectory<CatMouseAgent> realTrajectory = prior.nextSample();
 
     Likelihood<CatMouseAgent> likelihood(realTrajectory, pMakeObservation, pObserveIfPresent);
     std::cout << "Likelihood support is\n" << likelihood << std::endl;
