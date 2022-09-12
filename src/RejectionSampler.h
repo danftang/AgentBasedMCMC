@@ -22,10 +22,13 @@ public:
     }
 
 
-    template<class AGENT>
-    RejectionSampler(Prior<AGENT> & Prior, Likelihood<AGENT> & Likelihood) :
-        priorSampler([&Prior]() { return Prior.nextSample(true); }),
-        likelihood([&Likelihood](const Trajectory<AGENT> &X) { return Likelihood.P(X); }) {
+    template<class STARTSTATE, class AGENT>
+    RejectionSampler(Prior<STARTSTATE> & Prior, Likelihood<AGENT> & Likelihood) :
+        priorSampler([&Prior]() { return Prior.nextSample(); }),
+        likelihood([&Likelihood](const Trajectory<AGENT> &X) {
+            double logP = Likelihood.logPexact(X);
+            return exp(logP);
+        }) {
     }
 
 

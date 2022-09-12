@@ -37,8 +37,8 @@ public:
 //        debug(std::cout << "Generating observation " << *this << std::endl);
     }
 
-    SparseWidenedFunction<double, const Trajectory<AGENT> &> toSparseWidenedFunction() {
-        return SparseWidenedFunction<double, const Trajectory<AGENT> &>(
+    SparseFunction<std::pair<double,bool>, const Trajectory<AGENT> &> toSparseWidenedFunction() {
+        return SparseFunction<std::pair<double,bool>, const Trajectory<AGENT> &>(
         [state = state,nObserved = nObserved,pObserveIfPresent = pObserveIfPresent](const Trajectory<AGENT> &trajectory) {
             return widenedLogLikelihood(state, nObserved, pObserveIfPresent, trajectory);
         },

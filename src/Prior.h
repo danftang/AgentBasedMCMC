@@ -11,29 +11,23 @@
 #include "ConstrainedFactorisedDistribution.h"
 #include "PoissonStartState.h"
 
-template<class AGENT>
-class Prior: public ConstrainedFactorisedDistribution<const Trajectory<AGENT> &, ABM::coefficient_type> {
+template<typename STARTSTATE, typename AGENT = typename STARTSTATE::domain_type::agent_type>
+class Prior: public ConstrainedFactorisedDistribution<Trajectory<AGENT>, ABM::coefficient_type> {
 public:
-    PoissonStartState<AGENT>       startState;
-    int                            nTimesteps;
+    STARTSTATE       startState;
+    int              nTimesteps;
 
-    using ConstrainedFactorisedDistribution<const Trajectory<AGENT> &,ABM::coefficient_type>::addFactor;
+    using ConstrainedFactorisedDistribution<Trajectory<AGENT>,ABM::coefficient_type>::addFactor;
 
     Prior(): nTimesteps(0) { }
 
-    Prior(int NTimesteps, PoissonStartState<AGENT> StartState):
+    Prior(int NTimesteps, STARTSTATE StartState):
         nTimesteps(NTimesteps),
         startState(std::move(StartState))
     {
         addContinuityConstraints();
         addInteractionFactors();
-        addStartStateFactors();
-    }
-
-    void addStartStateFactors() {
-        for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
-            addFactor(startState.getTrajectoryFactor(agentId));
-        }
+        (*this) *= startState;
     }
 
 
@@ -66,9 +60,9 @@ public:
                     }
                 }
                 addFactor(
-                        SparseWidenedFunction<double, const Trajectory<AGENT> &>(
+                        SparseFunction<std::pair<double,bool>, const Trajectory<AGENT> &>(
                                 [state](const Trajectory<AGENT> &trajectory) {
-                                    return Prior<AGENT>::widenedAgentMultinomial(state, trajectory);
+                                    return Prior<STARTSTATE,AGENT>::widenedAgentMultinomial(state, trajectory);
                                 },
                                 actDependencies
                             )
@@ -131,7 +125,8 @@ public:
     }
 
     friend std::ostream &operator <<(std::ostream &out, const Prior &prior) {
-        out << "Prior timesteps = " << prior.nTimesteps << " Start state = " << prior.startState << std::endl;
+        out << "Prior timesteps = " << prior.nTimesteps << " Start state =\n" << prior.startState << std::endl;
+        out << prior.constraints;
         return out;
     }
 

@@ -1,4 +1,8 @@
-// Represents the set of binary-valued solutions to a ConvexPolyhedron
+// Represents the set of binary-valued solutions to a
+// set of constraints.
+// DOMAIN should be a type that has a subscript operator
+// that can be assigned integers
+// SUPPORT should be a type with isValidSolution(DOMAIN)
 //
 // Created by daniel on 10/08/2021.
 //
@@ -8,35 +12,37 @@
 
 #include <bitset>
 #include <cassert>
-#include "ConvexPolyhedron.h"
+#include "EqualityConstraints.h"
 
-template<class T>
+template<class DOMAIN, class SUPPORT>
 class BinarySolutionSet {
 public:
     class Iterator {
     public:
         unsigned long solutionId;
-        std::vector<T> solution;
-        const ConvexPolyhedron<T> &support;
+        DOMAIN solution;
+        const SUPPORT &support;
 
 
-        Iterator(int nDimensions, const ConvexPolyhedron<T> &support, int id)
-        : solutionId(id),
-          solution(nDimensions),
-          support(std::move(support)) {
-            assert(nDimensions < 32);
+        Iterator(const DOMAIN &zeroState, const SUPPORT &support, int id):
+        solutionId(id),
+        solution(zeroState),
+        support(support)
+        {
+            assert(solution.size() < 32);
             recalculateTrajectory();
 //            std::cout << "Made iterator with support:\n" << support << std::endl;
         }
 
         // construct as begin()
-        Iterator(int nDimensions, const ConvexPolyhedron<T> &support)
-        : Iterator(nDimensions, support, -1) {
+        Iterator(const DOMAIN &zeroState, const SUPPORT &support):
+        Iterator(zeroState, support, -1)
+        {
             // move forward to first valid exactEndState (or end)
             ++(*this);
         }
 
-        const std::vector<T> &operator *() { return solution; }
+        const DOMAIN &operator *() { return solution; }
 
         Iterator &operator ++() {
             do {
@@ -60,15 +66,14 @@ public:
     };
 
 
-    const ConvexPolyhedron<T> &support;
-    int nDimensions;
+    const SUPPORT &support;
+    DOMAIN zeroState;
 
-    BinarySolutionSet(const ConvexPolyhedron<T> &Support, int dimension = -1): support(Support) {
-        if(dimension > 0) nDimensions = dimension; else nDimensions = support.dimension();
+    BinarySolutionSet(const SUPPORT &Support, DOMAIN zeroState): support(Support), zeroState(zeroState) {
     }
 
-    Iterator begin() { return Iterator(nDimensions, support); }
-    Iterator end() { return Iterator(nDimensions, support, 1 << nDimensions);  }
+    Iterator begin() { return Iterator(zeroState, support); }
+    Iterator end() { return Iterator(zeroState, support, 1 << zeroState.size());  }
 
 };
 

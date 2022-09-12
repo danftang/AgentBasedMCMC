@@ -16,6 +16,9 @@
 template<typename AGENT>
 class ModelState: public std::vector<ABM::occupation_type> {
 public:
+    typedef AGENT agent_type;
+
+    static const ModelState<AGENT> zero;
 
     ModelState(): std::vector<value_type>(AGENT::domainSize(),0) { };
 
@@ -104,5 +107,8 @@ public:
         return state;
     }
 };
+
+template<typename AGENT> const ModelState<AGENT> ModelState<AGENT>::zero;
+
 
 #endif //GLPKTEST_MODELSTATE_H

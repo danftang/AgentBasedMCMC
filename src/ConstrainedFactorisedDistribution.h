@@ -20,69 +20,72 @@
 #include <vector>
 #include <limits>
 #include "EqualityConstraints.h"
-#include "SparseWidenedFunction.h"
+#include "SparseFunction.h"
 #include "FactorisedDistribution.h"
 
-template<typename T, typename CONSTRAINTCOEFF>
-class ConstrainedFactorisedDistribution: public FactorisedDistribution<T> {
+template<typename DOMAIN, typename CONSTRAINTCOEFF = typename subscript_operator_traits<DOMAIN>::base_type>
+class ConstrainedFactorisedDistribution: public FactorisedDistribution<DOMAIN> {
 public:
+    typedef CONSTRAINTCOEFF coefficient_type;
+
     EqualityConstraints<CONSTRAINTCOEFF>                  constraints;        // linear constraints
 
-    virtual std::function<const T &()> sampler() {
+    virtual std::function<const DOMAIN &()> sampler() {
         // TODO: Implement this
         return nullptr;
     }
 
     void addConstraint(EqualityConstraint<CONSTRAINTCOEFF> constraint) {
+        this->domainDimension = std::max(this->domainDimension, constraint.maxCoefficientIndex());
         constraints.push_back(std::move(constraint));
     }
 
-    ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> &operator *=(const ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> &other) {
+    ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> &operator *=(const ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> &other) {
         constraints += other.constraints;
-        FactorisedDistribution<T>::operator *=(other);
+        FactorisedDistribution<DOMAIN>::operator *=(other);
         return *this;
     }
 
-    ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> &operator *=(const FactorisedDistribution<T> &other) {
-        FactorisedDistribution<T>::operator *=(other);
+    ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> &operator *=(const FactorisedDistribution<DOMAIN> &other) {
+        FactorisedDistribution<DOMAIN>::operator *=(other);
         return *this;
     }
 
 
-    ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> operator *(const ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> &factoredDist) && {
+    ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> operator *(const ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> &factoredDist) && {
         (*this) *= factoredDist;
         return std::move(*this);
     }
 
-    ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> operator *(const FactorisedDistribution<T> &factoredDist) && {
+    ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> operator *(const FactorisedDistribution<DOMAIN> &factoredDist) && {
         (*this) *= factoredDist;
         return std::move(*this);
     }
 
 
-    ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> operator *(const ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> &factoredDist) const & {
-        ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> copyOfThis(*this);
+    ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> operator *(const ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> &factoredDist) const & {
+        ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> copyOfThis(*this);
         copyOfThis *= factoredDist;
         return copyOfThis;
     }
 
-    ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> operator *(const FactorisedDistribution<T> &factoredDist) const & {
-        ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> copyOfThis(*this);
+    ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> operator *(const FactorisedDistribution<DOMAIN> &factoredDist) const & {
+        ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> copyOfThis(*this);
         copyOfThis *= factoredDist;
         return copyOfThis;
     }
 
 
-    ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> operator *(ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> &&factoredDist) const & {
+    ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> operator *(ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> &&factoredDist) const & {
         factoredDist *= *this;
         return std::move(factoredDist);
     }
 
-    friend ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> operator *(const FactorisedDistribution<T> &fDist, const ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> &cfDist) {
+    friend ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> operator *(const FactorisedDistribution<DOMAIN> &fDist, const ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> &cfDist) {
         return cfDist * fDist;
     }
 
-    friend ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> operator *(const FactorisedDistribution<T> &fDist, ConstrainedFactorisedDistribution<T,CONSTRAINTCOEFF> &&cfDist) {
+    friend ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> operator *(const FactorisedDistribution<DOMAIN> &fDist, ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> &&cfDist) {
         return std::move(cfDist) * fDist;
     }
 
@@ -93,16 +96,34 @@ public:
 //    }
 
 
-    double logPexact(const std::vector<T> &X) const {
+    double logPexact(const DOMAIN &X) const {
         double logP = 0.0;
+        if(!constraints.isValidSolution(X)) return -std::numeric_limits<double>::infinity();
         for(int i=0; i < this->logFactors.size(); ++i) {
-            if(constraints[i].coefficients * X != constraints[i].constant) return -std::numeric_limits<double>::infinity();
-            logP += this->logFactors[i].exactValue(X);
+            logP += this->exactFactorValue(i,X);
+        }
+        return logP;
+    }
+
+    double logPwidened(const DOMAIN &X) const {
+        double logP = 0.0;
+        double distanceToValidHyperplane = 0.0;
+        for(const auto &constraint : constraints) {
+            distanceToValidHyperplane += fabs(constraint.coefficients * X - constraint.constant);
+        }
+        logP += -ABM::kappa * distanceToValidHyperplane;
+        for(int i=0; i < this->logFactors.size(); ++i) {
+            logP += this->widenedFactorValue(i,X);
         }
         return logP;
     }
 
 };
 
+template<typename T>
+std::ostream &operator <<(std::ostream &out, const ConstrainedFactorisedDistribution<T> &distribution) {
+    out << distribution.constraints << std::endl;
+    return out;
+}
 
 #endif //ABMCMC_CONSTRAINEDFACTORISEDDISTRIBUTION_H

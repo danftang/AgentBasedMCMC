@@ -16,7 +16,7 @@ public:
 //    double sumOfLogImportances;
 
     MCMCStatistics();
-    void addSample(bool proposalAccepted, bool isCurrentlyFeasible, bool proposalIsFeasible);
+    void addSample(bool proposalAccepted, bool startStateIsFeasible, bool proposalIsFeasible);
     void reset();
 
     int nSamples() const;

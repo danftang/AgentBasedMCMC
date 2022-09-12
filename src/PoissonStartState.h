@@ -13,14 +13,13 @@
 #include "FactorisedDistribution.h"
 
 template<class AGENT>
-class PoissonStartState: public FactorisedDistribution<const ModelState<AGENT> &> {
+class PoissonStartState: public FactorisedDistribution<ModelState<AGENT>> {
 public:
-    static const ModelState<AGENT> zeroModelState;
 
     explicit PoissonStartState(std::function<double(AGENT)> agentToLambda) {
             this->logFactors.reserve(AGENT::domainSize());
             for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
-                addFactor(agentId, agentToLambda(AGENT(agentId)));
+                addPoissonFactor(agentId, agentToLambda(AGENT(agentId)));
             }
     }
 
@@ -54,12 +53,12 @@ public:
         return out;
     }
 
-    using FactorisedDistribution<const ModelState<AGENT> &>::addFactor;
+    using FactorisedDistribution<ModelState<AGENT>>::addFactor;
 
-    void addFactor(int agentId, double lambda) {
+    void addPoissonFactor(int agentId, double lambda) {
         double logLambda = log(lambda);
         addFactor(
-                SparseWidenedFunction<double,const ModelState<AGENT> &>(
+                SparseFunction<std::pair<double,bool>,const ModelState<AGENT> &>(
                         [lambda,logLambda,agentId](const ModelState<AGENT> &modelState) {
                             return PoissonStartState<AGENT>::widenedLogPoisson(lambda, logLambda, modelState[agentId]); // log of Poisson
                         },
@@ -68,12 +67,24 @@ public:
         );
     }
 
-    double lambda(int agentId) const;
+    double lambda(int agentId) const {
+        return -this->logFactors[agentId](ModelState<AGENT>::zero).first;
+    }
 
-    SparseWidenedFunction<double,const Trajectory<AGENT> &> getTrajectoryFactor(int agentId) {
+    // convert to a distribution over trajectories
+    operator FactorisedDistribution<Trajectory<AGENT>>() {
+            FactorisedDistribution<Trajectory<AGENT>> trajectoryDistribution;
+            trajectoryDistribution.logFactors.reserve(AGENT::domainSize());
+            for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+                trajectoryDistribution.addFactor(getTrajectoryFactor(agentId));
+            }
+            return trajectoryDistribution;
+    }
+
+    SparseFunction<std::pair<double,bool>,const Trajectory<AGENT> &> getTrajectoryFactor(int agentId) {
         double l = lambda(agentId);
         double logLambda = log(l);
-        return SparseWidenedFunction<double,const Trajectory<AGENT> &>(
+        return SparseFunction<std::pair<double,bool>,const Trajectory<AGENT> &>(
                 [l,logLambda,agentId](const Trajectory<AGENT> &trajectory) {
                     return PoissonStartState<AGENT>::widenedLogPoisson(l, logLambda, trajectory[State<AGENT>(0,agentId)]); // log of Poisson
                 },
@@ -82,10 +93,10 @@ public:
     }
 
 
-    SparseWidenedFunction<double,const ModelState<AGENT> &> getModelStateFactor(int agentId) {
+    SparseFunction<std::pair<double,bool>,const ModelState<AGENT> &> getModelStateFactor(int agentId) {
         double l = lambda(agentId);
         double logLambda = log(l);
-        return SparseWidenedFunction<double,const ModelState<AGENT> &>(
+        return SparseFunction<std::pair<double,bool>,const ModelState<AGENT> &>(
                 [l,logLambda,agentId](const ModelState<AGENT> &modelState) {
                     return PoissonStartState<AGENT>::widenedLogPoisson(l, logLambda, modelState[agentId]); // log of Poisson
                 },
@@ -101,7 +112,7 @@ private:
         for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
             double lambda;
             ar >> lambda;
-            addFactor(agentId, lambda);
+            addPoissonFactor(agentId, lambda);
         }
     }
 
@@ -114,14 +125,6 @@ private:
 
     BOOST_SERIALIZATION_SPLIT_MEMBER();
 };
-
-template<typename AGENT> const ModelState<AGENT> PoissonStartState<AGENT>::zeroModelState;
-
-template<class AGENT>
-double PoissonStartState<AGENT>::lambda(int agentId) const {
-    return -this->logFactors[agentId].exactValue(zeroModelState);
-}
-
 
 
 #endif //ABMCMC_POISSONSTARTSTATE_H

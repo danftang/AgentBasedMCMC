@@ -16,7 +16,7 @@
 #include "ConstrainedFactorisedDistribution.h"
 
 template<class AGENT>
-class Likelihood: public ConstrainedFactorisedDistribution<const Trajectory<AGENT> &,ABM::coefficient_type> {
+class Likelihood: public ConstrainedFactorisedDistribution<Trajectory<AGENT>,ABM::coefficient_type> {
 public:
     std::vector<NoisyAgentStateObservation<AGENT>> noisyObservations;
 

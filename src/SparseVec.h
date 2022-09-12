@@ -51,11 +51,11 @@ public:
         for(int i = 0;i<sparseSize(); ++i) {
             if(indices[i] == index) return values[i];
         }
-        return 0.0;
+        return 0;
     }
 
-    template<class OTHERNUMBER>
-    T operator *(const std::vector<OTHERNUMBER> &other) const {
+    template<typename OTHER, typename = decltype(std::declval<T &>() += (std::declval<T>()*(std::declval<OTHER>()[0])))>
+    T operator *(const OTHER &other) const {
         T dotProd = 0;
         for(int i=0; i < sparseSize(); ++i) {
             dotProd += values[i] * other[indices[i]];
@@ -63,8 +63,31 @@ public:
         return dotProd;
     }
 
-    friend T operator *(const std::vector<T> &lhs, const SparseVec<T> &rhs) {
-        return rhs * lhs;
+
+    template<typename ELE, typename = decltype(std::declval<T>() *= std::declval<ELE>())>
+    SparseVec &operator *=(ELE element) {
+        for(int i=0; i < sparseSize(); ++i) values[i] *= element;
+        return *this;
+    }
+
+    template<typename ELE, typename = decltype(std::declval<T>() = std::declval<T>() * std::declval<ELE>())>
+    SparseVec &operator *(ELE element) {
+        SparseVec<T> result(sparseSize());
+        for(int i=0; i<sparseSize(); ++i) {
+            result.indices[i] = indices[i];
+            result.values[i] = values[i] * element;
+        }
+        return result;
+    }
+
+        template<typename = decltype(-std::declval<T>())>
+    SparseVec operator -() {
+        SparseVec<T> negation(sparseSize());
+        for(int i=0; i<sparseSize(); ++i) {
+            negation.indices[i] = indices[i];
+            negation.values[i] = -values[i];
+        }
+        return negation;
     }
 
     // copy semantics
@@ -153,6 +176,29 @@ std::ostream &operator<<(std::ostream &out, const SparseVec<T> &sVector) {
     return out;
 }
 
+
+template<typename T, typename OTHER, typename = decltype(std::declval<OTHER>()[0] += std::declval<T>())>
+OTHER &operator +=(OTHER &lhs, const SparseVec<T> &rhs) {
+    for(int nz=0; nz < rhs.sparseSize(); ++nz) {
+        lhs[rhs.indices[nz]] += rhs.values[nz];
+    }
+    return lhs;
+}
+
+
+template<typename T, typename OTHER, typename = decltype(std::declval<OTHER>()[0] -= std::declval<T>())>
+OTHER &operator -=(OTHER &lhs, const SparseVec<T> &rhs) {
+    for(int nz=0; nz < rhs.sparseSize(); ++nz) {
+        lhs[rhs.indices[nz]] -= rhs.values[nz];
+    }
+    return lhs;
+}
+
+
+template<typename T, typename OTHER, typename = decltype(std::declval<SparseVec<T>>() * std::declval<OTHER>())>
+auto operator *(const OTHER &lhs, const SparseVec<T> &rhs) {
+    return rhs * lhs;
+}
 
 
 #endif //GLPKTEST_SPARSEVEC_H

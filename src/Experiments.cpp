@@ -15,6 +15,8 @@
 #include "Prior.h"
 #include "ExactSolver.h"
 #include "PoissonStartState.h"
+#include "ConstrainedFactorisedSampler.h"
+#include "FixedPopulationStartState.h"
 
 using namespace dataflow;
 
@@ -76,12 +78,12 @@ void Experiments::CatMouseAssimilation() {
     constexpr int nTimesteps = 2;
     constexpr double pMakeObservation = 0.2;
     constexpr double pObserveIfPresent = 1.0;
-    constexpr int nSamples = 200000;
+    constexpr int nSamples = 100000;
     constexpr int nBurnin = 100;
     constexpr double kappa = 1.25;
 
-    Prior<CatMouseAgent> prior(nTimesteps, PoissonStartState<CatMouseAgent>({0.5, 0.5, 0.3, 0.3}));
-    std::cout << "Prior support is\n" << prior << std::endl;
+    Prior prior(nTimesteps, FixedPopulationStartState<CatMouseAgent>({0, 0, 1, 1},{1,1}));
+    std::cout << "Prior is\n" << prior << std::endl;
 
     Trajectory<CatMouseAgent> realTrajectory = prior.nextSample();
 
@@ -89,31 +91,33 @@ void Experiments::CatMouseAssimilation() {
     std::cout << "Likelihood support is\n" << likelihood << std::endl;
 
     auto posterior = likelihood * prior;
-//
-//    SparseBasisSampler sampler(posterior,kappa);
+    std::cout << "Posterior is\n" << posterior << std::endl;
+
+    Trajectory<CatMouseAgent> initialSample = prior.nextSample();
+    ConstrainedFactorisedSampler<Trajectory<CatMouseAgent>> sampler(posterior, initialSample);
 //    std::cout << "Constructed basis\n" << sampler << std::endl;
-//    for(int i=0; i < nBurnin; ++i) {
-//        const std::vector<ABM::occupation_type> &sample = sampler();
-//        assert(posterior.constraints.isValidSolution(sample));
-//    }
-//    std::map<std::vector<ABM::occupation_type>,double> pmf;
-//    for(int s=0; s<nSamples; ++s) pmf[Trajectory<CatMouseAgent>(sampler(),nTimesteps)] += 1.0/nSamples;
-//    std::cout << sampler.stats;
-//
-//    RejectionSampler<Trajectory<CatMouseAgent>> rejectionSampler(prior,likelihood);
-//    std::map<std::vector<ABM::occupation_type>,double> rejectionPMF;
-//    for(int s=0; s<nSamples; ++s) {
-//        Trajectory<CatMouseAgent> trajectory(rejectionSampler(),nTimesteps);
-////        std::cout << "Got trajectory " << trajectory << std::endl;
-//        rejectionPMF[trajectory] += 1.0/nSamples;
-//    }
-//
-//    ExactSolver<CatMouseAgent> exactSolver(posterior);
-//    std::cout << "Comparison of exact / rejection / mcmc solutions:" << std::endl;
-//    std::fixed(std::cout).precision(5);
-//    for(auto &[trajectory,prob] : exactSolver.pmf) {
-//        std::cout << trajectory << "  p(ex)= " << prob << "  p(rej)= " << rejectionPMF[trajectory] << "  p(mcmc)= " << pmf[trajectory] << "  err= " << prob - pmf[trajectory] << std::endl;
-//    }
+    for(int i=0; i < nBurnin; ++i) {
+        const Trajectory<CatMouseAgent> &sample = sampler.nextSample();
+        assert(posterior.constraints.isValidSolution(sample));
+    }
+    std::map<std::vector<ABM::occupation_type>,double> pmf;
+    for(int s=0; s<nSamples; ++s) pmf[sampler.nextSample()] += 1.0/nSamples;
+    std::cout << sampler.stats;
+
+    RejectionSampler<Trajectory<CatMouseAgent>> rejectionSampler(prior,likelihood);
+    std::map<std::vector<ABM::occupation_type>,double> rejectionPMF;
+    for(int s=0; s<nSamples; ++s) {
+        Trajectory<CatMouseAgent> trajectory(rejectionSampler(),nTimesteps);
+//        std::cout << "Got trajectory " << trajectory << std::endl;
+        rejectionPMF[trajectory] += 1.0/nSamples;
+    }
+
+    ExactSolver<Trajectory<CatMouseAgent>> exactSolver(posterior, Trajectory<CatMouseAgent>(nTimesteps));
+    std::cout << "Comparison of exact / rejection / mcmc solutions:" << std::endl;
+    std::fixed(std::cout).precision(5);
+    for(auto &[trajectory,prob] : exactSolver.pmf) {
+        std::cout << trajectory << "  p_exact = " << prob << "  p_reject = " << rejectionPMF[trajectory] << "  p_mcmc = " << pmf[trajectory] << "  p_exact - p_mcmc = " << prob - pmf[trajectory] << std::endl;
+    }
 }
 
 

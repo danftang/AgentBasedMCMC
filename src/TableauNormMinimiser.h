@@ -65,7 +65,8 @@ template<class T>
 class TableauNormMinimiser {
 public:
 
-    static constexpr int maxVectorsToTest = 10;
+    static constexpr int MAX_VECTORS_TO_TEST = 10;
+    static constexpr int UNREDUCED = -1;
 
 
     class Column: public std::set<int> { // set of non-zero row indices (only non-reduced rows are stored)
@@ -108,7 +109,7 @@ public:
 
     std::vector<std::list<int>> colsBySparsity;     // cols sorted by sparsity, only contains non-basic cols
     std::vector<std::list<int>> rowsBySparsity;     // rows sorted by sparsity, only contains active rows
-    std::vector<int>            basis;            // basic variables by row. -ve means auxiliary, otherwise col index of basic var
+    std::vector<int>            basis;            // col index of basic var by row. -1 means unreduced
 //    int                         nAuxiliaryVars;     // number of auxiliary variables
     std::vector<T>              F;                  // constant in linear equation (see intro above)
 //    std::vector<T>              L;                  // lower bounds by row (equalities are converted to zero)
@@ -119,11 +120,12 @@ public:
     TableauNormMinimiser()=default;
 
     void findMinimalBasis();
-    std::vector<SparseVec<T>> getMinimalBasisVectors();
+    std::vector<SparseVec<T>> getBasisVectors(int domainDimension);
+
+    double operator ()(int i, int j) const { auto it = rows[i].find(j); return it == rows[i].end()?0.0:it->second; }
 
 protected:
 
-    double operator ()(int i, int j) const { auto it = rows[i].find(j); return it == rows[i].end()?0.0:it->second; }
 
     std::pair<int,int> findMarkowitzPivot();
 
@@ -156,20 +158,20 @@ template<class T>
 std::ostream &operator <<(std::ostream &out, const TableauNormMinimiser<T> &tableau) {
     // print tableau
     for(int i=0; i<tableau.rows.size(); ++i) {
-        out << tableau.L[i] << "\t<=\t";
-        out << "x(" << -tableau.basis[i] << ")";
+        out << "x(" << tableau.basis[i] << ")";
         out << "\t=\t";
         for(int j=0; j<tableau.cols.size(); ++j) {
             out << tableau(i,j) << "\t";
         }
-        out << "+\t" << tableau.F[i] << " <= " << tableau.U[i] << std::endl;
+        out << "+\t" << tableau.F[i] << std::endl;
     }
     // mark basic columns
-    out << " \t \t \t   \t \t";
+    out << "\t   \t \t";
     for(int j=0; j<tableau.cols.size(); ++j) {
         out << (tableau.cols[j].isBasic?"B\t":"-\t");
     }
     out << std::endl;
+    out << tableau.cols << std::endl;
     return out;
 }
 
@@ -186,17 +188,14 @@ TableauNormMinimiser<T>::TableauNormMinimiser(const EqualityConstraints<T> &prob
     F.reserve(problem.size());
     rows.reserve(problem.size());
     int maxCol = 0; // maximum column id seen so far
-//    nAuxiliaryVars = 0;
-//    int constraintIndex = 0;
     for(const EqualityConstraint<T> &constraint: problem) {
         rows.emplace_back(constraint.coefficients, true);
         addRowSparsityEntry(rows.size()-1);
-        basis.push_back(INT_MAX); // unreduced row
+        basis.push_back(UNREDUCED); // unreduced row
         F.push_back(-constraint.constant); // transform all equality constraints to form DX - E = 0
         assert(rows.back().size() > 0);
         int rowMaxCol = rows.back().rbegin()->first;
         if(rowMaxCol > maxCol) maxCol = rowMaxCol;
-//        ++constraintIndex;
     }
 
     cols.resize(maxCol +1);
@@ -241,7 +240,7 @@ std::pair<int,int> TableauNormMinimiser<T>::findMarkowitzPivot() {
                     if (score <= (k - 1) * (k - 1)) return bestPivot;
                     lowestScore = score;
                 }
-                if (++vectorsTested >= maxVectorsToTest) return bestPivot;
+                if (++vectorsTested >= MAX_VECTORS_TO_TEST) return bestPivot;
             }
         }
         for(int i: rowsBySparsity[k]) {
@@ -253,7 +252,7 @@ std::pair<int,int> TableauNormMinimiser<T>::findMarkowitzPivot() {
                     if (score <= (k - 1) * (k - 1)) return bestPivot;
                     lowestScore = score;
                 }
-                if (++vectorsTested >= maxVectorsToTest) return bestPivot;
+                if (++vectorsTested >= MAX_VECTORS_TO_TEST) return bestPivot;
             }
         }
         ++k;
@@ -267,7 +266,7 @@ void TableauNormMinimiser<T>::pivot(int pi, int pj) {
     assert(rows[pi].isActive);
     T Mpipj = rows[pi].at(pj);
 
-    // remove sparsity entries of all affected rows and columns
+    // remove sparsity entries of all affected columns
     for(auto [j, v] : rows[pi]) removeColSparsityEntry(j);
 
     rows[pi] *= -1.0/Mpipj;     // divide row through to make the pivot point -1
@@ -284,33 +283,38 @@ void TableauNormMinimiser<T>::pivot(int pi, int pj) {
                         rows[i][j] = Mipj * Mpij;
                         cols[j].insert(i);
                     } else {
-                        T newMij = (rows[i][j] += Mipj * Mpij);
-                        if (newMij == 0.0) { // drop-out
+                        T newMij = (MijIt->second += Mipj * Mpij);
+                        if (newMij == 0) { // drop-out
                             cols[j].erase(i);
                             rows[i].erase(j);
                         }
                     }
+                } else {
+                    // drop out without testing as we're on the pivot col
+                    rows[i].erase(j);
                 }
             }
+            if(rows[i].isActive) addRowSparsityEntry(i);
             F[i] += Mipj * F[pi];
         }
     }
 
-    // re-add previously removed sparsity entries
-    for(int i : cols[pj]) {
-        if(i != pi) {
-            rows[i].erase(pj);
-            if(rows[i].isActive) addRowSparsityEntry(i);
-        }
-    }
-    setColBasic(pj, pi);
+//    // re-add previously removed sparsity entries
+//    for(int i : cols[pj]) {
+//        if(i != pi) {
+//            rows[i].erase(pj);
+//            if(rows[i].isActive) addRowSparsityEntry(i);
+//        }
+//    }
+    setColBasic(pj, pi); // removes entries from col and records in basis
+    // add new column sparsity entries
     for(const auto [j, Mpij]: rows[pi]) {
         if(j != pj) {
-            cols[j].erase(pi);  // cols[] only stores non-reduced rows
+//            cols[j].erase(pi);  // cols[] only stores non-reduced rows (triangular factorisation)
             addColSparsityEntry(j);
         }
     }
-    inactivateRow(pi);
+    inactivateRow(pi); // sets inactive and removes row sparsity entry
 }
 
 
@@ -441,16 +445,30 @@ double TableauNormMinimiser<T>::meanColumnL1Norm() const {
 }
 
 template<class T>
-std::vector<SparseVec<T>> TableauNormMinimiser<T>::getMinimalBasisVectors() {
+std::vector<SparseVec<T>> TableauNormMinimiser<T>::getBasisVectors(int domainDimension) {
+    std::cout << "Starting with tableaux: " << std::endl << *this << std::endl;
+    std::cout << rowsBySparsity << std::endl;
+    std::cout << colsBySparsity << std::endl;
+    std::cout << cols << std::endl;
     findMinimalBasis();
+    std::cout << "Finished with tableaux: " << std::endl << *this << std::endl;
+    std::cout << rowsBySparsity << std::endl;
+    std::cout << colsBySparsity << std::endl;
+    std::cout << cols << std::endl;
+
     std::vector<SparseVec<T>> basisVectors;
-    basisVectors.reserve(cols.size() - rows.size());
-    for(int j=0; j<cols.size(); ++j) {
-        if(!cols[j].isBasic) {
+    basisVectors.reserve(domainDimension);
+    for(int j=0; j<domainDimension; ++j) {
+        if(j>=cols.size() || !cols[j].isBasic) {
             basisVectors.emplace_back();
             SparseVec<T> &newBasis = basisVectors.back();
-            newBasis.insert(j,1);
-            for(int i: cols[j]) newBasis.insert(i, rows[i][j]);
+            newBasis.insert(j,1); // element from the identity
+            if(j < cols.size()) {
+                for (int i: cols[j]) {
+                    assert(basis[i] != UNREDUCED); // every row should have a basic variable
+                    newBasis.insert(basis[i], rows[i][j]);
+                }
+            }
         }
     }
     return basisVectors;

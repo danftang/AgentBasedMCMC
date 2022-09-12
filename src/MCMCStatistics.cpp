@@ -9,10 +9,10 @@ MCMCStatistics::MCMCStatistics() {
     reset();
 }
 
-void MCMCStatistics::addSample(bool proposalAccepted, bool isCurrentlyFeasible, bool proposalIsFeasible) {
-    ++nProposals[isCurrentlyFeasible][proposalIsFeasible];
+void MCMCStatistics::addSample(bool proposalAccepted, bool startStateIsFeasible, bool proposalIsFeasible) {
+    ++nProposals[startStateIsFeasible][proposalIsFeasible];
     if(proposalAccepted) {
-        ++nAccepted[isCurrentlyFeasible][proposalIsFeasible];
+        ++nAccepted[startStateIsFeasible][proposalIsFeasible];
     }
 }
 

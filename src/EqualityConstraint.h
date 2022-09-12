@@ -15,22 +15,20 @@ public:
     SparseVec<COEFF>    coefficients;
     COEFF               constant;
 
-//    EqualityConstraint(): EqualityConstraint(0) {}
+    EqualityConstraint(): EqualityConstraint(0) {} // default to \emptyset = 0
     explicit EqualityConstraint(COEFF constant): constant(constant) {};
     EqualityConstraint(SparseVec<COEFF> coefficients, COEFF constant): coefficients(std::move(coefficients)), constant(constant) {};
 
-    bool isValidSolution(const std::vector<COEFF> &X) const {
+    template<typename T>
+    bool isValidSolution(const T &X) const {
         return coefficients * X == constant;
     }
 
-    friend std::ostream &operator <<(std::ostream &out, const EqualityConstraint<COEFF> &constraint) {
-        for(int i=0; i < constraint.coefficients.sparseSize(); ++i) {
-            out << constraint.coefficients.values[i] << "X" << constraint.coefficients.indices[i];
-            if(i != constraint.coefficients.sparseSize()-1) out << " + ";
-        }
-        out << " == " << constraint.constant;
-        return out;
+    int maxCoefficientIndex() const {
+        if(coefficients.indices.size() == 0) return 0;
+        return *std::max_element(coefficients.indices.begin(), coefficients.indices.end());
     }
+
 };
 
 template<class COEFF>
@@ -41,6 +39,16 @@ EqualityConstraint<COEFF> operator ==(const LinearSum<COEFF> &linExp, COEFF c) {
 template<class COEFF>
 EqualityConstraint<COEFF> operator ==(double c, const LinearSum<COEFF> &linExp) {
     return linExp == c;
+}
+
+template<typename COEFF>
+std::ostream &operator <<(std::ostream &out, const EqualityConstraint<COEFF> &constraint) {
+    for(int i=0; i < constraint.coefficients.sparseSize(); ++i) {
+        out << constraint.coefficients.values[i] << "X" << constraint.coefficients.indices[i];
+        if(i != constraint.coefficients.sparseSize()-1) out << " + ";
+    }
+    out << " == " << constraint.constant;
+    return out;
 }
 
 

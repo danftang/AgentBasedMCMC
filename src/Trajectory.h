@@ -18,6 +18,8 @@ template<typename AGENT>
 class Trajectory: public std::vector<ABM::occupation_type> {
 public:
     typedef ABM::occupation_type occupation_type;
+    typedef AGENT agent_type;
+
 
     explicit Trajectory(int nTimesteps): std::vector<value_type>(dimension(nTimesteps)) { }
 

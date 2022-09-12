@@ -13,40 +13,45 @@
 #define ABMCMC_FACTORISEDDISTRIBUTION_H
 
 #include <vector>
-#include "SparseWidenedFunction.h"
+#include "SparseFunction.h"
 
-template<class T>
+template<class DOMAIN>
 class FactorisedDistribution {
 public:
-    std::vector<SparseWidenedFunction<double,T>>          logFactors;
+    typedef SparseFunction<std::pair<double,bool>,const DOMAIN &> function_type;
+    typedef DOMAIN domain_type;
 
-    virtual std::function<const T &()> sampler() {
+    std::vector<function_type>          logFactors;
+    int                                 domainDimension;
+
+    virtual std::function<const DOMAIN &()> sampler() {
         // TODO: implement this
         return nullptr;
     }
 
-    void addFactor(SparseWidenedFunction<double,T> factor) {
+    void addFactor(SparseFunction<std::pair<double,bool>,const DOMAIN &> factor) {
         logFactors.push_back(std::move(factor));
     }
 
-    FactorisedDistribution<T> &operator *=(const FactorisedDistribution<T> &other) {
+    FactorisedDistribution<DOMAIN> &operator *=(const FactorisedDistribution<DOMAIN> &other) {
         logFactors.reserve(logFactors.size() + other.logFactors.size());
         logFactors.insert(logFactors.end(), other.logFactors.begin(), other.logFactors.end());
+        if(other.domainDimension > domainDimension) domainDimension = other.domainDimension;
         return *this;
     }
 
-    FactorisedDistribution<T> operator *(const FactorisedDistribution<T> &factoredDist) && {
+    FactorisedDistribution<DOMAIN> operator *(const FactorisedDistribution<DOMAIN> &factoredDist) && {
         (*this) *= factoredDist;
         return std::move(*this);
     }
 
-    FactorisedDistribution<T> operator *(const FactorisedDistribution<T> &factoredDist) const & {
-        FactorisedDistribution<T> copyOfThis(*this);
+    FactorisedDistribution<DOMAIN> operator *(const FactorisedDistribution<DOMAIN> &factoredDist) const & {
+        FactorisedDistribution<DOMAIN> copyOfThis(*this);
         copyOfThis *= factoredDist;
         return copyOfThis;
     }
 
-    FactorisedDistribution<T> operator *(FactorisedDistribution<T> &&factoredDist) const & {
+    FactorisedDistribution<DOMAIN> operator *(FactorisedDistribution<DOMAIN> &&factoredDist) const & {
         factoredDist *= *this;
         return std::move(factoredDist);
     }
@@ -56,16 +61,25 @@ public:
 //        return exp(logP(X));
 //    }
 
+    double exactFactorValue(int factorIndex, const DOMAIN &X) const {
+        std::pair<double,bool> factorVal = logFactors[factorIndex](X);
+        return factorVal.second?factorVal.first:-std::numeric_limits<double>::infinity();
+    }
 
-    double logPexact(const T &X) const {
+    double widenedFactorValue(int factorIndex, const DOMAIN &X) const {
+        return logFactors[factorIndex](X).first;
+    }
+
+
+    double logPexact(const DOMAIN &X) const {
         double logP = 0.0;
-        for(int i=0; i < logFactors.size(); ++i) logP += logFactors[i].exactValue(X);
+        for(int i=0; i < logFactors.size(); ++i) logP += exactFactorValue(i,X);
         return logP;
     }
 
-    double logPwidened(const T &X) const {
+    double logPwidened(const DOMAIN &X) const {
         double logP = 0.0;
-        for(int i=0; i < logFactors.size(); ++i) logP += logFactors[i].widenedValue(X);
+        for(int i=0; i < logFactors.size(); ++i) logP += widenedFactorValue(i,X);
         return logP;
     }
 

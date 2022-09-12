@@ -1,5 +1,7 @@
 #include "Experiments.h"
-#include "FiguresForPaper.h"
+#include "agents/CatMouseAgent.h"
+// #include "FiguresForPaper.h"
+#include "subscript_operator_traits.h"
 
 
 int main(int argc, char *argv[]) {
@@ -15,7 +17,9 @@ int main(int argc, char *argv[]) {
 //    FiguresForPaper<32,16>::sampleTiming(1000000);
 
     ////////////// Test MCMC against small, tractable examples
+
     Experiments::CatMouseAssimilation();
+
 //    Experiments::PredPreySingleObservation();
 //    Experiments::CatMouseSingleObservation();
 //    Experiments::BinomialAgentSingleObservation();

@@ -12,51 +12,24 @@
 #ifndef GLPKTEST_STLSTREAM_H
 #define GLPKTEST_STLSTREAM_H
 
-template<typename T>
-std::ostream & operator <<(std::ostream &out, const std::list<T> &container);
+// This class allows us to implement a version of operator << that requires an implicit conversion
+// of its arguments. This ensures that a class that has begin() and end() operators has a default
+// stream operator but any direct implementation will override the default.
+struct ostream_implicit_conversion {
+    std::ostream &out;
+    ostream_implicit_conversion(std::ostream &out) : out(out) {}
+};
 
-template<typename T1, typename T2>
-std::ostream &operator <<(std::ostream &out, const std::pair<T1,T2> &pair);
-
-template<typename T>
-std::ostream & operator <<(std::ostream &out, const std::list<T> &container);
-
-template<typename T>
-std::ostream &operator <<(std::ostream &out, const std::valarray<T> &vec);
-
-template<typename KEY, typename VALUE>
-std::ostream &operator <<(std::ostream &out, const std::map<KEY,VALUE> &map);
-
-template<typename KEY, typename VALUE>
-std::ostream &operator <<(std::ostream &out, const std::multimap<KEY,VALUE> &map);
-
-template<typename I, intmax_t UNITS>
-std::ostream &operator <<(std::ostream &out, const std::chrono::duration<I,std::ratio<1,UNITS>> &duration);
-
-
-template<typename T>
-std::ostream & operator <<(std::ostream &out, const std::vector<T> &container) {
-    out << "{";
-    typename std::vector<T>::const_iterator it = container.begin();
-    if(it != container.end()) {
-        out << *it;
-        while(++it != container.end()) out << ", " << *it;
-    }
-    out << "}";
-    return out;
-}
-
-
-template<typename T>
-std::ostream & operator <<(std::ostream &out, const std::list<T> &container) {
-    out << "{";
+template<typename T, typename = decltype(std::declval<T>().begin()), typename = decltype(std::declval<T>().end())>
+std::ostream & operator <<(ostream_implicit_conversion out, const T &container) {
+    out.out << "{";
     auto it = container.begin();
     if(it != container.end()) {
-        out << *it;
-        while(++it != container.end()) out << ", " << *it;
+        out.out << *it;
+        while(++it != container.end()) out.out << ", " << *it;
     }
-    out << "}";
-    return out;
+    out.out << "}";
+    return out.out;
 }
 
 
