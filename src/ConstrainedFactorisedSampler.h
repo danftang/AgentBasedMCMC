@@ -53,7 +53,7 @@ public:
     MCMCStatistics              stats;
 
     ConstrainedFactorisedSampler<DOMAIN,ELEMENT>(
-            ConstrainedFactorisedDistribution<DOMAIN,ELEMENT> &targetDistribution,
+            const ConstrainedFactorisedDistribution<DOMAIN,ELEMENT> &targetDistribution,
             DOMAIN initialSolution
             ):
             basisDistribution(2*(initialSolution.size() - targetDistribution.constraints.size())),
@@ -65,26 +65,25 @@ public:
     {
 
         // calculate basis
-        std::vector<IndexSet> domainToBasisDependencies;
-        std::tie(basisVectors, domainToBasisDependencies) = calculateBasis(targetDistribution.constraints, initialSolution.size());
-
-
-        // calculate factor by basis-dependency matrix
-        std::set<std::pair<int,int>> dependencyMatrix; // entries
-        for(const auto &factor: targetDistribution.logFactors) {
-            for(int domainIndex: factor.dependencies) {
-                for(int basisIndex: domainToBasisDependencies[domainIndex]) {
-                    dependencyMatrix.insert(std::pair(factors.size()-1, basisIndex));
-                }
-            }
+        TableauNormMinimiser<ELEMENT> constraintTableau(targetDistribution.constraints);
+        std::vector<SparseVec<ELEMENT>> uniqueBasisVectors = constraintTableau.getBasisVectors(initialSolution.size());
+        // double-up unique basis vectors for + and -
+        basisVectors.reserve(uniqueBasisVectors.size()*2);
+        for(int i=0; i < uniqueBasisVectors.size(); ++i) {
+            basisVectors.push_back(-uniqueBasisVectors[i]);
+            basisVectors.push_back(std::move(uniqueBasisVectors[i]));
         }
-        for(auto &dependencyEntry: dependencyMatrix) {
-            basisToFactorDependencies[dependencyEntry.second].push_back(dependencyEntry.first);
-            factorToBasisDependencies[dependencyEntry.first].push_back(dependencyEntry.second);
-        }
+        constraintTableau.snapToSubspace(X);
+        assert(targetDistribution.constraints.isValidSolution(X));
+        initDependencies(targetDistribution);
 
-        // snap initialSolution to the subspace defined by the basis by recalculating basic vars
-        // TODO: Dammit need the TableauNormMinimiser here to retreive F 
+        // Test the basis
+//        for(int i=0; i<basisVectors.size(); ++i) {
+//            X += basisVectors[i];
+//            std::cout << "Testing basis vector " << basisVectors[i] << " X = " << X << std::endl;
+//            assert(targetDistribution.constraints.isValidSolution(X));
+//            X -= basisVectors[i];
+//        }
 
         // initialise factors and factor values
         factors.reserve(targetDistribution.logFactors.size());
@@ -92,11 +91,11 @@ public:
         for(const auto &factor: targetDistribution.logFactors) {
             factors.push_back(factor);
             currentFactorVal.push_back(factor(X));
-            currentInfeasibility += currentFactorVal.back().second;
+            std::cout << "factor feasibility is " << currentFactorVal.back().second << std::endl;
+            currentInfeasibility += !currentFactorVal.back().second;
         }
 
         // initialise weights and probabilities
-        // TODO: double up the basisDistribution for + and - each basis
         for(int j=0; j<basisVectors.size(); ++j) {
             currentLogWeight[j] = 0.0;
             X += basisVectors[j];
@@ -106,7 +105,6 @@ public:
             X -= basisVectors[j];
             basisDistribution[j] = logWeighttoBasisProb(currentLogWeight[j]);
         }
-
     }
 
     // Turns the given constraints into a minimal basis that spans the
@@ -115,35 +113,38 @@ public:
     // and whose second element is the dependency mapping from domain element to
     // the set of basis vectors that depend on that element, where the
     // basis vectors are given an index by the ordering of the first element.
-    static std::pair<std::vector<SparseVec<ELEMENT>>, std::vector<IndexSet>>
-    calculateBasis(const EqualityConstraints<ELEMENT> &constraints, int domainDimension) {
-        std::pair<std::vector<SparseVec<ELEMENT>>, std::vector<IndexSet>> result;
-        std::vector<SparseVec<ELEMENT>> &pmBasisVectors(result.first);
-        std::vector<IndexSet> &domainToBasisDependencies(result.second);
-        std::vector<SparseVec<ELEMENT>> basisVectors;
+    void initDependencies(const ConstrainedFactorisedDistribution<DOMAIN,ELEMENT> &targetDistribution) {
+        std::vector<IndexSet> domainToBasisDependencies(X.size());
 
-        basisVectors = TableauNormMinimiser<ELEMENT>(constraints).getBasisVectors(domainDimension);
-        // double-up basis vectors for + and -
-        int nBasisVectors = basisVectors.size();
-        pmBasisVectors.reserve(nBasisVectors*2);
-        for(int i=0; i < basisVectors.size(); ++i) {
-            pmBasisVectors.push_back(-basisVectors[i]);
-            pmBasisVectors.push_back(std::move(basisVectors[i]));
-        }
-
-        // now construct the reverse dependencies by domain index and basis index
-        domainToBasisDependencies.resize(domainDimension);
-        for(int j=0; j<pmBasisVectors.size(); ++j) {
-            for(int row: pmBasisVectors[j].indices) {
+        // construct the dependencies from domain index to basis index
+        for(int j=0; j<basisVectors.size(); ++j) {
+            for(int row: basisVectors[j].indices) {
                 domainToBasisDependencies[row].push_back(j);
             }
         }
-        return result;
+
+        // calculate factor by basis-dependency matrix
+        std::set<std::pair<int,int>> dependencyMatrix; // entries
+        for(int factorId = 0; factorId<targetDistribution.logFactors.size(); ++factorId) {
+            for(int domainIndex: targetDistribution.logFactors[factorId].dependencies) {
+                for(int basisIndex: domainToBasisDependencies[domainIndex]) {
+                    dependencyMatrix.insert(std::pair(factorId, basisIndex));
+                }
+            }
+        }
+
+        // now transfer to forward and backward maps
+        for(auto &dependencyEntry: dependencyMatrix) {
+            basisToFactorDependencies[dependencyEntry.second].push_back(dependencyEntry.first);
+            factorToBasisDependencies[dependencyEntry.first].push_back(dependencyEntry.second);
+        }
     }
 
 
     const DOMAIN &nextSample() {
+        int attempts = 0;
         do {
+            std::cout << "Infeasibility = " << currentInfeasibility << std::endl;
             bool startStateIsFeasible = currentInfeasibility == 0;
             int proposedBasisIndex = basisDistribution(Random::gen);
             double oldSum = basisDistribution.sum();
@@ -152,12 +153,36 @@ public:
             bool proposalIsFeasible = currentInfeasibility == 0;
             bool wasAccepted = true;
             if (Random::nextDouble() > acceptance) {
+                std::cout << "Rejecting" << std::endl;
                 wasAccepted = false;
                 performTransition(proposedBasisIndex ^ 1); // reject: reverse transition
+            } else {
+                std::cout << "Accepting" << std::endl;
             }
             stats.addSample(wasAccepted, startStateIsFeasible, proposalIsFeasible);
+            assert(++attempts < 20);
+            debug(sanityCheck());
         } while(currentInfeasibility != 0);
         return X;
+    }
+
+    double currentLogProb() {
+        double logProb = 0.0;
+        for(const auto &factor: factors) logProb += factor(X).first;
+        return logProb;
+    }
+
+
+    void sanityCheck() {
+        // check weights
+        double logProbX0 = currentLogProb();
+        for(int basisId=0; basisId < basisVectors.size(); ++basisId) {
+            X += basisVectors[basisId];
+            double logRatioOfProbs = currentLogProb() - logProbX0;
+            assert(fabs(currentLogWeight[basisId] - logRatioOfProbs) < 1e-8);
+            assert(fabs(logWeighttoBasisProb(logRatioOfProbs) - basisDistribution[basisId]) < 1e-8);
+            X -= basisVectors[basisId];
+        }
     }
 
 protected:
@@ -169,16 +194,21 @@ protected:
     void performTransition(int perturbedBasis) {
         std::set<int> updatedBasisWeights;
         X += basisVectors[perturbedBasis];
+        std::cout << "Transitioning along basis " << perturbedBasis << " " << basisVectors[perturbedBasis] << ",  X=" << X << std::endl;
         for(int factorIndex: basisToFactorDependencies[perturbedBasis]) {
             std::pair<double,bool> oldLogF = currentFactorVal[factorIndex];
             currentFactorVal[factorIndex] = factors[factorIndex](X);
-            currentInfeasibility += currentFactorVal[factorIndex].second - oldLogF.second;
+            currentInfeasibility += oldLogF.second - currentFactorVal[factorIndex].second;
+            std::cout << "Factor going from " << oldLogF.second << " to " << currentFactorVal[factorIndex].second << std::endl;
             for(int basisIndex: factorToBasisDependencies[factorIndex]) {
                 // update the given factor of the given basis transition
-                X += basisVectors[basisIndex];
+                X += basisVectors[basisIndex];   // TODO: is it worth storing these?
+                X -= basisVectors[perturbedBasis];
+                double oldPerturbedLogFVal = factors[factorIndex](X).first;
+                X += basisVectors[perturbedBasis];
                 double perturbedLogFVal = factors[factorIndex](X).first;
                 X -= basisVectors[basisIndex];
-                currentLogWeight[basisIndex] += oldLogF.first - 2.0 * currentFactorVal[factorIndex].first + perturbedLogFVal;
+                currentLogWeight[basisIndex] += oldLogF.first - oldPerturbedLogFVal + perturbedLogFVal - currentFactorVal[factorIndex].first;
                 updatedBasisWeights.insert(basisIndex);
             }
         }

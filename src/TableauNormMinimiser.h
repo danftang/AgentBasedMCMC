@@ -82,7 +82,6 @@ public:
         template <typename Archive>
         void serialize(Archive &ar, const unsigned int version) {
             ar & static_cast<std::set<int> &>(*this) & isBasic;
-            ar & isBasic;
         }
     };
 
@@ -95,6 +94,17 @@ public:
         Row() {}
 
         Row &operator *=(T c);
+
+        // dot product
+        template<typename OTHER, typename E = decltype(std::declval<T &>() = std::declval<T>() * std::declval<OTHER>()[0])>
+        T operator *(const OTHER &other) const {
+            T dotProd = 0;
+            for(const std::pair<int,T> &element: *this) {
+                dotProd += element.second * other[element.first];
+            }
+            return dotProd;
+        }
+
     private:
         friend class boost::serialization::access;
 
@@ -110,11 +120,7 @@ public:
     std::vector<std::list<int>> colsBySparsity;     // cols sorted by sparsity, only contains non-basic cols
     std::vector<std::list<int>> rowsBySparsity;     // rows sorted by sparsity, only contains active rows
     std::vector<int>            basis;            // col index of basic var by row. -1 means unreduced
-//    int                         nAuxiliaryVars;     // number of auxiliary variables
     std::vector<T>              F;                  // constant in linear equation (see intro above)
-//    std::vector<T>              L;                  // lower bounds by row (equalities are converted to zero)
-//    std::vector<T>              U;                  // upper bounds by row (equalities are converted to zero)
-//    TableauNormMinimiser(glp::Problem &problem);
     TableauNormMinimiser(const EqualityConstraints<T> &problem);
 
     TableauNormMinimiser()=default;
@@ -123,6 +129,9 @@ public:
     std::vector<SparseVec<T>> getBasisVectors(int domainDimension);
 
     double operator ()(int i, int j) const { auto it = rows[i].find(j); return it == rows[i].end()?0.0:it->second; }
+
+    template<typename VEC>
+    void snapToSubspace(VEC &X) const;
 
 protected:
 
@@ -144,6 +153,7 @@ protected:
 
     double meanColumnL0Norm() const;
     double meanColumnL1Norm() const;
+
 
 private:
     friend class boost::serialization::access;
@@ -472,6 +482,18 @@ std::vector<SparseVec<T>> TableauNormMinimiser<T>::getBasisVectors(int domainDim
         }
     }
     return basisVectors;
+}
+
+// Updates the basic variables of X, leaving the non-basic variables unchanged
+// so that X satisfies all constraints.
+template<class T>
+template<typename VEC>
+void TableauNormMinimiser<T>::snapToSubspace(VEC &X) const {
+    for(int i=0; i<rows.size(); ++i) {
+        int basisIndex = basis[i];
+        X[basisIndex] = 0;
+        X[basisIndex] = rows[i]*X + F[i];
+    }
 }
 
 

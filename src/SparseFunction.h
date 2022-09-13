@@ -25,6 +25,7 @@
 #include <vector>
 #include <array>
 #include <functional>
+#include <set>
 #include "subscript_operator_traits.h"
 
 template<typename OUT, typename IN>
@@ -56,6 +57,20 @@ public:
             dependencies({argumentIndex1, argumentIndex2})
     { }
 
+
+    // check whether non-dependent vars are truly non-dependent
+    void sanityCheck(std::remove_const_t<std::remove_reference_t<IN>> inputVector) const {
+        std::set<int> deps(dependencies.begin(), dependencies.end());
+        OUT baseValue = (*this)(inputVector);
+        for(int t=0; t<100; ++t) {
+            for(int i=0; i< inputVector.size(); ++i) {
+                if(deps.find(i) == deps.end()) {
+                    inputVector[i] += Random::nextBool()?-1:1;
+                }
+                assert((*this)(inputVector) == baseValue);
+            }
+        }
+    }
 
 //    OUT widenedValue(IN X) const { return function(X).first; }
 //

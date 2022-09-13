@@ -79,21 +79,22 @@ public:
         ABM::occupation_type stateOccupation = trajectory[state];
         double newLogP = (stateOccupation > 1)?lgamma(stateOccupation + 1.0):0.0; // log of Phi factorial
         bool exactValue = true;
-        if(stateOccupation > 0) {
-            std::vector<double> actPMF = state.agent.timestep(trajectory, state.time);
-            for (int act = 0; act < AGENT::actDomainSize(); ++act) {
-                int actOccupation = trajectory[Event<AGENT>(state.time, state.agent, act)];
+        std::vector<double> actPMF = state.agent.timestep(trajectory, state.time);
+        for (int act = 0; act < AGENT::actDomainSize(); ++act) {
+            int actOccupation = trajectory[Event<AGENT>(state.time, state.agent, act)];
+            if (actOccupation != 0) {
                 double pAct = actPMF[act];
-                if(actPMF[act] == 0.0) {
-                    pAct = exp(-ABM::kappa); // impossible act widening
-                    exactValue = false;
-                }
-                if(actOccupation < 0.0) { // negative occupation widening
+                if (actOccupation < 0) { // negative occupation widening
+//                        std::cout << "Widening due to negative occupation" << std::endl;
                     pAct = exp(-ABM::kappa);
                     actOccupation = -actOccupation;
                     exactValue = false;
+                } else if (actPMF[act] == 0.0) {
+//                        std::cout << "Widening due to impossible act" << std::endl;
+                    pAct = exp(-ABM::kappa); // impossible act widening
+                    exactValue = false;
                 }
-                newLogP += actOccupation*log(pAct) - lgamma(actOccupation + 1.0); // Fermionic bounding
+                newLogP += actOccupation * log(pAct) - lgamma(actOccupation + 1.0);
             }
         }
         return std::pair(newLogP,exactValue);
@@ -124,11 +125,11 @@ public:
         return sample;
     }
 
-    friend std::ostream &operator <<(std::ostream &out, const Prior &prior) {
-        out << "Prior timesteps = " << prior.nTimesteps << " Start state =\n" << prior.startState << std::endl;
-        out << prior.constraints;
-        return out;
-    }
+//    friend std::ostream &operator <<(std::ostream &out, const Prior &prior) {
+//        out << "Prior timesteps = " << prior.nTimesteps << "\nPrior ModelState =\n" << prior.startState << std::endl;
+//        out << "Prior Trajectory constraints =\n" << prior.constraints;
+//        return out;
+//    }
 
 };
 

@@ -14,6 +14,7 @@
 
 #include <vector>
 #include "SparseFunction.h"
+#include "debug.h"
 
 template<class DOMAIN>
 class FactorisedDistribution {
@@ -81,6 +82,13 @@ public:
         double logP = 0.0;
         for(int i=0; i < logFactors.size(); ++i) logP += widenedFactorValue(i,X);
         return logP;
+    }
+
+    void sanityCheck(const DOMAIN &testVector) const {
+        for(const auto &factor: logFactors) {
+            std::cout << "Checking factor" << std::endl;
+            factor.sanityCheck(testVector);
+        }
     }
 
 };

@@ -30,7 +30,7 @@ std::vector<double> CatMouseAgent::timestep(const Trajectory<CatMouseAgent> &oth
         actPmf[MOVE] = pCatMove;
         actPmf[STAYPUT] = 1.0 - pCatMove;
     } else {
-        if (others[State(time, CatMouseAgent(CAT, position()))] >= 1.0) {
+        if (others[State(time, CatMouseAgent(CAT, position()))] >= 1) {
             actPmf[MOVE] = 1.0;
             actPmf[STAYPUT] = 0.0;
         } else {
@@ -42,12 +42,12 @@ std::vector<double> CatMouseAgent::timestep(const Trajectory<CatMouseAgent> &oth
 }
 
 
-double CatMouseAgent::marginalTimestep(Act act) const {
-    if (type() == CAT) {
-        if(act == MOVE) return pCatMove; else return 1.0 - pCatMove;
-    }
-    return 1.0;
-}
+//double CatMouseAgent::marginalTimestep(Act act) const {
+//    if (type() == CAT) {
+//        if(act == MOVE) return pCatMove; else return 1.0 - pCatMove;
+//    }
+//    return 1.0;
+//}
 
 
 std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) const {
@@ -57,22 +57,22 @@ std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) const {
         return std::vector<CatMouseAgent>({ CatMouseAgent(type(), position()) });
     }
 }
-
-
-// result of static analysis of timestep member function...
-std::vector<Constraint<ABM::occupation_type>> CatMouseAgent::constraints(int time, Act act) const {
-    if(type() == MOUSE) {
-        if(act == MOVE) {
-            return std::vector({ 1*State(time,CatMouseAgent(CAT, position())) >= 1 });
-        } else {
-            return std::vector({ 1*State(time,CatMouseAgent(CAT, position())) <= 0 });
-        }
-    } else {
-        return std::vector<Constraint<ABM::occupation_type>>();
-    }
-}
+//
+//
+//// result of static analysis of timestep member function...
+//std::vector<Constraint<ABM::occupation_type>> CatMouseAgent::constraints(int time, Act act) const {
+//    if(type() == MOUSE) {
+//        if(act == MOVE) {
+//            return std::vector({ 1*State(time,CatMouseAgent(CAT, position())) >= 1 });
+//        } else {
+//            return std::vector({ 1*State(time,CatMouseAgent(CAT, position())) <= 0 });
+//        }
+//    } else {
+//        return std::vector<Constraint<ABM::occupation_type>>();
+//    }
+//}
 
 std::vector<CatMouseAgent> CatMouseAgent::neighbours() {
-    if(type() == CAT) return { CatMouseAgent(MOUSE, position()) };
+    if(type() == MOUSE) return { CatMouseAgent(CAT, position()) };
     return {};
 }

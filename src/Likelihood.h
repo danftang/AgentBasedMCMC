@@ -54,15 +54,15 @@ public:
     }
 
 
-    friend std::ostream &operator <<(std::ostream &out, const Likelihood<AGENT> &likelihood) {
-        for(const EqualityConstraint<ABM::occupation_type> &noiselessObservation : likelihood.constraints) {
-            out << noiselessObservation << std::endl;
-        }
-        for(const NoisyAgentStateObservation<AGENT> &observation : likelihood.noisyObservations) {
-            out << observation << std::endl;
-        }
-        return out;
-    }
+//    friend std::ostream &operator <<(std::ostream &out, const Likelihood<AGENT> &likelihood) {
+//        for(const EqualityConstraint<ABM::occupation_type> &noiselessObservation : likelihood.constraints) {
+//            out << noiselessObservation << std::endl;
+//        }
+//        for(const NoisyAgentStateObservation<AGENT> &observation : likelihood.noisyObservations) {
+//            out << observation << std::endl;
+//        }
+//        return out;
+//    }
 
 private:
     friend class boost::serialization::access;

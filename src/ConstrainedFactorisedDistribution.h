@@ -40,6 +40,14 @@ public:
         constraints.push_back(std::move(constraint));
     }
 
+    bool isFeasible(const DOMAIN &X) {
+        if(!constraints.template isValidSolution(X)) return false;
+        for(const auto &factor: this->logFactors) {
+            if(factor(X).second == false) return false;
+        }
+        return true;
+    }
+
     ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> &operator *=(const ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> &other) {
         constraints += other.constraints;
         FactorisedDistribution<DOMAIN>::operator *=(other);
@@ -122,7 +130,7 @@ public:
 
 template<typename T>
 std::ostream &operator <<(std::ostream &out, const ConstrainedFactorisedDistribution<T> &distribution) {
-    out << distribution.constraints << std::endl;
+    out << distribution.constraints << "nFactors = " << distribution.logFactors.size() << std::endl;
     return out;
 }
 

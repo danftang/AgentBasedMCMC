@@ -86,6 +86,7 @@ void Experiments::CatMouseAssimilation() {
     std::cout << "Prior is\n" << prior << std::endl;
 
     Trajectory<CatMouseAgent> realTrajectory = prior.nextSample();
+    std::cout << "Real trajectory " << realTrajectory << std::endl;
 
     Likelihood<CatMouseAgent> likelihood(realTrajectory, pMakeObservation, pObserveIfPresent);
     std::cout << "Likelihood support is\n" << likelihood << std::endl;
@@ -93,12 +94,22 @@ void Experiments::CatMouseAssimilation() {
     auto posterior = likelihood * prior;
     std::cout << "Posterior is\n" << posterior << std::endl;
 
-    Trajectory<CatMouseAgent> initialSample = prior.nextSample();
+    Trajectory<CatMouseAgent> initialSample = realTrajectory;// prior.nextSample();
+    std::cout << "Initial sample " << initialSample << std::endl;
+
+    debug(posterior.sanityCheck(initialSample));
+    assert(posterior.isFeasible(realTrajectory));
+
     ConstrainedFactorisedSampler<Trajectory<CatMouseAgent>> sampler(posterior, initialSample);
-//    std::cout << "Constructed basis\n" << sampler << std::endl;
+
+    debug(sampler.sanityCheck());
+
+    std::cout << "Burning in..." << std::endl;
+    std::cout << "Initial infeasibility = " << sampler.currentInfeasibility << std::endl;
     for(int i=0; i < nBurnin; ++i) {
         const Trajectory<CatMouseAgent> &sample = sampler.nextSample();
         assert(posterior.constraints.isValidSolution(sample));
+        std::cout << "Got sample " << i << std::endl;
     }
     std::map<std::vector<ABM::occupation_type>,double> pmf;
     for(int s=0; s<nSamples; ++s) pmf[sampler.nextSample()] += 1.0/nSamples;

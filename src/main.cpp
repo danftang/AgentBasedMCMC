@@ -6,7 +6,6 @@
 
 int main(int argc, char *argv[]) {
 
-
     /////////////// Generate data for figures 3 and 4 and statistics for table 2
 //    FiguresForPaper<32,16>::generateStandardProblemFile(10.0);
 //    FiguresForPaper<32,16>::generateStats(10000000);

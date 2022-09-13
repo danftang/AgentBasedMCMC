@@ -64,13 +64,13 @@ public:
     }
 
 
-    template<typename ELE, typename = decltype(std::declval<T>() *= std::declval<ELE>())>
+    template<typename ELE, typename = decltype(std::declval<T &>() *= std::declval<ELE>())>
     SparseVec &operator *=(ELE element) {
         for(int i=0; i < sparseSize(); ++i) values[i] *= element;
         return *this;
     }
 
-    template<typename ELE, typename = decltype(std::declval<T>() = std::declval<T>() * std::declval<ELE>())>
+    template<typename ELE, typename = decltype(std::declval<T &>() = std::declval<T>() * std::declval<ELE>())>
     SparseVec &operator *(ELE element) {
         SparseVec<T> result(sparseSize());
         for(int i=0; i<sparseSize(); ++i) {
@@ -80,7 +80,7 @@ public:
         return result;
     }
 
-        template<typename = decltype(-std::declval<T>())>
+    template<typename = decltype(-std::declval<T>())>
     SparseVec operator -() {
         SparseVec<T> negation(sparseSize());
         for(int i=0; i<sparseSize(); ++i) {
@@ -170,9 +170,11 @@ std::vector<T> SparseVec<T>::toDense(int dimension) const {
 
 template<class T>
 std::ostream &operator<<(std::ostream &out, const SparseVec<T> &sVector) {
-    for(auto entry: sVector) {
-        out << "[" << entry.index << "] -> " << entry.getValue << "  ";
+    out << "{";
+    for(int i=0; i<sVector.sparseSize(); ++i) {
+        out << "X[" << sVector.indices[i] << "]=" << sVector.values[i] << "  ";
     }
+    out << "}";
     return out;
 }
 
