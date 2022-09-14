@@ -86,7 +86,6 @@ public:
 
     void sanityCheck(const DOMAIN &testVector) const {
         for(const auto &factor: logFactors) {
-            std::cout << "Checking factor" << std::endl;
             factor.sanityCheck(testVector);
         }
     }

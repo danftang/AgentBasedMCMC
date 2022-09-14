@@ -456,15 +456,15 @@ double TableauNormMinimiser<T>::meanColumnL1Norm() const {
 
 template<class T>
 std::vector<SparseVec<T>> TableauNormMinimiser<T>::getBasisVectors(int domainDimension) {
-    std::cout << "Starting with tableaux: " << std::endl << *this << std::endl;
-    std::cout << rowsBySparsity << std::endl;
-    std::cout << colsBySparsity << std::endl;
-    std::cout << cols << std::endl;
+//    std::cout << "Starting with tableaux: " << std::endl << *this << std::endl;
+//    std::cout << rowsBySparsity << std::endl;
+//    std::cout << colsBySparsity << std::endl;
+//    std::cout << cols << std::endl;
     findMinimalBasis();
-    std::cout << "Finished with tableaux: " << std::endl << *this << std::endl;
-    std::cout << rowsBySparsity << std::endl;
-    std::cout << colsBySparsity << std::endl;
-    std::cout << cols << std::endl;
+//    std::cout << "Finished with tableaux: " << std::endl << *this << std::endl;
+//    std::cout << rowsBySparsity << std::endl;
+//    std::cout << colsBySparsity << std::endl;
+//    std::cout << cols << std::endl;
 
     std::vector<SparseVec<T>> basisVectors;
     basisVectors.reserve(domainDimension);

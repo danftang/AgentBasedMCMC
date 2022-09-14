@@ -91,7 +91,6 @@ public:
         for(const auto &factor: targetDistribution.logFactors) {
             factors.push_back(factor);
             currentFactorVal.push_back(factor(X));
-            std::cout << "factor feasibility is " << currentFactorVal.back().second << std::endl;
             currentInfeasibility += !currentFactorVal.back().second;
         }
 
@@ -144,7 +143,7 @@ public:
     const DOMAIN &nextSample() {
         int attempts = 0;
         do {
-            std::cout << "Infeasibility = " << currentInfeasibility << std::endl;
+//            std::cout << "Infeasibility = " << currentInfeasibility << std::endl;
             bool startStateIsFeasible = currentInfeasibility == 0;
             int proposedBasisIndex = basisDistribution(Random::gen);
             double oldSum = basisDistribution.sum();
@@ -153,14 +152,14 @@ public:
             bool proposalIsFeasible = currentInfeasibility == 0;
             bool wasAccepted = true;
             if (Random::nextDouble() > acceptance) {
-                std::cout << "Rejecting" << std::endl;
+//                std::cout << "Rejecting" << std::endl;
                 wasAccepted = false;
                 performTransition(proposedBasisIndex ^ 1); // reject: reverse transition
             } else {
-                std::cout << "Accepting" << std::endl;
+//                std::cout << "Accepting" << std::endl;
             }
             stats.addSample(wasAccepted, startStateIsFeasible, proposalIsFeasible);
-            assert(++attempts < 20);
+            debug(if(++attempts%10000 == 0) std::cout << "Stuck with infeasibility = " << currentInfeasibility << std::endl;);
             debug(sanityCheck());
         } while(currentInfeasibility != 0);
         return X;
@@ -194,15 +193,13 @@ protected:
     void performTransition(int perturbedBasis) {
         std::set<int> updatedBasisWeights;
         X += basisVectors[perturbedBasis];
-        std::cout << "Transitioning along basis " << perturbedBasis << " " << basisVectors[perturbedBasis] << ",  X=" << X << std::endl;
         for(int factorIndex: basisToFactorDependencies[perturbedBasis]) {
             std::pair<double,bool> oldLogF = currentFactorVal[factorIndex];
             currentFactorVal[factorIndex] = factors[factorIndex](X);
             currentInfeasibility += oldLogF.second - currentFactorVal[factorIndex].second;
-            std::cout << "Factor going from " << oldLogF.second << " to " << currentFactorVal[factorIndex].second << std::endl;
             for(int basisIndex: factorToBasisDependencies[factorIndex]) {
                 // update the given factor of the given basis transition
-                X += basisVectors[basisIndex];   // TODO: is it worth storing these?
+                X += basisVectors[basisIndex];   // TODO: is it worth storing these?... or nicer to have add/remove(basis, factor)?
                 X -= basisVectors[perturbedBasis];
                 double oldPerturbedLogFVal = factors[factorIndex](X).first;
                 X += basisVectors[perturbedBasis];

@@ -217,7 +217,7 @@ public:
         // Print scale reduction and effective samples
         std::valarray<double> neff = stats.effectiveSamples();
         std::valarray<double> ineff = (stats.nSamplesPerChain() * 1.0) / neff;
-        double execTimePerSample = stats.execTimeMilliSeconds * 2.0 / (stats.front().stats.nSamples()*stats.size());
+        double execTimePerSample = stats.execTimeMilliSeconds * 2.0 / (stats.front().stats.totalProposals() * stats.size());
         double execTimePerFeasibleSample = stats.execTimeMilliSeconds * 1.0 / (stats.nSamplesPerChain() * stats.nChains());
         std::cout << "Summary statistics for " << GRIDSIZE << " x " << TIMESTEPS << std::endl;
         std::cout << "Total exec time: " << stats.execTimeMilliSeconds << "ms" << std::endl;

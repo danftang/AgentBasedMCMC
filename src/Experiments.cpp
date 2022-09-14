@@ -78,7 +78,7 @@ void Experiments::CatMouseAssimilation() {
     constexpr int nTimesteps = 2;
     constexpr double pMakeObservation = 0.2;
     constexpr double pObserveIfPresent = 1.0;
-    constexpr int nSamples = 100000;
+    constexpr int nSamples = 1000000;
     constexpr int nBurnin = 100;
     constexpr double kappa = 1.25;
 
@@ -89,32 +89,36 @@ void Experiments::CatMouseAssimilation() {
     std::cout << "Real trajectory " << realTrajectory << std::endl;
 
     Likelihood<CatMouseAgent> likelihood(realTrajectory, pMakeObservation, pObserveIfPresent);
-    std::cout << "Likelihood support is\n" << likelihood << std::endl;
+    std::cout << "Likelihood is\n" << likelihood << std::endl;
 
     auto posterior = likelihood * prior;
     std::cout << "Posterior is\n" << posterior << std::endl;
 
-    Trajectory<CatMouseAgent> initialSample = realTrajectory;// prior.nextSample();
+    Trajectory<CatMouseAgent> initialSample = prior.nextSample();
     std::cout << "Initial sample " << initialSample << std::endl;
 
     debug(posterior.sanityCheck(initialSample));
     assert(posterior.isFeasible(realTrajectory));
 
     ConstrainedFactorisedSampler<Trajectory<CatMouseAgent>> sampler(posterior, initialSample);
-
     debug(sampler.sanityCheck());
 
     std::cout << "Burning in..." << std::endl;
-    std::cout << "Initial infeasibility = " << sampler.currentInfeasibility << std::endl;
     for(int i=0; i < nBurnin; ++i) {
         const Trajectory<CatMouseAgent> &sample = sampler.nextSample();
         assert(posterior.constraints.isValidSolution(sample));
-        std::cout << "Got sample " << i << std::endl;
+//        std::cout << "Infeasibility = " << sampler.currentInfeasibility << std::endl;
     }
+    std::cout << "Sampling..." << std::endl;
     std::map<std::vector<ABM::occupation_type>,double> pmf;
-    for(int s=0; s<nSamples; ++s) pmf[sampler.nextSample()] += 1.0/nSamples;
+    int reportInterval = nSamples/10;
+    for(int s=0; s<nSamples; ++s) {
+        if(s%reportInterval == 0) std::cout << s*100.0/nSamples << "% complete" << std::endl;
+        pmf[sampler.nextSample()] += 1.0/nSamples;
+    }
     std::cout << sampler.stats;
 
+    std::cout << "Validating..." << std::endl;
     RejectionSampler<Trajectory<CatMouseAgent>> rejectionSampler(prior,likelihood);
     std::map<std::vector<ABM::occupation_type>,double> rejectionPMF;
     for(int s=0; s<nSamples; ++s) {

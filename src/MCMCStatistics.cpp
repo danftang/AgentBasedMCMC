@@ -25,7 +25,7 @@ void MCMCStatistics::reset() {
     }
 }
 
-int MCMCStatistics::nSamples() const {
+int MCMCStatistics::totalProposals() const {
     return nProposals[true][true] + nProposals[true][false] + nProposals[false][true] + nProposals[false][false];
 }
 
@@ -46,16 +46,22 @@ int MCMCStatistics::nFeasibleSamples() const {
 }
 
 std::ostream &operator <<(std::ostream &out, const MCMCStatistics &stats) {
-    out << "Total samples                    " << stats.nSamples() << std::endl;
-    out << "Total feasible samples           " << stats.nFeasibleSamples() << std::endl;
-//    out << "Exp-log-mean importance          " << stats.meanImportance() <<  std::endl;
-    out << "proportion infeasible            " << stats.nInfeasibleSamples()*100.0/stats.nSamples() << "%" << std::endl;
-    out << "mean feasible run-length         " << stats.nFeasibleSamples()/(stats.nAccepted[false][true]+1.0) << std::endl;
-    out << "mean infeasible run-length       " << stats.nInfeasibleSamples()*1.0/stats.nAccepted[true][false] << std::endl;
-    out << "mean acceptance                  " << stats.totalAccepted()*100.0/stats.nSamples() << "%" << std::endl;
-    out << "   feasible-feasible             " << stats.nAccepted[true][true]*100.0/stats.nProposals[true][true] << "%" << std::endl;
-    out << "   feasible-infeasible           " << stats.nAccepted[true][false]*100.0/stats.nProposals[true][false] << "%" << std::endl;
-    out << "   infeasible-infeasible         " << stats.nAccepted[false][false]*100.0/stats.nProposals[false][false] << "%" << std::endl;
-    out << "   infeasible-feasible           " << stats.nAccepted[false][true]*100.0/stats.nProposals[false][true] << "%" << std::endl;
+    out << "Total feasible samples      " << stats.nFeasibleSamples() << std::endl;
+    out << "Proportion infeasible       " << stats.nInfeasibleSamples()*100.0/ stats.totalProposals() << "%" << std::endl;
+    out << "Mean feasible run-length    " << stats.nFeasibleSamples()/(stats.nAccepted[false][true]+1.0) << std::endl;
+    out << "Mean infeasible run-length  " << stats.nInfeasibleSamples()*1.0/stats.nAccepted[true][false] << std::endl;
+    out << "Proposals" << std::endl;
+    out << "   total                    " << stats.totalProposals() << std::endl;
+    out << "   feasible-feasible        " << stats.nProposals[true][true]*100.0/ stats.totalProposals() << "%" << std::endl;
+    out << "   feasible-infeasible      " << stats.nProposals[true][false]*100.0/ stats.totalProposals() << "%" << std::endl;
+    out << "   infeasible-infeasible    " << stats.nProposals[false][false]*100.0/ stats.totalProposals() << "%" << std::endl;
+    out << "   infeasible-feasible      " << stats.nProposals[false][true]*100.0/ stats.totalProposals() << "%" << std::endl;
+    out << "Acceptance" << std::endl;
+    out << "   mean                     " << stats.totalAccepted()*100.0/ stats.totalProposals() << "%" << std::endl;
+    out << "   feasible-feasible        " << stats.nAccepted[true][true]*100.0/stats.nProposals[true][true] << "%" << std::endl;
+    out << "   feasible-infeasible      " << stats.nAccepted[true][false]*100.0/stats.nProposals[true][false] << "%" << std::endl;
+    out << "   infeasible-infeasible    " << stats.nAccepted[false][false]*100.0/stats.nProposals[false][false] << "%" << std::endl;
+    out << "   infeasible-feasible      " << stats.nAccepted[false][true]*100.0/stats.nProposals[false][true] << "%" << std::endl;
+
     return out;
 }

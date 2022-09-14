@@ -19,7 +19,7 @@ public:
     void addSample(bool proposalAccepted, bool startStateIsFeasible, bool proposalIsFeasible);
     void reset();
 
-    int nSamples() const;
+    int totalProposals() const;
     int totalAccepted() const;
     int nRejected(bool startIsFeasible, bool proposalIsFeasible) const;
     int nInfeasibleSamples() const;

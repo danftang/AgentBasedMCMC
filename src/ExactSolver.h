@@ -19,7 +19,6 @@ public:
     std::map<stripped_domain,double> pmf;
 
     ExactSolver(const ConstrainedFactorisedDistribution<DOMAIN> &distribution, const DOMAIN &zeroState) {
-        std::cout << "In exact solver with distribution\n" << distribution << std::endl;
         double marginalP = 0.0;
         for(const DOMAIN &solution: BinarySolutionSet(distribution.constraints, zeroState)) {
             double jointP = exp(distribution.logPexact(solution));
