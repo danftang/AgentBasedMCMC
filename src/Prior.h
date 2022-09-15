@@ -11,11 +11,14 @@
 #include "ConstrainedFactorisedDistribution.h"
 #include "PoissonStartState.h"
 
-template<typename STARTSTATE, typename AGENT = typename STARTSTATE::domain_type::agent_type>
-class Prior: public ConstrainedFactorisedDistribution<Trajectory<AGENT>, ABM::coefficient_type> {
+template<typename STARTSTATE,
+        typename AGENT  = typename STARTSTATE::domain_type::agent_type,
+        typename        = std::is_base_of<ConstrainedFactorisedDistribution<ModelState<AGENT>>,STARTSTATE>
+        >
+class Prior: public ConstrainedFactorisedDistribution<Trajectory<AGENT>, typename STARTSTATE::coefficient_type> {
 public:
-    STARTSTATE       startState;
-    int              nTimesteps;
+    STARTSTATE    startState;
+    int           nTimesteps;
 
     using ConstrainedFactorisedDistribution<Trajectory<AGENT>,ABM::coefficient_type>::addFactor;
 
@@ -27,7 +30,7 @@ public:
     {
         addContinuityConstraints();
         addInteractionFactors();
-        (*this) *= startState;
+        (*this) *= startState.toTrajectoryDistribution(0);
     }
 
 
@@ -62,7 +65,7 @@ public:
                 addFactor(
                         SparseFunction<std::pair<double,bool>, const Trajectory<AGENT> &>(
                                 [state](const Trajectory<AGENT> &trajectory) {
-                                    return Prior<STARTSTATE,AGENT>::widenedAgentMultinomial(state, trajectory);
+                                    return widenedAgentMultinomial(state, trajectory);
                                 },
                                 actDependencies
                             )
@@ -79,7 +82,7 @@ public:
         ABM::occupation_type stateOccupation = trajectory[state];
         double newLogP = (stateOccupation > 1)?lgamma(stateOccupation + 1.0):0.0; // log of Phi factorial
         bool exactValue = true;
-        std::vector<double> actPMF = state.agent.timestep(trajectory, state.time);
+        std::vector<double> actPMF = state.agent.timestep(trajectory.temporaryPartialModelState(state.time, state.agent.neighbours()));
         for (int act = 0; act < AGENT::actDomainSize(); ++act) {
             int actOccupation = trajectory[Event<AGENT>(state.time, state.agent, act)];
             if (actOccupation != 0) {
@@ -100,30 +103,54 @@ public:
         return std::pair(newLogP,exactValue);
     }
 
-
-    Trajectory<AGENT> nextSample() const {
-        Trajectory<AGENT> sample(nTimesteps);
-        ModelState<AGENT> t0State = startState.nextSample();
-        ModelState<AGENT> t1State;
-        for (int t = 0; t < nTimesteps; ++t) {
-            for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
-                AGENT agent(agentId);
-                int nAgents = t0State[agentId];
-                for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
-                    sample[Event<AGENT>(t, agent, actId)] = 0.0;
+    std::function<const Trajectory<AGENT> &()> sampler() const {
+        return [sample = Trajectory<AGENT>(nTimesteps), startStateSampler = startState.sampler()]() mutable -> const Trajectory<AGENT> & {
+            ModelState<AGENT> t0State = startStateSampler();
+            ModelState<AGENT> t1State;
+            for (int t = 0; t < sample.nTimesteps(); ++t) {
+                for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+                    AGENT agent(agentId);
+                    int nAgents = t0State[agentId];
+                    for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+                        sample[Event<AGENT>(t, agent, actId)] = 0.0;
+                    }
+                    std::vector<double> actPMF = agent.timestep(t0State);
+                    for (int a = 0; a < nAgents; ++a) {
+                        int nextAct = Random::nextIntFromDiscrete(actPMF);
+                        sample[Event<AGENT>(t, agent, nextAct)] += 1;
+                        t1State += agent.consequences(nextAct);
+                    }
                 }
-                std::vector<double> actPMF = agent.timestep(t0State);
-                for (int a = 0; a < nAgents; ++a) {
-                    int nextAct = Random::nextIntFromDiscrete(actPMF);
-                    sample[Event<AGENT>(t, agent, nextAct)] += 1;
-                    t1State += agent.consequences(nextAct);
-                }
+                t0State.setToZero();
+                t0State.swap(t1State);
             }
-            t0State.setToZero();
-            t0State.swap(t1State);
-        }
-        return sample;
+            return sample;
+        };
     }
+
+//    Trajectory<AGENT> nextSample() const {
+//        static thread_local Trajectory<AGENT> sample(nTimesteps);
+//        ModelState<AGENT> t0State = startState.sampler().nextSample();
+//        ModelState<AGENT> t1State;
+//        for (int t = 0; t < nTimesteps; ++t) {
+//            for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+//                AGENT agent(agentId);
+//                int nAgents = t0State[agentId];
+//                for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+//                    sample[Event<AGENT>(t, agent, actId)] = 0.0;
+//                }
+//                std::vector<double> actPMF = agent.timestep(t0State);
+//                for (int a = 0; a < nAgents; ++a) {
+//                    int nextAct = Random::nextIntFromDiscrete(actPMF);
+//                    sample[Event<AGENT>(t, agent, nextAct)] += 1;
+//                    t1State += agent.consequences(nextAct);
+//                }
+//            }
+//            t0State.setToZero();
+//            t0State.swap(t1State);
+//        }
+//        return sample;
+//    }
 
 //    friend std::ostream &operator <<(std::ostream &out, const Prior &prior) {
 //        out << "Prior timesteps = " << prior.nTimesteps << "\nPrior ModelState =\n" << prior.startState << std::endl;

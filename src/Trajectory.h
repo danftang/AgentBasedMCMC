@@ -65,6 +65,20 @@ public:
 
     static int dimension(int nTimesteps) { return AGENT::domainSize()*AGENT::actDomainSize()*nTimesteps; }
 
+    const ModelState<AGENT> &temporaryPartialModelState(int time, const std::vector<int> &agentIds) const {
+        static thread_local ModelState<AGENT> state;
+        for(int agentId: agentIds)
+            state[agentId] = (*this)[State<AGENT>(time, agentId)];
+        return state;
+    }
+
+    const ModelState<AGENT> &temporaryPartialModelState(int time, const std::vector<AGENT> &agentIds) const {
+        static thread_local ModelState<AGENT> state;
+        for(AGENT agent: agentIds)
+            state[agent] = (*this)[State<AGENT>(time, agent)];
+        return state;
+    }
+
 
     Trajectory<AGENT> slice(int fromTimestep, int nTimesteps) const {
         Trajectory<AGENT> slice(nTimesteps);

@@ -25,13 +25,17 @@ void Experiments::BinomialAgentSingleObservation() {
     constexpr int GRIDSIZE = nTimesteps+1;
     constexpr int nSamples = 100000;
     constexpr int nBurnin = 100;
-    constexpr int nRejectionSamples = 50000;
-    constexpr double kappa = 1.0;
+    constexpr int nRejectionSamples = 100000;
+    constexpr double kappa = 2.0;
 
-//    doSingleObservationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
-//                                  BernoulliStartState<BinomialAgent<GRIDSIZE>>({1.0, 0.1, 0.0}),
-//                                  AgentStateObservation(State<BinomialAgent<GRIDSIZE>>(1, 0),1,0.9));
-    std::cout << "Exact state = " << 0.5+0.1*0.25 << " " << 0.5 + 0.1*0.25 << " " << 0.1*0.5 << std::endl;
+    double p0 = 1.0;
+    double p1 = 0.1;
+    double pObserveIfPresent = 0.9;
+
+    doValidationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
+                           BernoulliStartState<BinomialAgent<GRIDSIZE>>({p0, p1, 0.0}),
+                           Likelihood(State<BinomialAgent<GRIDSIZE>>(1, 0), 1, pObserveIfPresent));
+    std::cout << "Exact state = " << 0.5*p0+ 0.25*p1 << " " << 0.5*p0 + 0.25*p1 << " " << 0.5*p1 << std::endl;
 }
 
 
@@ -40,11 +44,11 @@ void Experiments::CatMouseSingleObservation() {
     constexpr int nBurnin = 100;
     constexpr int nSamples = 200000;
     constexpr int nRejectionSamples = 200000;
-    constexpr double kappa = 1.75;
+    constexpr double kappa = 2.5;//1.75;
 
-//    doSingleObservationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
-//            BernoulliStartState<CatMouseAgent>({0.9, 0.1, 0.1, 0.9}),
-//            AgentStateObservation(State(1,CatMouseAgent(CatMouseAgent::CAT, CatMouseAgent::LEFT)),1,1.0));
+    doValidationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
+            BernoulliStartState<CatMouseAgent>({0.9, 0.1, 0.1, 0.9}),
+            Likelihood(State(1,CatMouseAgent(CatMouseAgent::CAT, CatMouseAgent::LEFT)),1,1.0));
 }
 
 
@@ -53,17 +57,17 @@ void Experiments::PredPreySingleObservation() {
     constexpr int nTimesteps = 2;
     constexpr double pPredator = 0.1;//0.08;          // Bernoulli prob of predator in each gridsquare at t=0
     constexpr double pPrey = 2.0*pPredator;    // Bernoulli prob of prey in each gridsquare at t=0
-    constexpr int nSamples = 500000; //250000;
-    constexpr int nBurnin = 10000;
+    constexpr int nSamples = 100000; //250000;
+    constexpr int nBurnin = 10;
     constexpr int nRejectionSamples = 100000;
-    constexpr double kappa = 3.0;
+    constexpr double kappa = 5.0;
 
-//    doSingleObservationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
-//            PoissonStartState<PredPreyAgent<GRIDSIZE>>([](PredPreyAgent<GRIDSIZE> agent) {
-//                return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
-//            }),
-//            AgentStateObservation(State(1,PredPreyAgent<GRIDSIZE>(1, 1, PredPreyAgent<GRIDSIZE>::PREY)),1,1.0)
-//    );
+    doValidationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
+            PoissonStartState<PredPreyAgent<GRIDSIZE>>([](PredPreyAgent<GRIDSIZE> agent) {
+                return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
+            }),
+            Likelihood(State(1,PredPreyAgent<GRIDSIZE>(1, 1, PredPreyAgent<GRIDSIZE>::PREY)),1,1.0)
+    );
 
 //    Plotter gp;
 //    gp.plot(window.realTrajectory.endState(), sampleStats.means());
@@ -80,12 +84,13 @@ void Experiments::CatMouseAssimilation() {
     constexpr double pObserveIfPresent = 1.0;
     constexpr int nSamples = 1000000;
     constexpr int nBurnin = 100;
-    constexpr double kappa = 1.25;
+    constexpr double kappa = 2.5;
 
+    ABM::kappa = kappa;
     Prior prior(nTimesteps, FixedPopulationStartState<CatMouseAgent>({0, 0, 1, 1},{1,1}));
     std::cout << "Prior is\n" << prior << std::endl;
 
-    Trajectory<CatMouseAgent> realTrajectory = prior.nextSample();
+    Trajectory<CatMouseAgent> realTrajectory = prior.sampler()();
     std::cout << "Real trajectory " << realTrajectory << std::endl;
 
     Likelihood<CatMouseAgent> likelihood(realTrajectory, pMakeObservation, pObserveIfPresent);
@@ -94,7 +99,7 @@ void Experiments::CatMouseAssimilation() {
     auto posterior = likelihood * prior;
     std::cout << "Posterior is\n" << posterior << std::endl;
 
-    Trajectory<CatMouseAgent> initialSample = prior.nextSample();
+    Trajectory<CatMouseAgent> initialSample = prior.sampler()();
     std::cout << "Initial sample " << initialSample << std::endl;
 
     debug(posterior.sanityCheck(initialSample));
@@ -118,7 +123,7 @@ void Experiments::CatMouseAssimilation() {
     }
     std::cout << sampler.stats;
 
-    std::cout << "Validating..." << std::endl;
+    std::cout << "Validating against rejection sampler..." << std::endl;
     RejectionSampler<Trajectory<CatMouseAgent>> rejectionSampler(prior,likelihood);
     std::map<std::vector<ABM::occupation_type>,double> rejectionPMF;
     for(int s=0; s<nSamples; ++s) {
@@ -127,6 +132,7 @@ void Experiments::CatMouseAssimilation() {
         rejectionPMF[trajectory] += 1.0/nSamples;
     }
 
+    std::cout << "Validating against exact solution..." << std::endl;
     ExactSolver<Trajectory<CatMouseAgent>> exactSolver(posterior, Trajectory<CatMouseAgent>(nTimesteps));
     std::cout << "Comparison of exact / rejection / mcmc solutions:" << std::endl;
     std::fixed(std::cout).precision(5);
@@ -138,41 +144,44 @@ void Experiments::CatMouseAssimilation() {
 
 
 
-template<class AGENT>
-void Experiments::doSingleObservationExperiment(int nTimesteps, int nBurnin, int nSamples, int nRejectionSamples,
-                                                double kappa,
-                                                const StartStateDistribution<AGENT> &startState,
-                                                const NoisyAgentStateObservation<AGENT> &observation) {
-//    Prior<AGENT> prior(nTimesteps, startState);
-//    std::cout << "Prior support is\n" << prior << std::endl;
-//
-//    Likelihood<AGENT> likelihood(observation);
-//    std::cout << "Likelihood support is\n" << likelihood << std::endl;
-//
-//    auto posterior = likelihood * prior;
-//    std::cout << "Posterior support is\n" << posterior << std::endl;
-//
-//    SparseBasisSampler sampler(posterior, kappa);
-//    std::cout << "Constructed basis\n" << sampler << std::endl;
-//
-//    for(int i=0; i < nBurnin; ++i) {
-//        const std::vector<ABM::occupation_type> &sample = sampler();
-////        std::cout << "Got sample " << sample << "  " << ModelState<AGENT>(sample, nTimesteps, nTimesteps) << std::endl;
-//        assert(posterior.constraints.isValidSolution(sample));
-//    }
-//
-//    std::fixed(std::cout).precision(5);
-//    ModelState<AGENT> aggregateState;
-//    sampler >>= Take(nSamples) >>= TrajectoryToModelState<AGENT>(nTimesteps, nTimesteps) >>= Sum(aggregateState);
-//    std::cout << sampler.stats << std::endl;
-//    std::cout << "     MCMC state = " << aggregateState / nSamples << std::endl;
-//
-//    RejectionSampler<Trajectory<AGENT>> rejectionSampler(prior,likelihood);
-//
-//    ModelState<AGENT> rejectionAggregateState;
-//    rejectionSampler >>= Take(nRejectionSamples) >>= TrajectoryToModelState<AGENT>(nTimesteps, nTimesteps) >>= Sum(rejectionAggregateState);
-//    std::cout << "Rejection state = " << rejectionAggregateState / nRejectionSamples << std::endl;
-//    std::valarray<double> err = (aggregateState / nSamples) - (rejectionAggregateState / nRejectionSamples);
-//    double rms = sqrt((err*err).sum()/err.size());
-//    std::cout << "      RMS Error = " << rms << std::endl;
+template<class AGENT, class STARTSTATE>
+void Experiments::doValidationExperiment(int nTimesteps, int nBurnin, int nSamples, int nRejectionSamples,
+                                         double kappa,
+                                         const STARTSTATE &startStateDistribution,
+                                         const ConstrainedFactorisedDistribution<Trajectory<AGENT>> &likelihood) {
+    ABM::kappa = kappa;
+    Prior prior(nTimesteps, startStateDistribution);
+    std::cout << "Prior is\n" << prior << std::endl;
+
+    std::cout << "Likelihood is\n" << likelihood << std::endl;
+
+    auto posterior = likelihood * prior;
+    std::cout << "Posterior is\n" << posterior << std::endl;
+
+    Trajectory<AGENT> initialSolution(nTimesteps);
+
+    ConstrainedFactorisedSampler sampler(posterior, initialSolution);
+
+    std::cout << "Burning-in..." << std::endl;
+    for(int i=0; i < nBurnin; ++i) {
+        const std::vector<ABM::occupation_type> &sample = sampler.nextSample();
+//        std::cout << "Got sample " << sample << "  " << ModelState<AGENT>(sample, nTimesteps, nTimesteps) << std::endl;
+        assert(posterior.constraints.isValidSolution(sample));
+    }
+
+    std::cout << "Sampling..." << std::endl;
+    std::fixed(std::cout).precision(5);
+    ModelState<AGENT> aggregateState;
+    sampler >>= Take(nSamples) >>= TrajectoryToModelState<AGENT>(nTimesteps, nTimesteps) >>= Sum(aggregateState);
+    std::cout << sampler.stats << std::endl;
+    std::cout << "     MCMC state = " << aggregateState / nSamples << std::endl;
+
+    RejectionSampler<Trajectory<AGENT>> rejectionSampler(prior,likelihood);
+    ModelState<AGENT> rejectionAggregateState;
+    rejectionSampler >>= Take(nRejectionSamples) >>= TrajectoryToModelState<AGENT>(nTimesteps, nTimesteps) >>= Sum(rejectionAggregateState);
+    std::cout << "Rejection state = " << rejectionAggregateState / nRejectionSamples << std::endl;
+
+    std::valarray<double> err = (aggregateState / nSamples) - (rejectionAggregateState / nRejectionSamples);
+    double rms = sqrt((err*err).sum()/err.size());
+    std::cout << "      RMS Error = " << rms << std::endl;
 }

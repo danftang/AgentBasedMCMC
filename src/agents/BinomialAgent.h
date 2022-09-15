@@ -33,24 +33,24 @@ public:
         return {1.0-pMove, pMove};
     }
 
-    double marginalTimestep(Act act) const {
-         if(act == 0) return 1.0-pMove;
-         return pMove;
-    }
+//    double marginalTimestep(Act act) const {
+//         if(act == 0) return 1.0-pMove;
+//         return pMove;
+//    }
 
-    std::vector<BinomialAgent<GRIDSIZE>> neighbours() {
+    std::vector<BinomialAgent<GRIDSIZE>> neighbours() const {
         return std::vector<BinomialAgent<GRIDSIZE>>();
     }
 
 
     std::vector<BinomialAgent<GRIDSIZE>> consequences(Act act) const {
-        if(act == 1) return {BinomialAgent<GRIDSIZE>((stateId + 1)%GRIDSIZE)};
+        if(act == 1) return { BinomialAgent<GRIDSIZE>((stateId + 1)%GRIDSIZE) };
         return { *this };
     }
 
-    std::vector<Constraint<ABM::occupation_type>> constraints(int time, Act act) const {
-        return { };
-    }
+//    std::vector<Constraint<ABM::occupation_type>> constraints(int time, Act act) const {
+//        return { };
+//    }
 
 //    friend std::ostream &operator <<(std::ostream &out, const BinomialAgent &binomialAgent) {
 //        out << binomialAgent.stateId;

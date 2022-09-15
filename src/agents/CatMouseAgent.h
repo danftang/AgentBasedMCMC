@@ -57,12 +57,12 @@ public:
     Type type() const { return Type(stateId/2); }
 
     std::vector<double> timestep(const ModelState<CatMouseAgent> &others) const;
-    std::vector<double> timestep(const Trajectory<CatMouseAgent> &others, int time) const;
+//    std::vector<double> timestep(const Trajectory<CatMouseAgent> &others, int time) const;
 //    double marginalTimestep(Act act) const;
     std::vector<CatMouseAgent> consequences(Act act) const; // the consequences of an act
 //    // returns the constraints implied by the given act
 //    std::vector<Constraint<ABM::occupation_type>> constraints(int time, Act act) const; // to be generated automatically by static analysis...eventually.
-    std::vector<CatMouseAgent> neighbours();
+    std::vector<CatMouseAgent> neighbours() const;
 
     friend std::ostream &operator <<(std::ostream &out, const CatMouseAgent &agent) {
         out << (agent.type()==CAT?"CAT":"MSE") << ":" << (agent.position()==LEFT?"L":"R");

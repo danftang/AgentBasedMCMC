@@ -98,14 +98,15 @@ public:
     }
 
 
-    static ModelState<AGENT> randomPoissonState(const std::function<double (const AGENT &)> &pmf) {
-        ModelState<AGENT> state;
-        for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
-            int occupation = Random::nextPoisson(pmf(agentId));
-            if(occupation > 0) state[agentId] = occupation;
-        }
-        return state;
-    }
+//    static ModelState<AGENT> randomPoissonState(const std::function<double (const AGENT &)> &pmf) {
+//        ModelState<AGENT> state;
+//        for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
+//            int occupation = Random::nextPoisson(pmf(agentId));
+//            if(occupation > 0) state[agentId] = occupation;
+//        }
+//        return state;
+//    }
+
 };
 
 template<typename AGENT> const ModelState<AGENT> ModelState<AGENT>::zero;

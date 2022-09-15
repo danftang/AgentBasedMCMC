@@ -21,15 +21,15 @@ public:
     static void PredPreySingleObservation();
     static void CatMouseAssimilation();
 
-    template<class AGENT>
-    static void doSingleObservationExperiment(
+    template<class AGENT, class STARTSTATE>
+    static void doValidationExperiment(
             int nTimesteps,
             int nBurnin,
             int nSamples,
             int nRejectionSamples,
             double kappa,
-            const StartStateDistribution<AGENT> &startState,
-            const NoisyAgentStateObservation<AGENT> &observation);
+            const STARTSTATE &startStateDistribution,
+            const ConstrainedFactorisedDistribution<Trajectory<AGENT>> &likelihood);
 };
 
 

@@ -139,6 +139,7 @@ public:
         }
     }
 
+    const DOMAIN &operator()() { return nextSample(); }
 
     const DOMAIN &nextSample() {
         int attempts = 0;

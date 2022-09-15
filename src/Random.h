@@ -35,6 +35,10 @@ public:
         return std::uniform_int_distribution<int>(0, 1)(gen) == 0;
     }
 
+    static bool nextBool(double pTrue) {
+        return std::bernoulli_distribution(pTrue)(gen);
+    }
+
     static int nextIntFromDiscrete(const std::vector<double> &probabilities) {
         return nextIntFromDiscrete(probabilities.begin(), probabilities.end());
     }

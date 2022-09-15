@@ -57,6 +57,11 @@ public:
 
     PredPreyAgent(int ordinal): stateId(ordinal) {}
     PredPreyAgent( int x, int y, Type type): stateId(x + GRIDSIZE*y + GRIDSIZE*GRIDSIZE*type) { }
+
+    std::vector<double> timestep(const ModelState<PredPreyAgent<GRIDSIZE>> &others) const;
+    std::vector<PredPreyAgent<GRIDSIZE>> consequences(Act act) const; // the consequences of an act
+    std::vector<PredPreyAgent<GRIDSIZE>> neighbours() const;
+
     operator int() const { return stateId; }
     int xPosition() const { return stateId%GRIDSIZE; }
     int yPosition() const { return (stateId/GRIDSIZE)%GRIDSIZE; }
@@ -68,12 +73,9 @@ public:
     int yDown() const { return((stateId/GRIDSIZE + GRIDSIZE-1)%GRIDSIZE); }
 
 
-    std::vector<double> timestep(const ModelState<PredPreyAgent<GRIDSIZE>> &others) const;
-    double marginalTimestep(Act act) const; // returns the probability of this act, given an agent in this state
-    std::vector<PredPreyAgent<GRIDSIZE>> consequences(Act act) const; // the consequences of an act
+//    double marginalTimestep(Act act) const; // returns the probability of this act, given an agent in this state
     // returns the constraints implied by the given act of this agent
-    std::vector<Constraint<ABM::occupation_type>> constraints(int time, Act act) const; // to be generated automatically by static analysis...eventually.
-    std::vector<PredPreyAgent<GRIDSIZE>> neighbours();
+//    std::vector<Constraint<ABM::occupation_type>> constraints(int time, Act act) const; // to be generated automatically by static analysis...eventually.
 
     friend std::ostream &operator <<(std::ostream &out, const PredPreyAgent<GRIDSIZE> &agent) {
 
@@ -160,43 +162,43 @@ std::vector<double> PredPreyAgent<GRIDSIZE>::timestep(const ModelState<PredPreyA
 // Should be factored approximation of multinomial given an agent in start position and
 // that the constraints are satisfied
 // (i.e. given that the prob of this act is not zero)
+//template<int GRIDSIZE>
+//double PredPreyAgent<GRIDSIZE>::marginalTimestep(Act act) const {
+//    constexpr double pPreyNeighbourGivenPred = (1.0-pNoPrey4);
+//    constexpr double pPredNeighbourGivenPrey = (1.0-pNoPred4);
+//    constexpr double pPreyMove = 0.25 * (1.0 - pPreyDie - pPreyEatenGivenPred*pPredNeighbourGivenPrey - pPreyBirth);
+//    constexpr double pPredMove = 0.25 * (1.0 - pPredDie - pPredBirthGivenPrey*pPreyNeighbourGivenPred);
+//
+//    if(type() == PREDATOR) {
+//        switch (act) {
+//            case DIE:       return pPredDie;
+//            case GIVEBIRTH: return pPredBirthGivenPrey; // assume feasible
+//        }
+//        return pPredMove;
+//    }
+//    switch (act) {
+//        case DIE:       return pPreyDie + pPreyEatenGivenPred*pPredNeighbourGivenPrey;
+//        case GIVEBIRTH: return pPreyBirth;
+//    }
+//    return pPreyMove;
+//}
+
+
+//template<int GRIDSIZE>
+//std::vector<Constraint<ABM::occupation_type>> PredPreyAgent<GRIDSIZE>::constraints(int time, PredPreyAgent<GRIDSIZE>::Act act) const {
+//    if(type() == PREDATOR && act == GIVEBIRTH) {
+//        return std::vector<Constraint<ABM::occupation_type>>({
+//                                                    1*State(time,PredPreyAgent<GRIDSIZE>(xLeft(),yPosition(), PREY)) +
+//                                                    1*State(time,PredPreyAgent<GRIDSIZE>(xRight(),yPosition(), PREY)) +
+//                                                    1*State(time,PredPreyAgent<GRIDSIZE>(xPosition(),yUp(),PREY)) +
+//                                                    1*State(time,PredPreyAgent<GRIDSIZE>(xPosition(),yDown(),PREY)) >= 1
+//                                            });
+//    }
+//    return std::vector<Constraint<ABM::occupation_type>>();
+//}
+
 template<int GRIDSIZE>
-double PredPreyAgent<GRIDSIZE>::marginalTimestep(Act act) const {
-    constexpr double pPreyNeighbourGivenPred = (1.0-pNoPrey4);
-    constexpr double pPredNeighbourGivenPrey = (1.0-pNoPred4);
-    constexpr double pPreyMove = 0.25 * (1.0 - pPreyDie - pPreyEatenGivenPred*pPredNeighbourGivenPrey - pPreyBirth);
-    constexpr double pPredMove = 0.25 * (1.0 - pPredDie - pPredBirthGivenPrey*pPreyNeighbourGivenPred);
-
-    if(type() == PREDATOR) {
-        switch (act) {
-            case DIE:       return pPredDie;
-            case GIVEBIRTH: return pPredBirthGivenPrey; // assume feasible
-        }
-        return pPredMove;
-    }
-    switch (act) {
-        case DIE:       return pPreyDie + pPreyEatenGivenPred*pPredNeighbourGivenPrey;
-        case GIVEBIRTH: return pPreyBirth;
-    }
-    return pPreyMove;
-}
-
-
-template<int GRIDSIZE>
-std::vector<Constraint<ABM::occupation_type>> PredPreyAgent<GRIDSIZE>::constraints(int time, PredPreyAgent<GRIDSIZE>::Act act) const {
-    if(type() == PREDATOR && act == GIVEBIRTH) {
-        return std::vector<Constraint<ABM::occupation_type>>({
-                                                    1*State(time,PredPreyAgent<GRIDSIZE>(xLeft(),yPosition(), PREY)) +
-                                                    1*State(time,PredPreyAgent<GRIDSIZE>(xRight(),yPosition(), PREY)) +
-                                                    1*State(time,PredPreyAgent<GRIDSIZE>(xPosition(),yUp(),PREY)) +
-                                                    1*State(time,PredPreyAgent<GRIDSIZE>(xPosition(),yDown(),PREY)) >= 1
-                                            });
-    }
-    return std::vector<Constraint<ABM::occupation_type>>();
-}
-
-template<int GRIDSIZE>
-std::vector<PredPreyAgent<GRIDSIZE>> PredPreyAgent<GRIDSIZE>::neighbours() {
+std::vector<PredPreyAgent<GRIDSIZE>> PredPreyAgent<GRIDSIZE>::neighbours() const {
     Type affectedType = (type()==PREDATOR?PREY:PREDATOR);
     return {
         PredPreyAgent<GRIDSIZE>(xLeft(),yPosition(),affectedType),

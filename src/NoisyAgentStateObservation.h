@@ -34,51 +34,18 @@ public:
     {
         assert(nObserved >= 0);
         assert(pObserveIfPresent > 0.0 && pObserveIfPresent < 1.0); // if pObserveIfPresent = 1.0 use NoiselessAgentStateObservation
-//        debug(std::cout << "Generating observation " << *this << std::endl);
     }
 
     SparseFunction<std::pair<double,bool>, const Trajectory<AGENT> &> toSparseWidenedFunction() {
         return SparseFunction<std::pair<double,bool>, const Trajectory<AGENT> &>(
         [state = state,nObserved = nObserved,pObserveIfPresent = pObserveIfPresent](const Trajectory<AGENT> &trajectory) {
-            return widenedLogLikelihood(state, nObserved, pObserveIfPresent, trajectory);
+            ABM::occupation_type realOccupation = trajectory[state];
+            if(realOccupation < nObserved) return std::pair(nObserved*log(pObserveIfPresent) - ABM::kappa*(nObserved - realOccupation),false);
+            return std::pair(log(boost::math::pdf(boost::math::binomial(realOccupation, pObserveIfPresent), nObserved)),true);
         },
         state.forwardOccupationDependencies()
         );
     }
-
-    static std::pair<double,bool> widenedLogLikelihood(const State<AGENT> &state, ABM::occupation_type nObserved, double pObserveIfPresent, const Trajectory<AGENT> &trajecotry) {
-        ABM::occupation_type realOccupation = trajecotry[state];
-        if(realOccupation < nObserved) {
-            return std::pair(nObserved*log(pObserveIfPresent) - ABM::kappa*(nObserved - realOccupation),false);
-        }
-        return std::pair(log(boost::math::pdf(boost::math::binomial(realOccupation, pObserveIfPresent), nObserved)),true);
-    }
-
-
-
-//    double logLikelihood(ABM::occupation_type realOccupation) const {
-//        if(realOccupation < lowerBound || realOccupation > upperBound()) return -std::numeric_limits<double>::infinity();
-//        return log(likelihood(realOccupation));
-//    }
-//
-//    // likelihood function
-//    double likelihood(ABM::occupation_type realOccupation) const {
-//        return boost::math::pdf(boost::math::binomial(realOccupation, pObserveIfPresent), lowerBound);
-//    }
-//
-//
-//    ABM::occupation_type upperBound() const { return pObserveIfPresent==1.0?lowerBound: state.fermionicOccupationUpperBound(); }
-//
-//
-//    Constraint<ABM::occupation_type> constraint() const {
-//            return { lowerBound <= 1*state <= upperBound() };
-//    }
-//
-//    std::function<double(ABM::occupation_type)> toLogProbFunction() const {
-//        return [copy = *this](ABM::occupation_type realOccupation) {
-//            return copy.logLikelihood(realOccupation);
-//        };
-//    }
 
 
     friend std::ostream &operator <<(std::ostream &out, const NoisyAgentStateObservation<AGENT> & observation) {
@@ -93,8 +60,6 @@ private:
     void serialize(Archive &ar, const unsigned int version) {
         ar & state & nObserved & pObserveIfPresent;
     }
-
-
 };
 
 

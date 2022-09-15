@@ -18,17 +18,15 @@
 template<class AGENT>
 class Likelihood: public ConstrainedFactorisedDistribution<Trajectory<AGENT>,ABM::coefficient_type> {
 public:
-    std::vector<NoisyAgentStateObservation<AGENT>> noisyObservations;
-
     Likelihood()=default;
 
     // generate random observations
     Likelihood(const Trajectory<AGENT> &realTrajectory, double pMakeObservation, double pObserveIfPresent) {
+        assert(pMakeObservation != 0.0 && pObserveIfPresent != 0.0); // pointless as no information
         int nTimesteps = realTrajectory.nTimesteps();
         int approxSize = nTimesteps * AGENT::domainSize() * pMakeObservation;
-        if(pMakeObservation != 1.0) {
+        if(pObserveIfPresent != 1.0) {
             this->logFactors.reserve(approxSize);
-            noisyObservations.reserve(approxSize);
         } else {
             this->constraints.reserve(approxSize);
         }
@@ -44,12 +42,25 @@ public:
     }
 
 
+    Likelihood(const State<AGENT> &state, ABM::occupation_type nObserved, double pObserveIfPresent) {
+        addObservation(state, nObserved, pObserveIfPresent);
+    }
+
+
     void addObservation(const State<AGENT> &state, ABM::occupation_type nObserved, double pObserveIfPresent) {
         if(pObserveIfPresent == 1.0) {
             this->addConstraint(1*state == nObserved); // noiseless
         } else {
-            noisyObservations.push_back(NoisyAgentStateObservation<AGENT>(state, nObserved, pObserveIfPresent));
-            this->addFactor(noisyObservations.back().toSparseWidenedFunction());
+            this->addFactor(
+                    SparseFunction<std::pair<double,bool>, const Trajectory<AGENT> &>(
+                            [state = state,nObserved = nObserved,pObserveIfPresent = pObserveIfPresent](const Trajectory<AGENT> &trajectory) {
+                                ABM::occupation_type realOccupation = trajectory[state];
+                                if(realOccupation < nObserved) return std::pair(nObserved*log(pObserveIfPresent) - ABM::kappa*(nObserved - realOccupation),false);
+                                return std::pair(log(boost::math::pdf(boost::math::binomial(realOccupation, pObserveIfPresent), nObserved)),true);
+                            },
+                            state.forwardOccupationDependencies()
+                            )
+                    );
         }
     }
 
@@ -64,21 +75,21 @@ public:
 //        return out;
 //    }
 
-private:
-    friend class boost::serialization::access;
-
-    template <typename Archive>
-    void load(Archive &ar, const unsigned int version) {
-        ar >> noisyObservations >> this->constraints;
-        for(const auto &observation: noisyObservations) this->addFactor(observation.toSparseWidenedFunction());
-    }
-
-    template <typename Archive>
-    void save(Archive &ar, const unsigned int version) const {
-        ar << noisyObservations << this->constraints;
-    }
-
-    BOOST_SERIALIZATION_SPLIT_MEMBER();
+//private:
+//    friend class boost::serialization::access;
+//
+//    template <typename Archive>
+//    void load(Archive &ar, const unsigned int version) {
+//        ar >> noisyObservations >> this->constraints;
+//        for(const auto &observation: noisyObservations) this->addFactor(observation.toSparseWidenedFunction());
+//    }
+//
+//    template <typename Archive>
+//    void save(Archive &ar, const unsigned int version) const {
+//        ar << noisyObservations << this->constraints;
+//    }
+//
+//    BOOST_SERIALIZATION_SPLIT_MEMBER();
 };
 
 

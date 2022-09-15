@@ -57,6 +57,8 @@ public:
             dependencies({argumentIndex1, argumentIndex2})
     { }
 
+    std::function<OUT(IN)> &function() { return *this; }
+    const std::function<OUT(IN)> &function() const { return *this; }
 
     // check whether non-dependent vars are truly non-dependent
     void sanityCheck(std::remove_const_t<std::remove_reference_t<IN>> inputVector) const {

@@ -13,7 +13,7 @@
 template<class DOMAIN>
 class RejectionSampler {
 public:
-    std::function<DOMAIN()>                 priorSampler;
+    std::function<const DOMAIN &()>         priorSampler;
     std::function<double(const DOMAIN &)>   likelihood;
 
     RejectionSampler(std::function<DOMAIN()> PriorSampler, std::function<double(const DOMAIN &)> Likelihood):
@@ -23,8 +23,8 @@ public:
 
 
     template<class STARTSTATE, class AGENT>
-    RejectionSampler(Prior<STARTSTATE> & Prior, Likelihood<AGENT> & Likelihood) :
-        priorSampler([&Prior]() { return Prior.nextSample(); }),
+    RejectionSampler(Prior<STARTSTATE> & prior, const ConstrainedFactorisedDistribution<Trajectory<AGENT>> & Likelihood) :
+        priorSampler(prior.sampler()),
         likelihood([&Likelihood](const Trajectory<AGENT> &X) {
             double logP = Likelihood.logPexact(X);
             return exp(logP);

@@ -10,10 +10,10 @@
 
 #include <functional>
 #include "ModelState.h"
-#include "FactorisedDistribution.h"
+#include "ConstrainedFactorisedDistribution.h"
 
 template<class AGENT>
-class PoissonStartState: public FactorisedDistribution<ModelState<AGENT>> {
+class PoissonStartState: public ConstrainedFactorisedDistribution<ModelState<AGENT>> {
 public:
 
     explicit PoissonStartState(std::function<double(AGENT)> agentToLambda) {
@@ -29,12 +29,45 @@ public:
     }) {}
 
 
-    ModelState<AGENT> nextSample() const {
-        ModelState<AGENT> sample;
-        for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
-            sample[agentId] = Random::nextPoisson(lambda(agentId));
+    std::function<const ModelState<AGENT> &()> sampler() const {
+        return [this, sample = ModelState<AGENT>()]() mutable -> const ModelState<AGENT> & {
+            for(const auto &constraint: this->constraints) {
+                assert(constraint.constant == 0);
+                sample[constraint.coefficients.indices[0]] = 0;
+            }
+            for(const auto &factor: this->logFactors)
+                sample[factor.dependencies[0]] = Random::nextPoisson(-factor(ModelState<AGENT>::zero).first);
+            return  sample;
+        };
+    }
+
+
+//    const ModelState<AGENT> &nextSample() const {
+//        static thread_local ModelState<AGENT> sample;
+//        for(const auto &constraint: this->constraints) {
+//            sample[constraint.coefficients.indices[0]] = constraint.constant;
+//        }
+//        for(const auto &factor: this->logFactors) {
+//            sample[factor.dependencies[0]] = Random::nextPoisson(-factor(ModelState<AGENT>::zero).first);
+//        }
+//        return sample;
+//    }
+
+    void addPoissonFactor(int agentId, double lambda) {
+        if(lambda == 0.0) {
+            this->addConstraint(1*X(agentId) == 0);
+        } else {
+            double logLambda = log(lambda);
+            this->addFactor(
+                    SparseFunction<std::pair<double, bool>, const ModelState<AGENT> &>(
+                            [lambda, logLambda, agentId](const ModelState<AGENT> &modelState) {
+                                return PoissonStartState<AGENT>::widenedLogPoisson(lambda, logLambda,
+                                                                                   modelState[agentId]); // log of Poisson
+                            },
+                            {agentId}
+                    )
+            );
         }
-        return sample;
     }
 
 
@@ -53,77 +86,66 @@ public:
         return out;
     }
 
-    using FactorisedDistribution<ModelState<AGENT>>::addFactor;
-
-    void addPoissonFactor(int agentId, double lambda) {
-        double logLambda = log(lambda);
-        addFactor(
-                SparseFunction<std::pair<double,bool>,const ModelState<AGENT> &>(
-                        [lambda,logLambda,agentId](const ModelState<AGENT> &modelState) {
-                            return PoissonStartState<AGENT>::widenedLogPoisson(lambda, logLambda, modelState[agentId]); // log of Poisson
-                        },
-                        {agentId}
-                )
-        );
+    operator ConstrainedFactorisedDistribution<Trajectory<AGENT>>() {
+        return this->toTrajectoryDistribution(0);
     }
 
-    double lambda(int agentId) const {
-        return -this->logFactors[agentId](ModelState<AGENT>::zero).first;
-    }
 
     // convert to a distribution over trajectories
-    operator FactorisedDistribution<Trajectory<AGENT>>() {
-            FactorisedDistribution<Trajectory<AGENT>> trajectoryDistribution;
-            trajectoryDistribution.logFactors.reserve(AGENT::domainSize());
-            for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
-                trajectoryDistribution.addFactor(getTrajectoryFactor(agentId));
-            }
-            return trajectoryDistribution;
-    }
-
-    SparseFunction<std::pair<double,bool>,const Trajectory<AGENT> &> getTrajectoryFactor(int agentId) {
-        double l = lambda(agentId);
-        double logLambda = log(l);
-        return SparseFunction<std::pair<double,bool>,const Trajectory<AGENT> &>(
-                [l,logLambda,agentId](const Trajectory<AGENT> &trajectory) {
-                    return PoissonStartState<AGENT>::widenedLogPoisson(l, logLambda, trajectory[State<AGENT>(0,agentId)]); // log of Poisson
-                },
-                State<AGENT>(0,agentId).forwardOccupationDependencies()
-        );
-    }
+//    operator FactorisedDistribution<Trajectory<AGENT>>() {
+//            FactorisedDistribution<Trajectory<AGENT>> trajectoryDistribution;
+//            trajectoryDistribution.logFactors.reserve(AGENT::domainSize());
+//            for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+//                trajectoryDistribution.addFactor(getTrajectoryFactor(agentId));
+//            }
+//            return trajectoryDistribution;
+//    }
 
 
-    SparseFunction<std::pair<double,bool>,const ModelState<AGENT> &> getModelStateFactor(int agentId) {
-        double l = lambda(agentId);
-        double logLambda = log(l);
-        return SparseFunction<std::pair<double,bool>,const ModelState<AGENT> &>(
-                [l,logLambda,agentId](const ModelState<AGENT> &modelState) {
-                    return PoissonStartState<AGENT>::widenedLogPoisson(l, logLambda, modelState[agentId]); // log of Poisson
-                },
-                {agentId}
-        );
-    }
 
-private:
-    friend class boost::serialization::access;
+//    SparseFunction<std::pair<double,bool>,const Trajectory<AGENT> &> getTrajectoryFactor(int agentId) {
+//        double l = lambda(agentId);
+//        double logLambda = log(l);
+//        return SparseFunction<std::pair<double,bool>,const Trajectory<AGENT> &>(
+//                [l,logLambda,agentId](const Trajectory<AGENT> &trajectory) {
+//                    return PoissonStartState<AGENT>::widenedLogPoisson(l, logLambda, trajectory[State<AGENT>(0,agentId)]); // log of Poisson
+//                },
+//                State<AGENT>(0,agentId).forwardOccupationDependencies()
+//        );
+//    }
+//
+//
+//    SparseFunction<std::pair<double,bool>,const ModelState<AGENT> &> getModelStateFactor(int agentId) {
+//        double l = lambda(agentId);
+//        double logLambda = log(l);
+//        return SparseFunction<std::pair<double,bool>,const ModelState<AGENT> &>(
+//                [l,logLambda,agentId](const ModelState<AGENT> &modelState) {
+//                    return PoissonStartState<AGENT>::widenedLogPoisson(l, logLambda, modelState[agentId]); // log of Poisson
+//                },
+//                {agentId}
+//        );
+//    }
 
-    template <typename Archive>
-    void load(Archive &ar, const unsigned int version) {
-        for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
-            double lambda;
-            ar >> lambda;
-            addPoissonFactor(agentId, lambda);
-        }
-    }
-
-    template <typename Archive>
-    void save(Archive &ar, const unsigned int version) const {
-        for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
-            ar << lambda(agentId);
-        }
-    }
-
-    BOOST_SERIALIZATION_SPLIT_MEMBER();
+//private:
+//    friend class boost::serialization::access;
+//
+//    template <typename Archive>
+//    void load(Archive &ar, const unsigned int version) {
+//        for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+//            double lambda;
+//            ar >> lambda;
+//            addPoissonFactor(agentId, lambda);
+//        }
+//    }
+//
+//    template <typename Archive>
+//    void save(Archive &ar, const unsigned int version) const {
+//        for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+//            ar << lambda(agentId);
+//        }
+//    }
+//
+//    BOOST_SERIALIZATION_SPLIT_MEMBER();
 };
 
 
