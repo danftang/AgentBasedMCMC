@@ -10,7 +10,7 @@
 #include <boost/serialization/vector.hpp>
 #include "ModelState.h"
 #include "StateTrajectory.h"
-#include "Random.h"
+#include "include/Random.h"
 #include "ActFermionicDistribution.h"
 #include "ABM.h"
 
@@ -20,6 +20,7 @@ public:
     typedef ABM::occupation_type occupation_type;
     typedef AGENT agent_type;
 
+    Trajectory() = default;
 
     explicit Trajectory(int nTimesteps): std::vector<value_type>(dimension(nTimesteps)) { }
 

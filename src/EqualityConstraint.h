@@ -5,7 +5,7 @@
 #ifndef ABMCMC_EQUALITYCONSTRAINT_H
 #define ABMCMC_EQUALITYCONSTRAINT_H
 
-#include "SparseVec.h"
+#include "include/SparseVec.h"
 #include "LinearSum.h"
 
 template<class COEFF>

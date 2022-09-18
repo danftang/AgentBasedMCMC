@@ -14,7 +14,7 @@
 
 #include "boost/math/distributions/binomial.hpp"
 #include "ConvexPolyhedron.h"
-#include "debug.h"
+#include "include/debug.h"
 #include "ABM.h"
 #include "ConstrainedFactorisedDistribution.h"
 

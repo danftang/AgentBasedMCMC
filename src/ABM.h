@@ -13,4 +13,5 @@ public:
 
 inline double ABM::kappa = 4.0;
 
+
 #endif //GLPKTEST_ABMCONSTRAINTS_H

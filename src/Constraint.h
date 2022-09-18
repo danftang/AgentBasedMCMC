@@ -7,7 +7,7 @@
 #ifndef ABMCMC_CONSTRAINT_H
 #define ABMCMC_CONSTRAINT_H
 
-#include "SparseVec.h"
+#include "include/SparseVec.h"
 #include "LinearSum.h"
 #include "EqualityConstraint.h"
 

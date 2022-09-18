@@ -23,9 +23,9 @@ using namespace dataflow;
 void Experiments::BinomialAgentSingleObservation() {
     constexpr int nTimesteps = 2;
     constexpr int GRIDSIZE = nTimesteps+1;
-    constexpr int nSamples = 100000;
+    constexpr int nSamples = 250000;
     constexpr int nBurnin = 100;
-    constexpr int nRejectionSamples = 100000;
+    constexpr int nRejectionSamples = 250000;
     constexpr double kappa = 2.0;
 
     double p0 = 1.0;
@@ -44,7 +44,7 @@ void Experiments::CatMouseSingleObservation() {
     constexpr int nBurnin = 100;
     constexpr int nSamples = 200000;
     constexpr int nRejectionSamples = 200000;
-    constexpr double kappa = 2.5;//1.75;
+    constexpr double kappa = 3.0;//1.75;
 
     doValidationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
             BernoulliStartState<CatMouseAgent>({0.9, 0.1, 0.1, 0.9}),
@@ -58,9 +58,9 @@ void Experiments::PredPreySingleObservation() {
     constexpr double pPredator = 0.1;//0.08;          // Bernoulli prob of predator in each gridsquare at t=0
     constexpr double pPrey = 2.0*pPredator;    // Bernoulli prob of prey in each gridsquare at t=0
     constexpr int nSamples = 100000; //250000;
-    constexpr int nBurnin = 10;
-    constexpr int nRejectionSamples = 100000;
-    constexpr double kappa = 5.0;
+    constexpr int nBurnin = 1000;
+    constexpr int nRejectionSamples = 10000;
+    constexpr double kappa = 6.0;
 
     doValidationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
             PoissonStartState<PredPreyAgent<GRIDSIZE>>([](PredPreyAgent<GRIDSIZE> agent) {
@@ -84,7 +84,7 @@ void Experiments::CatMouseAssimilation() {
     constexpr double pObserveIfPresent = 1.0;
     constexpr int nSamples = 1000000;
     constexpr int nBurnin = 100;
-    constexpr double kappa = 2.5;
+    constexpr double kappa = 3.0;
 
     ABM::kappa = kappa;
     Prior prior(nTimesteps, FixedPopulationStartState<CatMouseAgent>({0, 0, 1, 1},{1,1}));
@@ -183,5 +183,5 @@ void Experiments::doValidationExperiment(int nTimesteps, int nBurnin, int nSampl
 
     std::valarray<double> err = (aggregateState / nSamples) - (rejectionAggregateState / nRejectionSamples);
     double rms = sqrt((err*err).sum()/err.size());
-    std::cout << "      RMS Error = " << rms << std::endl;
+    std::cout << " RMS difference = " << rms << std::endl;
 }

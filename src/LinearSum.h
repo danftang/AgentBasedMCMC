@@ -9,7 +9,7 @@
 #include <map>
 #include <iomanip>
 #include "X.h"
-#include "SparseVec.h"
+#include "include/SparseVec.h"
 
 template<class T>
 class LinearSum {

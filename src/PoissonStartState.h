@@ -17,7 +17,7 @@ class PoissonStartState: public ConstrainedFactorisedDistribution<ModelState<AGE
 public:
 
     explicit PoissonStartState(std::function<double(AGENT)> agentToLambda) {
-            this->logFactors.reserve(AGENT::domainSize());
+            this->factors.reserve(AGENT::domainSize());
             for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
                 addPoissonFactor(agentId, agentToLambda(AGENT(agentId)));
             }
@@ -35,8 +35,10 @@ public:
                 assert(constraint.constant == 0);
                 sample[constraint.coefficients.indices[0]] = 0;
             }
-            for(const auto &factor: this->logFactors)
-                sample[factor.dependencies[0]] = Random::nextPoisson(-factor(ModelState<AGENT>::zero).first);
+            for(const auto &factor: this->factors) {
+                sample[factor.dependencies[0]] = 1; // to extract lambda from the factor
+                sample[factor.dependencies[0]] = Random::nextPoisson(exp(factor(sample).first));
+            }
             return  sample;
         };
     }
@@ -60,9 +62,8 @@ public:
             double logLambda = log(lambda);
             this->addFactor(
                     SparseFunction<std::pair<double, bool>, const ModelState<AGENT> &>(
-                            [lambda, logLambda, agentId](const ModelState<AGENT> &modelState) {
-                                return PoissonStartState<AGENT>::widenedLogPoisson(lambda, logLambda,
-                                                                                   modelState[agentId]); // log of Poisson
+                            [logLambda, agentId](const ModelState<AGENT> &modelState) {
+                                return PoissonStartState<AGENT>::widenedUnnormalisedPoisson(logLambda,modelState[agentId]);
                             },
                             {agentId}
                     )
@@ -72,9 +73,10 @@ public:
 
 
     // A Poisson distribution that decays exponentially below zero
-    static std::pair<double,bool> widenedLogPoisson(double lambda, double logLambda, int occupation) {
-        if(occupation < 0) return std::pair(ABM::kappa*occupation - lambda, false);               // widening
-        return std::pair(occupation*logLambda - lambda - lgamma(occupation+1), true);    // log of Poisson
+    // constant factor of exp(-lambda) is removed for computational efficiency
+    static std::pair<double,bool> widenedUnnormalisedPoisson(double logLambda, int occupation) {
+        if(occupation < 0) return std::pair(ABM::kappa*occupation, false);               // widening
+        return std::pair(occupation*logLambda - lgamma(occupation+1), true);    // log of Poisson
     }
 
     friend std::ostream &operator <<(std::ostream &out, const PoissonStartState<AGENT> &startState) {

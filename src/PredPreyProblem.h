@@ -6,12 +6,12 @@
 #define GLPKTEST_PREDPREYPROBLEM_H
 
 #include <vector>
+#include <fstream>
 #include <boost/serialization/vector.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include "Event.h"
-#include "StlStream.h"
+#include "include/StlStream.h"
 #include "StateTrajectory.h"
-#include "NoisyAgentStateObservation.h"
 #include "agents/PredPreyAgent.h"
 #include "Prior.h"
 #include "Likelihood.h"
@@ -22,56 +22,69 @@
 template<int GRIDSIZE>
 class PredPreyProblem {
 public:
-    double                              pPredator;
+    typedef PredPreyAgent<GRIDSIZE> agent_type;
+
+    double                              pObserveIfPresent;
+    std::vector<std::pair<State<agent_type>,int>> observations;
+
+    double                              pPredator; // start state parameters
     double                              pPrey;
+
+    Trajectory<agent_type> realTrajectory;
+
     double                              kappa;
-    Prior<PredPreyAgent<GRIDSIZE>>      prior;
-    Trajectory<PredPreyAgent<GRIDSIZE>> realTrajectory;
-    Likelihood<PredPreyAgent<GRIDSIZE>> likelihood;
-    WeightedFactoredConvexDistribution<ABM::occupation_type> posterior;
+//    Prior<PoissonStartState<agent_type>>      prior;
+//    Likelihood<agent_type> likelihood;
+//    ConstrainedFactorisedDistribution<Trajectory<agent_type>> posterior;
     TableauNormMinimiser<ABM::occupation_type> tableau;
 
     PredPreyProblem(): realTrajectory(0) {}
 
-
-    PredPreyProblem(const std::string &filename): PredPreyProblem() {
-        std::ifstream probFile(filename);
-        if(!probFile.good()) throw("Can't open problem file " + filename);
-        boost::archive::binary_iarchive probArchive(probFile);
-        PredPreyProblem<GRIDSIZE> problem;
-        probArchive >> *this;
-    }
+//    PredPreyProblem(const std::string &filename): PredPreyProblem() {
+//        std::ifstream probFile(filename);
+//        if(!probFile.good()) throw("Can't open problem file " + filename);
+//        boost::archive::binary_iarchive probArchive(probFile);
+//        PredPreyProblem<GRIDSIZE> problem;
+//        probArchive >> *this;
+//    }
 
 
     PredPreyProblem(int nTimesteps, double pPredator, double pPrey, double pMakeObservation, double pObserveIfPresent, double kappa):
+    pObserveIfPresent(pObserveIfPresent),
     pPredator(pPredator),
     pPrey(pPrey),
+    realTrajectory(prior().sampler()()),
     kappa(kappa),
-    prior(nTimesteps, startStatePrior()),
-    realTrajectory(prior.nextSample(true)),
-    likelihood(realTrajectory, pMakeObservation, pObserveIfPresent),
-    posterior(likelihood * prior),
-    tableau(posterior.constraints) {
-        tableau.findMinimalBasis();
+    observations(Likelihood<agent_type>::generateObservaions(realTrajectory, pMakeObservation, pObserveIfPresent))
+    {
+
+    }
+
+    Prior<PoissonStartState<agent_type>> prior() {
+        return Prior(nTimesteps, startStatePrior());
+    };
+
+    Likelihood<agent_type> likelihood() {
+        return Likelihood<agent_type>(observations, pObserveIfPresent);
+    }
+
+
+    ConstrainedFactorisedDistribution<Trajectory<agent_type>> posterior() {
+        return prior() * likelihood();
     }
 
 
     auto startStatePrior() const {
-//        return PoissonStartState<PredPreyAgent<GRIDSIZE>>([pPredator = pPredator, pPrey = pPrey](PredPreyAgent<GRIDSIZE> agent) {
-//            return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
-//        });
-        return BernoulliStartState<PredPreyAgent<GRIDSIZE>>([pPredator = pPredator, pPrey = pPrey](PredPreyAgent<GRIDSIZE> agent) {
+        return PoissonStartState<PredPreyAgent<GRIDSIZE>>([pPredator = pPredator, pPrey = pPrey](PredPreyAgent<GRIDSIZE> agent) {
             return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
         });
+//        return BernoulliStartState<PredPreyAgent<GRIDSIZE>>([pPredator = pPredator, pPrey = pPrey](PredPreyAgent<GRIDSIZE> agent) {
+//            return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
+//        });
     }
 
 
     int nTimesteps() const { return realTrajectory.nTimesteps(); }
-
-
-    void save(const std::string &filename) {
-
-    }
 
 
     friend std::ostream &operator <<(std::ostream &out, const PredPreyProblem &predPreyProblem) {
@@ -93,14 +106,11 @@ private:
     void load(Archive &ar, const unsigned int version) {
         std::vector<NoisyAgentStateObservation<PredPreyAgent<GRIDSIZE>>> observations;
         ar & pPredator & pPrey & kappa & realTrajectory & observations & tableau;
-        prior = Prior<PredPreyAgent<GRIDSIZE>>(realTrajectory.nTimesteps(), startStatePrior());
-        likelihood = Likelihood<PredPreyAgent<GRIDSIZE>>(observations);
-        posterior = likelihood * prior;
     }
 
     template <typename Archive>
     void save(Archive &ar, const unsigned int version) const {
-        ar & pPredator & pPrey & kappa & realTrajectory & likelihood.noisyObservations & tableau;
+        ar & pPredator & pPrey & kappa & realTrajectory & observations & tableau;
     }
 
     BOOST_SERIALIZATION_SPLIT_MEMBER();

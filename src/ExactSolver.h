@@ -10,7 +10,7 @@
 #include <valarray>
 #include "BinarySolutionSet.h"
 #include "ModelState.h"
-#include "StlStream.h"
+#include "include/StlStream.h"
 
 template<typename DOMAIN>
 class ExactSolver {
@@ -21,7 +21,7 @@ public:
     ExactSolver(const ConstrainedFactorisedDistribution<DOMAIN> &distribution, const DOMAIN &zeroState) {
         double marginalP = 0.0;
         for(const DOMAIN &solution: BinarySolutionSet(distribution.constraints, zeroState)) {
-            double jointP = exp(distribution.logPexact(solution));
+            double jointP = distribution.Pexact(solution);
             if(jointP > 1e-12) {
                 assert(distribution.constraints.isValidSolution(solution));
                 pmf[solution] = jointP;

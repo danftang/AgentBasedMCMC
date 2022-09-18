@@ -39,13 +39,13 @@ public:
 
     std::vector<T> toDense() const;
     std::vector<T> toDense(int dimension) const;
-    void insert(int i, T v);
+    void insert(int i, const T &v);
+    void insert(int i, T &&v);
     void clear();
     void resize(size_t size) { indices.resize(size); values.resize(size); }
     void reserve(size_t n) { indices.reserve(n); values.reserve(n);}
 
     int maxNonZeroIndex() const;
-
 
     T operator[](int index) {
         for(int i = 0;i<sparseSize(); ++i) {
@@ -54,7 +54,22 @@ public:
         return 0;
     }
 
-    template<typename OTHER, typename = decltype(std::declval<T &>() += (std::declval<T>()*(std::declval<OTHER>()[0])))>
+
+
+    template<typename ELE, typename = decltype(std::declval<T &>() *= std::declval<const ELE &>())>
+    SparseVec &operator *=(const ELE &element) {
+        for(int i=0; i < sparseSize(); ++i) values[i] *= element;
+        return *this;
+    }
+
+    template<typename ELE, typename = decltype(std::declval<T &>() *= std::declval<const ELE &>())>
+    SparseVec operator *(const ELE &element) const {
+        SparseVec<T> result(*this);
+        result *= element;
+        return result;
+    }
+
+    template<typename OTHER, typename = decltype(std::declval<T &>() += std::declval<T>() * (std::declval<OTHER>()[0]))>
     T operator *(const OTHER &other) const {
         T dotProd = 0;
         for(int i=0; i < sparseSize(); ++i) {
@@ -64,24 +79,7 @@ public:
     }
 
 
-    template<typename ELE, typename = decltype(std::declval<T &>() *= std::declval<ELE>())>
-    SparseVec &operator *=(ELE element) {
-        for(int i=0; i < sparseSize(); ++i) values[i] *= element;
-        return *this;
-    }
-
-    template<typename ELE, typename = decltype(std::declval<T &>() = std::declval<T>() * std::declval<ELE>())>
-    SparseVec &operator *(ELE element) {
-        SparseVec<T> result(sparseSize());
-        for(int i=0; i<sparseSize(); ++i) {
-            result.indices[i] = indices[i];
-            result.values[i] = values[i] * element;
-        }
-        return result;
-    }
-
-    template<typename = decltype(-std::declval<T>())>
-    SparseVec operator -() {
+    SparseVec<T> operator -() {
         SparseVec<T> negation(sparseSize());
         for(int i=0; i<sparseSize(); ++i) {
             negation.indices[i] = indices[i];
@@ -133,12 +131,22 @@ double SparseVec<T>::operator[](int denseIndex) const {
 // Adds element,
 // doesn't delete if ind already exists
 template<class T>
-void SparseVec<T>::insert(int i, T v) {
-    if (v != 0.0) {
+void SparseVec<T>::insert(int i, const T &v) {
+    if (v != 0) {
         indices.push_back(i);
         values.push_back(v);
     }
 }
+
+
+template<class T>
+void SparseVec<T>::insert(int i, T &&v) {
+        if (v != 0) {
+            indices.push_back(i);
+            values.push_back(std::move(v));
+        }
+}
+
 
 
 template<class T>

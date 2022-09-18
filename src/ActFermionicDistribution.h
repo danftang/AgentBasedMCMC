@@ -8,8 +8,8 @@
 
 #include <vector>
 #include <cassert>
-#include "Random.h"
-#include "StlStream.h"
+#include "include/Random.h"
+#include "include/StlStream.h"
 
 // This is the distribution of acts of a number of act-fermionic agents
 // in the same state. Given m agents in the same state and a vector of act

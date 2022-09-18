@@ -12,6 +12,7 @@
 // #include "assert.h"
 
 #define debug(expr) expr
+
 // #define fail() assert(false)
 #endif
 

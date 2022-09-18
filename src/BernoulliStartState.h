@@ -12,7 +12,7 @@ class BernoulliStartState: public ConstrainedFactorisedDistribution<ModelState<A
 public:
 
     explicit BernoulliStartState(std::function<double(AGENT)> agentToProb) {
-        this->logFactors.reserve(AGENT::domainSize());
+        this->factors.reserve(AGENT::domainSize());
         for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
             addBernoulliFactor(agentId, agentToProb(AGENT(agentId)));
         }
@@ -28,7 +28,7 @@ public:
             for(const auto &constraint: this->constraints)
                 sample[constraint.coefficients.indices[0]] = constraint.constant;
 
-            for(const auto &factor: this->logFactors) {
+            for(const auto &factor: this->factors) {
                 double p = 1.0 - exp(factor(ModelState<AGENT>::zero).first);
                 sample[factor.dependencies[0]] = Random::nextBool(p) ? 1:0;
 //                std::cout << "p = " << p << " " << factor.dependencies[0] << " -> " << val << std::endl;
@@ -51,11 +51,12 @@ public:
 
     void addBernoulliFactor(int agentId, double p) {
         if(p != 1.0 && p != 0.0) {
+            double logP = log(p);
+            double logNotP = log(1.0-p);
             this->addFactor(
                     SparseFunction<std::pair<double, bool>, const ModelState<AGENT> &>(
-                            [p, agentId](const ModelState<AGENT> &modelState) {
-                                return BernoulliStartState<AGENT>
-                                ::widenedLogBernoulli(p, modelState[agentId]); // log of Bernoulli
+                            [logP, logNotP, agentId](const ModelState<AGENT> &modelState) {
+                                return widenedLogBernoulli(logP, logNotP, modelState[agentId]); // log of Bernoulli
                             },
                             {agentId}
                     )
@@ -64,10 +65,6 @@ public:
             this->addConstraint(1*X(agentId) == (int)p);
         }
     }
-
-//    double probability(int agentId) const {
-//        return 1.0 - exp(this->logFactors[agentId](ModelState<AGENT>::zero).first);
-//    }
 
     // convert to a distribution over trajectories
     operator ConstrainedFactorisedDistribution<Trajectory<AGENT>>() {
@@ -97,11 +94,11 @@ public:
 //    }
 
     // A Bernoulli distribution that decays exponentially below zero
-    static std::pair<double,bool> widenedLogBernoulli(double p, int occupation) {
-        if(occupation == 0) return std::pair(log(1-p), true);
-        if(occupation < 0) return std::pair(ABM::kappa*occupation, false);
-        if(occupation > 1) return std::pair(ABM::kappa*(1-occupation), false);
-        return std::pair(log(p), true);
+    static std::pair<double,bool> widenedLogBernoulli(double logP, double logNotP, int occupation) {
+        if(occupation == 0) return std::pair(logNotP, true);
+        if(occupation < 0) return std::pair(logNotP + ABM::kappa*occupation, false);
+        if(occupation > 1) return std::pair(logP + ABM::kappa*(1-occupation), false);
+        return std::pair(logP, true);
     }
 
     friend std::ostream &operator <<(std::ostream &out, const BernoulliStartState<AGENT> &startState) {
@@ -110,7 +107,7 @@ public:
             out << "P(X" << constraint.coefficients.indices[0] << ")=" << constraint.constant << " ";
         }
         for(const auto &factor: startState.logFactors) {
-            out << "P(X" << factor.dependencies[0] << ")=" << 1.0 - exp(factor(ModelState<AGENT>::zero).first) << " ";
+            out << "P(X" << factor.dependencies[0] << ")=" << 1.0 - factor(ModelState<AGENT>::zero).first << " ";
         }
         out << "}";
         return out;

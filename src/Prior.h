@@ -20,8 +20,6 @@ public:
     STARTSTATE    startState;
     int           nTimesteps;
 
-    using ConstrainedFactorisedDistribution<Trajectory<AGENT>,ABM::coefficient_type>::addFactor;
-
     Prior(): nTimesteps(0) { }
 
     Prior(int NTimesteps, STARTSTATE StartState):
@@ -52,6 +50,7 @@ public:
         }
     }
 
+
     void addInteractionFactors() {
         for(int time = 0; time < nTimesteps; ++time) {
             for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
@@ -62,7 +61,7 @@ public:
                         actDependencies.push_back(neighbourAct);
                     }
                 }
-                addFactor(
+                this->addFactor(
                         SparseFunction<std::pair<double,bool>, const Trajectory<AGENT> &>(
                                 [state](const Trajectory<AGENT> &trajectory) {
                                     return widenedAgentMultinomial(state, trajectory);
@@ -79,8 +78,9 @@ public:
     // \prod_a \pi(a, \Psi, \psi)^T^t_{\psi a}/T^t_{\psi a}!
     // widened to decay (roughly) exponentially over negative occupations and zero probability actions
     static std::pair<double, bool> widenedAgentMultinomial(const State<AGENT> &state, const Trajectory<AGENT> &trajectory) {
-        ABM::occupation_type stateOccupation = trajectory[state];
-        double newLogP = (stateOccupation > 1)?lgamma(stateOccupation + 1.0):0.0; // log of Phi factorial
+        static double expMinusKappa = exp(-ABM::kappa);
+        ABM::occupation_type l1StateOccupation(0);
+        double newP(0.0);
         bool exactValue = true;
         std::vector<double> actPMF = state.agent.timestep(trajectory.temporaryPartialModelState(state.time, state.agent.neighbours()));
         for (int act = 0; act < AGENT::actDomainSize(); ++act) {
@@ -89,19 +89,22 @@ public:
                 double pAct = actPMF[act];
                 if (actOccupation < 0) { // negative occupation widening
 //                        std::cout << "Widening due to negative occupation" << std::endl;
-                    pAct = exp(-ABM::kappa);
+                    pAct = expMinusKappa;
                     actOccupation = -actOccupation;
                     exactValue = false;
                 } else if (actPMF[act] == 0.0) {
 //                        std::cout << "Widening due to impossible act" << std::endl;
-                    pAct = exp(-ABM::kappa); // impossible act widening
+                    pAct = expMinusKappa; // impossible act widening
                     exactValue = false;
                 }
-                newLogP += actOccupation * log(pAct) - lgamma(actOccupation + 1.0);
+                newP += actOccupation*log(pAct) - lgamma(actOccupation + 1);
+                l1StateOccupation += actOccupation; // sum of absolute values
             }
         }
-        return std::pair(newLogP,exactValue);
+        newP += lgamma(l1StateOccupation + 1); // Phi factorial
+        return std::pair(newP,exactValue);
     }
+
 
     std::function<const Trajectory<AGENT> &()> sampler() const {
         return [sample = Trajectory<AGENT>(nTimesteps), startStateSampler = startState.sampler()]() mutable -> const Trajectory<AGENT> & {

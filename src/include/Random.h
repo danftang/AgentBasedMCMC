@@ -58,5 +58,6 @@ public:
 
 };
 
+inline thread_local std::mt19937 Random::gen;
 
 #endif //GLPKTEST_RANDOM_H

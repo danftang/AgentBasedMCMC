@@ -23,9 +23,9 @@
 #include <utility>
 #include <vector>
 #include "TableauNormMinimiser.h"
-#include "MutableCategoricalArray.h"
+#include "include/MutableCategoricalArray.h"
 #include "MCMCStatistics.h"
-#include "Random.h"
+#include "include/Random.h"
 
 
 template<class T>

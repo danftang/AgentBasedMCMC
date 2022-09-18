@@ -1,16 +1,12 @@
 #include "Experiments.h"
 #include "agents/BinomialAgent.h"
-// #include "FiguresForPaper.h"
 #include "subscript_operator_traits.h"
 #include "BernoulliStartState.h"
+#include "FiguresForPaper.h"
 
 
 int main(int argc, char *argv[]) {
-
-//    BernoulliStartState<BinomialAgent<3>> startState({1.0, 0.1, 0.0});
-//    std::cout << startState << std::endl;
-//    auto sampler = startState.sampler();
-//    for(int s=0; s<100; ++s) std::cout << sampler() << std::endl;
+    auto startTime = std::chrono::steady_clock::now();
 
     /////////////// Generate data for figures 3 and 4 and statistics for table 2
 //    FiguresForPaper<32,16>::generateStandardProblemFile(10.0);
@@ -23,11 +19,16 @@ int main(int argc, char *argv[]) {
 
     ////////////// Test MCMC against small, tractable examples
 
+    // TODO: try factorising extended model state
+    // TODO: account for factor dependency when factorizing
+
 //    Experiments::BinomialAgentSingleObservation();
 //    Experiments::CatMouseSingleObservation();
 //    Experiments::CatMouseAssimilation();
-//    Experiments::PredPreySingleObservation();
+    Experiments::PredPreySingleObservation();
 
+    auto endTime = std::chrono::steady_clock::now();
+    std::cout << "Exec time = " << endTime - startTime << std::endl;
     return 0;
 }
 

@@ -218,8 +218,8 @@ TableauNormMinimiser<T>::TableauNormMinimiser(const EqualityConstraints<T> &prob
     for(int j=0; j<=maxCol; ++j) {
         addColSparsityEntry(j);
     }
-    std::cout << "Initial mean L0 norm = " << meanColumnL0Norm() << std::endl;
-    std::cout << "Initial L1 norm = " << meanColumnL1Norm() << std::endl;
+    std::cout << "Initial mean column L0 norm = " << meanColumnL0Norm() << std::endl;
+    std::cout << "Initial column L1 norm = " << meanColumnL1Norm() << std::endl;
 //    findMinimalBasis();
 }
 
@@ -229,8 +229,8 @@ void TableauNormMinimiser<T>::findMinimalBasis() {
         auto [i,j] = findMarkowitzPivot();
         pivot(i,j);
     }
-    std::cout << "Reduced mean L0 norm = " << meanColumnL0Norm() << std::endl;
-    std::cout << "Reduced L1 norm = " << meanColumnL1Norm() << std::endl;
+    std::cout << "Reduced mean column L0 norm = " << meanColumnL0Norm() << std::endl;
+    std::cout << "Reduced column L1 norm = " << meanColumnL1Norm() << std::endl;
 
 }
 
@@ -406,7 +406,7 @@ int TableauNormMinimiser<T>::sparsestColInRow(int i) {
     int minj = -1;
     for(const auto [j, Mij] : rows[i]) {
         int colSize = cols[j].size();
-        if(colSize < minColSparsity && !cols[j].isBasic && fabs(Mij) == 1.0) {
+        if(colSize < minColSparsity && !cols[j].isBasic && Mij*Mij == 1) {
             minColSparsity = colSize;
             minj = j;
         }
@@ -420,7 +420,7 @@ int TableauNormMinimiser<T>::sparsestRowInCol(int j) {
     int mini = -1;
     for(int i : cols[j]) {
         int rowSize = rows[i].size();
-        if(rowSize < minRowSparsity && rows[i].isActive && fabs(rows[i].at(j)) == 1.0) {
+        if(rowSize < minRowSparsity && rows[i].isActive && fabs((double)rows[i].at(j)) == 1.0) {
             minRowSparsity = rowSize;
             mini = i;
         }
@@ -448,7 +448,7 @@ double TableauNormMinimiser<T>::meanColumnL1Norm() const {
     for(int j=0; j<cols.size(); ++j) {
         if(!cols[j].isBasic) {
             ++nNonBasic;
-            for (int i: cols[j]) normSum += fabs(rows[i].at(j));
+            for (int i: cols[j]) normSum += fabs((double)rows[i].at(j));
         }
     }
     return normSum / nNonBasic;
@@ -486,6 +486,7 @@ std::vector<SparseVec<T>> TableauNormMinimiser<T>::getBasisVectors(int domainDim
 
 // Updates the basic variables of X, leaving the non-basic variables unchanged
 // so that X satisfies all constraints.
+// TODO: should this be elsewhere?
 template<class T>
 template<typename VEC>
 void TableauNormMinimiser<T>::snapToSubspace(VEC &X) const {

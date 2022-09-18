@@ -21,6 +21,7 @@
 #include <limits>
 #include "EqualityConstraints.h"
 #include "SparseFunction.h"
+#include "TableauNormMinimiser.h"
 
 template<typename DOMAIN, typename CONSTRAINTCOEFF = typename subscript_operator_traits<DOMAIN>::base_type>
 class ConstrainedFactorisedDistribution {
@@ -29,13 +30,13 @@ public:
     typedef SparseFunction<std::pair<double,bool>,const DOMAIN &> function_type;
     typedef DOMAIN domain_type;
 
-    std::vector<function_type>           logFactors;
+    std::vector<function_type>           factors;
     EqualityConstraints<CONSTRAINTCOEFF> constraints;        // linear constraints
 //    int                                  domainDimension;
 
 
     void addFactor(SparseFunction<std::pair<double,bool>,const DOMAIN &> factor) {
-        logFactors.push_back(std::move(factor));
+        factors.push_back(std::move(factor));
     }
 
     void addConstraint(EqualityConstraint<CONSTRAINTCOEFF> constraint) {
@@ -43,19 +44,19 @@ public:
         constraints.push_back(std::move(constraint));
     }
 
-    double exactFactorValue(int factorIndex, const DOMAIN &X) const {
-        std::pair<double,bool> factorVal = logFactors[factorIndex](X);
-        return factorVal.second?factorVal.first:-std::numeric_limits<double>::infinity();
-    }
-
-    double widenedFactorValue(int factorIndex, const DOMAIN &X) const {
-        return logFactors[factorIndex](X).first;
-    }
+//    double exactFactorValue(int factorIndex, const DOMAIN &X) const {
+//        std::pair<double,bool> factorVal = factors[factorIndex](X);
+//        return factorVal.second?factorVal.first:-INFINITY;
+//    }
+//
+//    double widenedFactorValue(int factorIndex, const DOMAIN &X) const {
+//        return factors[factorIndex](X).first;
+//    }
 
 
     bool isFeasible(const DOMAIN &X) {
         if(!constraints.template isValidSolution(X)) return false;
-        for(const auto &factor: this->logFactors) {
+        for(const auto &factor: this->factors) {
             if(factor(X).second == false) return false;
         }
         return true;
@@ -65,8 +66,8 @@ public:
 
     ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> &operator *=(const ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> &other) {
         constraints += other.constraints;
-        logFactors.reserve(logFactors.size() + other.logFactors.size());
-        logFactors.insert(logFactors.end(), other.logFactors.begin(), other.logFactors.end());
+        factors.reserve(factors.size() + other.factors.size());
+        factors.insert(factors.end(), other.factors.begin(), other.factors.end());
 //        if(other.domainDimension > domainDimension) domainDimension = other.domainDimension;
         return *this;
     }
@@ -91,11 +92,16 @@ public:
     double logPexact(const DOMAIN &X) const {
         double logP = 0.0;
         if(!constraints.isValidSolution(X)) return -std::numeric_limits<double>::infinity();
-        for(int i=0; i < this->logFactors.size(); ++i) {
-            logP += this->exactFactorValue(i,X);
+        for(const auto &factor: factors) {
+            std::pair<double,bool> factorVal = factor(X);
+            if(factorVal.second == false) return -std::numeric_limits<double>::infinity();
+            logP += factorVal.first;
         }
         return logP;
     }
+
+    // use logPexact if the total probability may be too small for double.
+      double Pexact(const DOMAIN &X) const { return exp(logPexact(X)); }
 
     double logPwidened(const DOMAIN &X) const {
         double logP = 0.0;
@@ -104,14 +110,14 @@ public:
             distanceToValidHyperplane += fabs(constraint.coefficients * X - constraint.constant);
         }
         logP += -ABM::kappa * distanceToValidHyperplane;
-        for(int i=0; i < this->logFactors.size(); ++i) {
-            logP += this->widenedFactorValue(i,X);
+        for(const auto &factor: factors) {
+            logP += log(factor(X).first);
         }
         return logP;
     }
 
     void sanityCheck(const DOMAIN &testVector) const {
-        for(const auto &factor: logFactors) {
+        for(const auto &factor: factors) {
             factor.sanityCheck(testVector);
         }
     }
@@ -119,18 +125,34 @@ public:
     template<typename = std::is_same<ModelState<typename DOMAIN::agent_type>, DOMAIN>>
     auto toTrajectoryDistribution(int time) {
         ConstrainedFactorisedDistribution<Trajectory<typename DOMAIN::agent_type>> trajDistribution;
-        trajDistribution.logFactors = trajectoryLogFactors(time);
+        trajDistribution.factors = trajectoryFactors(time);
         trajDistribution.constraints = trajectoryConstraints(time);
         return trajDistribution;
     }
 
+//    std::vector<SparseVec<CONSTRAINTCOEFF>> calculateBasis(int domainDimension) const {
+//        std::vector<SparseVec<CONSTRAINTCOEFF>> basisVectors;
+//        TableauNormMinimiser<CONSTRAINTCOEFF> constraintTableau(constraints);
+//        std::vector<SparseVec<CONSTRAINTCOEFF>> uniqueBasisVectors = constraintTableau.getBasisVectors(domainDimension);
+//        // double-up unique basis vectors for + and -
+//        basisVectors.reserve(uniqueBasisVectors.size()*2);
+//        for(int i=0; i < uniqueBasisVectors.size(); ++i) {
+//            basisVectors.push_back(-uniqueBasisVectors[i]);
+//            basisVectors.push_back(std::move(uniqueBasisVectors[i]));
+//        }
+//        return basisVectors;
+//    }
+
 
 protected:
 
+    // If this distribution's domain is ModelState<AGENT> then this
+    // generates a set of factors on Trajectory<AGENT> domain, with the
+    // constraints applied at the given time.
     template<typename AGENT = typename DOMAIN::agent_type, typename = std::is_same<ModelState<AGENT>, DOMAIN>>
-    auto trajectoryLogFactors(int time) {
+    auto trajectoryFactors(int time) {
         std::vector<SparseFunction<std::pair<double, bool>, const Trajectory<AGENT> &>> trajFactors;
-        for (const auto &modelStateFactor: logFactors) {
+        for (const auto &modelStateFactor: factors) {
             std::vector<int> trajectoryDependencies;
             trajectoryDependencies.reserve(modelStateFactor.dependencies.size() * AGENT::actDomainSize());
             for (int agentId: modelStateFactor.dependencies) {
@@ -167,7 +189,7 @@ protected:
 
 template<typename T>
 std::ostream &operator <<(std::ostream &out, const ConstrainedFactorisedDistribution<T> &distribution) {
-    for(const auto &factor: distribution.logFactors) {
+    for(const auto &factor: distribution.factors) {
         out << "P(";
         if(factor.dependencies.size() > 0) {
             out << "X" << factor.dependencies[0];

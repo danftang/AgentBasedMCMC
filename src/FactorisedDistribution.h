@@ -16,7 +16,7 @@
 #include "SparseFunction.h"
 #include "ModelState.h"
 #include "Trajectory.h"
-#include "debug.h"
+#include "include/debug.h"
 
 //template<class DOMAIN>
 //class FactorisedDistribution {
