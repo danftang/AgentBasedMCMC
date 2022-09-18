@@ -83,7 +83,7 @@ public:
             )
     {
         // calculate basis
-        TableauNormMinimiser<ELEMENT> constraintTableau(targetDistribution.constraints);
+        TableauNormMinimiser<ELEMENT> constraintTableau(targetDistribution);
         std::vector<SparseVec<ELEMENT>> uniqueBasisVectors = constraintTableau.getBasisVectors(initialGuess.size());
         // double-up unique basis vectors for + and -
         std::vector<SparseVec<ELEMENT>> basisVecs;

@@ -12,6 +12,7 @@
 #include "boost/serialization/map.hpp"
 #include "boost/serialization/set.hpp"
 #include "EqualityConstraints.h"
+#include "ConstrainedFactorisedDistribution.h"
 
 // Takes an LP Problem and finds the basis that pivots out as many
 // fixed-variables as possible, while attempting to keep the L0-norm of the tableau
@@ -61,7 +62,7 @@
 //  Maros, I., 2002, "Computational techniques of the sipmlex method", Springer
 //
 //
-template<class T>
+template<class COEFF>
 class TableauNormMinimiser {
 public:
 
@@ -69,7 +70,7 @@ public:
     static constexpr int UNREDUCED = -1;
 
 
-    class Column: public std::set<int> { // set of non-zero row indices (only non-reduced rows are stored)
+    class Column: public std::set<int> { // set of row indices of non-zero entries, +ve is equality constraint, -ve is factor dependency
     public:
         std::list<int>::iterator sparsityEntry; // iterator into colsBySaprsity entry
         bool isBasic;
@@ -85,21 +86,21 @@ public:
         }
     };
 
-    class Row: public std::map<int,T> { // map from non-zero col index to element value
+    class Row: public std::map<int,COEFF> { // map from non-zero col index to element value
     public:
         std::list<int>::iterator sparsityEntry; // iterator into rowsBySaprsity entry
         bool isActive;                          // true if this row is an unreduced equality constraint
 
-        Row(const SparseVec<T> &row, bool isActive);
+        Row(const SparseVec<COEFF> &row, bool isActive);
         Row() {}
 
-        Row &operator *=(T c);
+        Row &operator *=(COEFF c);
 
         // dot product
-        template<typename OTHER, typename E = decltype(std::declval<T &>() = std::declval<T>() * std::declval<OTHER>()[0])>
-        T operator *(const OTHER &other) const {
-            T dotProd = 0;
-            for(const std::pair<int,T> &element: *this) {
+        template<typename OTHER, typename E = decltype(std::declval<COEFF &>() = std::declval<COEFF>() * std::declval<OTHER>()[0])>
+        COEFF operator *(const OTHER &other) const {
+            COEFF dotProd = 0;
+            for(const std::pair<int,COEFF> &element: *this) {
                 dotProd += element.second * other[element.first];
             }
             return dotProd;
@@ -110,7 +111,7 @@ public:
 
         template <typename Archive>
         void serialize(Archive &ar, const unsigned int version) {
-            ar & static_cast<std::map<int,T> &>(*this) & isActive;
+            ar & static_cast<std::map<int,COEFF> &>(*this) & isActive;
         }
     };
 
@@ -120,13 +121,15 @@ public:
     std::vector<std::list<int>> colsBySparsity;     // cols sorted by sparsity, only contains non-basic cols
     std::vector<std::list<int>> rowsBySparsity;     // rows sorted by sparsity, only contains active rows
     std::vector<int>            basis;            // col index of basic var by row. -1 means unreduced
-    std::vector<T>              F;                  // constant in linear equation (see intro above)
-    TableauNormMinimiser(const EqualityConstraints<T> &problem);
+    std::vector<COEFF>              F;                  // constant in linear equation (see intro above)
+
+    template<class DOMAIN>
+    TableauNormMinimiser(const ConstrainedFactorisedDistribution<DOMAIN,COEFF> &problem);
 
     TableauNormMinimiser()=default;
 
     void findMinimalBasis();
-    std::vector<SparseVec<T>> getBasisVectors(int domainDimension);
+    std::vector<SparseVec<COEFF>> getBasisVectors(int domainDimension);
 
     double operator ()(int i, int j) const { auto it = rows[i].find(j); return it == rows[i].end()?0.0:it->second; }
 
@@ -192,13 +195,15 @@ std::ostream &operator <<(std::ostream &out, const TableauNormMinimiser<T> &tabl
 // (-L M)(1 X A)^T = 0, 0 <= A <= U-L
 // where the zero'th elelemet of (1 X A) is 1.
 template<class T>
-TableauNormMinimiser<T>::TableauNormMinimiser(const EqualityConstraints<T> &problem)
+template<class D>
+TableauNormMinimiser<T>::TableauNormMinimiser(const ConstrainedFactorisedDistribution<D,T> &problem)
 {
-    basis.reserve(problem.size());
-    F.reserve(problem.size());
-    rows.reserve(problem.size());
+    basis.reserve(problem.constraints.size());
+    F.reserve(problem.constraints.size());
+    rows.reserve(problem.constraints.size());
     int maxCol = 0; // maximum column id seen so far
-    for(const EqualityConstraint<T> &constraint: problem) {
+    // initialise row information
+    for(const EqualityConstraint<T> &constraint: problem.constraints) {
         rows.emplace_back(constraint.coefficients, true);
         addRowSparsityEntry(rows.size()-1);
         basis.push_back(UNREDUCED); // unreduced row
@@ -209,7 +214,12 @@ TableauNormMinimiser<T>::TableauNormMinimiser(const EqualityConstraints<T> &prob
     }
 
     cols.resize(maxCol +1);
-    // Now fill column information from rows
+    // Now fill column information from rows and factor dependencies
+    for(int factorIndex = 0; factorIndex < problem.factors.size(); ++factorIndex) {
+        for(int basisIndex : problem.factors[factorIndex].dependencies) {
+            cols[basisIndex].insert(-1 - factorIndex);
+        }
+    }
     for(int i=0; i<rows.size(); ++i) {
         for(auto [j, v]: rows[i]) {
             cols[j].insert(i);
@@ -277,35 +287,40 @@ void TableauNormMinimiser<T>::pivot(int pi, int pj) {
     T Mpipj = rows[pi].at(pj);
 
     // remove sparsity entries of all affected columns
-    for(auto [j, v] : rows[pi]) removeColSparsityEntry(j);
+    for(const auto &[j, v] : rows[pi]) removeColSparsityEntry(j);
 
     rows[pi] *= -1.0/Mpipj;     // divide row through to make the pivot point -1
     F[pi] *= -1.0/Mpipj;
 
-    for(int i : cols[pj]) {
-        if(i != pi) {
-            if(rows[i].isActive) removeRowSparsityEntry(i);
-            T Mipj = rows[i].at(pj);
-            for (const auto[j, Mpij]: rows[pi]) {
-                if(j != pj) {
-                    auto MijIt = rows[i].find(j);
-                    if (MijIt == rows[i].end()) { // fill-in
-                        rows[i][j] = Mipj * Mpij;
-                        cols[j].insert(i);
-                    } else {
-                        T newMij = (MijIt->second += Mipj * Mpij);
-                        if (newMij == 0) { // drop-out
-                            cols[j].erase(i);
-                            rows[i].erase(j);
+    for (int i: cols[pj]) {
+        if (i != pi) {
+            if (i >= 0) { // row is equality constraint, so do linear pivot
+                if(rows[i].isActive) removeRowSparsityEntry(i);
+                T Mipj = rows[i].at(pj);
+                for (const auto &[j, Mpij]: rows[pi]) {
+                    if (j != pj) {
+                        auto MijIt = rows[i].find(j);
+                        if (MijIt == rows[i].end()) { // fill-in
+                            rows[i][j] = Mipj * Mpij;
+                            cols[j].insert(i);
+                        } else {
+                            T newMij = (MijIt->second += Mipj * Mpij);
+                            if (newMij == 0) { // drop-out
+                                cols[j].erase(i);
+                                rows[i].erase(j);
+                            }
                         }
+                    } else {
+                        // drop out without testing as we're on the pivot col
+                        // don't erase col entry yet as we're iterating through it
+                        rows[i].erase(j);
                     }
-                } else {
-                    // drop out without testing as we're on the pivot col
-                    rows[i].erase(j);
                 }
+                if (rows[i].isActive) addRowSparsityEntry(i);
+                F[i] += Mipj * F[pi];
+            } else { // row is factor dependency so do union pivot
+                for (const auto &[j, Mpij]: rows[pi]) cols[j].insert(i);
             }
-            if(rows[i].isActive) addRowSparsityEntry(i);
-            F[i] += Mipj * F[pi];
         }
     }
 
@@ -330,6 +345,7 @@ void TableauNormMinimiser<T>::pivot(int pi, int pj) {
 
 template<class T>
 void TableauNormMinimiser<T>::addRowSparsityEntry(int i) {
+    assert(i>=0);
     Row &row = rows[i];
     if(rowsBySparsity.size() <= row.size()) rowsBySparsity.resize(row.size()+1);
     rowsBySparsity[row.size()].push_front(i);
@@ -338,6 +354,7 @@ void TableauNormMinimiser<T>::addRowSparsityEntry(int i) {
 
 template<class T>
 void TableauNormMinimiser<T>::removeRowSparsityEntry(int i) {
+    assert(i>=0);
     Row &row = rows[i];
     assert(row.isActive);
     rowsBySparsity[row.size()].erase(row.sparsityEntry);
@@ -419,10 +436,12 @@ int TableauNormMinimiser<T>::sparsestRowInCol(int j) {
     int minRowSparsity = INT32_MAX;
     int mini = -1;
     for(int i : cols[j]) {
-        int rowSize = rows[i].size();
-        if(rowSize < minRowSparsity && rows[i].isActive && fabs((double)rows[i].at(j)) == 1.0) {
-            minRowSparsity = rowSize;
-            mini = i;
+        if(i >=0) {
+            int rowSize = rows[i].size();
+            if (rowSize < minRowSparsity && rows[i].isActive && fabs((double) rows[i].at(j)) == 1.0) {
+                minRowSparsity = rowSize;
+                mini = i;
+            }
         }
     }
     return mini;
@@ -448,7 +467,9 @@ double TableauNormMinimiser<T>::meanColumnL1Norm() const {
     for(int j=0; j<cols.size(); ++j) {
         if(!cols[j].isBasic) {
             ++nNonBasic;
-            for (int i: cols[j]) normSum += fabs((double)rows[i].at(j));
+            for (int i: cols[j]) {
+                if(i>=0) normSum += fabs((double)rows[i].at(j));
+            }
         }
     }
     return normSum / nNonBasic;
@@ -475,8 +496,10 @@ std::vector<SparseVec<T>> TableauNormMinimiser<T>::getBasisVectors(int domainDim
             newBasis.insert(j,1); // element from the identity
             if(j < cols.size()) {
                 for (int i: cols[j]) {
-                    assert(basis[i] != UNREDUCED); // every row should have a basic variable
-                    newBasis.insert(basis[i], rows[i][j]);
+                    if(i >=0) {
+                        assert(basis[i] != UNREDUCED); // every row should have a basic variable
+                        newBasis.insert(basis[i], rows[i][j]);
+                    }
                 }
             }
         }

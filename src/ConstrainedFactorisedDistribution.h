@@ -21,7 +21,6 @@
 #include <limits>
 #include "EqualityConstraints.h"
 #include "SparseFunction.h"
-#include "TableauNormMinimiser.h"
 
 template<typename DOMAIN, typename CONSTRAINTCOEFF = typename subscript_operator_traits<DOMAIN>::base_type>
 class ConstrainedFactorisedDistribution {

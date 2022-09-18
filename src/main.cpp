@@ -20,12 +20,11 @@ int main(int argc, char *argv[]) {
     ////////////// Test MCMC against small, tractable examples
 
     // TODO: try factorising extended model state
-    // TODO: account for factor dependency when factorizing
 
 //    Experiments::BinomialAgentSingleObservation();
 //    Experiments::CatMouseSingleObservation();
 //    Experiments::CatMouseAssimilation();
-    Experiments::PredPreySingleObservation();
+    Experiments::PredPreySingleObservation(); // dep col = 8.16 dep row = 59.56, 29.7s
 
     auto endTime = std::chrono::steady_clock::now();
     std::cout << "Exec time = " << endTime - startTime << std::endl;
