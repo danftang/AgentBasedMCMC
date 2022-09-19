@@ -27,7 +27,7 @@ public:
     time(time),
     agent(agent) { }
 
-    explicit State(int agentId): State(std::div(agentId,AGENT::domainSize())) {}
+    explicit State(int stateTrajectoryIndex): State(std::div(stateTrajectoryIndex, AGENT::domainSize())) {}
 
     explicit State(std::div_t agentIdDivDomainSize): time(agentIdDivDomainSize.quot), agent(agentIdDivDomainSize.rem) { }
 

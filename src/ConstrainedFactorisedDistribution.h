@@ -121,13 +121,22 @@ public:
         }
     }
 
-    template<typename = std::is_same<ModelState<typename DOMAIN::agent_type>, DOMAIN>>
-    auto toTrajectoryDistribution(int time) {
-        ConstrainedFactorisedDistribution<Trajectory<typename DOMAIN::agent_type>> trajDistribution;
-        trajDistribution.factors = trajectoryFactors(time);
-        trajDistribution.constraints = trajectoryConstraints(time);
-        return trajDistribution;
-    }
+//    template<typename = std::is_same<ModelState<typename DOMAIN::agent_type>, DOMAIN>>
+//    auto toTrajectoryDistribution(int time) const {
+//        ConstrainedFactorisedDistribution<Trajectory<typename DOMAIN::agent_type>> trajDistribution;
+//        trajDistribution.factors = trajectoryFactors(time);
+//        trajDistribution.constraints = trajectoryConstraints(time);
+//        return trajDistribution;
+//    }
+
+//    template<class NEWDOMAIN, typename = decltype(typename DOMAIN::template linearMapTo<NEWDOMAIN>())>
+//    ConstrainedFactorisedDistribution<NEWDOMAIN> toDomain() {
+//        ConstrainedFactorisedDistribution<NEWDOMAIN> trajDistribution;
+//        trajDistribution.factors = trajectoryFactors(time);
+//        trajDistribution.constraints = trajectoryConstraints(time);
+//        return trajDistribution;
+//
+//    }
 
 //    std::vector<SparseVec<CONSTRAINTCOEFF>> calculateBasis(int domainDimension) const {
 //        std::vector<SparseVec<CONSTRAINTCOEFF>> basisVectors;
@@ -145,6 +154,9 @@ public:
 
 protected:
 
+    // Given a linear map from domain A->B (i.e. B = MA + C) we can transform a disrtibution over B into a distribution over A
+    // ...special case is when M is binary and C=0, so B_i = sum_{j \in S(i)} A_j so we only need to supply S(i)
+
     // If this distribution's domain is ModelState<AGENT> then this
     // generates a set of factors on Trajectory<AGENT> domain, with the
     // constraints applied at the given time.
@@ -160,7 +172,7 @@ protected:
                 }
             }
             trajFactors.emplace_back(
-                    [modelFactor = modelStateFactor, time](const Trajectory<AGENT> &trajectory) { // TODO: ensure that modelFactor is caprured by value
+                    [modelFactor = modelStateFactor, time](const Trajectory<AGENT> &trajectory) {
                         return modelFactor(trajectory.temporaryPartialModelState(time,modelFactor.dependencies));
                     },
                     trajectoryDependencies
@@ -168,6 +180,30 @@ protected:
         }
         return trajFactors;
     }
+
+
+    // Transforms factors to a new domain subject to a linear transform from the new domain to the
+    // old. A = MB
+//    template<typename NEWDOMAIN>
+//    auto transformedFactors() {
+//        const std::vector<SparseVec<CONSTRAINTCOEFF>> &linearTransform = NEWDOMAIN::template linearDomainTransform<DOMAIN>();
+//        std::vector<SparseFunction<std::pair<double, bool>, const NEWDOMAIN &>> newFactors;
+//        for (const auto &oldFactor: factors) {
+//            std::set<int> newDependencies;
+//            for (int agentId: oldFactor.dependencies) {
+//                for (int actId: ) {
+//                    newDependencies.push_back(actId);
+//                }
+//            }
+//            newFactors.emplace_back(
+//                    [modelFactor = oldFactor, time](const Trajectory<AGENT> &trajectory) {
+//                        return modelFactor(trajectory.temporaryPartialModelState(time,modelFactor.dependencies));
+//                    },
+//                    newDependencies
+//            );
+//        }
+//        return newFactors;
+//    }
 
 
     template<typename AGENT = typename DOMAIN::agent_type, typename = std::is_same<ModelState<AGENT>,DOMAIN>>

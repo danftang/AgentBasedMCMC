@@ -33,6 +33,12 @@ public:
         }
     }
 
+    explicit SparseVec(const std::map<int,T> &map): indices(), values() {
+        reserve(map.size());
+        for(const auto &entry: map) insert(entry.first, entry.second);
+    }
+
+
     double operator [](int denseIndex) const;
 
     int sparseSize() const { return indices.size(); }

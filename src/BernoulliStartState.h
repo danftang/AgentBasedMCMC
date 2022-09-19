@@ -7,31 +7,31 @@
 
 #include "ConstrainedFactorisedDistribution.h"
 
-template<class AGENT>
-class BernoulliStartState: public ConstrainedFactorisedDistribution<ModelState<AGENT>> {
+template<class DOMAIN, class AGENT = typename DOMAIN::agent_type>
+class BernoulliStartState: public ConstrainedFactorisedDistribution<DOMAIN> {
 public:
+    std::function<const ModelState<AGENT> &()> modelStateSampler;
+
+    using typename ConstrainedFactorisedDistribution<DOMAIN>::coefficient_type;
+
 
     explicit BernoulliStartState(std::function<double(AGENT)> agentToProb) {
         this->factors.reserve(AGENT::domainSize());
         for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
             addBernoulliFactor(agentId, agentToProb(AGENT(agentId)));
         }
+        modelStateSampler = sampler(agentToProb);
     }
 
-    explicit BernoulliStartState(std::initializer_list<double> probs): BernoulliStartState([&probs](AGENT agent) {
-        return data(probs)[agent];
+    explicit BernoulliStartState(std::initializer_list<double> probs): BernoulliStartState([probs = std::vector(probs)](AGENT agent) {
+        return probs[agent];
     }) {}
 
 
-    std::function<const ModelState<AGENT> &()> sampler() const {
-        return [this, sample = ModelState<AGENT>()]() mutable -> const ModelState<AGENT> & {
-            for(const auto &constraint: this->constraints)
-                sample[constraint.coefficients.indices[0]] = constraint.constant;
-
-            for(const auto &factor: this->factors) {
-                double p = 1.0 - exp(factor(ModelState<AGENT>::zero).first);
-                sample[factor.dependencies[0]] = Random::nextBool(p) ? 1:0;
-//                std::cout << "p = " << p << " " << factor.dependencies[0] << " -> " << val << std::endl;
+    static std::function<const ModelState<AGENT> &()> sampler(std::function<double(AGENT)> &agentToprob) {
+        return [sample = ModelState<AGENT>(), agentToprob]() mutable -> const ModelState<AGENT> & {
+            for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+                sample[agentId] = Random::nextBool(agentToprob(AGENT(agentId)));
             }
             return  sample;
         };
@@ -50,26 +50,31 @@ public:
 
 
     void addBernoulliFactor(int agentId, double p) {
+        State<AGENT> state(0,agentId);
         if(p != 1.0 && p != 0.0) {
             double logP = log(p);
             double logNotP = log(1.0-p);
             this->addFactor(
-                    SparseFunction<std::pair<double, bool>, const ModelState<AGENT> &>(
-                            [logP, logNotP, agentId](const ModelState<AGENT> &modelState) {
-                                return widenedLogBernoulli(logP, logNotP, modelState[agentId]); // log of Bernoulli
+                    SparseFunction<std::pair<double, bool>, const DOMAIN &>(
+                            [logP, logNotP, state](const DOMAIN &x) {
+                                return widenedLogBernoulli(logP, logNotP, x[state]); // log of Bernoulli
                             },
-                            {agentId}
+                            DOMAIN::dependencies(state)
                     )
             );
         } else {
-            this->addConstraint(1*X(agentId) == (int)p);
+            auto &newConstraint = this->constraints.template emplace_back();
+            for(int index: DOMAIN::dependencies(state)) {
+                newConstraint.coefficients.insert(index, 1); // assumes unity coefficients, true for now
+            }
+            newConstraint.constant = (int)p;
         }
     }
 
-    // convert to a distribution over trajectories
-    operator ConstrainedFactorisedDistribution<Trajectory<AGENT>>() {
-        return this->toTrajectoryDistribution(0);
-    }
+//    // convert to a distribution over trajectories
+//    operator ConstrainedFactorisedDistribution<Trajectory<AGENT>>() {
+//        return this->toTrajectoryDistribution(0);
+//    }
 
 
 //    SparseFunction<std::pair<double,bool>,const Trajectory<AGENT> &> getTrajectoryFactor(int agentId) {
@@ -101,13 +106,13 @@ public:
         return std::pair(logP, true);
     }
 
-    friend std::ostream &operator <<(std::ostream &out, const BernoulliStartState<AGENT> &startState) {
+    friend std::ostream &operator <<(std::ostream &out, const BernoulliStartState<DOMAIN> &startState) {
         out << "{ ";
         for(const EqualityConstraint<ABM::occupation_type> &constraint: startState.constraints) {
             out << "P(X" << constraint.coefficients.indices[0] << ")=" << constraint.constant << " ";
         }
         for(const auto &factor: startState.logFactors) {
-            out << "P(X" << factor.dependencies[0] << ")=" << 1.0 - factor(ModelState<AGENT>::zero).first << " ";
+            out << "P(X" << factor.dependencies[0] << ")=" << 1.0 - factor(DOMAIN::zero).first << " ";
         }
         out << "}";
         return out;

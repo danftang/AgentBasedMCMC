@@ -90,6 +90,10 @@ public:
         return slice;
     }
 
+    static std::vector<int> dependencies(const State<AGENT> &state) {
+        return state.forwardOccupationDependencies();
+    }
+
 private:
     friend class boost::serialization::access;
 

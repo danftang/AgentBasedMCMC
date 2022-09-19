@@ -67,6 +67,7 @@ namespace dataflow {
         };
     }
 
+
     // requires that CONSUMER(PRODUCER) returns bool
     template<typename PRODUCER, typename CONSUMER, typename = std::void_t<
                 std::enable_if_t<
@@ -76,6 +77,7 @@ namespace dataflow {
     void operator >>=(PRODUCER &&producer, CONSUMER &&consumer) {
         while(consumer(producer())) {};
     }
+
 
     class Transform {
     public:

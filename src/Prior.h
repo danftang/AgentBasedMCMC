@@ -11,24 +11,22 @@
 #include "ConstrainedFactorisedDistribution.h"
 #include "PoissonStartState.h"
 
-template<typename STARTSTATE,
-        typename AGENT  = typename STARTSTATE::domain_type::agent_type,
-        typename        = std::is_base_of<ConstrainedFactorisedDistribution<ModelState<AGENT>>,STARTSTATE>
-        >
-class Prior: public ConstrainedFactorisedDistribution<Trajectory<AGENT>, typename STARTSTATE::coefficient_type> {
+template<typename DOMAIN, typename AGENT  = typename DOMAIN::agent_type>
+class Prior: public ConstrainedFactorisedDistribution<DOMAIN> {
 public:
-    STARTSTATE    startState;
+    std::function<const ModelState<AGENT> &()> startStateSampler;
     int           nTimesteps;
 
-    Prior(): nTimesteps(0) { }
+//    Prior(): nTimesteps(0) { }
 
-    Prior(int NTimesteps, STARTSTATE StartState):
+    template<class STARTSTATE>
+    Prior(int NTimesteps, const STARTSTATE &startState):
         nTimesteps(NTimesteps),
-        startState(std::move(StartState))
+        startStateSampler(startState.modelStateSampler)
     {
         addContinuityConstraints();
         addInteractionFactors();
-        (*this) *= startState.toTrajectoryDistribution(0);
+        (*this) *= startState;
     }
 
 
@@ -107,7 +105,7 @@ public:
 
 
     std::function<const Trajectory<AGENT> &()> sampler() const {
-        return [sample = Trajectory<AGENT>(nTimesteps), startStateSampler = startState.sampler()]() mutable -> const Trajectory<AGENT> & {
+        return [sample = Trajectory<AGENT>(nTimesteps), startStateSampler = startStateSampler]() mutable -> const Trajectory<AGENT> & {
             ModelState<AGENT> t0State = startStateSampler();
             ModelState<AGENT> t1State;
             for (int t = 0; t < sample.nTimesteps(); ++t) {
@@ -115,7 +113,7 @@ public:
                     AGENT agent(agentId);
                     int nAgents = t0State[agentId];
                     for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
-                        sample[Event<AGENT>(t, agent, actId)] = 0.0;
+                        sample[Event<AGENT>(t, agent, actId)] = 0;
                     }
                     std::vector<double> actPMF = agent.timestep(t0State);
                     for (int a = 0; a < nAgents; ++a) {

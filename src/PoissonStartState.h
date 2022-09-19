@@ -12,15 +12,18 @@
 #include "ModelState.h"
 #include "ConstrainedFactorisedDistribution.h"
 
-template<class AGENT>
-class PoissonStartState: public ConstrainedFactorisedDistribution<ModelState<AGENT>> {
+template<class DOMAIN, class AGENT = typename DOMAIN::agent_type>
+class PoissonStartState: public ConstrainedFactorisedDistribution<DOMAIN> {
 public:
+
+    std::function<const ModelState<AGENT> &()> modelStateSampler;
 
     explicit PoissonStartState(std::function<double(AGENT)> agentToLambda) {
             this->factors.reserve(AGENT::domainSize());
             for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
                 addPoissonFactor(agentId, agentToLambda(AGENT(agentId)));
             }
+            modelStateSampler = sampler(agentToLambda);
     }
 
 
@@ -29,43 +32,32 @@ public:
     }) {}
 
 
-    std::function<const ModelState<AGENT> &()> sampler() const {
-        return [this, sample = ModelState<AGENT>()]() mutable -> const ModelState<AGENT> & {
-            for(const auto &constraint: this->constraints) {
-                assert(constraint.constant == 0);
-                sample[constraint.coefficients.indices[0]] = 0;
-            }
-            for(const auto &factor: this->factors) {
-                sample[factor.dependencies[0]] = 1; // to extract lambda from the factor
-                sample[factor.dependencies[0]] = Random::nextPoisson(exp(factor(sample).first));
+    static std::function<const ModelState<AGENT> &()> sampler(std::function<double(AGENT)> &agentToLambda) {
+        return [agentToLambda, sample = ModelState<AGENT>()]() mutable -> const ModelState<AGENT> & {
+            for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+                sample[agentId] = Random::nextPoisson(agentToLambda(AGENT(agentId)));
             }
             return  sample;
         };
     }
 
 
-//    const ModelState<AGENT> &nextSample() const {
-//        static thread_local ModelState<AGENT> sample;
-//        for(const auto &constraint: this->constraints) {
-//            sample[constraint.coefficients.indices[0]] = constraint.constant;
-//        }
-//        for(const auto &factor: this->logFactors) {
-//            sample[factor.dependencies[0]] = Random::nextPoisson(-factor(ModelState<AGENT>::zero).first);
-//        }
-//        return sample;
-//    }
-
     void addPoissonFactor(int agentId, double lambda) {
+        State<AGENT> state(0,agentId);
         if(lambda == 0.0) {
-            this->addConstraint(1*X(agentId) == 0);
+            auto newConstraint = this->constraints.emplace_back();
+            for(int index: DOMAIN::dependencies(state)) {
+                newConstraint.coefficients.insert(index, 1); // assumes unity coefficients, true for now
+            }
+            newConstraint.constant = 0;
         } else {
             double logLambda = log(lambda);
             this->addFactor(
-                    SparseFunction<std::pair<double, bool>, const ModelState<AGENT> &>(
-                            [logLambda, agentId](const ModelState<AGENT> &modelState) {
-                                return PoissonStartState<AGENT>::widenedUnnormalisedPoisson(logLambda,modelState[agentId]);
+                    SparseFunction<std::pair<double, bool>, const DOMAIN &>(
+                            [logLambda, state](const DOMAIN &x) {
+                                return PoissonStartState::widenedUnnormalisedPoisson(logLambda, x[state]);
                             },
-                            {agentId}
+                            DOMAIN::dependencies(state)
                     )
             );
         }
@@ -79,7 +71,7 @@ public:
         return std::pair(occupation*logLambda - lgamma(occupation+1), true);    // log of Poisson
     }
 
-    friend std::ostream &operator <<(std::ostream &out, const PoissonStartState<AGENT> &startState) {
+    friend std::ostream &operator <<(std::ostream &out, const PoissonStartState<DOMAIN> &startState) {
         out << "{ ";
         for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
             out << startState.lambda(agentId) << " ";
@@ -88,9 +80,9 @@ public:
         return out;
     }
 
-    operator ConstrainedFactorisedDistribution<Trajectory<AGENT>>() {
-        return this->toTrajectoryDistribution(0);
-    }
+//    operator ConstrainedFactorisedDistribution<Trajectory<AGENT>>() {
+//        return this->toTrajectoryDistribution(0);
+//    }
 
 
     // convert to a distribution over trajectories

@@ -33,14 +33,21 @@ public:
     StateTrajectory(int nTimesteps): std::vector<ModelState<AGENT>>(nTimesteps) { }
 
 
-    ABM::occupation_type operator [](const State<AGENT> &agentState) const {
-        if(agentState.time >= this->size()) return 0;
+    const ABM::occupation_type &operator [](const State<AGENT> &agentState) const {
+//        if(agentState.time >= this->size()) return 0;
+        assert(agentState.time < this->size());
         return (*this)[agentState.time][agentState.agent];
     }
 
     ABM::occupation_type &operator [](const State<AGENT> &agentState) {
         return (*this)[agentState.time][agentState.agent];
     }
+
+//    const ABM::occupation_type &operator [](int index) const {
+//        int time = stateTrajectoryIndex / AGENT::domainSize();
+//        int state = stateTrajectoryIndex % AGENT::domainSize();
+//        return (*this)[time][state];
+//    }
 
 };
 

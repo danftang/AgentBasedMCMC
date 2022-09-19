@@ -23,9 +23,9 @@ using namespace dataflow;
 void Experiments::BinomialAgentSingleObservation() {
     constexpr int nTimesteps = 2;
     constexpr int GRIDSIZE = nTimesteps+1;
-    constexpr int nSamples = 250000;
+    constexpr int nSamples = 25000;
     constexpr int nBurnin = 100;
-    constexpr int nRejectionSamples = 250000;
+    constexpr int nRejectionSamples = 25000;
     constexpr double kappa = 2.0;
 
     double p0 = 1.0;
@@ -33,7 +33,7 @@ void Experiments::BinomialAgentSingleObservation() {
     double pObserveIfPresent = 0.9;
 
     doValidationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
-                           BernoulliStartState<BinomialAgent<GRIDSIZE>>({p0, p1, 0.0}),
+                           BernoulliStartState<Trajectory<BinomialAgent<GRIDSIZE>>>({p0, p1, 0.0}),
                            Likelihood(State<BinomialAgent<GRIDSIZE>>(1, 0), 1, pObserveIfPresent));
     std::cout << "Exact state = " << 0.5*p0+ 0.25*p1 << " " << 0.5*p0 + 0.25*p1 << " " << 0.5*p1 << std::endl;
 }
@@ -47,7 +47,7 @@ void Experiments::CatMouseSingleObservation() {
     constexpr double kappa = 3.0;//1.75;
 
     doValidationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
-            BernoulliStartState<CatMouseAgent>({0.9, 0.1, 0.1, 0.9}),
+            BernoulliStartState<Trajectory<CatMouseAgent>>({0.9, 0.1, 0.1, 0.9}),
             Likelihood(State(1,CatMouseAgent(CatMouseAgent::CAT, CatMouseAgent::LEFT)),1,1.0));
 }
 
@@ -63,7 +63,7 @@ void Experiments::PredPreySingleObservation() {
     constexpr double kappa = 6.0;
 
     doValidationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
-            PoissonStartState<PredPreyAgent<GRIDSIZE>>([](PredPreyAgent<GRIDSIZE> agent) {
+            PoissonStartState<Trajectory<PredPreyAgent<GRIDSIZE>>>([](PredPreyAgent<GRIDSIZE> agent) {
                 return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
             }),
             Likelihood(State(1,PredPreyAgent<GRIDSIZE>(1, 1, PredPreyAgent<GRIDSIZE>::PREY)),1,1.0)
@@ -87,7 +87,7 @@ void Experiments::CatMouseAssimilation() {
     constexpr double kappa = 3.0;
 
     ABM::kappa = kappa;
-    Prior prior(nTimesteps, FixedPopulationStartState<CatMouseAgent>({0, 0, 1, 1},{1,1}));
+    Prior<Trajectory<CatMouseAgent>> prior(nTimesteps, FixedPopulationStartState<Trajectory<CatMouseAgent>>({0, 0, 1, 1},{1,1}));
     std::cout << "Prior is\n" << prior << std::endl;
 
     Trajectory<CatMouseAgent> realTrajectory = prior.sampler()();
@@ -150,7 +150,7 @@ void Experiments::doValidationExperiment(int nTimesteps, int nBurnin, int nSampl
                                          const STARTSTATE &startStateDistribution,
                                          const ConstrainedFactorisedDistribution<Trajectory<AGENT>> &likelihood) {
     ABM::kappa = kappa;
-    Prior prior(nTimesteps, startStateDistribution);
+    Prior<Trajectory<AGENT>> prior(nTimesteps, startStateDistribution);
     std::cout << "Prior is\n" << prior << std::endl;
 
     std::cout << "Likelihood is\n" << likelihood << std::endl;
