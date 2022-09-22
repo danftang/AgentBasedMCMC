@@ -10,7 +10,7 @@
 #include "RejectionSampler.h"
 #include "Forecast.h"
 #include "Likelihood.h"
-#include "diagnostics/AgentDataflow.h"
+#include "diagnostics/Dataflow.h"
 
 using namespace dataflow;
 
@@ -20,8 +20,9 @@ public:
     static void CatMouseSingleObservation();
     static void PredPreySingleObservation();
     static void CatMouseAssimilation();
+    static void Animation();
 
-    template<class AGENT, class STARTSTATE>
+    template<class DOMAIN, class STARTSTATE>
     static void doValidationExperiment(
             int nTimesteps,
             int nBurnin,
@@ -29,7 +30,7 @@ public:
             int nRejectionSamples,
             double kappa,
             const STARTSTATE &startStateDistribution,
-            const ConstrainedFactorisedDistribution<Trajectory<AGENT>> &likelihood);
+            const ConstrainedFactorisedDistribution<DOMAIN> &likelihood);
 };
 
 

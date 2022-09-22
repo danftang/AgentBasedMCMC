@@ -25,10 +25,7 @@ public:
                 partitionToAgents.resize(partitionId+1);
             }
             partitionToAgents[partitionId].push_back(agentId);
-            State<AGENT> state(0,agentId);
-            for(int dependency: DOMAIN::dependencies(state)) {
-                constraints[partitionId].coefficients.insert(dependency,1);
-            }
+            constraints[partitionId].coefficients.insert(DOMAIN::coefficients(State<AGENT>(0,agentId)));
         }
         for(int partitionId=0; partitionId < constraints.size(); ++partitionId) {
             constraints[partitionId].constant = partitionToPopulation(partitionId);

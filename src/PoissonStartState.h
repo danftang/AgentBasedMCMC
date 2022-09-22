@@ -12,6 +12,9 @@
 #include "ModelState.h"
 #include "ConstrainedFactorisedDistribution.h"
 
+// DOMAIN should be an ABM trajectory that implements index operator over States
+// and implements a static coefficients(state) function that gives the
+// coefficients of a linear transform from a trajectory to a given state occupation
 template<class DOMAIN, class AGENT = typename DOMAIN::agent_type>
 class PoissonStartState: public ConstrainedFactorisedDistribution<DOMAIN> {
 public:
@@ -45,11 +48,7 @@ public:
     void addPoissonFactor(int agentId, double lambda) {
         State<AGENT> state(0,agentId);
         if(lambda == 0.0) {
-            auto newConstraint = this->constraints.emplace_back();
-            for(int index: DOMAIN::dependencies(state)) {
-                newConstraint.coefficients.insert(index, 1); // assumes unity coefficients, true for now
-            }
-            newConstraint.constant = 0;
+            auto newConstraint = this->constraints.emplace_back(DOMAIN::coefficients(state), 0);
         } else {
             double logLambda = log(lambda);
             this->addFactor(
@@ -57,7 +56,7 @@ public:
                             [logLambda, state](const DOMAIN &x) {
                                 return PoissonStartState::widenedUnnormalisedPoisson(logLambda, x[state]);
                             },
-                            DOMAIN::dependencies(state)
+                            DOMAIN::coefficients(state).indices
                     )
             );
         }

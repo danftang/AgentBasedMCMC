@@ -23,6 +23,7 @@ template<int GRIDSIZE>
 class PredPreyProblem {
 public:
     typedef PredPreyAgent<GRIDSIZE> agent_type;
+    typedef Trajectory<PredPreyAgent<GRIDSIZE>> trajectory_type;
 
     double                              pObserveIfPresent;
     std::vector<std::pair<State<agent_type>,int>> observations;
@@ -30,7 +31,7 @@ public:
     double                              pPredator; // start state parameters
     double                              pPrey;
 
-    Trajectory<agent_type> realTrajectory;
+    trajectory_type realTrajectory;
 
     double                              kappa;
 //    Prior<PoissonStartState<agent_type>>      prior;
@@ -55,7 +56,7 @@ public:
     pPrey(pPrey),
     realTrajectory(prior().sampler()()),
     kappa(kappa),
-    observations(Likelihood<agent_type>::generateObservaions(realTrajectory, pMakeObservation, pObserveIfPresent))
+    observations(Likelihood<trajectory_type>::generateObservaions(realTrajectory, pMakeObservation, pObserveIfPresent))
     {
 
     }
@@ -64,8 +65,8 @@ public:
         return Prior(nTimesteps, startStatePrior());
     };
 
-    Likelihood<agent_type> likelihood() {
-        return Likelihood<agent_type>(observations, pObserveIfPresent);
+    Likelihood<trajectory_type> likelihood() {
+        return Likelihood<trajectory_type>(observations, pObserveIfPresent);
     }
 
 

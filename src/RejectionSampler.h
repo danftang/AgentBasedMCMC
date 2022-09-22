@@ -22,10 +22,9 @@ public:
     }
 
 
-    template<class STARTSTATE, class AGENT>
-    RejectionSampler(Prior<STARTSTATE> & prior, const ConstrainedFactorisedDistribution<Trajectory<AGENT>> & likelihood) :
+    RejectionSampler(Prior<DOMAIN> & prior, const ConstrainedFactorisedDistribution<DOMAIN> & likelihood) :
         priorSampler(prior.sampler()),
-        likelihood([&likelihood](const Trajectory<AGENT> &X) {
+        likelihood([&likelihood](const DOMAIN &X) {
             return likelihood.Pexact(X);
         }) {
     }

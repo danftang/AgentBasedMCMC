@@ -4,24 +4,37 @@
 
 #include "CatMouseAgent.h"
 
-// returns LogPMF over acts given surrounding agents
-std::vector<double> CatMouseAgent::timestep(const ModelState<CatMouseAgent> &others) const {
-    std::vector<double> actPmf(actDomainSize());
 
-    if (type() == CAT) {
-        actPmf[MOVE] = pCatMove;
-        actPmf[STAYPUT] = 1.0 - pCatMove;
-    } else {
-        if (others[CatMouseAgent(CAT, position())] >= 1.0) {
-            actPmf[MOVE] = 1.0;
-            actPmf[STAYPUT] = 0.0;
-        } else {
-            actPmf[MOVE] = 0.0;
-            actPmf[STAYPUT] = 1.0;
-        }
-    }
-    return actPmf;
+TrajectoryDependencies<CatMouseAgent> CatMouseAgent::eventProbDependencies(const Event<CatMouseAgent> &event) {
+    if (event.agent().type() == CAT) return {{},{}};
+    return {{State(event.time(), CatMouseAgent(CAT, event.agent().position()))},{}};
 }
+
+std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) const {
+    if(act == MOVE) {
+        return std::vector<CatMouseAgent>({ CatMouseAgent(type(), Position((position()+1)%2)) });
+    }
+    return std::vector<CatMouseAgent>({ CatMouseAgent(type(), position()) });
+}
+
+// returns LogPMF over acts given surrounding agents
+//std::vector<double> CatMouseAgent::timestep(const ModelState<CatMouseAgent> &others) const {
+//    std::vector<double> actPmf(actDomainSize());
+//
+//    if (type() == CAT) {
+//        actPmf[MOVE] = pCatMove;
+//        actPmf[STAYPUT] = 1.0 - pCatMove;
+//    } else {
+//        if (others[CatMouseAgent(CAT, position())] >= 1.0) {
+//            actPmf[MOVE] = 1.0;
+//            actPmf[STAYPUT] = 0.0;
+//        } else {
+//            actPmf[MOVE] = 0.0;
+//            actPmf[STAYPUT] = 1.0;
+//        }
+//    }
+//    return actPmf;
+//}
 
 //std::vector<double> CatMouseAgent::timestep(const Trajectory<CatMouseAgent> &others, int time) const {
 //    std::vector<double> actPmf(actDomainSize());
@@ -50,13 +63,6 @@ std::vector<double> CatMouseAgent::timestep(const ModelState<CatMouseAgent> &oth
 //}
 
 
-std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) const {
-    if(act == MOVE) {
-        return std::vector<CatMouseAgent>({ CatMouseAgent(type(), Position((position()+1)%2)) });
-    } else {
-        return std::vector<CatMouseAgent>({ CatMouseAgent(type(), position()) });
-    }
-}
 //
 //
 //// result of static analysis of timestep member function...
@@ -72,7 +78,7 @@ std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) const {
 //    }
 //}
 
-std::vector<CatMouseAgent> CatMouseAgent::neighbours() const {
-    if(type() == MOUSE) return { CatMouseAgent(CAT, position()) };
-    return {};
-}
+//std::vector<CatMouseAgent> CatMouseAgent::neighbours() const {
+//    if(type() == MOUSE) return { CatMouseAgent(CAT, position()) };
+//    return {};
+//}

@@ -31,16 +31,25 @@ public:
 
     std::vector<function_type>           factors;
     EqualityConstraints<CONSTRAINTCOEFF> constraints;        // linear constraints
-//    int                                  domainDimension;
 
 
     void addFactor(SparseFunction<std::pair<double,bool>,const DOMAIN &> factor) {
         factors.push_back(std::move(factor));
     }
 
+    template<class INDEXDEPENDENCIES>
+    void addFactor(std::function<std::pair<double,bool>(const DOMAIN &)> func, INDEXDEPENDENCIES &&indexDependencies) {
+        factors.emplace_back(std::move(func), std::forward<INDEXDEPENDENCIES>(indexDependencies));
+    }
+
     void addConstraint(EqualityConstraint<CONSTRAINTCOEFF> constraint) {
-//        this->domainDimension = std::max(this->domainDimension, constraint.maxCoefficientIndex());
         constraints.push_back(std::move(constraint));
+    }
+
+    void addConstraints(EqualityConstraints<CONSTRAINTCOEFF> constraints) {
+        for(auto &constraint : constraints) {
+            this->constraints.push_back(std::move(constraint));
+        }
     }
 
 //    double exactFactorValue(int factorIndex, const DOMAIN &X) const {
@@ -160,26 +169,26 @@ protected:
     // If this distribution's domain is ModelState<AGENT> then this
     // generates a set of factors on Trajectory<AGENT> domain, with the
     // constraints applied at the given time.
-    template<typename AGENT = typename DOMAIN::agent_type, typename = std::is_same<ModelState<AGENT>, DOMAIN>>
-    auto trajectoryFactors(int time) {
-        std::vector<SparseFunction<std::pair<double, bool>, const Trajectory<AGENT> &>> trajFactors;
-        for (const auto &modelStateFactor: factors) {
-            std::vector<int> trajectoryDependencies;
-            trajectoryDependencies.reserve(modelStateFactor.dependencies.size() * AGENT::actDomainSize());
-            for (int agentId: modelStateFactor.dependencies) {
-                for (int actId: State<AGENT>(time, agentId).forwardOccupationDependencies()) {
-                    trajectoryDependencies.push_back(actId);
-                }
-            }
-            trajFactors.emplace_back(
-                    [modelFactor = modelStateFactor, time](const Trajectory<AGENT> &trajectory) {
-                        return modelFactor(trajectory.temporaryPartialModelState(time,modelFactor.dependencies));
-                    },
-                    trajectoryDependencies
-            );
-        }
-        return trajFactors;
-    }
+//    template<typename AGENT = typename DOMAIN::agent_type, typename = std::is_same<ModelState<AGENT>, DOMAIN>>
+//    auto trajectoryFactors(int time) {
+//        std::vector<SparseFunction<std::pair<double, bool>, const Trajectory<AGENT> &>> trajFactors;
+//        for (const auto &modelStateFactor: factors) {
+//            std::vector<int> trajectoryDependencies;
+//            trajectoryDependencies.reserve(modelStateFactor.dependencies.size() * AGENT::actDomainSize());
+//            for (int agentId: modelStateFactor.dependencies) {
+//                for (int actId: State<AGENT>(time, agentId).forwardOccupationDependencies()) {
+//                    trajectoryDependencies.push_back(actId);
+//                }
+//            }
+//            trajFactors.emplace_back(
+//                    [modelFactor = modelStateFactor, time](const Trajectory<AGENT> &trajectory) {
+//                        return modelFactor(trajectory.temporaryPartialModelState(time,modelFactor.dependencies));
+//                    },
+//                    trajectoryDependencies
+//            );
+//        }
+//        return trajFactors;
+//    }
 
 
     // Transforms factors to a new domain subject to a linear transform from the new domain to the
@@ -206,19 +215,19 @@ protected:
 //    }
 
 
-    template<typename AGENT = typename DOMAIN::agent_type, typename = std::is_same<ModelState<AGENT>,DOMAIN>>
-    EqualityConstraints<CONSTRAINTCOEFF> trajectoryConstraints(int time) {
-        EqualityConstraints<CONSTRAINTCOEFF> trajConstraints;
-        for(auto &modelStateConstraint: constraints) {
-            EqualityConstraint<CONSTRAINTCOEFF> &trajectoryConstraint = trajConstraints.emplace_back();
-            for(int nzi = 0; nzi < modelStateConstraint.coefficients.sparseSize(); ++nzi) {
-                auto actIds = State<AGENT>(time, modelStateConstraint.coefficients.indices[nzi]).forwardOccupationDependencies();
-                for(int actId: actIds) trajectoryConstraint.coefficients.insert(actId, modelStateConstraint.coefficients.values[nzi]);
-            }
-            trajectoryConstraint.constant = modelStateConstraint.constant;
-        }
-        return trajConstraints;
-    }
+//    template<typename AGENT = typename DOMAIN::agent_type, typename = std::is_same<ModelState<AGENT>,DOMAIN>>
+//    EqualityConstraints<CONSTRAINTCOEFF> trajectoryConstraints(int time) {
+//        EqualityConstraints<CONSTRAINTCOEFF> trajConstraints;
+//        for(auto &modelStateConstraint: constraints) {
+//            EqualityConstraint<CONSTRAINTCOEFF> &trajectoryConstraint = trajConstraints.emplace_back();
+//            for(int nzi = 0; nzi < modelStateConstraint.coefficients.sparseSize(); ++nzi) {
+//                auto actIds = State<AGENT>(time, modelStateConstraint.coefficients.indices[nzi]).forwardOccupationDependencies();
+//                for(int actId: actIds) trajectoryConstraint.coefficients.insert(actId, modelStateConstraint.coefficients.values[nzi]);
+//            }
+//            trajectoryConstraint.constant = modelStateConstraint.constant;
+//        }
+//        return trajConstraints;
+//    }
 };
 
 

@@ -13,6 +13,7 @@
 #include "include/Random.h"
 #include "ActFermionicDistribution.h"
 #include "ABM.h"
+#include "EqualityConstraints.h"
 
 template<typename AGENT>
 class Trajectory: public std::vector<ABM::occupation_type> {
@@ -32,6 +33,7 @@ public:
         resize(nTimesteps*AGENT::domainSize()*AGENT::actDomainSize(),0);
     }
 
+    ModelState<AGENT> modelState(int time) const { return ModelState<AGENT>(*this, time); }
 
     // occupation number of an agent state at a particular time
     value_type operator[](const State<AGENT> &state) const {
@@ -39,26 +41,23 @@ public:
         return(state.time < nTimesteps())?state.forwardOccupation(*this):state.backwardOccupation(*this);
     }
 
-    value_type &operator[](const Event<AGENT> &event) {
-        return std::vector<value_type>::operator[](event.id);
-    }
-
     const value_type &operator[](const Event<AGENT> &event) const {
         return std::vector<value_type>::operator[](event.id);
     }
 
-    value_type &operator[](int eventId) {
-        return std::vector<value_type>::operator[](eventId);
+    value_type &operator[](const Event<AGENT> &event) {
+        return std::vector<value_type>::operator[](event.id);
     }
 
-    const value_type &operator[](int eventId) const {
-        return std::vector<value_type>::operator[](eventId);
+    value_type &operator[](int index) {
+        return std::vector<value_type>::operator[](index);
+    }
+
+    const value_type &operator[](int index) const {
+        return std::vector<value_type>::operator[](index);
     }
 
 
-    ModelState<AGENT> endState() const {
-        return ModelState<AGENT>(*this, nTimesteps(), nTimesteps());
-    }
 
     int nTimesteps() const { return size()/(AGENT::domainSize()*AGENT::actDomainSize()); }
 
@@ -66,12 +65,12 @@ public:
 
     static int dimension(int nTimesteps) { return AGENT::domainSize()*AGENT::actDomainSize()*nTimesteps; }
 
-    const ModelState<AGENT> &temporaryPartialModelState(int time, const std::vector<int> &agentIds) const {
-        static thread_local ModelState<AGENT> state;
-        for(int agentId: agentIds)
-            state[agentId] = (*this)[State<AGENT>(time, agentId)];
-        return state;
-    }
+//    const ModelState<AGENT> &temporaryPartialModelState(int time, const std::vector<int> &agentIds) const {
+//        static thread_local ModelState<AGENT> state;
+//        for(int agentId: agentIds)
+//            state[agentId] = (*this)[State<AGENT>(time, agentId)];
+//        return state;
+//    }
 
     const ModelState<AGENT> &temporaryPartialModelState(int time, const std::vector<AGENT> &agentIds) const {
         static thread_local ModelState<AGENT> state;
@@ -90,9 +89,39 @@ public:
         return slice;
     }
 
-    static std::vector<int> dependencies(const State<AGENT> &state) {
-        return state.forwardOccupationDependencies();
+
+    // gives the coefficients to create the givven state
+    static SparseVec<value_type> coefficients(const State<AGENT> &state) {
+        SparseVec<value_type> coeffs;
+        coeffs.indices = state.forwardOccupationDependencies();
+        coeffs.values.resize(coeffs.indices.size(),1);
+        return coeffs;
     }
+
+    static int indexOf(const Event<AGENT> &event) {
+        return event.id;
+    }
+
+    static EqualityConstraints<value_type> constraints(int nTimesteps) {
+        EqualityConstraints<value_type> constraints;
+        for(int time = 1; time < nTimesteps; ++time) {
+            for(int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
+                SparseVec<ABM::coefficient_type> coefficients;
+                // outgoing edges
+                for (int act = 0; act < AGENT::actDomainSize(); ++act) {
+                    coefficients.insert(indexOf(Event<AGENT>(time, agentState, act)), 1);
+                }
+                // incoming edges
+                for (const Event<AGENT> &inEdge: State<AGENT>::incomingEventsByState[agentState]) {
+                    coefficients.insert(indexOf(Event<AGENT>(time-1,inEdge.agent(),inEdge.act())), -1);
+                }
+                constraints.emplace_back(coefficients,0);
+            }
+        }
+        return constraints;
+    }
+
+
 
 private:
     friend class boost::serialization::access;

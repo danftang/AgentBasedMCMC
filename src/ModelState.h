@@ -26,16 +26,20 @@ public:
         assert(size() == AGENT::domainSize());
     }
 
+    template<class DOMAIN>
+    ModelState(const DOMAIN &trajectory, int time);
 
-    ModelState(const std::vector<ABM::occupation_type> &trajectory, int nTimesteps, int time) : ModelState() {
-        assert(time>=0 && time<=nTimesteps);
-        if(time < nTimesteps) {
-            for (int stateId = 0; stateId < AGENT::domainSize(); ++stateId)
-                (*this)[stateId] = State<AGENT>(time,stateId).forwardOccupation(trajectory);
-        } else {
-            for (int stateId = 0; stateId < AGENT::domainSize(); ++stateId)
-                (*this)[stateId] = State<AGENT>(time,stateId).backwardOccupation(trajectory);
-        }
+    // so that Modelstate can also look like a trajectory
+    const value_type &operator[](const State<AGENT> &state) const {
+        return std::vector<value_type>::operator[]((int)state.agent);
+    }
+
+    const value_type &operator[](const AGENT &agent) const {
+        return std::vector<value_type>::operator[]((int)agent);
+    }
+
+    value_type &operator[](const AGENT &agent) {
+        return std::vector<value_type>::operator[]((int)agent);
     }
 
     void setToZero() {
@@ -108,6 +112,13 @@ public:
 //    }
 
 };
+
+template<class AGENT>
+template<class DOMAIN>
+ModelState<AGENT>::ModelState(const DOMAIN &trajectory, int time) : ModelState() {
+    for (int stateId = 0; stateId < AGENT::domainSize(); ++stateId)
+        (*this)[stateId] = trajectory[State<AGENT>(time,stateId)];
+}
 
 template<typename AGENT> const ModelState<AGENT> ModelState<AGENT>::zero;
 

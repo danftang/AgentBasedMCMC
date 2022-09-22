@@ -69,8 +69,8 @@ public:
     ConstrainedFactorisedSampler(
             const ConstrainedFactorisedDistribution<DOMAIN, ELEMENT> &targetDistribution,
             DOMAIN validInitialSolution,
-            std::vector<SparseVec<ELEMENT>> basisVectors) {
-        init(targetDistribution, std::move(basisVectors), std::move(validInitialSolution));
+            std::vector<SparseVec<ELEMENT>> basisVectors): X(validInitialSolution) {
+        init(targetDistribution, std::move(basisVectors));
     }
 
 
@@ -80,7 +80,7 @@ public:
     ConstrainedFactorisedSampler(
             const ConstrainedFactorisedDistribution<DOMAIN,ELEMENT> &targetDistribution,
             DOMAIN initialGuess
-            )
+            ): X(initialGuess)
     {
         // calculate basis
         TableauNormMinimiser<ELEMENT> constraintTableau(targetDistribution);
@@ -92,8 +92,8 @@ public:
             basisVecs.push_back(-uniqueBasisVectors[i]);
             basisVecs.push_back(std::move(uniqueBasisVectors[i]));
         }
-        constraintTableau.snapToSubspace(initialGuess);
-        init(targetDistribution, std::move(basisVecs), std::move(initialGuess));
+        constraintTableau.snapToSubspace(X);
+        init(targetDistribution, std::move(basisVecs));
     }
 
 
@@ -101,10 +101,8 @@ public:
     // initialSolution should be a valid solution of the constraints of targetDistribution
     void init(
             const ConstrainedFactorisedDistribution<DOMAIN,ELEMENT> & targetDistribution,
-            std::vector<SparseVec<ELEMENT>> && basisVecs,
-            DOMAIN && initialSolution
+            std::vector<SparseVec<ELEMENT>> && basisVecs
             ) {
-        X = std::move(initialSolution);
         assert(targetDistribution.constraints.isValidSolution(X));
 
         initDependencies(targetDistribution, std::move(basisVecs));
@@ -179,6 +177,7 @@ public:
         std::cout << "mean basis size = " << nBasisEntries * 1.0 / basisVectors.size() << std::endl;
         std::cout << "mean dependency col size = " << dependencyMatrix.size() * 1.0 / basisVectors.size() << std::endl;
         std::cout << "mean dependency row size = " << dependencyMatrix.size() * 1.0/ targetDistribution.factors.size() << std::endl;
+        std::cout << "mean updates per transition = " << pow(dependencyMatrix.size(),2)*1.0/(basisVectors.size()*targetDistribution.factors.size())  << std::endl;
 
         // now transfer to forward and backward dependencies
         // set up structure, values will be added later

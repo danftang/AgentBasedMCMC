@@ -5,6 +5,7 @@
 #ifndef GLPKTEST_PLOTTER_H
 #define GLPKTEST_PLOTTER_H
 
+#include <thread>
 #include "gnuplot-iostream/gnuplot-iostream.h"
 
 // template specialization to allow valarrays to be recognized
@@ -93,12 +94,12 @@ public:
     }
 
     template<int GRIDSIZE>
-    void animate(Trajectory<PredPreyAgent<GRIDSIZE>> &predPreyTrajectory, double frameRate) {
+    void animate(Trajectory<PredPreyAgent<GRIDSIZE>> &predPreyTrajectory, double framesPerSecond) {
 
-        long frameDelay = 1000/frameRate;
+        long frameDelay = 1000 / framesPerSecond;
         for(int t=0; t <= predPreyTrajectory.nTimesteps(); ++t) {
             auto clockTime = std::chrono::steady_clock::now();
-            plot(predPreyTrajectory(t));
+            plot(ModelState<PredPreyAgent<GRIDSIZE>>(predPreyTrajectory,t));
             std::this_thread::sleep_until(clockTime + std::chrono::milliseconds(frameDelay));
         }
     }

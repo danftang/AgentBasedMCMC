@@ -10,12 +10,16 @@
 #include "../ModelState.h"
 #include "../Constraint.h"
 #include "../ABM.h"
+#include "../TrajectoryDependencies.h"
 
 // Agent that has no interactions and can either stay put or move right (on a circular, 1D domain)
 template<int GRIDSIZE>
 class BinomialAgent {
 public:
     static const double pMove; // probability of moving right
+    static const double lpMove; // log probability of moving right
+    static const double lpNotMove; // log probability of not moving
+
 
     typedef int Act;
 
@@ -29,35 +33,31 @@ public:
 
     operator int() const { return stateId; }
 
-    std::vector<double> timestep(const ModelState<BinomialAgent> &others) const {
-        return {1.0-pMove, pMove};
-    }
-
-//    double marginalTimestep(Act act) const {
-//         if(act == 0) return 1.0-pMove;
-//         return pMove;
+//    std::vector<double> timestep(const ModelState<BinomialAgent> &others) const {
+//        return {1.0-pMove, pMove};
 //    }
 
-    std::vector<BinomialAgent<GRIDSIZE>> neighbours() const {
-        return std::vector<BinomialAgent<GRIDSIZE>>();
+    template<class TRAJECTORY>
+    static double logEventProb(const Event<BinomialAgent<GRIDSIZE>> &event, const TRAJECTORY &trajectory) {
+        return event.act() == 1?lpMove:lpNotMove;
     }
 
+    static TrajectoryDependencies<BinomialAgent<GRIDSIZE>> eventProbDependencies(const Event<BinomialAgent<GRIDSIZE>> &event) {
+        return {{},{}};
+    }
 
     std::vector<BinomialAgent<GRIDSIZE>> consequences(Act act) const {
         if(act == 1) return { BinomialAgent<GRIDSIZE>((stateId + 1)%GRIDSIZE) };
         return { *this };
     }
 
-//    std::vector<Constraint<ABM::occupation_type>> constraints(int time, Act act) const {
-//        return { };
-//    }
-
-//    friend std::ostream &operator <<(std::ostream &out, const BinomialAgent &binomialAgent) {
-//        out << binomialAgent.stateId;
-//    }
 };
 
 template<int GRIDSIZE>
 const double BinomialAgent<GRIDSIZE>::pMove = 0.5;
+template<int GRIDSIZE>
+const double BinomialAgent<GRIDSIZE>::lpMove = log(pMove);
+template<int GRIDSIZE>
+const double BinomialAgent<GRIDSIZE>::lpNotMove = log(1.0-pMove);
 
 #endif //GLPKTEST_BINOMIALAGENT_H

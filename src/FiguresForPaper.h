@@ -9,7 +9,6 @@
 #include <thread>
 #include "PredPreyProblem.h"
 #include "diagnostics/MultiChainStats.h"
-#include "diagnostics/AgentDataflow.h"
 #include "Plotter.h"
 #include "SparseBasisSampler.h"
 
@@ -89,17 +88,18 @@ public:
         std::valarray<std::valarray<double>> lastSynopsisSamples(nSamples/2);
         ModelState<PredPreyAgent<GRIDSIZE>> firstMeanEndState;
         ModelState<PredPreyAgent<GRIDSIZE>> lastMeanEndState;
+        std::function trajectoryToEndState = [nTimesteps](const Trajectory<PredPreyAgent<GRIDSIZE>> &x) { return x.modelState(nTimesteps); };
 
         sampler >>= Drop(nBurnIn)
-                >>= TrajectoryToModelState<PredPreyAgent<GRIDSIZE>>(nTimesteps, nTimesteps)
+                >>= trajectoryToEndState
                 >>= SwitchOnClose {
                         Split {
-                                Map{ synopsis } >>= save(firstSynopsisSamples),
-                                Take(nSamples/2) >>= Sum<ModelState<PredPreyAgent<GRIDSIZE>>>(firstMeanEndState)
+                                synopsis >>= save(firstSynopsisSamples),
+                                Sum(nSamples/2,firstMeanEndState)
                         },
                         Split{
-                                Map{ synopsis } >>= save(lastSynopsisSamples),
-                                Take(nSamples/2) >>= Sum<ModelState<PredPreyAgent<GRIDSIZE>>>(firstMeanEndState)
+                                synopsis >>= save(lastSynopsisSamples),
+                                Sum(nSamples/2,firstMeanEndState)
                         },
                 };
 
@@ -181,7 +181,7 @@ public:
     static void plotProblemEndState() {
         PredPreyProblem<GRIDSIZE> problem(problemFilename);
         Plotter plotter;
-        plotter.plot(problem.realTrajectory.endState());
+        plotter.plot(ModelState(problem.realTrajectory, problem.realTrajectory.nTimesteps()));
     }
 
 
@@ -232,7 +232,7 @@ public:
         // plot end state
 
         Plotter endStatePlotter;
-        endStatePlotter.plot(problem.realTrajectory.endState(), stats.meanEndState(),"");
+        endStatePlotter.plot(ModelState(problem.realTrajectory,problem.realTrajectory.nTimesteps()), stats.meanEndState(),"");
 
         if(waitForKeypressToExit) {
             std::cout << "Press Enter to exit" << std::endl;

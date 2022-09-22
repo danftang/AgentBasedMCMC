@@ -36,10 +36,15 @@ public:
     std::vector<int>          dependencies;
 
 
-    SparseFunction(std::function<OUT(IN)> widenedFunction, std::vector<int> dependencies):
-            std::function<OUT(IN)>(std::move(widenedFunction)),
-            dependencies(std::move(dependencies))
-    { }
+    template<class CONTAINER>
+    SparseFunction(std::function<OUT(IN)> widenedFunction, const CONTAINER &dependencies):
+            std::function<OUT(IN)>(std::move(widenedFunction))
+    {
+                this->dependencies.reserve(dependencies.size());
+                for(int dependency: dependencies) {
+                    this->dependencies.push_back(dependency);
+                }
+    }
 
 
     // Convenience constructors for functions with low numbers of arguments

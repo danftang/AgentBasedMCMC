@@ -59,15 +59,11 @@ public:
                             [logP, logNotP, state](const DOMAIN &x) {
                                 return widenedLogBernoulli(logP, logNotP, x[state]); // log of Bernoulli
                             },
-                            DOMAIN::dependencies(state)
+                            DOMAIN::coefficients(state).indices
                     )
             );
         } else {
-            auto &newConstraint = this->constraints.template emplace_back();
-            for(int index: DOMAIN::dependencies(state)) {
-                newConstraint.coefficients.insert(index, 1); // assumes unity coefficients, true for now
-            }
-            newConstraint.constant = (int)p;
+            this->constraints.emplace_back(DOMAIN::coefficients(state), p);
         }
     }
 

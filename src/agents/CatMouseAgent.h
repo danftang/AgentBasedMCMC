@@ -22,6 +22,7 @@
 #include "../ModelState.h"
 #include "../Constraint.h"
 #include "../Trajectory.h"
+#include "../TrajectoryDependencies.h"
 
 class CatMouseAgent {
 public:
@@ -56,13 +57,19 @@ public:
     Position position() const { return Position(stateId%2); }
     Type type() const { return Type(stateId/2); }
 
-    std::vector<double> timestep(const ModelState<CatMouseAgent> &others) const;
+//    std::vector<double> timestep(const ModelState<CatMouseAgent> &others) const;
 //    std::vector<double> timestep(const Trajectory<CatMouseAgent> &others, int time) const;
 //    double marginalTimestep(Act act) const;
     std::vector<CatMouseAgent> consequences(Act act) const; // the consequences of an act
 //    // returns the constraints implied by the given act
 //    std::vector<Constraint<ABM::occupation_type>> constraints(int time, Act act) const; // to be generated automatically by static analysis...eventually.
-    std::vector<CatMouseAgent> neighbours() const;
+//
+//   std::vector<CatMouseAgent> neighbours() const;
+
+    template<class TRAJECTORY>
+    static double logEventProb(const Event<CatMouseAgent> &event, const TRAJECTORY &trajectory);
+
+    static TrajectoryDependencies<CatMouseAgent> eventProbDependencies(const Event<CatMouseAgent> &event);
 
     friend std::ostream &operator <<(std::ostream &out, const CatMouseAgent &agent) {
         out << (agent.type()==CAT?"CAT":"MSE") << ":" << (agent.position()==LEFT?"L":"R");
@@ -71,6 +78,15 @@ public:
 
 };
 
+
+template<class TRAJECTORY>
+double CatMouseAgent::logEventProb(const Event<CatMouseAgent> &event, const TRAJECTORY &trajectory) {
+    if (event.agent().type() == CAT) return (event.act() == MOVE)?log(pCatMove):log(1.0-pCatMove);
+    if (trajectory[State(event.time(), CatMouseAgent(CAT, event.agent().position()))] >= 1.0) {
+        return (event.act() == MOVE)?0.0:-INFINITY;
+    }
+    return (event.act() == MOVE)?-INFINITY:0.0;
+}
 
 
 #endif //GLPKTEST_CATMOUSEAGENT_H

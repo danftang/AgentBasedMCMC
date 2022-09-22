@@ -45,7 +45,7 @@ public:
                 int stateId = state.id();
                 if(staleStates.insert(stateId)) stateOccupationsForUndo.push_back(stateTrajectory[state.time][state.agent]);
                 if(staleFactors.insert(stateId)) factorValuesForUndo.push_back(stateLogProbs[stateId]);
-                for (AGENT neighbour: changedEvent.agent().neighbours()) {
+                for (AGENT neighbour: changedEvent.agent().eventProbDependencies()) {
                     int neighbourState = State<AGENT>(state.time, neighbour).id();
                     if(staleFactors.insert(neighbourState)) factorValuesForUndo.push_back(stateLogProbs[neighbourState]);
                 }

@@ -39,28 +39,33 @@ public:
     }
 
 
-    double operator [](int denseIndex) const;
 
     int sparseSize() const { return indices.size(); }
 
     std::vector<T> toDense() const;
     std::vector<T> toDense(int dimension) const;
-    void insert(int i, const T &v);
+    void insert(int i, const T &v); // Warning: none of the inserts check for duplicate entries
     void insert(int i, T &&v);
+    void insert(const SparseVec<T> &other);
     void clear();
     void resize(size_t size) { indices.resize(size); values.resize(size); }
     void reserve(size_t n) { indices.reserve(n); values.reserve(n);}
 
     int maxNonZeroIndex() const;
 
-    T operator[](int index) {
-        for(int i = 0;i<sparseSize(); ++i) {
-            if(indices[i] == index) return values[i];
-        }
-        return 0;
-    }
-
-
+    // TODO: need an accessor class for indexing
+//    T operator [](int denseIndex) const {
+//        auto sparseIterator = std::find(indices.begin(), indices.end(), denseIndex);
+//        if(sparseIterator != indices.end()) return values[sparseIterator - indices.begin()];
+//        return 0;
+//    }
+//
+//    T operator[](int index) {
+//        for(int i = 0;i<sparseSize(); ++i) {
+//            if(indices[i] == index) return values[i];
+//        }
+//        return 0;
+//    }
 
     template<typename ELE, typename = decltype(std::declval<T &>() *= std::declval<const ELE &>())>
     SparseVec &operator *=(const ELE &element) {
@@ -127,13 +132,6 @@ int SparseVec<T>::maxNonZeroIndex() const {
 }
 
 
-template<class T>
-double SparseVec<T>::operator[](int denseIndex) const {
-    auto sparseIterator = std::find(indices.begin(), indices.end(), denseIndex);
-    if(sparseIterator != indices.end()) return values[sparseIterator - indices.begin()];
-    return 0.0;
-}
-
 // Adds element,
 // doesn't delete if ind already exists
 template<class T>
@@ -151,6 +149,14 @@ void SparseVec<T>::insert(int i, T &&v) {
             indices.push_back(i);
             values.push_back(std::move(v));
         }
+}
+
+
+template<class T>
+void SparseVec<T>::insert(const SparseVec<T> &other) {
+    for(int nzi=0; nzi<other.sparseSize(); ++nzi) {
+        insert(other.indices[nzi], other.values[nzi]);
+    }
 }
 
 
