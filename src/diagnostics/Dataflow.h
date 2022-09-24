@@ -85,11 +85,12 @@ namespace dataflow {
         while(consumer(producer())) {};
     }
 
-    template<class RETURN, class ITEM, class CONSUMER, typename =
-    std::enable_if_t<std::is_invocable_r_v<bool,CONSUMER,const RETURN &>>>
-    auto operator >>=(RETURN(ITEM::*ptr)(const ITEM &), CONSUMER &consumer) {
+    template<class RETURN, class ITEM, class CONSUMER
+            , typename = std::enable_if_t<std::is_invocable_r_v<bool,CONSUMER,const RETURN &>>
+    >
+    auto operator >>=(RETURN(ITEM::*ptr)() const, CONSUMER &&consumer) {
         return [ptr, consumer](const ITEM &item) mutable {
-            return consumer((item.*ptr)(item));
+            return consumer((item.*ptr)());
         };
     }
 

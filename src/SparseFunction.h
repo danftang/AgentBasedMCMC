@@ -27,6 +27,7 @@
 #include <functional>
 #include <set>
 #include "subscript_operator_traits.h"
+#include "include/Random.h"
 
 template<typename OUT, typename IN>
 class SparseFunction: public std::function<OUT(IN)> {
@@ -47,20 +48,20 @@ public:
     }
 
 
-    // Convenience constructors for functions with low numbers of arguments
-    SparseFunction(std::function<OUT(const element_type &)> unaryFunction, int argumentIndex):
-            std::function<OUT(IN)>([unaryFunction, argumentIndex](IN args) {
-                return unaryFunction(args[argumentIndex]);
-            }),
-            dependencies({argumentIndex})
-    { }
-
-    SparseFunction(std::function<OUT(const element_type &, const element_type &)> binaryFunction, int argumentIndex1, int argumentIndex2):
-            std::function<OUT(IN)>([binaryFunction, argumentIndex1, argumentIndex2](IN args) {
-                return binaryFunction(args[argumentIndex1], args[argumentIndex2]);
-            }),
-            dependencies({argumentIndex1, argumentIndex2})
-    { }
+//    // Convenience constructors for functions with low numbers of arguments
+//    SparseFunction(std::function<OUT(const element_type &)> unaryFunction, int argumentIndex):
+//            std::function<OUT(IN)>([unaryFunction, argumentIndex](IN args) {
+//                return unaryFunction(args[argumentIndex]);
+//            }),
+//            dependencies({argumentIndex})
+//    { }
+//
+//    SparseFunction(std::function<OUT(const element_type &, const element_type &)> binaryFunction, int argumentIndex1, int argumentIndex2):
+//            std::function<OUT(IN)>([binaryFunction, argumentIndex1, argumentIndex2](IN args) {
+//                return binaryFunction(args[argumentIndex1], args[argumentIndex2]);
+//            }),
+//            dependencies({argumentIndex1, argumentIndex2})
+//    { }
 
     std::function<OUT(IN)> &function() { return *this; }
     const std::function<OUT(IN)> &function() const { return *this; }

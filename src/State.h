@@ -27,37 +27,41 @@ public:
     time(time),
     agent(agent) { }
 
-    explicit State(int stateTrajectoryIndex): State(std::div(stateTrajectoryIndex, AGENT::domainSize())) {}
+    explicit State(int stateTrajectoryIndex): State(std::div(stateTrajectoryIndex, AGENT::domainSize)) {}
 
     explicit State(std::div_t agentIdDivDomainSize): time(agentIdDivDomainSize.quot), agent(agentIdDivDomainSize.rem) { }
 
 
     int id() const {
-        return time*AGENT::domainSize() + agent;
+        return time*AGENT::domainSize + agent;
     }
 
 
     ABM::occupation_type fermionicOccupationUpperBound() const {
         assert(agent < incomingEventsByState.size());
-        return AGENT::actDomainSize() < incomingEventsByState[agent].size()?AGENT::actDomainSize():incomingEventsByState[agent].size();
+        return AGENT::actDomainSize < incomingEventsByState[agent].size()?AGENT::actDomainSize:incomingEventsByState[agent].size();
     }
 
-
-    ABM::occupation_type forwardOccupation(const std::vector<ABM::occupation_type> &trajectory) const {
+    template<class DOMAIN>
+    ABM::occupation_type forwardOccupation(const DOMAIN &trajectory) const {
         ABM::occupation_type occupation = 0;
-        int beginIndex = Event<AGENT>(time, agent, 0).id;
-        int endIndex = beginIndex + AGENT::actDomainSize();
-        for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
-            occupation += trajectory[eventId];
+        for(int actId = 0; actId < AGENT::actDomainSize; ++actId) {
+            occupation += trajectory[DOMAIN::indexOf(Event<AGENT>(time, agent, actId))];
         }
+//        int beginIndex = Event<AGENT>(time, agent, 0).id;
+//        int endIndex = beginIndex + AGENT::actDomainSize;
+//        for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
+//            occupation += trajectory[eventId];
+//        }
         return occupation;
     }
 
 
-    ABM::occupation_type backwardOccupation(const std::vector<ABM::occupation_type> &trajectory) const {
+    template<class DOMAIN>
+    ABM::occupation_type backwardOccupation(const DOMAIN &trajectory) const {
         ABM::occupation_type occupation = 0;
-        for(const Event<AGENT> &incomingEvent : State<AGENT>::incomingEventsByState[agent]) {
-            occupation += trajectory[Event<AGENT>(time-1, incomingEvent.agent(), incomingEvent.act()).id];
+        for(const Event<AGENT> &incomingEvent : incomingEventsByState[agent]) {
+            occupation += trajectory[DOMAIN::indexOf(Event<AGENT>(time-1, incomingEvent.agent(), incomingEvent.act()))];
         }
         return occupation;
     }
@@ -65,7 +69,7 @@ public:
     std::vector<int> forwardOccupationDependencies() const {
         std::vector<int> dependencies;
         int beginIndex = Event<AGENT>(time, agent, 0).id;
-        int endIndex = beginIndex + AGENT::actDomainSize();
+        int endIndex = beginIndex + AGENT::actDomainSize;
         for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
             dependencies.push_back(eventId);
         }
@@ -76,7 +80,7 @@ public:
     ABM::occupation_type fermionicBoundedForwardOccupation(const std::vector<ABM::occupation_type> &trajectory) const {
         ABM::occupation_type occupation = 0;
         int beginIndex = Event<AGENT>(time, agent, 0).id;
-        int endIndex = beginIndex + AGENT::actDomainSize();
+        int endIndex = beginIndex + AGENT::actDomainSize;
         for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
             occupation += trajectory[eventId]>0?1:0;
         }
@@ -87,7 +91,7 @@ public:
     LinearSum<ABM::occupation_type> operator *(ABM::occupation_type c) const {
         LinearSum<ABM::occupation_type> eventVector;
         int beginIndex = Event<AGENT>(time, agent, 0).id;
-        for(int actId=0; actId < AGENT::actDomainSize(); ++actId) {
+        for(int actId=0; actId < AGENT::actDomainSize; ++actId) {
             eventVector += c*X(beginIndex+actId);
         }
         return eventVector;
@@ -104,11 +108,11 @@ public:
 
 
     static std::vector<std::vector<Event<AGENT>>> calculateIncomingEventsByState() {
-        std::vector<std::vector<Event<AGENT>>> endStateToEvents(AGENT::domainSize());
+        std::vector<std::vector<Event<AGENT>>> endStateToEvents(AGENT::domainSize);
         std::vector<AGENT> consequences;
-        for(int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
+        for(int agentState = 0; agentState < AGENT::domainSize; ++agentState) {
             AGENT agent(agentState);
-            for (int act = 0; act < AGENT::actDomainSize(); ++act) {
+            for (int act = 0; act < AGENT::actDomainSize; ++act) {
                 consequences = agent.consequences(act);
                 for(const AGENT &endState: consequences) {
                     endStateToEvents[endState].push_back(Event(0,agent,act));

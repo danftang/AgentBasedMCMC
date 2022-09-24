@@ -28,7 +28,7 @@ public:
 
     TrajectoryImportance(int nTimesteps):
             stateTrajectory(nTimesteps),
-            stateLogProbs(nTimesteps*AGENT::domainSize(),0.0),
+            stateLogProbs(nTimesteps*AGENT::domainSize,0.0),
             staleStates(stateLogProbs.size()),
             staleFactors(stateLogProbs.size()) {}
 
@@ -37,7 +37,7 @@ public:
         clearUndoInformation();
 
         totalLogProbForUndo = totalLogProb;
-        int eventTrajectorySize = nTimesteps()*AGENT::domainSize()*AGENT::actDomainSize();
+        int eventTrajectorySize = nTimesteps()*AGENT::domainSize*AGENT::actDomainSize;
         for(int i : perturbedIndices) {
             if(i < eventTrajectorySize) {
                 Event<AGENT> changedEvent(i);
@@ -100,7 +100,7 @@ public:
             double newLogP = (stateOccupation > 1)?lgamma(stateOccupation + 1.0):0.0; // log of Phi factorial
             if(stateOccupation > 0) {
                 std::vector<double> actPMF = state.agent.timestep(stateTrajectory[state.time]);
-                for (int act = 0; act < AGENT::actDomainSize(); ++act) {
+                for (int act = 0; act < AGENT::actDomainSize; ++act) {
                     int actOccupation = eventTrajectory[Event<AGENT>(state.time, state.agent, act).id];
                     if(actOccupation > 0 && actPMF[act] > 0.0) {
                         newLogP += log(actPMF[act] / state.agent.marginalTimestep(act)); // Fermionic bounding
@@ -116,17 +116,17 @@ public:
     void setState(const std::vector<ABM::occupation_type> &eventTrajectory) {
         totalLogProb = 0.0;//-log(alpha);
         for (int t = 0; t < nTimesteps(); ++t) {
-            for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
+            for(int agentId=0; agentId<AGENT::domainSize; ++agentId) {
                 stateTrajectory[t][agentId] = State<AGENT>(t,agentId).fermionicBoundedForwardOccupation(eventTrajectory);
             }
-            for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
+            for(int agentId=0; agentId<AGENT::domainSize; ++agentId) {
                 ABM::occupation_type stateOccupation = stateTrajectory[t][agentId];
                 if(stateOccupation > 0) {
                     State<AGENT> state(t,agentId);
                     double &factorLogProb = stateLogProbs[state.id()];
                     factorLogProb = (stateOccupation > 1)?lgamma(stateOccupation + 1.0):0.0;
                     std::vector<double> actPMF = state.agent.timestep(stateTrajectory[t]);
-                    for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+                    for (int actId = 0; actId < AGENT::actDomainSize; ++actId) {
                         double actOccupation = eventTrajectory[Event<AGENT>(t, agentId, actId).id];
                         if (actOccupation > 0 && actPMF[actId] > 0.0) {
                             factorLogProb += log(actPMF[actId] / state.agent.marginalTimestep(actId)); // Fermionic bounding
@@ -153,15 +153,15 @@ protected:
         double logP = 0.0;//-log(alpha);
         int tEnd = nTimesteps();
         for (int t = 0; t < tEnd; ++t) {
-            for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId)
+            for (int agentId = 0; agentId < AGENT::domainSize; ++agentId)
                 assert(stateTrajectory[t][agentId] == State<AGENT>(t,agentId).fermionicBoundedForwardOccupation(eventTrajectory));
-            for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+            for (int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
                 ABM::occupation_type stateOccupation = stateTrajectory[t][agentId];
                 if(stateOccupation > 0) {
                     AGENT agent(agentId);
                     std::vector<double> actPMF = agent.timestep(stateTrajectory[t]);
                     double agentStateLogP = (stateOccupation > 1)?lgamma(stateOccupation + 1.0):0.0;
-                    for (int actId = 0; actId < AGENT::actDomainSize(); ++actId) {
+                    for (int actId = 0; actId < AGENT::actDomainSize; ++actId) {
                         double actOccupation = eventTrajectory[Event<AGENT>(t, agentId, actId).id];
                         if (actOccupation > 0 && actPMF[actId] > 0.0)
                             agentStateLogP += log(actPMF[actId] / agent.marginalTimestep(actId)); // Fermionic bounding

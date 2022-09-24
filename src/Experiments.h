@@ -5,14 +5,7 @@
 #ifndef GLPKTEST_EXPERIMENTS_H
 #define GLPKTEST_EXPERIMENTS_H
 
-#include <functional>
-#include "Trajectory.h"
-#include "RejectionSampler.h"
-#include "Forecast.h"
-#include "Likelihood.h"
-#include "diagnostics/Dataflow.h"
-
-using namespace dataflow;
+#include "ConstrainedFactorisedDistribution.h"
 
 class Experiments {
 public:
@@ -24,7 +17,6 @@ public:
 
     template<class DOMAIN, class STARTSTATE>
     static void doValidationExperiment(
-            int nTimesteps,
             int nBurnin,
             int nSamples,
             int nRejectionSamples,

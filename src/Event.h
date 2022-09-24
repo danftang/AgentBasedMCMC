@@ -10,16 +10,18 @@
 #include "X.h"
 
 template<typename AGENT>
-class Event: public X {
+class Event {
 public:
+    int id;
+
     Event(int time, const AGENT agent, const typename AGENT::Act act):
-            X(time*AGENT::domainSize()*AGENT::actDomainSize() + agent*AGENT::actDomainSize() + (int)act) { }
+            id(time*AGENT::domainSize*AGENT::actDomainSize + agent*AGENT::actDomainSize + (int)act) { }
 
-    Event(int eventId): X(eventId) {}
+    Event(int eventId): id(eventId) {}
 
-    int time() const        { return id/(AGENT::domainSize()*AGENT::actDomainSize()); }
-    AGENT agent() const     { return id%(AGENT::domainSize()*AGENT::actDomainSize())/AGENT::actDomainSize(); }
-    typename AGENT::Act act() const { return id%AGENT::actDomainSize(); }
+    int time() const        { return id/(AGENT::domainSize*AGENT::actDomainSize); }
+    AGENT agent() const     { return id%(AGENT::domainSize*AGENT::actDomainSize)/AGENT::actDomainSize; }
+    typename AGENT::Act act() const { return id%AGENT::actDomainSize; }
     std::vector<AGENT> consequences() const { return agent().consequences(act()); }
 
     friend std::ostream &operator <<(std::ostream &out, const Event &event) {

@@ -24,8 +24,8 @@ public:
     typedef int Act;
 
     // Agent Domain stuff
-    static int domainSize() { return GRIDSIZE; }
-    static constexpr int actDomainSize() { return 2; }
+    static constexpr int domainSize = GRIDSIZE;
+    static constexpr int actDomainSize = 2;
 
     int stateId;
 
@@ -42,8 +42,9 @@ public:
         return event.act() == 1?lpMove:lpNotMove;
     }
 
-    static TrajectoryDependencies<BinomialAgent<GRIDSIZE>> eventProbDependencies(const Event<BinomialAgent<GRIDSIZE>> &event) {
-        return {{},{}};
+    template<class DOMAIN>
+    static std::vector<int> eventProbDependencies(const Event<BinomialAgent<GRIDSIZE>> &event) {
+        return {};
     }
 
     std::vector<BinomialAgent<GRIDSIZE>> consequences(Act act) const {

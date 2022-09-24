@@ -49,25 +49,25 @@ public:
     void addObservation(const State<AGENT> &state, ABM::occupation_type nObserved, double pObserveIfPresent) {
         double logPnObserved = nObserved*log(pObserveIfPresent);
         if(pObserveIfPresent == 1.0) {
-            this->constraints.emplace_back(DOMAIN::coefficients(state), nObserved); // noiseless
+            this->constraints.push_back(1*X(DOMAIN::indexOf(state)) == nObserved); // noiseless
         } else {
             this->addFactor(
-                    SparseFunction<std::pair<double,bool>, const DOMAIN &>(
-                            [state, nObserved, pObserveIfPresent, logPnObserved](const DOMAIN &trajectory) {
-                                ABM::occupation_type realOccupation = trajectory[state];
-                                if(realOccupation < nObserved) return std::pair(logPnObserved + ABM::kappa*(realOccupation - nObserved),false);
-                                return std::pair(log(boost::math::pdf(boost::math::binomial(realOccupation, pObserveIfPresent), nObserved)),true);
-                            },
-                            DOMAIN::coefficients(state).indices
-                            )
-                    );
+                    [state, nObserved, pObserveIfPresent, logPnObserved](const DOMAIN &trajectory) {
+                        ABM::occupation_type realOccupation = trajectory[state];
+                        if (realOccupation < nObserved)
+                            return std::pair(logPnObserved + ABM::kappa * (realOccupation - nObserved), false);
+                        return std::pair(log(boost::math::pdf(boost::math::binomial(realOccupation, pObserveIfPresent),
+                                                              nObserved)), true);
+                    },
+                    { DOMAIN::indexOf(state) }
+            );
         }
     }
 
     static std::vector<std::pair<State<AGENT>,int>> generateObservations(const DOMAIN &realTrajectory, double pMakeObservation, double pObserveIfPresent) {
         std::vector<std::pair<State<AGENT>,int>> observations;
         for (int t = 0; t < realTrajectory.nTimesteps(); ++t) {
-            for (int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+            for (int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
                 if (Random::nextBool(pMakeObservation)) {
                     State<AGENT> state(t, agentId);
                     int nObserved = Random::nextBinomial(realTrajectory[state], pObserveIfPresent);

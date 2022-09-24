@@ -20,10 +20,10 @@ public:
 
     static const ModelState<AGENT> zero;
 
-    ModelState(): std::vector<value_type>(AGENT::domainSize(),0) { };
+    ModelState(): std::vector<value_type>(AGENT::domainSize,0) { };
 
     ModelState(std::vector<value_type> &&X): std::vector<value_type>(X) {
-        assert(size() == AGENT::domainSize());
+        assert(size() == AGENT::domainSize);
     }
 
     template<class DOMAIN>
@@ -72,14 +72,14 @@ public:
 
     // Addition for aggregation of states
     ModelState<AGENT> &operator +=(const ModelState<AGENT> &other) {
-        for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+        for(int agentId=0; agentId < AGENT::domainSize; ++agentId) {
             (*this)[agentId] += other[agentId];
         }
         return *this;
     }
 
     ModelState<AGENT> &operator *=(value_type multiplier) {
-        for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+        for(int agentId=0; agentId < AGENT::domainSize; ++agentId) {
             (*this)[agentId] *= multiplier;
         }
         return *this;
@@ -87,7 +87,7 @@ public:
 
     std::valarray<double> operator /(double denominator) const {
         std::valarray<double> probs(size());
-        for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+        for(int agentId=0; agentId < AGENT::domainSize; ++agentId) {
             probs[agentId] = (*this)[agentId] / denominator;
         }
         return probs;
@@ -95,7 +95,7 @@ public:
 
     std::valarray<double> operator *(double multiplier) const {
         std::valarray<double> probs(size());
-        for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+        for(int agentId=0; agentId < AGENT::domainSize; ++agentId) {
             probs[agentId] = (*this)[agentId] * multiplier;
         }
         return probs;
@@ -104,7 +104,7 @@ public:
 
 //    static ModelState<AGENT> randomPoissonState(const std::function<double (const AGENT &)> &pmf) {
 //        ModelState<AGENT> state;
-//        for(int agentId=0; agentId<AGENT::domainSize(); ++agentId) {
+//        for(int agentId=0; agentId<AGENT::domainSize; ++agentId) {
 //            int occupation = Random::nextPoisson(pmf(agentId));
 //            if(occupation > 0) state[agentId] = occupation;
 //        }
@@ -116,7 +116,7 @@ public:
 template<class AGENT>
 template<class DOMAIN>
 ModelState<AGENT>::ModelState(const DOMAIN &trajectory, int time) : ModelState() {
-    for (int stateId = 0; stateId < AGENT::domainSize(); ++stateId)
+    for (int stateId = 0; stateId < AGENT::domainSize; ++stateId)
         (*this)[stateId] = trajectory[State<AGENT>(time,stateId)];
 }
 

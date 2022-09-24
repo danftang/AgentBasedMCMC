@@ -5,7 +5,6 @@
 #include "Experiments.h"
 #include "BernoulliStartState.h"
 #include "Likelihood.h"
-#include "SparseBasisSampler.h"
 #include "agents/BinomialAgent.h"
 #include "RejectionSampler.h"
 #include "diagnostics/Dataflow.h"
@@ -16,7 +15,8 @@
 #include "PoissonStartState.h"
 #include "ConstrainedFactorisedSampler.h"
 #include "FixedPopulationStartState.h"
-#include "ExtendedTrajectory.h"
+#include "ExtendedTrajectory2.h"
+#include "PredPreyTrajectory.h"
 #include "Plotter.h"
 
 using namespace dataflow;
@@ -33,9 +33,9 @@ void Experiments::BinomialAgentSingleObservation() {
     double p1 = 0.1;
     double pObserveIfPresent = 0.9;
 
-    doValidationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
-                           BernoulliStartState<Trajectory<BinomialAgent<GRIDSIZE>>>({p0, p1, 0.0}),
-                           Likelihood<Trajectory<BinomialAgent<GRIDSIZE>>>(State<BinomialAgent<GRIDSIZE>>(1, 0), 1, pObserveIfPresent));
+    doValidationExperiment(nBurnin, nSamples, nRejectionSamples, kappa,
+                           BernoulliStartState<ExtendedTrajectory2<BinomialAgent<GRIDSIZE>,nTimesteps>>({p0, p1, 0.0}),
+                           Likelihood<ExtendedTrajectory2<BinomialAgent<GRIDSIZE>,nTimesteps>>(State<BinomialAgent<GRIDSIZE>>(1, 0), 1, pObserveIfPresent));
 //    doValidationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
 //                           BernoulliStartState<ExtendedTrajectory<BinomialAgent<GRIDSIZE>>>({p0, p1, 0.0}),
 //                           Likelihood<ExtendedTrajectory<BinomialAgent<GRIDSIZE>>>(State<BinomialAgent<GRIDSIZE>>(1, 0), 1, pObserveIfPresent));
@@ -53,9 +53,9 @@ void Experiments::CatMouseSingleObservation() {
 //    doValidationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
 //            BernoulliStartState<Trajectory<CatMouseAgent>>({0.9, 0.1, 0.1, 0.9}),
 //            Likelihood<Trajectory<CatMouseAgent>>(State(1,CatMouseAgent(CatMouseAgent::CAT, CatMouseAgent::LEFT)),1,1.0));
-    doValidationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
-                           BernoulliStartState<ExtendedTrajectory<CatMouseAgent>>({0.9, 0.1, 0.1, 0.9}),
-                           Likelihood<ExtendedTrajectory<CatMouseAgent>>(State(1,CatMouseAgent(CatMouseAgent::CAT, CatMouseAgent::LEFT)),1,1.0));
+    doValidationExperiment(nBurnin, nSamples, nRejectionSamples, kappa,
+                           BernoulliStartState<ExtendedTrajectory2<CatMouseAgent,nTimesteps>>({0.9, 0.1, 0.1, 0.9}),
+                           Likelihood<ExtendedTrajectory2<CatMouseAgent,nTimesteps>>(State(1,CatMouseAgent(CatMouseAgent::CAT, CatMouseAgent::LEFT)),1,1.0));
 }
 
 
@@ -69,17 +69,18 @@ void Experiments::PredPreySingleObservation() {
     constexpr int nRejectionSamples = 100000;
     constexpr double kappa = 5.0;// 5.75;
 
-//    doValidationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
-//            PoissonStartState<Trajectory<PredPreyAgent<GRIDSIZE>>>([](PredPreyAgent<GRIDSIZE> agent) {
-//                return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
-//            }),
-//            Likelihood<Trajectory<PredPreyAgent<GRIDSIZE>>>(State(1,PredPreyAgent<GRIDSIZE>(1, 1, PredPreyAgent<GRIDSIZE>::PREY)),1,1.0)
+//    doValidationExperiment(nBurnin, nSamples, nRejectionSamples, kappa,
+//                           PoissonStartState<ExtendedTrajectory2<PredPreyAgent<GRIDSIZE>,nTimesteps>>([](PredPreyAgent<GRIDSIZE> agent) {
+//                               return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
+//                           }),
+//                           Likelihood<ExtendedTrajectory2<PredPreyAgent<GRIDSIZE>,nTimesteps>>(State(1,PredPreyAgent<GRIDSIZE>(1, 1, PredPreyAgent<GRIDSIZE>::PREY)),1,1.0)
 //    );
-    doValidationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
-                           PoissonStartState<ExtendedTrajectory<PredPreyAgent<GRIDSIZE>>>([](PredPreyAgent<GRIDSIZE> agent) {
+
+    doValidationExperiment(nBurnin, nSamples, nRejectionSamples, kappa,
+                           PoissonStartState<PredPreyTrajectory<GRIDSIZE,nTimesteps>>([](PredPreyAgent<GRIDSIZE> agent) {
                                return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
                            }),
-                           Likelihood<ExtendedTrajectory<PredPreyAgent<GRIDSIZE>>>(State(1,PredPreyAgent<GRIDSIZE>(1, 1, PredPreyAgent<GRIDSIZE>::PREY)),1,1.0)
+                           Likelihood<PredPreyTrajectory<GRIDSIZE,nTimesteps>>(State(1,PredPreyAgent<GRIDSIZE>(1, 1, PredPreyAgent<GRIDSIZE>::PREY)),1,1.0)
     );
 
 //    Plotter gp;
@@ -158,12 +159,12 @@ void Experiments::PredPreySingleObservation() {
 
 
 template<class DOMAIN, class STARTSTATE>
-void Experiments::doValidationExperiment(int nTimesteps, int nBurnin, int nSamples, int nRejectionSamples,
+void Experiments::doValidationExperiment(int nBurnin, int nSamples, int nRejectionSamples,
                                          double kappa,
                                          const STARTSTATE &startStateDistribution,
                                          const ConstrainedFactorisedDistribution<DOMAIN> &likelihood) {
     ABM::kappa = kappa;
-    Prior<DOMAIN> prior(nTimesteps, startStateDistribution);
+    Prior<DOMAIN> prior(startStateDistribution);
     std::cout << "Prior is\n" << prior << std::endl;
 
     std::cout << "Likelihood is\n" << likelihood << std::endl;
@@ -171,25 +172,22 @@ void Experiments::doValidationExperiment(int nTimesteps, int nBurnin, int nSampl
     auto posterior = likelihood * prior;
     std::cout << "Posterior is\n" << posterior << std::endl;
 
-    DOMAIN initialSolution(nTimesteps);
+    DOMAIN initialSolution;
 
     ConstrainedFactorisedSampler sampler(posterior, initialSolution);
 
     std::cout << "Burning-in..." << std::endl;
     for(int i=0; i < nBurnin; ++i) {
         const DOMAIN &sample = sampler.nextSample();
-//        std::cout << "Got sample " << sample << "  " << ModelState<AGENT>(sample, nTimesteps, nTimesteps) << std::endl;
+//        std::cout << "Got sample " << sample << "  " << sample.endState() << std::endl;
         assert(posterior.constraints.isValidSolution(sample));
     }
 
     std::cout << "Sampling..." << std::endl;
     std::fixed(std::cout).precision(5);
     ModelState<typename DOMAIN::agent_type> aggregateState;
-//    sampler >>= Take(nSamples) >>= TrajectoryToModelState<AGENT>(nTimesteps, nTimesteps) >>= Sum(aggregateState);
-//    std::function<ModelState<typename DOMAIN::agent_type>(const DOMAIN &)> trajectoryToEndState = [nTimesteps](const DOMAIN &x) { return x.modelState(nTimesteps); };
-    std::function trajectoryToEndState = [nTimesteps](const DOMAIN &x) { return x.modelState(nTimesteps); };
     auto startTime = std::chrono::steady_clock::now();
-    sampler >>= trajectoryToEndState >>= Sum(nSamples,aggregateState);
+    sampler >>= &DOMAIN::endState >>= Sum(nSamples,aggregateState);
     auto endTime = std::chrono::steady_clock::now();
     std::cout << "Sample time = " << endTime - startTime << std::endl;
     std::cout << sampler.stats << std::endl;
@@ -197,7 +195,7 @@ void Experiments::doValidationExperiment(int nTimesteps, int nBurnin, int nSampl
 
     RejectionSampler<DOMAIN> rejectionSampler(prior,likelihood);
     ModelState<typename DOMAIN::agent_type> rejectionAggregateState;
-    rejectionSampler >>= trajectoryToEndState >>= Sum(nRejectionSamples, rejectionAggregateState);
+    rejectionSampler >>= &DOMAIN::endState >>= Sum(nRejectionSamples, rejectionAggregateState);
     std::cout << "Rejection state = " << rejectionAggregateState / nRejectionSamples << std::endl;
 
     std::valarray<double> err = (aggregateState / nSamples) - (rejectionAggregateState / nRejectionSamples);

@@ -7,8 +7,8 @@
 // An agent should be a Domain that includes
 // AGENT::Act - type of act that this agent performs, should be a Domain
 //  void consequences(AGENT::Act act, std::vector<AGENT> consequences); // consequences of an action
-// int domainSize() - number of Agent states
-// int actDomainSize() - number of act states
+// int domainSize - number of Agent states
+// int actDomainSize - number of act states
 //
 // Created by daniel on 26/04/2021.
 //
@@ -48,8 +48,8 @@ public:
     int stateId;
 
     // Agent Domain stuff
-    static constexpr int domainSize() { return 4; }
-    static constexpr int actDomainSize() { return 2; }
+    static constexpr int domainSize= 4;
+    static constexpr int actDomainSize = 2;
 
     CatMouseAgent(int ordinal): stateId(ordinal) {}
     CatMouseAgent(Type type, Position position): stateId(position + 2*type) { }
@@ -69,7 +69,8 @@ public:
     template<class TRAJECTORY>
     static double logEventProb(const Event<CatMouseAgent> &event, const TRAJECTORY &trajectory);
 
-    static TrajectoryDependencies<CatMouseAgent> eventProbDependencies(const Event<CatMouseAgent> &event);
+    template<class DOMAIN>
+    static std::vector<int> eventProbDependencies(const Event<CatMouseAgent> &event);
 
     friend std::ostream &operator <<(std::ostream &out, const CatMouseAgent &agent) {
         out << (agent.type()==CAT?"CAT":"MSE") << ":" << (agent.position()==LEFT?"L":"R");
@@ -86,6 +87,12 @@ double CatMouseAgent::logEventProb(const Event<CatMouseAgent> &event, const TRAJ
         return (event.act() == MOVE)?0.0:-INFINITY;
     }
     return (event.act() == MOVE)?-INFINITY:0.0;
+}
+
+template<class DOMAIN>
+std::vector<int> CatMouseAgent::eventProbDependencies(const Event<CatMouseAgent> &event) {
+    if (event.agent().type() == CAT) return {};
+    return {DOMAIN::indexOf(State(event.time(), CatMouseAgent(CAT, event.agent().position())))};
 }
 
 

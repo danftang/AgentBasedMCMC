@@ -6,6 +6,7 @@
 #define ABMCMC_SPARSEVEC_H
 
 #include <vector>
+#include <map>
 #include <ostream>
 #include <algorithm>
 

@@ -48,7 +48,7 @@ public:
     ExtendedTrajectory(int nTimesteps): actTrajectory(nTimesteps), stateTrajectory(nTimesteps) { }
 
 
-    size_t size() const { return nTimesteps()*(AGENT::domainSize()*(AGENT::actDomainSize()+1));  }
+    size_t size() const { return nTimesteps()*(AGENT::domainSize*(AGENT::actDomainSize+1));  }
 
     size_t nTimesteps() const { return stateTrajectory.size(); }
 
@@ -71,22 +71,22 @@ public:
 
     // direct element access
     const value_type &operator [](int index) const {
-        div_t div = std::div(index, AGENT::domainSize()*(AGENT::actDomainSize()+1));
+        div_t div = std::div(index, AGENT::domainSize*(AGENT::actDomainSize+1));
         int time = div.quot;
-        if(div.rem < AGENT::domainSize()) {
+        if(div.rem < AGENT::domainSize) {
             return stateTrajectory[time][div.rem];
         }
-        return actTrajectory[AGENT::domainSize() * AGENT::actDomainSize() * time + div.rem - AGENT::domainSize()];
+        return actTrajectory[AGENT::domainSize * AGENT::actDomainSize * time + div.rem - AGENT::domainSize];
     }
 
 
     value_type &operator [](int index) {
-        div_t div = std::div(index, AGENT::domainSize()*(AGENT::actDomainSize()+1));
+        div_t div = std::div(index, AGENT::domainSize*(AGENT::actDomainSize+1));
         int time = div.quot;
-        if(div.rem < AGENT::domainSize()) {
+        if(div.rem < AGENT::domainSize) {
             return stateTrajectory[time][div.rem];
         }
-        return actTrajectory[AGENT::domainSize() * AGENT::actDomainSize() * time + div.rem - AGENT::domainSize()];
+        return actTrajectory[AGENT::domainSize * AGENT::actDomainSize * time + div.rem - AGENT::domainSize];
     }
 
     static SparseVec<value_type> coefficients(const State<AGENT> &state) {
@@ -96,21 +96,21 @@ public:
     }
 
     static int indexOf(const Event<AGENT> &event) {
-        return event.time() * (AGENT::domainSize()*(AGENT::actDomainSize()+1)) + AGENT::domainSize() + event.agent()*AGENT::actDomainSize() + event.act();
+        return event.time() * (AGENT::domainSize*(AGENT::actDomainSize+1)) + AGENT::domainSize + event.agent()*AGENT::actDomainSize + event.act();
     }
 
     static int indexOf(const State<AGENT> &state) {
-        return state.time * (AGENT::domainSize()*(AGENT::actDomainSize()+1)) + state.agent;
+        return state.time * (AGENT::domainSize*(AGENT::actDomainSize+1)) + state.agent;
     }
 
 
     static EqualityConstraints<value_type> constraints(int nTimesteps) {
         EqualityConstraints<value_type> constraints;
         for(int time = 0; time < nTimesteps; ++time) {
-            for(int agentState = 0; agentState < AGENT::domainSize(); ++agentState) {
+            for(int agentState = 0; agentState < AGENT::domainSize; ++agentState) {
                 // forward occupation
                 SparseVec<ABM::coefficient_type> forwardCoeffs;
-                for (int act = 0; act < AGENT::actDomainSize(); ++act) {
+                for (int act = 0; act < AGENT::actDomainSize; ++act) {
                     forwardCoeffs.insert(indexOf(Event<AGENT>(time, agentState, act)), 1);
                 }
                 forwardCoeffs.insert(indexOf(State<agent_type>(time, agentState)), -1);

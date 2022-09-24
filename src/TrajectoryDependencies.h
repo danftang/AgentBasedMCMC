@@ -20,15 +20,15 @@ public:
     TrajectoryDependencies(STATES &&states, EVENTS &&events): states(std::forward<STATES>(states)), events(std::forward<EVENTS>(events)) {
     }
 
-    template<class TRAJECTORY>
-    std::vector<int> indexDependencies() {
-        std::vector<int> indexDependencies;
-        for(const State<AGENT> &state: states) {
-            for(int index: TRAJECTORY::coefficients(state).indices) indexDependencies.push_back(index);
-        }
-        for(const Event<AGENT> &event: events) indexDependencies.push_back(TRAJECTORY::indexOf(event));
-        return indexDependencies;
-    }
+//    template<class TRAJECTORY>
+//    std::vector<int> indexDependencies() {
+//        std::vector<int> indexDependencies;
+//        for(const State<AGENT> &state: states) {
+//            for(int index: TRAJECTORY::coefficients(state).indices) indexDependencies.push_back(index);
+//        }
+//        for(const Event<AGENT> &event: events) indexDependencies.push_back(TRAJECTORY::indexOf(event));
+//        return indexDependencies;
+//    }
 };
 
 

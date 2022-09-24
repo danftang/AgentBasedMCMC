@@ -6,6 +6,7 @@
 #define ABMCMC_BERNOULLISTARTSTATE_H
 
 #include "ConstrainedFactorisedDistribution.h"
+#include "ModelState.h"
 
 template<class DOMAIN, class AGENT = typename DOMAIN::agent_type>
 class BernoulliStartState: public ConstrainedFactorisedDistribution<DOMAIN> {
@@ -16,8 +17,8 @@ public:
 
 
     explicit BernoulliStartState(std::function<double(AGENT)> agentToProb) {
-        this->factors.reserve(AGENT::domainSize());
-        for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+        this->factors.reserve(AGENT::domainSize);
+        for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
             addBernoulliFactor(agentId, agentToProb(AGENT(agentId)));
         }
         modelStateSampler = sampler(agentToProb);
@@ -30,7 +31,7 @@ public:
 
     static std::function<const ModelState<AGENT> &()> sampler(std::function<double(AGENT)> &agentToprob) {
         return [sample = ModelState<AGENT>(), agentToprob]() mutable -> const ModelState<AGENT> & {
-            for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+            for(int agentId=0; agentId < AGENT::domainSize; ++agentId) {
                 sample[agentId] = Random::nextBool(agentToprob(AGENT(agentId)));
             }
             return  sample;
@@ -55,15 +56,14 @@ public:
             double logP = log(p);
             double logNotP = log(1.0-p);
             this->addFactor(
-                    SparseFunction<std::pair<double, bool>, const DOMAIN &>(
-                            [logP, logNotP, state](const DOMAIN &x) {
-                                return widenedLogBernoulli(logP, logNotP, x[state]); // log of Bernoulli
-                            },
-                            DOMAIN::coefficients(state).indices
-                    )
+                    [logP, logNotP, state](const DOMAIN &x) {
+                        return widenedLogBernoulli(logP, logNotP, x[state]); // log of Bernoulli
+                    },
+                    { DOMAIN::indexOf(state) }
+
             );
         } else {
-            this->constraints.emplace_back(DOMAIN::coefficients(state), p);
+            this->constraints.push_back(1*X(DOMAIN::indexOf(state)) == (int)p);
         }
     }
 
@@ -119,7 +119,7 @@ public:
 //
 //    template <typename Archive>
 //    void load(Archive &ar, const unsigned int version) {
-//        for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+//        for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
 //            double p;
 //            ar >> p;
 //            addBernoulliFactor(agentId, p);
@@ -128,7 +128,7 @@ public:
 //
 //    template <typename Archive>
 //    void save(Archive &ar, const unsigned int version) const {
-//        for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+//        for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
 //            ar << probability(agentId);
 //        }
 //    }

@@ -22,8 +22,8 @@ public:
     std::function<const ModelState<AGENT> &()> modelStateSampler;
 
     explicit PoissonStartState(std::function<double(AGENT)> agentToLambda) {
-            this->factors.reserve(AGENT::domainSize());
-            for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+            this->factors.reserve(AGENT::domainSize);
+            for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
                 addPoissonFactor(agentId, agentToLambda(AGENT(agentId)));
             }
             modelStateSampler = sampler(agentToLambda);
@@ -37,7 +37,7 @@ public:
 
     static std::function<const ModelState<AGENT> &()> sampler(std::function<double(AGENT)> &agentToLambda) {
         return [agentToLambda, sample = ModelState<AGENT>()]() mutable -> const ModelState<AGENT> & {
-            for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+            for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
                 sample[agentId] = Random::nextPoisson(agentToLambda(AGENT(agentId)));
             }
             return  sample;
@@ -48,16 +48,14 @@ public:
     void addPoissonFactor(int agentId, double lambda) {
         State<AGENT> state(0,agentId);
         if(lambda == 0.0) {
-            auto newConstraint = this->constraints.emplace_back(DOMAIN::coefficients(state), 0);
+            this->constraints.push_back(1*X(DOMAIN::indexOf(state)) == 0);
         } else {
             double logLambda = log(lambda);
             this->addFactor(
-                    SparseFunction<std::pair<double, bool>, const DOMAIN &>(
-                            [logLambda, state](const DOMAIN &x) {
-                                return PoissonStartState::widenedUnnormalisedPoisson(logLambda, x[state]);
-                            },
-                            DOMAIN::coefficients(state).indices
-                    )
+                    [logLambda, state](const DOMAIN &x) {
+                        return PoissonStartState::widenedUnnormalisedPoisson(logLambda, x[state]);
+                    },
+                    {DOMAIN::indexOf(state)}
             );
         }
     }
@@ -72,7 +70,7 @@ public:
 
     friend std::ostream &operator <<(std::ostream &out, const PoissonStartState<DOMAIN> &startState) {
         out << "{ ";
-        for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+        for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
             out << startState.lambda(agentId) << " ";
         }
         out << "}";
@@ -87,8 +85,8 @@ public:
     // convert to a distribution over trajectories
 //    operator FactorisedDistribution<Trajectory<AGENT>>() {
 //            FactorisedDistribution<Trajectory<AGENT>> trajectoryDistribution;
-//            trajectoryDistribution.logFactors.reserve(AGENT::domainSize());
-//            for(int agentId=0; agentId < AGENT::domainSize(); ++agentId) {
+//            trajectoryDistribution.logFactors.reserve(AGENT::domainSize);
+//            for(int agentId=0; agentId < AGENT::domainSize; ++agentId) {
 //                trajectoryDistribution.addFactor(getTrajectoryFactor(agentId));
 //            }
 //            return trajectoryDistribution;
@@ -124,7 +122,7 @@ public:
 //
 //    template <typename Archive>
 //    void load(Archive &ar, const unsigned int version) {
-//        for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+//        for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
 //            double lambda;
 //            ar >> lambda;
 //            addPoissonFactor(agentId, lambda);
@@ -133,7 +131,7 @@ public:
 //
 //    template <typename Archive>
 //    void save(Archive &ar, const unsigned int version) const {
-//        for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+//        for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
 //            ar << lambda(agentId);
 //        }
 //    }

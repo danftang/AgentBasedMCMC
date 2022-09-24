@@ -18,7 +18,7 @@ public:
 
     explicit FixedPopulationStartState(std::function<int(AGENT)> agentToPartition, std::function<int(int)> partitionToPopulation) {
         std::vector<std::vector<int>> partitionToAgents;
-        for(int agentId = 0; agentId < AGENT::domainSize(); ++agentId) {
+        for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
             int partitionId = agentToPartition(agentId);
             if(constraints.size() < partitionId+1) {
                 constraints.resize(partitionId+1);

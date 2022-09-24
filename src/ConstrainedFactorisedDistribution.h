@@ -19,8 +19,10 @@
 
 #include <vector>
 #include <limits>
+#include <cmath>
 #include "EqualityConstraints.h"
 #include "SparseFunction.h"
+#include "ABM.h"
 
 template<typename DOMAIN, typename CONSTRAINTCOEFF = typename subscript_operator_traits<DOMAIN>::base_type>
 class ConstrainedFactorisedDistribution {
@@ -37,7 +39,7 @@ public:
         factors.push_back(std::move(factor));
     }
 
-    template<class INDEXDEPENDENCIES>
+    template<class INDEXDEPENDENCIES = std::initializer_list<int>>
     void addFactor(std::function<std::pair<double,bool>(const DOMAIN &)> func, INDEXDEPENDENCIES &&indexDependencies) {
         factors.emplace_back(std::move(func), std::forward<INDEXDEPENDENCIES>(indexDependencies));
     }
@@ -109,7 +111,7 @@ public:
     }
 
     // use logPexact if the total probability may be too small for double.
-      double Pexact(const DOMAIN &X) const { return exp(logPexact(X)); }
+      double Pexact(const DOMAIN &X) const { return std::exp(logPexact(X)); }
 
     double logPwidened(const DOMAIN &X) const {
         double logP = 0.0;
@@ -174,7 +176,7 @@ protected:
 //        std::vector<SparseFunction<std::pair<double, bool>, const Trajectory<AGENT> &>> trajFactors;
 //        for (const auto &modelStateFactor: factors) {
 //            std::vector<int> trajectoryDependencies;
-//            trajectoryDependencies.reserve(modelStateFactor.dependencies.size() * AGENT::actDomainSize());
+//            trajectoryDependencies.reserve(modelStateFactor.dependencies.size() * AGENT::actDomainSize);
 //            for (int agentId: modelStateFactor.dependencies) {
 //                for (int actId: State<AGENT>(time, agentId).forwardOccupationDependencies()) {
 //                    trajectoryDependencies.push_back(actId);

@@ -97,7 +97,7 @@
 //        std::vector<SparseFunction<std::pair<double, bool>, const Trajectory<AGENT> &>> trajFactors;
 //        for (const auto &modelStateFactor: logFactors) {
 //            std::vector<int> trajectoryDependencies;
-//            trajectoryDependencies.reserve(modelStateFactor.dependencies.size() * AGENT::actDomainSize());
+//            trajectoryDependencies.reserve(modelStateFactor.dependencies.size() * AGENT::actDomainSize);
 //            for (int agentId: modelStateFactor.dependencies) {
 //                for (int actId: State<AGENT>(time, agentId).forwardOccupationDependencies()) {
 //                    trajectoryDependencies.push_back(actId);

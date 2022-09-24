@@ -5,11 +5,6 @@
 #include "CatMouseAgent.h"
 
 
-TrajectoryDependencies<CatMouseAgent> CatMouseAgent::eventProbDependencies(const Event<CatMouseAgent> &event) {
-    if (event.agent().type() == CAT) return {{},{}};
-    return {{State(event.time(), CatMouseAgent(CAT, event.agent().position()))},{}};
-}
-
 std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) const {
     if(act == MOVE) {
         return std::vector<CatMouseAgent>({ CatMouseAgent(type(), Position((position()+1)%2)) });
@@ -19,7 +14,7 @@ std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) const {
 
 // returns LogPMF over acts given surrounding agents
 //std::vector<double> CatMouseAgent::timestep(const ModelState<CatMouseAgent> &others) const {
-//    std::vector<double> actPmf(actDomainSize());
+//    std::vector<double> actPmf(actDomainSize);
 //
 //    if (type() == CAT) {
 //        actPmf[MOVE] = pCatMove;
@@ -37,7 +32,7 @@ std::vector<CatMouseAgent> CatMouseAgent::consequences(Act act) const {
 //}
 
 //std::vector<double> CatMouseAgent::timestep(const Trajectory<CatMouseAgent> &others, int time) const {
-//    std::vector<double> actPmf(actDomainSize());
+//    std::vector<double> actPmf(actDomainSize);
 //
 //    if (type() == CAT) {
 //        actPmf[MOVE] = pCatMove;

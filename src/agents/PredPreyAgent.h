@@ -2,6 +2,39 @@
 // Created by daniel on 18/05/2021.
 //
 
+// Making AGENTs define their own trajectory accessors?...
+//   * need to somehow coordinate with StartStates and Observations
+//   * if we define Trajectory[IndexSetFor<Trajectory>] then any linear
+//     combination can be extracted from the trajectory and a new index type
+//     can be defined as long as it has a cast to IndexSetFor<Trajectory> for
+//     each type of trajecotry.
+//
+//   * alternatively, we go the other way around and define Accessor[trajectory],
+//     which probably makes more sense. The accessor can:
+//        - calculate occupation number given a trajectory
+//        - give it's dependencies for a given trajectory type e.g. dependencies<Trajectory>()
+//        - give it's coefficients for a given trajectory type e.g. coefficients<Trajectory>()
+//
+//   * alternatively, we have accessors in the AGENT definition, so
+//        - AGENT::occupation(Trajectory, IndexType)
+//        - AGENT::coefficients(Trajectory, IndexType)
+//
+//  * alternatively, we assume that trajectories have act and state accessors, then let the
+//    agent define it's own extra accessors
+//
+//  * alternatively, we make it easy to add accessors to trajectories...and each AGENT provides
+//    its own trajectory type at compile time, and can then assume it's dealing with this
+//    trajectory type.
+//    A trajectory can be thought odf as trajectory[ACCESSORTYPE]<[time]><[agent]><[act]>
+//    or if we assume all accessors are within-timestep then trajectory[time][ACCESSORTYPE]<[agent]><[act]>
+//    So we can build a trejectory by supplying a set of accessor types in a pack
+//    Each accessor type supplies its own domainSize, a cast to int (indexOf) and linear constraints
+//    in terms of other accessors...So accesrots have prerequisites in terms of which
+//    Accessors are needed to express their coefficients. So, a State accessor requires
+//    an act accessor, a surrounding accessor requires a state accessor
+//
+//    So... an accessor is a map from various objects to occupation and from int to occupation
+
 #ifndef GLPKTEST_PREDPREYAGENT_H
 #define GLPKTEST_PREDPREYAGENT_H
 
@@ -9,6 +42,7 @@
 #include <map>
 #include "../ModelState.h"
 #include "../Constraint.h"
+#include "../ExtendedTrajectory2.h"
 
 class PredPreyAgentBase {
 public:
@@ -71,7 +105,7 @@ public:
     static const double lpMove;
 
     // Agent Domain stuff
-    static constexpr int actDomainSize() { return 6; }
+    static constexpr int actDomainSize= 6;
 };
 
 inline const double PredPreyAgentBase::lpPredBirthGivenPrey = log(clustering);
@@ -90,8 +124,9 @@ inline const double PredPreyAgentBase::lpMove = log(0.25 * (1.0 - clustering));
 template<int GRIDSIZE>
 class PredPreyAgent: public PredPreyAgentBase {
 public:
+
     // Agent Domain stuff
-    static constexpr int domainSize() { return GRIDSIZE*GRIDSIZE*2; }
+    static constexpr int domainSize = GRIDSIZE*GRIDSIZE*2;
 
     int stateId;
 
@@ -104,23 +139,34 @@ public:
     template<class TRAJECTORY>
     static double logEventProb(const Event<PredPreyAgent<GRIDSIZE>> &event, const TRAJECTORY &trajectory);
 
-    static TrajectoryDependencies<PredPreyAgent<GRIDSIZE>> eventProbDependencies(const Event<PredPreyAgent<GRIDSIZE>> &event);
+    template<class DOMAIN>
+    static std::vector<int> eventProbDependencies(const Event<PredPreyAgent<GRIDSIZE>> &event);
+
+    template<class TRAJECTORY>
+    bool hasAnySurrounding(Type type, int time, const TRAJECTORY &trajectory) const {
+        return
+                trajectory[State(time,PredPreyAgent(xRight(),yPosition(),type))] ||
+                trajectory[State(time,PredPreyAgent(xLeft(),yPosition(),type))] ||
+                trajectory[State(time,PredPreyAgent(xPosition(),yUp(),type))] ||
+                trajectory[State(time,PredPreyAgent(xPosition(),yDown(),type))];
+    }
 
 
     operator int() const { return stateId; }
     int xPosition() const { return stateId%GRIDSIZE; }
     int yPosition() const { return (stateId/GRIDSIZE)%GRIDSIZE; }
     Type type() const { return Type(stateId/(GRIDSIZE*GRIDSIZE)); }
+    Type otherType() const { return type()==PREDATOR?PREY:PREDATOR; }
 
     int xLeft() const { return((stateId+GRIDSIZE-1)%GRIDSIZE); }
     int xRight() const { return((stateId+1)%GRIDSIZE); }
     int yUp() const { return((stateId/GRIDSIZE+1)%GRIDSIZE); }
     int yDown() const { return((stateId/GRIDSIZE + GRIDSIZE-1)%GRIDSIZE); }
 
-
-//    double marginalTimestep(Act act) const; // returns the probability of this act, given an agent in this state
-    // returns the constraints implied by the given act of this agent
-//    std::vector<Constraint<ABM::occupation_type>> constraints(int time, Act act) const; // to be generated automatically by static analysis...eventually.
+    PredPreyAgent<GRIDSIZE> leftOther() const { return PredPreyAgent<GRIDSIZE>(xLeft(),yPosition(),otherType()); }
+    PredPreyAgent<GRIDSIZE> rightOther() const { return PredPreyAgent<GRIDSIZE>(xRight(),yPosition(), otherType()); }
+    PredPreyAgent<GRIDSIZE> upOther() const { return PredPreyAgent<GRIDSIZE>(xPosition(),yUp(),otherType()); }
+    PredPreyAgent<GRIDSIZE> downOther() const { return PredPreyAgent<GRIDSIZE>(xPosition(),yDown(),otherType()); }
 
     friend std::ostream &operator <<(std::ostream &out, const PredPreyAgent<GRIDSIZE> &agent) {
 
@@ -129,23 +175,15 @@ public:
     }
 
 
+
+
     // Count of agents of given type north, south, east and west of this agent.
-    double surroundingCountOf(Type type, const ModelState<PredPreyAgent<GRIDSIZE>> &others) const {
-        return others[PredPreyAgent(xRight(),yPosition(),type)] +
-        others[PredPreyAgent(xLeft(),yPosition(),type)] +
-        others[PredPreyAgent(xPosition(),yUp(),type)] +
-        others[PredPreyAgent(xPosition(),yDown(),type)];
-    }
-
-    template<class TRAJECTORY>
-    bool hasAnySurrounding(Type type, int time, const TRAJECTORY &trajectory) const {
-        return
-        trajectory[State(time,PredPreyAgent(xRight(),yPosition(),type))] ||
-        trajectory[State(time,PredPreyAgent(xLeft(),yPosition(),type))] ||
-        trajectory[State(time,PredPreyAgent(xPosition(),yUp(),type))] ||
-        trajectory[State(time,PredPreyAgent(xPosition(),yDown(),type))];
-    }
-
+//    double surroundingCountOf(Type type, const ModelState<PredPreyAgent<GRIDSIZE>> &others) const {
+//        return others[PredPreyAgent(xRight(),yPosition(),type)] +
+//        others[PredPreyAgent(xLeft(),yPosition(),type)] +
+//        others[PredPreyAgent(xPosition(),yUp(),type)] +
+//        others[PredPreyAgent(xPosition(),yDown(),type)];
+//    }
 
 
 };
@@ -176,6 +214,7 @@ std::vector<PredPreyAgent<GRIDSIZE>> PredPreyAgent<GRIDSIZE>::consequences(PredP
 template<int GRIDSIZE>
 template<class TRAJECTORY>
 double PredPreyAgent<GRIDSIZE>::logEventProb(const Event<PredPreyAgent<GRIDSIZE>> &event, const TRAJECTORY &trajectory) {
+    int surroundingCount;
     switch(event.act()) {
         case MOVEUP:
         case MOVEDOWN:
@@ -183,44 +222,63 @@ double PredPreyAgent<GRIDSIZE>::logEventProb(const Event<PredPreyAgent<GRIDSIZE>
         case MOVERIGHT:
             return lpMove;
         case GIVEBIRTH:
-            if (event.agent().type() == PREDATOR) {
-                return (event.agent().hasAnySurrounding(PREY, event.time(), trajectory)) ? lpPredBirthGivenPrey : lpPredBirthGivenNoPrey;
-            } else {
-                return (event.agent().hasAnySurrounding(PREDATOR, event.time(), trajectory)) ? lpPreyBirthGivenPred : lpPreyBirthGivenNoPred;
-            }
+            surroundingCount = trajectory.surroundingCountOf(State<PredPreyAgent<GRIDSIZE>>(event.time(), event.agent()));
+            if (event.agent().type() == PREDATOR) return surroundingCount >= 1 ? lpPredBirthGivenPrey : lpPredBirthGivenNoPrey;
+            return surroundingCount >= 1 ? lpPreyBirthGivenPred : lpPreyBirthGivenNoPred;
         case DIE:
-            if (event.agent().type() == PREDATOR) {
-                return (event.agent().hasAnySurrounding(PREY, event.time(), trajectory)) ? lpPredDeathGivenPrey : lpPredDeathGivenNoPrey;
-            } else {
-                return (event.agent().hasAnySurrounding(PREDATOR, event.time(), trajectory)) ? lpPreyDeathGivenPred : lpPreyDeathGivenNoPred;
-            }
+            surroundingCount = trajectory.surroundingCountOf(State<PredPreyAgent<GRIDSIZE>>(event.time(), event.agent()));
+            if (event.agent().type() == PREDATOR) return surroundingCount >= 1 ? lpPredDeathGivenPrey : lpPredDeathGivenNoPrey;
+            return surroundingCount >= 1 ? lpPreyDeathGivenPred : lpPreyDeathGivenNoPred;
+
+//        case GIVEBIRTH:
+//            if (event.agent().type() == PREDATOR) {
+//                return (event.agent().hasAnySurrounding(PREY, event.time(), trajectory)) ? lpPredBirthGivenPrey : lpPredBirthGivenNoPrey;
+//            } else {
+//                return (event.agent().hasAnySurrounding(PREDATOR, event.time(), trajectory)) ? lpPreyBirthGivenPred : lpPreyBirthGivenNoPred;
+//            }
+//        case DIE:
+//            if (event.agent().type() == PREDATOR) {
+//                return (event.agent().hasAnySurrounding(PREY, event.time(), trajectory)) ? lpPredDeathGivenPrey : lpPredDeathGivenNoPrey;
+//            } else {
+//                return (event.agent().hasAnySurrounding(PREDATOR, event.time(), trajectory)) ? lpPreyDeathGivenPred : lpPreyDeathGivenNoPred;
+//            }
     }
     assert(false);
     return -INFINITY;
 }
 
 template<int GRIDSIZE>
-TrajectoryDependencies<PredPreyAgent<GRIDSIZE>> PredPreyAgent<GRIDSIZE>::eventProbDependencies(const Event<PredPreyAgent<GRIDSIZE>> &event) {
+template<class DOMAIN>
+std::vector<int> PredPreyAgent<GRIDSIZE>::eventProbDependencies(const Event<PredPreyAgent<GRIDSIZE>> &event) {
     switch(event.act()) {
         case MOVEUP:
         case MOVEDOWN:
         case MOVELEFT:
         case MOVERIGHT:
-            return {{},{}};
+            return {};
         case GIVEBIRTH:
         case DIE:
-            PredPreyAgent<GRIDSIZE> agent = event.agent();
-            Type affectedType = (agent.type()==PREDATOR?PREY:PREDATOR);
-            return {{
-                            State(event.time(), PredPreyAgent<GRIDSIZE>(agent.xLeft(), agent.yPosition(), affectedType)),
-                            State(event.time(), PredPreyAgent<GRIDSIZE>(agent.xRight(), agent.yPosition(), affectedType)),
-                            State(event.time(), PredPreyAgent<GRIDSIZE>(agent.xPosition(), agent.yUp(), affectedType)),
-                            State(event.time(), PredPreyAgent<GRIDSIZE>(agent.xPosition(), agent.yDown(), affectedType))
-                    },
-                    {}};
+            return { DOMAIN::surroundingCountIndexOf(State<PredPreyAgent<GRIDSIZE>>(event.time(), event.agent())) };
+
+//            PredPreyAgent<GRIDSIZE> agent = event.agent();
+//            Type affectedType = (agent.type()==PREDATOR?PREY:PREDATOR);
+//            return {
+//                    DOMAIN::indexOf(State(event.time(),
+//                                          PredPreyAgent<GRIDSIZE>(agent.xLeft(), agent.yPosition(),
+//                                                                  affectedType))),
+//                    DOMAIN::indexOf(State(event.time(),
+//                                          PredPreyAgent<GRIDSIZE>(agent.xRight(), agent.yPosition(),
+//                                                                  affectedType))),
+//                    DOMAIN::indexOf(State(event.time(), PredPreyAgent<GRIDSIZE>(agent.xPosition(), agent.yUp(),
+//                                                                                affectedType))),
+//                    DOMAIN::indexOf(State(event.time(),
+//                                          PredPreyAgent<GRIDSIZE>(agent.xPosition(), agent.yDown(),
+//                                                                  affectedType)))
+//            };
+
     }
     assert(false);
-    return {{},{}};
+    return {};
 }
 
 
@@ -284,7 +342,7 @@ TrajectoryDependencies<PredPreyAgent<GRIDSIZE>> PredPreyAgent<GRIDSIZE>::eventPr
 //template<int GRIDSIZE>
 //std::vector<double> PredPreyAgent<GRIDSIZE>::timestep(const ModelState<PredPreyAgent<GRIDSIZE>> &others) const {
 //
-//    std::vector<double> actDistribution(actDomainSize(),0.0);
+//    std::vector<double> actDistribution(actDomainSize,0.0);
 //    if (type() == PREDATOR) {
 //        if (surroundingCountOf(PREY, others) >= 1) {
 //            actDistribution[GIVEBIRTH] = lpPredBirthGivenPrey;

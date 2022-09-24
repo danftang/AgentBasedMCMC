@@ -93,11 +93,11 @@ public:
         send1d(matrixData);
     }
 
-    template<int GRIDSIZE>
-    void animate(Trajectory<PredPreyAgent<GRIDSIZE>> &predPreyTrajectory, double framesPerSecond) {
+    template<int GRIDSIZE, int NTIMESTEPS>
+    void animate(Trajectory<PredPreyAgent<GRIDSIZE>,NTIMESTEPS> &predPreyTrajectory, double framesPerSecond) {
 
         long frameDelay = 1000 / framesPerSecond;
-        for(int t=0; t <= predPreyTrajectory.nTimesteps(); ++t) {
+        for(int t=0; t <= NTIMESTEPS; ++t) {
             auto clockTime = std::chrono::steady_clock::now();
             plot(ModelState<PredPreyAgent<GRIDSIZE>>(predPreyTrajectory,t));
             std::this_thread::sleep_until(clockTime + std::chrono::milliseconds(frameDelay));
