@@ -13,7 +13,7 @@
 
 #include <functional>
 #include <cmath>
-#include "ConvexPolyhedron.h"
+#include "version1/ConvexPolyhedron.h"
 
 template<class T>
 class FactoredConvexDistribution {

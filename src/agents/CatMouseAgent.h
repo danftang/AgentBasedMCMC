@@ -20,9 +20,8 @@
 #include <vector>
 #include <set>
 #include "../ModelState.h"
-#include "../Constraint.h"
+#include "../version1/Constraint.h"
 #include "../Trajectory.h"
-#include "../TrajectoryDependencies.h"
 
 class CatMouseAgent {
 public:

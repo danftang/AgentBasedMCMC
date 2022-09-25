@@ -31,15 +31,25 @@ public:
 
 };
 
-template<class COEFF>
-EqualityConstraint<COEFF> operator ==(const LinearSum<COEFF> &linExp, COEFF c) {
-    return EqualityConstraint<COEFF>(linExp.toSparseVec(), c);
+template<class CONST, class COEFF, class RESULT = decltype(std::declval<COEFF>() - std::declval<CONST>())>
+EqualityConstraint<RESULT> operator ==(const LinearSum<COEFF> &linExp, CONST c) {
+    EqualityConstraint<RESULT> result;
+    result.constant = c;
+    result.coefficients.reserve(linExp.coefficients.size());
+    for(const auto &entry: linExp.coefficients) result.coefficients.insert(entry.first, entry.second);
+    return result;
 }
 
-template<class COEFF>
-EqualityConstraint<COEFF> operator ==(double c, const LinearSum<COEFF> &linExp) {
-    return linExp == c;
+template<class COEFF, class CONST, class RESULT = decltype(std::declval<COEFF>() - std::declval<CONST>())>
+EqualityConstraint<COEFF> operator ==(CONST c, const LinearSum<COEFF> &linExp) {
+    return operator ==<CONST,COEFF,RESULT>(linExp,c);
 }
+
+template<class COEFF, typename = std::enable_if_t<std::is_arithmetic_v<COEFF>>>
+EqualityConstraint<COEFF> operator ==(const X &symbolicVar, const COEFF &constant) {
+    return EqualityConstraint<COEFF>({{symbolicVar.id,1}}, constant);
+}
+
 
 template<typename COEFF>
 std::ostream &operator <<(std::ostream &out, const EqualityConstraint<COEFF> &constraint) {

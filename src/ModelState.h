@@ -14,7 +14,7 @@
 #include "State.h"
 
 template<typename AGENT>
-class ModelState: public std::vector<ABM::occupation_type> {
+class ModelState: public std::vector<int> {
 public:
     typedef AGENT agent_type;
 

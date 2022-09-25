@@ -40,8 +40,8 @@ public:
     }
 
     template<class INDEXDEPENDENCIES = std::initializer_list<int>>
-    void addFactor(std::function<std::pair<double,bool>(const DOMAIN &)> func, INDEXDEPENDENCIES &&indexDependencies) {
-        factors.emplace_back(std::move(func), std::forward<INDEXDEPENDENCIES>(indexDependencies));
+    void addFactor(std::function<std::pair<double,bool>(const DOMAIN &)> func, const INDEXDEPENDENCIES &indexDependencies) {
+        factors.emplace_back(std::move(func), indexDependencies);
     }
 
     void addConstraint(EqualityConstraint<CONSTRAINTCOEFF> constraint) {

@@ -8,9 +8,9 @@
 #define ABMCMC_STARTSTATEDISTRIBUTION_H
 
 #include <functional>
-#include "ABM.h"
-#include "FactoredConvexDistribution.h"
-#include "ModelState.h"
+#include "../ABM.h"
+#include "../FactoredConvexDistribution.h"
+#include "../ModelState.h"
 
 template<class AGENT>
 class StartStateDistribution: public FactoredConvexDistribution<ABM::occupation_type> {

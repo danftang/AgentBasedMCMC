@@ -26,7 +26,7 @@
 #include <array>
 #include <functional>
 #include <set>
-#include "subscript_operator_traits.h"
+#include "extratraits.h"
 #include "include/Random.h"
 
 template<typename OUT, typename IN>

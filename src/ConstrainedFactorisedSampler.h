@@ -25,10 +25,12 @@
 #include <vector>
 #include <map>
 #include <functional>
+#include "include/debug.h"
 #include "include/MutableCategoricalArray.h"
 #include "include/SparseVec.h"
-#include "MCMCStatistics.h"
 #include "include/Random.h"
+
+#include "MCMCStatistics.h"
 #include "ConstrainedFactorisedDistribution.h"
 #include "TableauNormMinimiser.h"
 

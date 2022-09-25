@@ -48,7 +48,7 @@ public:
     void addPoissonFactor(int agentId, double lambda) {
         State<AGENT> state(0,agentId);
         if(lambda == 0.0) {
-            this->constraints.push_back(1*X(DOMAIN::indexOf(state)) == 0);
+            this->constraints.push_back(X(DOMAIN::indexOf(state)) == (typename DOMAIN::value_type)0);
         } else {
             double logLambda = log(lambda);
             this->addFactor(

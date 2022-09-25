@@ -8,9 +8,8 @@
 
 #include <vector>
 #include "../ModelState.h"
-#include "../Constraint.h"
+#include "../version1/Constraint.h"
 #include "../ABM.h"
-#include "../TrajectoryDependencies.h"
 
 // Agent that has no interactions and can either stay put or move right (on a circular, 1D domain)
 template<int GRIDSIZE>

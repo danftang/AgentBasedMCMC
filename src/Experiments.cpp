@@ -15,7 +15,7 @@
 #include "PoissonStartState.h"
 #include "ConstrainedFactorisedSampler.h"
 #include "FixedPopulationStartState.h"
-#include "ExtendedTrajectory2.h"
+#include "ExtendedTrajectory.h"
 #include "PredPreyTrajectory.h"
 #include "Plotter.h"
 
@@ -34,8 +34,8 @@ void Experiments::BinomialAgentSingleObservation() {
     double pObserveIfPresent = 0.9;
 
     doValidationExperiment(nBurnin, nSamples, nRejectionSamples, kappa,
-                           BernoulliStartState<ExtendedTrajectory2<BinomialAgent<GRIDSIZE>,nTimesteps>>({p0, p1, 0.0}),
-                           Likelihood<ExtendedTrajectory2<BinomialAgent<GRIDSIZE>,nTimesteps>>(State<BinomialAgent<GRIDSIZE>>(1, 0), 1, pObserveIfPresent));
+                           BernoulliStartState<ExtendedTrajectory<BinomialAgent<GRIDSIZE>,nTimesteps>>({p0, p1, 0.0}),
+                           Likelihood<ExtendedTrajectory<BinomialAgent<GRIDSIZE>,nTimesteps>>(State<BinomialAgent<GRIDSIZE>>(1, 0), 1, pObserveIfPresent));
 //    doValidationExperiment(nTimesteps, nBurnin, nSamples, nRejectionSamples, kappa,
 //                           BernoulliStartState<ExtendedTrajectory<BinomialAgent<GRIDSIZE>>>({p0, p1, 0.0}),
 //                           Likelihood<ExtendedTrajectory<BinomialAgent<GRIDSIZE>>>(State<BinomialAgent<GRIDSIZE>>(1, 0), 1, pObserveIfPresent));
@@ -54,8 +54,8 @@ void Experiments::CatMouseSingleObservation() {
 //            BernoulliStartState<Trajectory<CatMouseAgent>>({0.9, 0.1, 0.1, 0.9}),
 //            Likelihood<Trajectory<CatMouseAgent>>(State(1,CatMouseAgent(CatMouseAgent::CAT, CatMouseAgent::LEFT)),1,1.0));
     doValidationExperiment(nBurnin, nSamples, nRejectionSamples, kappa,
-                           BernoulliStartState<ExtendedTrajectory2<CatMouseAgent,nTimesteps>>({0.9, 0.1, 0.1, 0.9}),
-                           Likelihood<ExtendedTrajectory2<CatMouseAgent,nTimesteps>>(State(1,CatMouseAgent(CatMouseAgent::CAT, CatMouseAgent::LEFT)),1,1.0));
+                           BernoulliStartState<ExtendedTrajectory<CatMouseAgent,nTimesteps>>({0.9, 0.1, 0.1, 0.9}),
+                           Likelihood<ExtendedTrajectory<CatMouseAgent,nTimesteps>>(State(1, CatMouseAgent(CatMouseAgent::CAT, CatMouseAgent::LEFT)), 1, 1.0));
 }
 
 

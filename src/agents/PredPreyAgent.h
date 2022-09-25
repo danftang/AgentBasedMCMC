@@ -41,8 +41,8 @@
 #include <vector>
 #include <map>
 #include "../ModelState.h"
-#include "../Constraint.h"
-#include "../ExtendedTrajectory2.h"
+#include "../version1/Constraint.h"
+#include "../ExtendedTrajectory.h"
 
 class PredPreyAgentBase {
 public:

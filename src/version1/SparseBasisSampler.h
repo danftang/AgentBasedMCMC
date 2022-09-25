@@ -22,10 +22,10 @@
 
 #include <utility>
 #include <vector>
-#include "TableauNormMinimiser.h"
-#include "include/MutableCategoricalArray.h"
-#include "MCMCStatistics.h"
-#include "include/Random.h"
+#include "../TableauNormMinimiser.h"
+#include "../include/MutableCategoricalArray.h"
+#include "../MCMCStatistics.h"
+#include "../include/Random.h"
 
 
 template<class T>

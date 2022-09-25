@@ -7,10 +7,7 @@
 #define ABMCMC_PRIOR_H
 
 #include "ABM.h"
-#include "StartStateDistribution.h"
 #include "ConstrainedFactorisedDistribution.h"
-#include "PoissonStartState.h"
-#include "TrajectoryDependencies.h"
 
 // DOMAIN should be a domain over ABM trajectories that inplements
 // index operators over Events and States
@@ -98,35 +95,35 @@ public:
     // Turns an agent timestep, pi(a, \Psi), unction into a function
     // \prod_a \pi(a, \Psi, \psi)^T^t_{\psi a}/T^t_{\psi a}!
     // widened to decay (roughly) exponentially over negative occupations and zero probability actions
-    static std::pair<double, bool> widenedAgentMultinomial(const State<AGENT> &state, const DOMAIN &trajectory, const bool includePhiFactorial) {
-        ABM::occupation_type stateOccupation(0);
-        double logP(0.0);
-        bool exactValue = true;
-        // std::vector<double> actPMF = state.agent.timestep(
-//        const ModelState<AGENT> &neighbours = neighbourModelState(trajectory, state);
-        for (int act = 0; act < AGENT::actDomainSize; ++act) {
-            Event<AGENT> event(state.time, state.agent, act);
-            int actOccupation = trajectory[event];
-            if (actOccupation != 0) {
-                double logpAct;
-                if (actOccupation < 0) { // negative occupation widening
-                    logpAct = -ABM::kappa;
-                    actOccupation = -actOccupation;
-                    exactValue = false;
-                } else {
-                    logpAct = AGENT::logEventProb(event, trajectory);
-                    if (logpAct == -INFINITY) {
-                        logpAct = -ABM::kappa; // impossible act widening
-                        exactValue = false;
-                    }
-                }
-                logP += actOccupation * logpAct - lgamma(actOccupation + 1);
-                stateOccupation += actOccupation;
-            }
-        }
-        if(includePhiFactorial) logP += lgamma(std::max(stateOccupation, 0) + 1); // Phi factorial
-        return std::pair(logP, exactValue);
-    }
+//    static std::pair<double, bool> widenedAgentMultinomial(const State<AGENT> &state, const DOMAIN &trajectory, const bool includePhiFactorial) {
+//        ABM::occupation_type stateOccupation(0);
+//        double logP(0.0);
+//        bool exactValue = true;
+//        // std::vector<double> actPMF = state.agent.timestep(
+////        const ModelState<AGENT> &neighbours = neighbourModelState(trajectory, state);
+//        for (int act = 0; act < AGENT::actDomainSize; ++act) {
+//            Event<AGENT> event(state.time, state.agent, act);
+//            int actOccupation = trajectory[event];
+//            if (actOccupation != 0) {
+//                double logpAct;
+//                if (actOccupation < 0) { // negative occupation widening
+//                    logpAct = -ABM::kappa;
+//                    actOccupation = -actOccupation;
+//                    exactValue = false;
+//                } else {
+//                    logpAct = AGENT::logEventProb(event, trajectory);
+//                    if (logpAct == -INFINITY) {
+//                        logpAct = -ABM::kappa; // impossible act widening
+//                        exactValue = false;
+//                    }
+//                }
+//                logP += actOccupation * logpAct - lgamma(actOccupation + 1);
+//                stateOccupation += actOccupation;
+//            }
+//        }
+//        if(includePhiFactorial) logP += lgamma(std::max(stateOccupation, 0) + 1); // Phi factorial
+//        return std::pair(logP, exactValue);
+//    }
 
     static std::pair<double, bool> widenedEventFactor(const Event<AGENT> &event, const DOMAIN &trajectory) {
         double logP = 0.0;

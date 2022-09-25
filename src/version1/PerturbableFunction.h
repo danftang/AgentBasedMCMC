@@ -5,7 +5,7 @@
 #ifndef ABMCMC_PERTURBABLEFUNCTION_H
 #define ABMCMC_PERTURBABLEFUNCTION_H
 
-#include "include/SparseVec.h"
+#include "../include/SparseVec.h"
 
 template<class D, class RANGE>
 class PerturbableFunction {

@@ -26,8 +26,8 @@
 
 #include "WeightedFactoredConvexDistribution.h"
 #include "TrajectoryImportance.h"
-#include "ABM.h"
-#include "Event.h"
+#include "../ABM.h"
+#include "../Event.h"
 #include "StartStateDistribution.h"
 
 //template <class AGENT>

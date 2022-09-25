@@ -7,9 +7,9 @@
 #ifndef ABMCMC_CONSTRAINT_H
 #define ABMCMC_CONSTRAINT_H
 
-#include "include/SparseVec.h"
-#include "LinearSum.h"
-#include "EqualityConstraint.h"
+#include "../include/SparseVec.h"
+#include "../LinearSum.h"
+#include "../EqualityConstraint.h"
 
 template<class COEFF>
 class Constraint {

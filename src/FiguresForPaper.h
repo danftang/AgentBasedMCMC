@@ -9,12 +9,14 @@
 #include <thread>
 #include "PredPreyProblem.h"
 #include "diagnostics/MultiChainStats.h"
+#include "diagnostics/Dataflow.h"
 #include "Plotter.h"
-#include "SparseBasisSampler.h"
+#include "ConstrainedFactorisedSampler.h"
 
 template<int GRIDSIZE, int TIMESTEPS>
 class FiguresForPaper {
 public:
+    typedef PredPreyTrajectory<GRIDSIZE,TIMESTEPS> trajectory_type;
 
     static const std::string filenamePrefix;
     static const std::string problemFilename;
@@ -22,15 +24,15 @@ public:
 
 
     static void generateStandardProblemFile(double kappa)  {
-        constexpr double pPredator = 1.0-PredPreyAgent<GRIDSIZE>::pNoPred;
-        constexpr double pPrey = 1.0-PredPreyAgent<GRIDSIZE>::pNoPrey;
+        constexpr double pPredator = PredPreyAgent<GRIDSIZE>::pPred;
+        constexpr double pPrey = PredPreyAgent<GRIDSIZE>::pPrey;
         constexpr double pMakeObservation = 0.05;
         constexpr double pObserveIfPresent = 1.0;//0.9;
         std::ofstream probFile(problemFilename);
         boost::archive::binary_oarchive probArchive(probFile);
 
         Random::gen.seed(1234);
-        PredPreyProblem<GRIDSIZE> problem(TIMESTEPS, pPredator, pPrey, pMakeObservation, pObserveIfPresent, kappa);
+        PredPreyProblem<GRIDSIZE,TIMESTEPS> problem(pPredator, pPrey, pMakeObservation, pObserveIfPresent, kappa);
         std::cout << problem << std::endl;
         probArchive << problem;
     }
@@ -42,7 +44,7 @@ public:
         std::ifstream probFile(problemFilename);
         if(!probFile.good()) throw("Can't open problem probFile for this geometry. Run generateStandardProblemFile first.");
         boost::archive::binary_iarchive probArchive(probFile);
-        PredPreyProblem<GRIDSIZE> problem;
+        PredPreyProblem<GRIDSIZE,TIMESTEPS> problem;
         probArchive >> problem;
 
         std::cout << "Loaded problem" << std::endl;
@@ -74,7 +76,7 @@ public:
     }
 
 
-    static std::vector<ChainStats> startStatsThread(const PredPreyProblem<GRIDSIZE> &problem, std::vector<ABM::occupation_type> initialState, int nSamples) {
+    static std::vector<ChainStats> startStatsThread(const PredPreyProblem<GRIDSIZE,TIMESTEPS> &problem, trajectory_type initialState, int nSamples) {
         using namespace dataflow;
 
         const double maxLagProportion = 0.5;
@@ -82,16 +84,15 @@ public:
         const int nBurnIn = nSamples*0.1;
         int nTimesteps = problem.nTimesteps();
 
-        SparseBasisSampler sampler(problem.tableau, problem.posterior.factors, problem.posterior.perturbableFunctionFactory(), initialState, problem.kappa);
+        ConstrainedFactorisedSampler sampler(problem.tableau, problem.posterior.factors, problem.posterior.perturbableFunctionFactory(), initialState, problem.kappa);
 
         std::valarray<std::valarray<double>> firstSynopsisSamples(nSamples/2);
         std::valarray<std::valarray<double>> lastSynopsisSamples(nSamples/2);
         ModelState<PredPreyAgent<GRIDSIZE>> firstMeanEndState;
         ModelState<PredPreyAgent<GRIDSIZE>> lastMeanEndState;
-        std::function trajectoryToEndState = [nTimesteps](const Trajectory<PredPreyAgent<GRIDSIZE>> &x) { return x.modelState(nTimesteps); };
 
         sampler >>= Drop(nBurnIn)
-                >>= trajectoryToEndState
+                >>= &PredPreyTrajectory<GRIDSIZE,TIMESTEPS>::endState
                 >>= SwitchOnClose {
                         Split {
                                 synopsis >>= save(firstSynopsisSamples),
@@ -131,7 +132,7 @@ public:
         std::ifstream probFile(problemFilename);
         if(!probFile.good()) throw("Can't open problem probFile for this geometry. Run generateStandardProblemFile first.");
         boost::archive::binary_iarchive probArchive(probFile);
-        PredPreyProblem<GRIDSIZE> problem;
+        PredPreyProblem<GRIDSIZE,TIMESTEPS> problem;
         probArchive >> problem;
 
         std::cout << "Loaded problem" << std::endl;
@@ -152,14 +153,14 @@ public:
         std::ifstream probFile(problemFilename);
         if(!probFile.good()) throw("Can't open problem probFile for this geometry. Run generateStandardProblemFile first.");
         boost::archive::binary_iarchive probArchive(probFile);
-        PredPreyProblem<GRIDSIZE> problem;
+        PredPreyProblem<GRIDSIZE,TIMESTEPS> problem;
         probArchive >> problem;
 
         std::cout << "Loaded problem" << std::endl;
         std::cout << problem;
 
         std::cout << "Creating sampler..." << std::endl;
-        SparseBasisSampler<ABM::occupation_type> sampler(problem.tableau, problem.posterior.factors, problem.posterior.perturbableFunctionFactory(), problem.prior.nextSample(false), problem.kappa);
+        ConstrainedFactorisedSampler sampler(problem.tableau, problem.posterior.factors, problem.posterior.perturbableFunctionFactory(), problem.prior.nextSample(false), problem.kappa);
 
         std::cout << "Burning in..." << std::endl;
         for(int burnIn=0; burnIn<nSamples/4; ++burnIn) sampler();
@@ -170,8 +171,8 @@ public:
         auto endTime = std::chrono::steady_clock::now();
         auto execTimeMilliSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
 
-        const std::vector<ABM::occupation_type> sample = sampler();
-        std::cout << "Final state is " << std::vector<ABM::occupation_type>(sample.begin(), sample.begin() + 20) << "..." << std::endl;
+        const trajectory_type &sample = sampler();
+        std::cout << "Final state is " << std::vector(sample.begin(), sample.begin() + 20) << "..." << std::endl;
         std::cout << "Executed in " << execTimeMilliSeconds << "ms" << std::endl;
         std::cout << "Time per feasible sample " << execTimeMilliSeconds*1.0/nSamples << "ms" << std::endl;
 
@@ -179,7 +180,7 @@ public:
 
 
     static void plotProblemEndState() {
-        PredPreyProblem<GRIDSIZE> problem(problemFilename);
+        PredPreyProblem<GRIDSIZE,TIMESTEPS> problem(problemFilename);
         Plotter plotter;
         plotter.plot(ModelState(problem.realTrajectory, problem.realTrajectory.nTimesteps()));
     }
@@ -196,7 +197,7 @@ public:
         std::ifstream probFile(problemFilename);
         if(!probFile.good()) throw("Can't open problem probFile for this geometry. Odd because the stats probFile exists!");
         boost::archive::binary_iarchive probArchive(probFile);
-        PredPreyProblem<GRIDSIZE> problem;
+        PredPreyProblem<GRIDSIZE,TIMESTEPS> problem;
         probArchive >> problem;
 
         std::cout << problem << std::endl;

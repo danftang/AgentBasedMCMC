@@ -9,10 +9,7 @@
 #ifndef ABMCMC_LIKELIHOOD_H
 #define ABMCMC_LIKELIHOOD_H
 
-#include "ABM.h"
-#include "NoisyAgentStateObservation.h"
-#include "NoiselessAgentStateObservation.h"
-#include "Trajectory.h"
+#include <boost/math/distributions/binomial.hpp>
 #include "ConstrainedFactorisedDistribution.h"
 
 template<class DOMAIN, class AGENT = typename DOMAIN::agent_type>
@@ -39,21 +36,21 @@ public:
 
 
     // single observation
-    Likelihood(const State<AGENT> &state, ABM::occupation_type nObserved, double pObserveIfPresent) {
+    Likelihood(const State<AGENT> &state, typename DOMAIN::value_type nObserved, double pObserveIfPresent) {
         addObservation(state, nObserved, pObserveIfPresent);
     }
 
 
     // binomial (n k) p^k (1-p)^(n-k)
     // logBinomial klog(p) + (n-k)log(1-p) + log(n choose k)
-    void addObservation(const State<AGENT> &state, ABM::occupation_type nObserved, double pObserveIfPresent) {
+    void addObservation(const State<AGENT> &state, typename DOMAIN::value_type nObserved, double pObserveIfPresent) {
         double logPnObserved = nObserved*log(pObserveIfPresent);
         if(pObserveIfPresent == 1.0) {
-            this->constraints.push_back(1*X(DOMAIN::indexOf(state)) == nObserved); // noiseless
+            this->constraints.push_back(X(DOMAIN::indexOf(state)) == nObserved); // noiseless
         } else {
             this->addFactor(
                     [state, nObserved, pObserveIfPresent, logPnObserved](const DOMAIN &trajectory) {
-                        ABM::occupation_type realOccupation = trajectory[state];
+                        typename DOMAIN::value_type realOccupation = trajectory[state];
                         if (realOccupation < nObserved)
                             return std::pair(logPnObserved + ABM::kappa * (realOccupation - nObserved), false);
                         return std::pair(log(boost::math::pdf(boost::math::binomial(realOccupation, pObserveIfPresent),
@@ -66,7 +63,7 @@ public:
 
     static std::vector<std::pair<State<AGENT>,int>> generateObservations(const DOMAIN &realTrajectory, double pMakeObservation, double pObserveIfPresent) {
         std::vector<std::pair<State<AGENT>,int>> observations;
-        for (int t = 0; t < realTrajectory.nTimesteps(); ++t) {
+        for (int t = 0; t < realTrajectory.nTimesteps; ++t) {
             for (int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
                 if (Random::nextBool(pMakeObservation)) {
                     State<AGENT> state(t, agentId);

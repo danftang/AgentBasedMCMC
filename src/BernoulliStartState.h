@@ -63,7 +63,7 @@ public:
 
             );
         } else {
-            this->constraints.push_back(1*X(DOMAIN::indexOf(state)) == (int)p);
+            this->constraints.push_back(X(DOMAIN::indexOf(state)) == (typename DOMAIN::value_type)p);
         }
     }
 
@@ -104,7 +104,7 @@ public:
 
     friend std::ostream &operator <<(std::ostream &out, const BernoulliStartState<DOMAIN> &startState) {
         out << "{ ";
-        for(const EqualityConstraint<ABM::occupation_type> &constraint: startState.constraints) {
+        for(const auto &constraint: startState.constraints) {
             out << "P(X" << constraint.coefficients.indices[0] << ")=" << constraint.constant << " ";
         }
         for(const auto &factor: startState.logFactors) {

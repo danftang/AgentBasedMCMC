@@ -8,9 +8,9 @@
 #include <vector>
 #include <map>
 
-#include "State.h"
-#include "ModelState.h"
-#include "ABM.h"
+#include "../State.h"
+#include "../ModelState.h"
+#include "../ABM.h"
 
 // A vector of timesteps, whith each timestep a map from agent state to occupation number
 template<typename AGENT>

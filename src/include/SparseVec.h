@@ -16,16 +16,13 @@ public:
     std::vector<int> indices;   // array of indices of non-zero elements
     std::vector<T> values; // array of values of non-zero elements
 
-    SparseVec() { }
+    SparseVec()=default;
+    SparseVec(const SparseVec<T> &other)=default;
+    SparseVec(SparseVec<T> &&other)=default;
 
     explicit SparseVec(int sparseSize): indices(sparseSize), values(sparseSize) { }
 
-    SparseVec(SparseVec<T> &&rvalue) noexcept: indices(std::move(rvalue.indices)), values(std::move(rvalue.values)) { }
-
-    SparseVec(const SparseVec<T> &lvalue): indices(lvalue.indices), values(lvalue.values) { // copy semantics
-    }
-
-    explicit SparseVec(const std::vector<T> &dense): indices(), values() {
+    explicit SparseVec(const std::vector<T> &dense) {
         for(int i=0; i < dense.size(); ++i) {
             if(double v = dense[i]; v != 0.0) {
                 indices.push_back(i);
@@ -34,12 +31,15 @@ public:
         }
     }
 
-    explicit SparseVec(const std::map<int,T> &map): indices(), values() {
+    explicit SparseVec(const std::map<int,T> &map) {
         reserve(map.size());
         for(const auto &entry: map) insert(entry.first, entry.second);
     }
 
-
+    SparseVec(const std::initializer_list<std::pair<int,T>> &initValues) {
+        reserve(initValues.size());
+        for(const std::pair<int,T> &entry: initValues) insert(entry.first, entry.second);
+    }
 
     int sparseSize() const { return indices.size(); }
 

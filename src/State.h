@@ -37,14 +37,14 @@ public:
     }
 
 
-    ABM::occupation_type fermionicOccupationUpperBound() const {
-        assert(agent < incomingEventsByState.size());
-        return AGENT::actDomainSize < incomingEventsByState[agent].size()?AGENT::actDomainSize:incomingEventsByState[agent].size();
-    }
+//    ABM::occupation_type fermionicOccupationUpperBound() const {
+//        assert(agent < incomingEventsByState.size());
+//        return AGENT::actDomainSize < incomingEventsByState[agent].size()?AGENT::actDomainSize:incomingEventsByState[agent].size();
+//    }
 
     template<class DOMAIN>
-    ABM::occupation_type forwardOccupation(const DOMAIN &trajectory) const {
-        ABM::occupation_type occupation = 0;
+    typename DOMAIN::value_type forwardOccupation(const DOMAIN &trajectory) const {
+        typename DOMAIN::value_type occupation = 0;
         for(int actId = 0; actId < AGENT::actDomainSize; ++actId) {
             occupation += trajectory[DOMAIN::indexOf(Event<AGENT>(time, agent, actId))];
         }
@@ -58,8 +58,8 @@ public:
 
 
     template<class DOMAIN>
-    ABM::occupation_type backwardOccupation(const DOMAIN &trajectory) const {
-        ABM::occupation_type occupation = 0;
+    typename DOMAIN::value_type backwardOccupation(const DOMAIN &trajectory) const {
+        typename DOMAIN::value_type occupation = 0;
         for(const Event<AGENT> &incomingEvent : incomingEventsByState[agent]) {
             occupation += trajectory[DOMAIN::indexOf(Event<AGENT>(time-1, incomingEvent.agent(), incomingEvent.act()))];
         }
@@ -77,29 +77,29 @@ public:
     }
 
 
-    ABM::occupation_type fermionicBoundedForwardOccupation(const std::vector<ABM::occupation_type> &trajectory) const {
-        ABM::occupation_type occupation = 0;
-        int beginIndex = Event<AGENT>(time, agent, 0).id;
-        int endIndex = beginIndex + AGENT::actDomainSize;
-        for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
-            occupation += trajectory[eventId]>0?1:0;
-        }
-        return occupation;
-    }
+//    ABM::occupation_type fermionicBoundedForwardOccupation(const std::vector<ABM::occupation_type> &trajectory) const {
+//        ABM::occupation_type occupation = 0;
+//        int beginIndex = Event<AGENT>(time, agent, 0).id;
+//        int endIndex = beginIndex + AGENT::actDomainSize;
+//        for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
+//            occupation += trajectory[eventId]>0?1:0;
+//        }
+//        return occupation;
+//    }
 
 
-    LinearSum<ABM::occupation_type> operator *(ABM::occupation_type c) const {
-        LinearSum<ABM::occupation_type> eventVector;
-        int beginIndex = Event<AGENT>(time, agent, 0).id;
-        for(int actId=0; actId < AGENT::actDomainSize; ++actId) {
-            eventVector += c*X(beginIndex+actId);
-        }
-        return eventVector;
-    }
+//    LinearSum<ABM::occupation_type> operator *(ABM::occupation_type c) const {
+//        LinearSum<ABM::occupation_type> eventVector;
+//        int beginIndex = Event<AGENT>(time, agent, 0).id;
+//        for(int actId=0; actId < AGENT::actDomainSize; ++actId) {
+//            eventVector += c*X(beginIndex+actId);
+//        }
+//        return eventVector;
+//    }
 
-    friend LinearSum<ABM::occupation_type> operator *(ABM::occupation_type c, const State<AGENT> &state) {
-        return state * c;
-    }
+//    friend LinearSum<ABM::occupation_type> operator *(ABM::occupation_type c, const State<AGENT> &state) {
+//        return state * c;
+//    }
 
     friend std::ostream &operator <<(std::ostream &out, const State &state) {
         out << state.agent << "@t" << state.time;

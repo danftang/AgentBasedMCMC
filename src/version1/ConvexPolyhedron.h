@@ -11,7 +11,7 @@
 
 #include <vector>
 #include <iostream>
-#include "include/StlStream.h"
+#include "../include/StlStream.h"
 #include "Constraint.h"
 
 template<class T>
