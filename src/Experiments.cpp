@@ -10,7 +10,7 @@
 #include "diagnostics/Dataflow.h"
 #include "agents/CatMouseAgent.h"
 #include "agents/PredPreyAgent.h"
-#include "Prior.h"
+#include "ABMPrior.h"
 #include "ExactSolver.h"
 #include "PoissonStartState.h"
 #include "ConstrainedFactorisedSampler.h"
@@ -18,6 +18,7 @@
 #include "ExtendedTrajectory.h"
 #include "PredPreyTrajectory.h"
 #include "Plotter.h"
+#include "ABMPriorSampler.h"
 
 using namespace dataflow;
 
@@ -164,7 +165,7 @@ void Experiments::doValidationExperiment(int nBurnin, int nSamples, int nRejecti
                                          const STARTSTATE &startStateDistribution,
                                          const ConstrainedFactorisedDistribution<DOMAIN> &likelihood) {
     ABM::kappa = kappa;
-    Prior<DOMAIN> prior(startStateDistribution);
+    ABMPrior<DOMAIN> prior(startStateDistribution);
     std::cout << "Prior is\n" << prior << std::endl;
 
     std::cout << "Likelihood is\n" << likelihood << std::endl;
@@ -172,9 +173,8 @@ void Experiments::doValidationExperiment(int nBurnin, int nSamples, int nRejecti
     auto posterior = likelihood * prior;
     std::cout << "Posterior is\n" << posterior << std::endl;
 
-    DOMAIN initialSolution;
 
-    ConstrainedFactorisedSampler sampler(posterior, initialSolution);
+    ConstrainedFactorisedSampler sampler(posterior);
 
     std::cout << "Burning-in..." << std::endl;
     for(int i=0; i < nBurnin; ++i) {
@@ -193,7 +193,7 @@ void Experiments::doValidationExperiment(int nBurnin, int nSamples, int nRejecti
     std::cout << sampler.stats << std::endl;
     std::cout << "     MCMC state = " << aggregateState / nSamples << std::endl;
 
-    RejectionSampler<DOMAIN> rejectionSampler(prior,likelihood);
+    RejectionSampler<DOMAIN> rejectionSampler(ABMPriorSampler<DOMAIN>(startStateDistribution.modelStateSampler()), likelihood);
     ModelState<typename DOMAIN::agent_type> rejectionAggregateState;
     rejectionSampler >>= &DOMAIN::endState >>= Sum(nRejectionSamples, rejectionAggregateState);
     std::cout << "Rejection state = " << rejectionAggregateState / nRejectionSamples << std::endl;

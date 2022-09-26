@@ -12,18 +12,21 @@
 #include "Event.h"
 #include "include/StlStream.h"
 #include "agents/PredPreyAgent.h"
-#include "Prior.h"
+#include "ABMPrior.h"
+#include "ABMPriorSampler.h"
 #include "Likelihood.h"
 #include "BernoulliStartState.h"
 #include "PoissonStartState.h"
 #include "TableauNormMinimiser.h"
 #include "PredPreyTrajectory.h"
+#include "Basis.h"
 
 template<int GRIDSIZE,int NTIMESTEPS>
 class PredPreyProblem {
 public:
     typedef PredPreyAgent<GRIDSIZE> agent_type;
     typedef PredPreyTrajectory<GRIDSIZE,NTIMESTEPS> trajectory_type;
+    typedef typename trajectory_type::value_type value_type;
 
     double                              pObserveIfPresent;
     double                              pPredator; // start state parameters
@@ -31,7 +34,7 @@ public:
     trajectory_type                     realTrajectory;
     double                              kappa;
     std::vector<std::pair<State<agent_type>,int>> observations;
-    TableauNormMinimiser<typename trajectory_type::value_type> tableau;
+    Basis<trajectory_type>              basisObj;
 
 //    PredPreyProblem(const std::string &filename): PredPreyProblem() {
 //        std::ifstream probFile(filename);
@@ -42,16 +45,20 @@ public:
 //    }
 //
 //
-    PredPreyProblem(double pPredator, double pPrey, double pMakeObservation, double pObserveIfPresent, double kappa):
-    pObserveIfPresent(pObserveIfPresent),
-    pPredator(pPredator),
-    pPrey(pPrey),
-    realTrajectory(prior().sampler()()),
-    kappa(kappa),
-    observations(Likelihood<trajectory_type>::generateObservations(realTrajectory, pMakeObservation, pObserveIfPresent))
-    {
+    PredPreyProblem()=default;
 
+
+    PredPreyProblem(double pPredator, double pPrey, double pMakeObservation, double pObserveIfPresent, double kappa):
+            pObserveIfPresent(pObserveIfPresent),
+            pPredator(pPredator),
+            pPrey(pPrey),
+            realTrajectory(ABMPriorSampler<PredPreyTrajectory<GRIDSIZE,NTIMESTEPS>>(startState())),
+            kappa(kappa),
+            observations(Likelihood<trajectory_type>::generateObservations(realTrajectory, pMakeObservation, pObserveIfPresent)),
+            basisObj(posterior())
+    {
     }
+
 
     PoissonStartState<trajectory_type> startState() {
         return PoissonStartState<trajectory_type>([pPredator=pPredator, pPrey=pPrey](agent_type agent) {
@@ -60,14 +67,29 @@ public:
     };
 
 
-    Prior<trajectory_type> prior() {
-        return Prior<trajectory_type>(startState());
+    const Basis<trajectory_type> &basis() { return basisObj; }
+
+    const std::vector<SparseVec<value_type>> &basisVectors() { return basisObj.basisVectors; }
+
+    trajectory_type randomInitialSolution() { return basis().basisToDomain(randomBasisCoord()); }
+
+    std::vector<value_type> randomBasisCoord() {
+        std::vector<value_type> coord(basisObj.basisVectors.size());
+        for(int i=0; i<coord.size(); ++i) {
+            coord[i] = Random::nextBool(0.01);
+        }
+        return coord;
+    }
+
+
+
+    ABMPrior<trajectory_type> prior() {
+        return ABMPrior<trajectory_type>(startState());
     };
 
     Likelihood<trajectory_type> likelihood() {
         return Likelihood<trajectory_type>(observations, pObserveIfPresent);
     }
-
 
     ConstrainedFactorisedDistribution<trajectory_type> posterior() {
         return prior() * likelihood();
@@ -112,7 +134,7 @@ private:
 
     template <typename Archive>
     void serialize(Archive &ar, const unsigned int version) {
-        ar & pPredator & pPrey & kappa & realTrajectory & observations & tableau;
+        ar & pPredator & pPrey & kappa & realTrajectory & observations & basisObj;
     }
 
 

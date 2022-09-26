@@ -9,6 +9,8 @@
 #include <map>
 #include <ostream>
 #include <algorithm>
+#include <boost/serialization/access.hpp>
+
 
 template<class T>
 class SparseVec {
@@ -91,7 +93,7 @@ public:
     }
 
 
-    SparseVec<T> operator -() {
+    SparseVec<T> operator -() const {
         SparseVec<T> negation(sparseSize());
         for(int i=0; i<sparseSize(); ++i) {
             negation.indices[i] = indices[i];
@@ -119,6 +121,15 @@ protected:
         indices.swap(rvalue.indices);
         values.swap(rvalue.values);
     }
+
+private:
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void serialize(Archive &ar, const unsigned int version) {
+        ar & indices & values;
+    }
+
 
 };
 

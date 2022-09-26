@@ -7,7 +7,7 @@
 
 #include <functional>
 #include "ModelState.h"
-#include "Prior.h"
+#include "ABMPrior.h"
 #include "Likelihood.h"
 
 template<class DOMAIN>
@@ -22,12 +22,12 @@ public:
     }
 
 
-    RejectionSampler(Prior<DOMAIN> & prior, const ConstrainedFactorisedDistribution<DOMAIN> & likelihood) :
-        priorSampler(prior.sampler()),
-        likelihood([&likelihood](const DOMAIN &X) {
-            return likelihood.Pexact(X);
-        }) {
-    }
+//    RejectionSampler(ABMPrior<DOMAIN> & prior, const ConstrainedFactorisedDistribution<DOMAIN> & likelihood) :
+//        priorSampler(prior.sampler()),
+//        likelihood([&likelihood](const DOMAIN &X) {
+//            return likelihood.Pexact(X);
+//        }) {
+//    }
 
 
     // N.B. Only use this when likelihood is reasonably high

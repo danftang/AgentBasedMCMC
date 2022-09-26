@@ -17,6 +17,7 @@ template<int GRIDSIZE, int TIMESTEPS>
 class FiguresForPaper {
 public:
     typedef PredPreyTrajectory<GRIDSIZE,TIMESTEPS> trajectory_type;
+    typedef typename trajectory_type::value_type value_type;
 
     static const std::string filenamePrefix;
     static const std::string problemFilename;
@@ -50,11 +51,18 @@ public:
         std::cout << "Loaded problem" << std::endl;
         std::cout << problem;
 
+//        ABMPrior<trajectory_type> prior(problem.prior());
+        auto posterior = problem.posterior();
+
         auto startTime = std::chrono::steady_clock::now();
 
         std::future<std::vector<ChainStats>> futureResults[nThreads];
         for(int thread = 0; thread < nThreads; ++thread) {
-            futureResults[thread] = std::async(&startStatsThread, problem, problem.prior.nextSample(false), nSamples);
+            futureResults[thread] = std::async(&startStatsThread,
+                                               posterior,
+                                               problem.basisVectors(),
+                                               problem.randomInitialSolution(),
+                                               nSamples);
         }
 
 
@@ -76,15 +84,18 @@ public:
     }
 
 
-    static std::vector<ChainStats> startStatsThread(const PredPreyProblem<GRIDSIZE,TIMESTEPS> &problem, trajectory_type initialState, int nSamples) {
+    static std::vector<ChainStats> startStatsThread(
+            const ConstrainedFactorisedDistribution<trajectory_type> &targetDistribution,
+            std::vector<SparseVec<value_type>> basisVectors,
+            trajectory_type initalSample,
+            int nSamples) {
         using namespace dataflow;
 
         const double maxLagProportion = 0.5;
         const int nLags = 200;
         const int nBurnIn = nSamples*0.1;
-        int nTimesteps = problem.nTimesteps();
 
-        ConstrainedFactorisedSampler sampler(problem.tableau, problem.posterior.factors, problem.posterior.perturbableFunctionFactory(), initialState, problem.kappa);
+        ConstrainedFactorisedSampler sampler(targetDistribution, basisVectors, initalSample);
 
         std::valarray<std::valarray<double>> firstSynopsisSamples(nSamples/2);
         std::valarray<std::valarray<double>> lastSynopsisSamples(nSamples/2);

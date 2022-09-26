@@ -6,6 +6,7 @@
 #ifndef ABMCMC_LINEARSUM_H
 #define ABMCMC_LINEARSUM_H
 
+#include <iostream>
 #include <map>
 #include <iomanip>
 #include "X.h"

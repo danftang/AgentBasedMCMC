@@ -3,8 +3,8 @@
 // Created by daniel on 01/04/2022.
 //
 
-#ifndef ABMCMC_PRIOR_H
-#define ABMCMC_PRIOR_H
+#ifndef ABMCMC_ABMPRIOR_H
+#define ABMCMC_ABMPRIOR_H
 
 #include "ABM.h"
 #include "ConstrainedFactorisedDistribution.h"
@@ -12,13 +12,13 @@
 // DOMAIN should be a domain over ABM trajectories that inplements
 // index operators over Events and States
 template<typename DOMAIN, typename AGENT  = typename DOMAIN::agent_type>
-class Prior: public ConstrainedFactorisedDistribution<DOMAIN> {
+class ABMPrior: public ConstrainedFactorisedDistribution<DOMAIN> {
 public:
-    std::function<const ModelState<AGENT> &()> startStateSampler;
+//    std::function<const ModelState<AGENT> &()> startStateSampler;
 
     template<class STARTSTATE>
-    Prior(const STARTSTATE &startState):
-        startStateSampler(startState.modelStateSampler)
+    ABMPrior(const STARTSTATE &startState)
+//        :startStateSampler(startState._modelStateSampler)
     {
         this->addConstraints(DOMAIN::constraints());
         addMultinomials();
@@ -159,38 +159,29 @@ public:
 
 
 
-    std::function<const DOMAIN &()> sampler() const {
-        return [sample = DOMAIN(), startStateSampler = startStateSampler]() mutable -> const DOMAIN & {
-            sample.setStartState(startStateSampler());
-            for (int t = 0; t < DOMAIN::nTimesteps; ++t) {
-                if(t>0) sample.recalculateDependentVariables(t);
-                for (int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
-                    AGENT agent(agentId);
-                    State<AGENT> state(t, agent);
-                    int nAgents = sample[state];
-                    for (int actId = 0; actId < AGENT::actDomainSize; ++actId) {
-                        sample[DOMAIN::indexOf(Event<AGENT>(t, agent, actId))] = 0; // modification must be via int index
-                    }
-                    std::vector<double> actPMF = agentActPMF(state, sample);
-                    for (int a = 0; a < nAgents; ++a) {
-                        int nextAct = Random::nextIntFromDiscrete(actPMF);
-                        sample[DOMAIN::indexOf(Event<AGENT>(t, agent, nextAct))] += 1;
-                    }
-                }
-            }
-            return sample;
-        };
-    }
+//    std::function<const DOMAIN &()> sampler() const {
+//        return [sample = DOMAIN(), startStateSampler = startStateSampler]() mutable -> const DOMAIN & {
+//            sample.setStartState(startStateSampler());
+//            for (int t = 0; t < DOMAIN::nTimesteps; ++t) {
+//                if(t>0) sample.recalculateDependentVariables(t);
+//                for (int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
+//                    AGENT agent(agentId);
+//                    State<AGENT> state(t, agent);
+//                    int nAgents = sample[state];
+//                    for (int actId = 0; actId < AGENT::actDomainSize; ++actId) {
+//                        sample[DOMAIN::indexOf(Event<AGENT>(t, agent, actId))] = 0; // modification must be via int index
+//                    }
+//                    std::vector<double> actPMF = agentActPMF(state, sample);
+//                    for (int a = 0; a < nAgents; ++a) {
+//                        int nextAct = Random::nextIntFromDiscrete(actPMF);
+//                        sample[DOMAIN::indexOf(Event<AGENT>(t, agent, nextAct))] += 1;
+//                    }
+//                }
+//            }
+//            return sample;
+//        };
+//    }
 
-    static std::vector<double> agentActPMF(const State<AGENT> &state, const DOMAIN &trajectory) {
-        std::vector<double> pmf;
-        pmf.reserve(AGENT::actDomainSize);
-        for(int actId=0; actId < AGENT::actDomainSize; ++actId) {
-            Event<AGENT> event(state.time, state.agent, actId);
-            pmf.push_back(exp(AGENT::logEventProb(event, trajectory)));
-        }
-        return pmf;
-    }
 
 //    Trajectory<AGENT> nextSample() const {
 //        static thread_local Trajectory<AGENT> sample(nTimesteps);
@@ -225,4 +216,4 @@ public:
 };
 
 
-#endif //ABMCMC_PRIOR_H
+#endif //ABMCMC_ABMPRIOR_H

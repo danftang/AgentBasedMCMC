@@ -17,16 +17,18 @@
 // coefficients of a linear transform from a trajectory to a given state occupation
 template<class DOMAIN, class AGENT = typename DOMAIN::agent_type>
 class PoissonStartState: public ConstrainedFactorisedDistribution<DOMAIN> {
+protected:
+    std::function<const ModelState<AGENT> &()> _modelStateSampler;
+
 public:
 
-    std::function<const ModelState<AGENT> &()> modelStateSampler;
 
     explicit PoissonStartState(std::function<double(AGENT)> agentToLambda) {
             this->factors.reserve(AGENT::domainSize);
             for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
                 addPoissonFactor(agentId, agentToLambda(AGENT(agentId)));
             }
-            modelStateSampler = sampler(agentToLambda);
+        _modelStateSampler = sampler(agentToLambda);
     }
 
 
@@ -34,6 +36,8 @@ public:
         return data(lambdas)[agent];
     }) {}
 
+
+    std::function<const ModelState<AGENT> &()> modelStateSampler() const { return _modelStateSampler; }
 
     static std::function<const ModelState<AGENT> &()> sampler(std::function<double(AGENT)> &agentToLambda) {
         return [agentToLambda, sample = ModelState<AGENT>()]() mutable -> const ModelState<AGENT> & {

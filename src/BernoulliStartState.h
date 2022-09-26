@@ -10,8 +10,9 @@
 
 template<class DOMAIN, class AGENT = typename DOMAIN::agent_type>
 class BernoulliStartState: public ConstrainedFactorisedDistribution<DOMAIN> {
+protected:
+    std::function<const ModelState<AGENT> &()> _modelStateSampler;
 public:
-    std::function<const ModelState<AGENT> &()> modelStateSampler;
 
     using typename ConstrainedFactorisedDistribution<DOMAIN>::coefficient_type;
 
@@ -21,12 +22,14 @@ public:
         for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
             addBernoulliFactor(agentId, agentToProb(AGENT(agentId)));
         }
-        modelStateSampler = sampler(agentToProb);
+        _modelStateSampler = sampler(agentToProb);
     }
 
     explicit BernoulliStartState(std::initializer_list<double> probs): BernoulliStartState([probs = std::vector(probs)](AGENT agent) {
         return probs[agent];
     }) {}
+
+    std::function<const ModelState<AGENT> &()> modelStateSampler() const { return _modelStateSampler; }
 
 
     static std::function<const ModelState<AGENT> &()> sampler(std::function<double(AGENT)> &agentToprob) {

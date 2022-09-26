@@ -54,16 +54,6 @@ public:
         }
     }
 
-//    double exactFactorValue(int factorIndex, const DOMAIN &X) const {
-//        std::pair<double,bool> factorVal = factors[factorIndex](X);
-//        return factorVal.second?factorVal.first:-INFINITY;
-//    }
-//
-//    double widenedFactorValue(int factorIndex, const DOMAIN &X) const {
-//        return factors[factorIndex](X).first;
-//    }
-
-
     bool isFeasible(const DOMAIN &X) {
         if(!constraints.template isValidSolution(X)) return false;
         for(const auto &factor: this->factors) {
@@ -71,7 +61,6 @@ public:
         }
         return true;
     }
-
 
 
     ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> &operator *=(const ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> &other) {
@@ -98,6 +87,14 @@ public:
         factoredDist *= *this;
         return std::move(factoredDist);
     }
+
+    ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> operator *(ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF> &&factoredDist) && {
+        factoredDist *= *this;
+        return std::move(factoredDist);
+    }
+
+
+    double operator ()(const DOMAIN &X) const { return Pexact(X); }
 
     double logPexact(const DOMAIN &X) const {
         double logP = 0.0;

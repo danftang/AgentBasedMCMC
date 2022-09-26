@@ -19,44 +19,20 @@
 // as low as possible.
 //
 // Starting with a set of linear constraints on X
-// L <= CX <= U, DX = E, G <= X <= H
-// we introduce auxiliary variables, A, so that
-// (C)(X) + ( 0) = (A), L <= A <= U, G <= X <= H
-// (D)      (-E)   (0)
+//  DX = F
 //
 // If D has m rows, this class chooses m linearly independent columns
-// and pivots on rows in D so that C is left with all zeroes in those columns
-// and D is left as a (truncated) triangular with "diagonal" elements equal to -1
-// to give
+// of D and pivots on rows in D so that X can be split into X_N and
+// X_B so that
 //
-// (M)(X) + F = (A), L <= A <= U, G <= X <= H
-// (J)          (0)
-//
-// where M has a total of m reduced columns. The reduced columns make the
-// corresponding elements of X into basic variables, the remainder being
-// non-basic.
-//
-// Given an assignment of values to non-basic variables, X_N, the basic variables,
-// X_B, and the auxilliary variables, A, are uniquely defined and can be found by
-// rearranging the columns of M and J so that
-//
-// (Q  0)(X_N) + F = (A), L <= A <= U, G_N <= X_N <= H_N, G_B <= X_B <= H_B
-// (R  T)(X_B)       (0)
-//
-// So that
-//
-// (Q)X_N + F = (A)   , L <= A <= U, G_N <= X_N < H_N, G_B <= X_B <= H_B
-// (R)          (X_B)
-//
-// where Q is M with the zero columns removed, X_N is X with the corresponding
-// basic variables removed, R is J with basic cols removed and X_B are the
-// basic variables.
+// D'X = (I  M)(X_B) = F'
+//             (X_N)
 //
 // All fixed variables are assumed to be functions of integers only.
 // Pivoting only occurs on elements that have value +-1 to retain
 // integer coefficients.
 //
-// The non-basic columns of M and J form the sparse basis, so we want to pivot in
+// We want to pivot in
 // such a way as to maintain the sparsity of these matrices. We do this using a
 // greedy algorithm based on the Markovitz criterion. See
 //  Maros, I., 2002, "Computational techniques of the sipmlex method", Springer
@@ -120,8 +96,8 @@ public:
 
     std::vector<std::list<int>> colsBySparsity;     // cols sorted by sparsity, only contains non-basic cols
     std::vector<std::list<int>> rowsBySparsity;     // rows sorted by sparsity, only contains active rows
-    std::vector<int>            basis;            // col index of basic var by row. -1 means unreduced
-    std::vector<COEFF>              F;                  // constant in linear equation (see intro above)
+    std::vector<int>            basicVars;            // col index of basic var by row. -1 means unreduced
+    std::vector<COEFF>              F;                  // constant in linear equations by row (see intro above)
 
     template<class DOMAIN>
     TableauNormMinimiser(const ConstrainedFactorisedDistribution<DOMAIN,COEFF> &problem);
@@ -129,7 +105,10 @@ public:
     TableauNormMinimiser()=default;
 
     void findMinimalBasis();
-    std::vector<SparseVec<COEFF>> getBasisVectors(int domainDimension);
+    std::vector<SparseVec<COEFF>> getBasisVectors();
+//    template<class DOMAIN>
+//    Basis<DOMAIN> getBasis();
+    SparseVec<COEFF> getOrigin();
 
     double operator ()(int i, int j) const { auto it = rows[i].find(j); return it == rows[i].end()?0.0:it->second; }
 
@@ -158,20 +137,13 @@ protected:
     double meanColumnL1Norm() const;
 
 
-private:
-    friend class boost::serialization::access;
-
-    template <typename Archive>
-    void serialize(Archive &ar, const unsigned int version) {
-        ar & cols & rows & basis & F;
-    }
 };
 
 template<class T>
 std::ostream &operator <<(std::ostream &out, const TableauNormMinimiser<T> &tableau) {
     // print tableau
     for(int i=0; i<tableau.rows.size(); ++i) {
-        out << "x(" << tableau.basis[i] << ")";
+        out << "x(" << tableau.basicVars[i] << ")";
         out << "\t=\t";
         for(int j=0; j<tableau.cols.size(); ++j) {
             out << tableau(i,j) << "\t";
@@ -188,32 +160,27 @@ std::ostream &operator <<(std::ostream &out, const TableauNormMinimiser<T> &tabl
     return out;
 }
 
-// Turns the supplied convex polyhedron into a set of equality constraints by introducing auxiliary
-// variables where the upper and lower bounds are not equal. So if we have
-// L <= CX <= U
-// then
-// (-L M)(1 X A)^T = 0, 0 <= A <= U-L
-// where the zero'th elelemet of (1 X A) is 1.
+// Turns the supplied distribution into a set of equality constraints
+// and factor dependencies.
+// -ve entries in columns are factor dependencies and non-negative entries
+// are constraints.
 template<class T>
 template<class D>
 TableauNormMinimiser<T>::TableauNormMinimiser(const ConstrainedFactorisedDistribution<D,T> &problem)
 {
-    basis.reserve(problem.constraints.size());
+    basicVars.reserve(problem.constraints.size());
     F.reserve(problem.constraints.size());
     rows.reserve(problem.constraints.size());
-    int maxCol = 0; // maximum column id seen so far
     // initialise row information
     for(const EqualityConstraint<T> &constraint: problem.constraints) {
         rows.emplace_back(constraint.coefficients, true);
         addRowSparsityEntry(rows.size()-1);
-        basis.push_back(UNREDUCED); // unreduced row
-        F.push_back(-constraint.constant); // transform all equality constraints to form DX - E = 0
+        basicVars.push_back(UNREDUCED); // unreduced row
+        F.push_back(-constraint.constant); // transform all equality constraints to form DX + F = 0
         assert(rows.back().size() > 0);
-        int rowMaxCol = rows.back().rbegin()->first;
-        if(rowMaxCol > maxCol) maxCol = rowMaxCol;
     }
 
-    cols.resize(maxCol +1);
+    cols.resize(D::dimension);
     // Now fill column information from rows and factor dependencies
     for(int factorIndex = 0; factorIndex < problem.factors.size(); ++factorIndex) {
         for(int basisIndex : problem.factors[factorIndex].dependencies) {
@@ -225,7 +192,7 @@ TableauNormMinimiser<T>::TableauNormMinimiser(const ConstrainedFactorisedDistrib
             cols[j].insert(i);
         }
     }
-    for(int j=0; j<=maxCol; ++j) {
+    for(int j=0; j<cols.size(); ++j) {
         addColSparsityEntry(j);
     }
     std::cout << "Initial mean column L0 norm = " << meanColumnL0Norm() << std::endl;
@@ -407,7 +374,7 @@ void TableauNormMinimiser<T>::setColBasic(int j, int i) {
     col.isBasic = true;
     col.clear();
     col.insert(i);
-    basis[i] = j;
+    basicVars[i] = j;
 }
 
 template<class T>
@@ -476,7 +443,7 @@ double TableauNormMinimiser<T>::meanColumnL1Norm() const {
 }
 
 template<class T>
-std::vector<SparseVec<T>> TableauNormMinimiser<T>::getBasisVectors(int domainDimension) {
+std::vector<SparseVec<T>> TableauNormMinimiser<T>::getBasisVectors() {
 //    std::cout << "Starting with tableaux: " << std::endl << *this << std::endl;
 //    std::cout << rowsBySparsity << std::endl;
 //    std::cout << colsBySparsity << std::endl;
@@ -488,23 +455,39 @@ std::vector<SparseVec<T>> TableauNormMinimiser<T>::getBasisVectors(int domainDim
 //    std::cout << cols << std::endl;
 
     std::vector<SparseVec<T>> basisVectors;
-    basisVectors.reserve(domainDimension);
-    for(int j=0; j<domainDimension; ++j) {
-        if(j>=cols.size() || !cols[j].isBasic) {
+    basisVectors.reserve(cols.size());
+    for(int j=0; j<cols.size(); ++j) {
+        if(!cols[j].isBasic) {
             basisVectors.emplace_back();
             SparseVec<T> &newBasis = basisVectors.back();
-            newBasis.insert(j,1); // element from the identity
-            if(j < cols.size()) {
-                for (int i: cols[j]) {
-                    if(i >=0) {
-                        assert(basis[i] != UNREDUCED); // every row should have a basic variable
-                        newBasis.insert(basis[i], rows[i][j]);
-                    }
+            newBasis.insert(j, 1); // element from the identity
+            for (int i: cols[j]) {
+                if (i >= 0) {
+                    assert(basicVars[i] != UNREDUCED); // every row should have a basic variable
+                    newBasis.insert(basicVars[i], rows[i][j]);
                 }
             }
         }
     }
     return basisVectors;
+}
+
+//template<class T>
+//template<class DOMAIN>
+//Basis<DOMAIN> TableauNormMinimiser<T>::getBasis() {
+//    std::vector<SparseVec<T>> basisVecs = getBasisVectors(DOMAIN::dimension);
+//    DOMAIN origin; // assumes default constructor generates zero vector
+//    for(int row =0; row < basicVars.size(); ++row) origin[basicVars[row]] = F[row];
+//    return Basis(basisVecs, origin);
+//}
+
+
+// returns the value of the domain when all non-basic variables are zero
+template<class T>
+SparseVec<T> TableauNormMinimiser<T>::getOrigin() {
+    SparseVec<T> origin;
+    for(int row =0; row < basicVars.size(); ++row) origin.insert(basicVars[row], F[row]);
+    return origin;
 }
 
 // Updates the basic variables of X, leaving the non-basic variables unchanged
@@ -514,7 +497,7 @@ template<class T>
 template<typename VEC>
 void TableauNormMinimiser<T>::snapToSubspace(VEC &X) const {
     for(int i=0; i<rows.size(); ++i) {
-        int basisIndex = basis[i];
+        int basisIndex = basicVars[i];
         X[basisIndex] = 0;
         X[basisIndex] = rows[i]*X + F[i];
     }

@@ -22,10 +22,11 @@ public:
     static constexpr size_t nTimesteps = NTIMESTEPS;
     static constexpr size_t dimension =  AGENT::domainSize*AGENT::actDomainSize*NTIMESTEPS;
 
-    Trajectory(): std::vector<value_type>(dimension) { }
+    Trajectory(): Trajectory(dimension) { }
 
 protected:
-    Trajectory(size_t nElements): std::vector<value_type>(nElements) {}
+    Trajectory(size_t nElements): std::vector<value_type>(nElements,0) {}
+
 public:
 
 

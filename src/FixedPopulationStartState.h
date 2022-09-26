@@ -11,10 +11,12 @@
 
 template<class DOMAIN, class AGENT = typename DOMAIN::agent_type>
 class FixedPopulationStartState : public ConstrainedFactorisedDistribution<DOMAIN> {
+protected:
+    std::function<const ModelState<AGENT> &()> _modelStateSampler;
+
 public:
     using ConstrainedFactorisedDistribution<DOMAIN>::constraints;
 
-    std::function<const ModelState<AGENT> &()> modelStateSampler;
 
     explicit FixedPopulationStartState(std::function<int(AGENT)> agentToPartition, std::function<int(int)> partitionToPopulation) {
         std::vector<std::vector<int>> partitionToAgents;
@@ -30,7 +32,7 @@ public:
         for(int partitionId=0; partitionId < constraints.size(); ++partitionId) {
             constraints[partitionId].constant = partitionToPopulation(partitionId);
         }
-        modelStateSampler = sampler(partitionToAgents, partitionToPopulation);
+        _modelStateSampler = sampler(partitionToAgents, partitionToPopulation);
     }
 
 
@@ -47,6 +49,8 @@ public:
 //    operator ConstrainedFactorisedDistribution<Trajectory<AGENT>>() {
 //        return this->toTrajectoryDistribution(0);
 //    }
+
+    std::function<const ModelState<AGENT> &()> modelStateSampler() const { return _modelStateSampler; }
 
     static std::function<const ModelState<AGENT> &()> sampler(std::vector<std::vector<int>> &partitionToAgents, std::function<int(int)> partitionToPopulation) {
         return [partitionToAgents, partitionToPopulation, sample = ModelState<AGENT>()] () mutable -> const ModelState<AGENT> & {

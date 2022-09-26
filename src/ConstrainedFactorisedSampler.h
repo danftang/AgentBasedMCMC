@@ -33,8 +33,9 @@
 #include "MCMCStatistics.h"
 #include "ConstrainedFactorisedDistribution.h"
 #include "TableauNormMinimiser.h"
+#include "Basis.h"
 
-template<typename DOMAIN, typename ELEMENT = typename subscript_operator_traits<DOMAIN>::base_type>
+template<typename DOMAIN, typename ELEMENT>
 class ConstrainedFactorisedSampler {
 public:
     typedef std::vector<int> IndexSet;
@@ -62,61 +63,32 @@ public:
     std::vector<std::vector<RowEntry>>       factorToBasisPerturbedValue; // set of basis vectors that a given factor is dependent on
     std::vector<std::vector<ColEntry>>     basisToFactorPerturbedValue; // set of factors that are dependent on a given basis
 
-    DOMAIN                      X;      // the current point on the lattice by row.
+    DOMAIN                      X;      // the current point on the lattice
     int                         currentInfeasibility; // current number of factors that are in widened support
     MCMCStatistics              stats;
 
 public:
-    // basis vectors should already be doubled up for + and - if required.
+    ConstrainedFactorisedSampler(const ConstrainedFactorisedDistribution<DOMAIN, ELEMENT> &targetDistribution):
+            ConstrainedFactorisedSampler(targetDistribution, Basis(targetDistribution)) { }
+
+    ConstrainedFactorisedSampler(const ConstrainedFactorisedDistribution<DOMAIN, ELEMENT> &targetDistribution, const Basis<DOMAIN> &basis):
+            ConstrainedFactorisedSampler(targetDistribution, basis.basisVectors, basis.origin) { }
+
     ConstrainedFactorisedSampler(
             const ConstrainedFactorisedDistribution<DOMAIN, ELEMENT> &targetDistribution,
-            DOMAIN validInitialSolution,
-            std::vector<SparseVec<ELEMENT>> basisVectors): X(validInitialSolution) {
-        init(targetDistribution, std::move(basisVectors));
-    }
+            const std::vector<SparseVec<ELEMENT>> &basisVecs,
+            const DOMAIN &initialValidSample): X(initialValidSample) {
 
-
-    // initialGuess need not be a valid solution but its non-basic values are used
-    // to construct the start point, and its size is used to define the size of the
-    // domain vector.
-    ConstrainedFactorisedSampler(
-            const ConstrainedFactorisedDistribution<DOMAIN,ELEMENT> &targetDistribution,
-            DOMAIN initialGuess
-            ): X(initialGuess)
-    {
-        // calculate basis
-        TableauNormMinimiser<ELEMENT> constraintTableau(targetDistribution);
-        std::vector<SparseVec<ELEMENT>> uniqueBasisVectors = constraintTableau.getBasisVectors(initialGuess.size());
-        // double-up unique basis vectors for + and -
-        std::vector<SparseVec<ELEMENT>> basisVecs;
-        basisVecs.reserve(uniqueBasisVectors.size()*2);
-        for(int i=0; i < uniqueBasisVectors.size(); ++i) {
-            basisVecs.push_back(-uniqueBasisVectors[i]);
-            basisVecs.push_back(std::move(uniqueBasisVectors[i]));
-        }
-        constraintTableau.snapToSubspace(X);
-        init(targetDistribution, std::move(basisVecs));
-    }
-
-
-    // basis vectors should already be doubled up for + and - if required.
-    // initialSolution should be a valid solution of the constraints of targetDistribution
-    void init(
-            const ConstrainedFactorisedDistribution<DOMAIN,ELEMENT> & targetDistribution,
-            std::vector<SparseVec<ELEMENT>> && basisVecs
-            ) {
         assert(targetDistribution.constraints.isValidSolution(X));
 
-        initDependencies(targetDistribution, std::move(basisVecs));
+        // double-up unique basis vectors for + and -
+        basisVectors.reserve(basisVecs.size()*2);
+        for(int i=0; i < basisVecs.size(); ++i) {
+            basisVectors.push_back(-(basisVecs[i]));
+            basisVectors.push_back( basisVecs[i]);
+        }
 
-        // Test the basis
-        debug(
-                for(int i=0; i<basisVectors.size(); ++i) {
-                    X += basisVectors[i];
-                    assert(targetDistribution.constraints.isValidSolution(X));
-                    X -= basisVectors[i];
-                }
-        );
+        initDependencies(targetDistribution, basisVectors);
 
         // initialise factors and factor values
         factors.reserve(targetDistribution.factors.size());
@@ -132,11 +104,7 @@ public:
         currentWeight.resize(basisVectors.size(), 0.0);
         for(int basisIndex=0; basisIndex < basisVectors.size(); ++basisIndex) {
             X += basisVectors[basisIndex];
-//            auto &perturbedValColumn = basisToFactorPerturbedVal[basisIndex];
-//            for(int nzi = 0; nzi < perturbedValColumn.sparseSize(); ++nzi) {
             for(ColEntry &colEntry : basisToFactorPerturbedValue[basisIndex]) {
-//                int factorIndex = perturbedValColumn.indices[nzi];
-//                std::pair<double,bool> &perturbedVal(perturbedValColumn.values[nzi]);
                 colEntry.value = factors[colEntry.factorIndex](X);
                 currentWeight[basisIndex] += colEntry.value.first - currentFactorVal[colEntry.factorIndex].first;
             }
@@ -144,56 +112,6 @@ public:
             basisDistribution.push_back(logWeighttoBasisProb(currentWeight[basisIndex]));
         }
         debug(sanityCheck());
-    }
-
-    // Turns the given constraints into a minimal basis that spans the
-    // subspace described by the constraints.
-    // Returns a pair whose first element is the basis vectors
-    // and whose second element is the dependency mapping from domain element to
-    // the set of basis vectors that depend on that element, where the
-    // basis vectors are given an index by the ordering of the first element.
-    void initDependencies(const ConstrainedFactorisedDistribution<DOMAIN,ELEMENT> &targetDistribution,
-                          std::vector<SparseVec<ELEMENT>> &&basisVecs)
-    {
-
-        // construct the dependencies from domain index to basis index
-        basisVectors = std::move(basisVecs);
-        std::vector<IndexSet> domainToBasisDependencies(X.size());
-        int nBasisEntries = 0;
-        for(int j=0; j<basisVectors.size(); ++j) {
-            for(int row: basisVectors[j].indices) {
-                domainToBasisDependencies[row].push_back(j);
-                ++nBasisEntries;
-            }
-        }
-
-        // calculate factor by basis-dependency matrix
-        std::set<std::pair<int,int>> dependencyMatrix; // entries
-        for(int factorId = 0; factorId<targetDistribution.factors.size(); ++factorId) {
-            for(int domainIndex: targetDistribution.factors[factorId].dependencies) {
-                for(int basisIndex: domainToBasisDependencies[domainIndex]) {
-                    dependencyMatrix.insert(std::pair(factorId, basisIndex));
-                }
-            }
-        }
-        std::cout << "mean basis size = " << nBasisEntries * 1.0 / basisVectors.size() << std::endl;
-        std::cout << "mean dependency col size = " << dependencyMatrix.size() * 1.0 / basisVectors.size() << std::endl;
-        std::cout << "mean dependency row size = " << dependencyMatrix.size() * 1.0/ targetDistribution.factors.size() << std::endl;
-        std::cout << "mean updates per transition = " << pow(dependencyMatrix.size(),2)*1.0/(basisVectors.size()*targetDistribution.factors.size())  << std::endl;
-
-        // now transfer to forward and backward dependencies
-        // set up structure, values will be added later
-        factorToBasisPerturbedValue.resize(targetDistribution.factors.size());
-        for(auto &dependencyEntry: dependencyMatrix) {
-            factorToBasisPerturbedValue[dependencyEntry.first].emplace_back(dependencyEntry.second);
-        }
-        basisToFactorPerturbedValue.resize(basisVectors.size());
-        for(int factorId = 0; factorId < factorToBasisPerturbedValue.size(); ++factorId) {
-            for(RowEntry &entry : factorToBasisPerturbedValue[factorId]) {
-                basisToFactorPerturbedValue[entry.basisIndex].emplace_back(factorId, entry.value);
-            }
-        }
-
     }
 
     const DOMAIN &operator()() { return nextSample(); }
@@ -229,13 +147,6 @@ public:
         return logProb;
     }
 
-//    double currentProb() {
-//        double P = 1.0;
-//        for(const auto &factor: factors) {
-//            P *= factor(X).first;
-//        }
-//        return P;
-//    }
 
 
     void sanityCheck() {
@@ -255,23 +166,56 @@ public:
     }
 
 
-//    static std::pair<
-//            std::vector<SparseVec<ELEMENT>>,
-//            DOMAIN
-//            > calculateBasis(const ConstrainedFactorisedDistribution<DOMAIN> &targetDistribution, int domainDimension) {
-//        std::vector<SparseVec<ELEMENT>> basisVectors;
-//        TableauNormMinimiser<ELEMENT> constraintTableau(targetDistribution.constraints);
-//        std::vector<SparseVec<ELEMENT>> uniqueBasisVectors = constraintTableau.getBasisVectors(domainDimension);
-//        // double-up unique basis vectors for + and -
-//        basisVectors.reserve(uniqueBasisVectors.size()*2);
-//        for(int i=0; i < uniqueBasisVectors.size(); ++i) {
-//            basisVectors.push_back(-uniqueBasisVectors[i]);
-//            basisVectors.push_back(std::move(uniqueBasisVectors[i]));
-//        }
-//        return basisVectors;
-//    }
-
 protected:
+
+    // Turns the given constraints into a minimal basis that spans the
+    // subspace described by the constraints.
+    // Returns a pair whose first element is the basis vectors
+    // and whose second element is the dependency mapping from domain element to
+    // the set of basis vectors that depend on that element, where the
+    // basis vectors are given an index by the ordering of the first element.
+    void initDependencies(const ConstrainedFactorisedDistribution<DOMAIN,ELEMENT> &targetDistribution,
+                          const std::vector<SparseVec<ELEMENT>> &basisVecs)
+    {
+
+        // construct the dependencies from domain index to basis index
+        std::vector<IndexSet> domainToBasisDependencies(DOMAIN::dimension);
+        int nBasisEntries = 0;
+        for(int j=0; j<basisVecs.size(); ++j) {
+            for(int row: basisVecs[j].indices) {
+                domainToBasisDependencies[row].push_back(j);
+                ++nBasisEntries;
+            }
+        }
+
+        // calculate factor by basis-dependency matrix
+        std::set<std::pair<int,int>> dependencyMatrix; // entries
+        for(int factorId = 0; factorId<targetDistribution.factors.size(); ++factorId) {
+            for(int domainIndex: targetDistribution.factors[factorId].dependencies) {
+                for(int basisIndex: domainToBasisDependencies[domainIndex]) {
+                    dependencyMatrix.insert(std::pair(factorId, basisIndex));
+                }
+            }
+        }
+        std::cout << "mean basis size = " << nBasisEntries * 1.0 / basisVecs.size() << std::endl;
+        std::cout << "mean dependency col size = " << dependencyMatrix.size() * 1.0 / basisVecs.size() << std::endl;
+        std::cout << "mean dependency row size = " << dependencyMatrix.size() * 1.0/ targetDistribution.factors.size() << std::endl;
+        std::cout << "mean updates per transition = " << pow(dependencyMatrix.size(),2)*1.0/(basisVecs.size()*targetDistribution.factors.size())  << std::endl;
+
+        // now transfer to forward and backward dependencies
+        // set up structure, values will be added later
+        factorToBasisPerturbedValue.resize(targetDistribution.factors.size());
+        for(auto &dependencyEntry: dependencyMatrix) {
+            factorToBasisPerturbedValue[dependencyEntry.first].emplace_back(dependencyEntry.second);
+        }
+        basisToFactorPerturbedValue.resize(basisVecs.size());
+        for(int factorId = 0; factorId < factorToBasisPerturbedValue.size(); ++factorId) {
+            for(RowEntry &entry : factorToBasisPerturbedValue[factorId]) {
+                basisToFactorPerturbedValue[entry.basisIndex].emplace_back(factorId, entry.value);
+            }
+        }
+    }
+
     static double logWeighttoBasisProb(double w) { return w<0.0?exp(w):1.0; } // convert change in energy of a column to probability of proposal
 
 
