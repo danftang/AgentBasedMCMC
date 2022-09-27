@@ -4,9 +4,28 @@
 int main(int argc, char *argv[]) {
 //    auto startTime = std::chrono::steady_clock::now();
 
+//    std::vector<int>::con it;
+
+    SparseVec<double> vec;
+    const SparseVec<double> &cvec = vec;
+
+    vec.insert(3,5.678);
+    vec.insert(7,6.789);
+
+    for(const auto &entry: cvec) {
+        std::cout << entry.index() << " " << entry.value() << std::endl;
+    }
+
+    for(double &value : vec.values) value *= 2.0;
+
+
+    for(auto it = cvec.rbegin(); it != cvec.rend(); ++it) {
+        std::cout << it->index() << " " << it->value() << std::endl;
+    }
+
     /////////////// Generate data for figures 3 and 4 and statistics for table 2
 //    FiguresForPaper<8,4>::generateStandardProblemFile(10.0);
-    FiguresForPaper<8,4>::generateStats(1000);
+//    FiguresForPaper<8,4>::generateStats(1000);
 
     //    FiguresForPaper<32,16>::generateStandardProblemFile(10.0);
 //    FiguresForPaper<32,16>::generateStats(10000000);

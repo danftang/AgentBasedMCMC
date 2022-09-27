@@ -47,12 +47,11 @@ public:
         EqualityConstraints<COEFF> newConstraints;
         for(auto &thisConstraint: *this) {
             std::map<int,COEFF> newCoefficients;
-            for(int nzi = 0; nzi < thisConstraint.coefficients.sparseSize(); ++nzi) {
-                int thisEntryIndex = thisConstraint.coefficients.indices[nzi];
-                COEFF coefficient = thisConstraint.coefficients.values[nzi];
-                for(int nzj=0; nzj < linearTransform[thisEntryIndex].sparseSize(); ++nzj) {
-                    newCoefficients[linearTransform[thisEntryIndex].indices[nzj]] +=
-                            coefficient * linearTransform[thisEntryIndex].values[nzj];
+            for(const auto &entry: thisConstraint.coefficients) {
+                for(const auto &transformEntry: linearTransform[entry.index()]) {
+                    COEFF increment = entry.value() * transformEntry.value();
+                    auto ins = newCoefficients.try_emplace(transformEntry.index(), increment);
+                    if(!ins.second) ins.first += increment;
                 }
             }
             newConstraints.emplace_back(SparseVec(newCoefficients), thisConstraint.constant);
