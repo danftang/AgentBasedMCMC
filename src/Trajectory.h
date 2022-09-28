@@ -10,6 +10,7 @@
 #include <boost/serialization/vector.hpp>
 #include "ModelState.h"
 #include "include/Random.h"
+#include "include/StlStream.h"
 #include "ABM.h"
 #include "EqualityConstraints.h"
 
@@ -68,14 +69,18 @@ public:
     }
 
     friend std::ostream &operator <<(std::ostream &out, const Trajectory<AGENT,NTIMESTEPS> &trajectory) {
-        for(int t=0; t<NTIMESTEPS; ++t) {
-            for(int agentId=0; agentId < AGENT::domainSize; ++agentId) {
-                for(int actId=0; actId < AGENT::actDomainSize; ++actId) {
-                    out << trajectory[Event<AGENT>(t,agentId,actId)];
+        if(trajectory.size() < 2048) { // print whole trajectory
+            for (int t = 0; t < NTIMESTEPS; ++t) {
+                for (int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
+                    for (int actId = 0; actId < AGENT::actDomainSize; ++actId) {
+                        out << trajectory[Event<AGENT>(t, agentId, actId)];
+                    }
+                    out << " ";
                 }
-                out << " ";
+                out << std::endl;
             }
-            out << std::endl;
+        } else { // print ellipsis
+            out << std::vector<Trajectory<AGENT,NTIMESTEPS>::value_type>(trajectory.begin(), trajectory.begin() + 2047) << "..." << std::endl;
         }
         return out;
     }

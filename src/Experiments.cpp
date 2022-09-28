@@ -127,7 +127,7 @@ void Experiments::PredPreySingleObservation() {
 //    for(int i=0; i < nBurnin; ++i) {
 //        const Trajectory<CatMouseAgent> &sample = sampler.nextSample();
 //        assert(posterior.constraints.isValidSolution(sample));
-////        std::cout << "Infeasibility = " << sampler.currentInfeasibility << std::endl;
+////        std::cout << "Infeasibility = " << modelStateSampler.currentInfeasibility << std::endl;
 //    }
 //    std::cout << "Sampling..." << std::endl;
 //    std::map<std::vector<ABM::occupation_type>,double> pmf;
@@ -193,7 +193,7 @@ void Experiments::doValidationExperiment(int nBurnin, int nSamples, int nRejecti
     std::cout << sampler.stats << std::endl;
     std::cout << "     MCMC state = " << aggregateState / nSamples << std::endl;
 
-    RejectionSampler<DOMAIN> rejectionSampler(ABMPriorSampler<DOMAIN>(startStateDistribution.modelStateSampler()), likelihood);
+    RejectionSampler<DOMAIN> rejectionSampler(startStateDistribution.priorSampler(), likelihood);
     ModelState<typename DOMAIN::agent_type> rejectionAggregateState;
     rejectionSampler >>= &DOMAIN::endState >>= Sum(nRejectionSamples, rejectionAggregateState);
     std::cout << "Rejection state = " << rejectionAggregateState / nRejectionSamples << std::endl;
@@ -236,7 +236,7 @@ void Experiments::doValidationExperiment(int nBurnin, int nSamples, int nRejecti
 //    std::cout << "Done" << std::endl;
 ////    std::cout << "Prior is\n" << prior << std::endl;
 ////
-////    Trajectory<CatMouseAgent> realTrajectory = prior.sampler()();
+////    Trajectory<CatMouseAgent> realTrajectory = prior.modelStateSampler()();
 ////    std::cout << "Real trajectory " << realTrajectory << std::endl;
 //
 //}

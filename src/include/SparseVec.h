@@ -1,3 +1,6 @@
+// Represents a sparse vector stored as a vector of non-zero indices/values.
+// In order to improve performance, multiple entries with the same index are allowed.
+// The value of a non-zero element is the sum of entries with that index value.
 //
 // Created by daniel on 09/04/2021.
 //

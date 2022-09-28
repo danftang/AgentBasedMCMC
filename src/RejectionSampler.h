@@ -16,7 +16,7 @@ public:
     std::function<const DOMAIN &()>         priorSampler;
     std::function<double(const DOMAIN &)>   likelihood;
 
-    RejectionSampler(std::function<DOMAIN()> PriorSampler, std::function<double(const DOMAIN &)> Likelihood):
+    RejectionSampler(std::function<const DOMAIN &()> PriorSampler, std::function<double(const DOMAIN &)> Likelihood):
         priorSampler(std::move(PriorSampler)),
         likelihood(std::move(Likelihood)) {
     }

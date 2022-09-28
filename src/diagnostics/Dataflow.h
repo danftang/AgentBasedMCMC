@@ -16,133 +16,64 @@
 // A CONSUMER is any object that can be called with a const reference to a data object and
 // returns a boolean if the consumer is willing to accept more data.
 //
-// A TRANSFORMER is any object that can be called with a downstream consumer and an
-// upstream data item, and returns a boolean that is true if the consumer can accept
-// more data. The object should transform the upstream data in some way and feed it to the
-// supplied downstream consumer.
+// A TRANSFORMER is any object that can be called with a const referene to an upstream data
+// item, and returns a data item that is to be fed downstream. Any object that can
+// be used to construct a std::function<OUt(IN)> object can automatically be used as
+// a transformer. A member function of a downstream data item can also be used as a transformer.
+// Transformers with indeterminate upstream/downstream type can be
+// created with a class that supplies a templated operator () and an overriden >>=
+// operator.
 //
-// A dataflow PIPELINE here consists of a single PRODUCER, any number of TRANSFORMERS
-// and a single CONSUMER. However, any of these components can start other pipelines
-// and in this way an acyclic graph can be built up (technically any acyclic graph if
-// we allow the addition of a "universal producer" and a "universal consumer" like in
-// minimum flow algorithms).
+// Elements are connected together using the '=>' operator. A dataflow PIPELINE consists of
+// a PRODUCER >>= CONSUMER pair, where a TRANSFORMER >>= CONSUMER pair is also a CONSUMER.
+// By allowing components to be constructed from other CONSUMERS a tree-like
+// PIPELINE can be constructed.
 //
-// Elements are connected together using the '=>' operator, so for example, the code:
+// So for example, the code:
 //
 // producer => transform => consumer;
 //
 // would describe the typical pipeline.
 //
-// TODO: Better to have a consumer be an object that takes a producer, and a transform
-//  be an object that takes a producer and returns a producer? This makes type inference
-//  much easier (since a function with no arguments must have a well defined return type)!
-//
 ////////////////////////////////////////////////////////////////////////////////////////
 #include "../gnuplot-iostream/gnuplot-iostream.h"
 
 namespace dataflow {
-//    template<typename T, typename FUNCTIONTEST=void>
-//    struct unary_function_traits {
-//    };
-//
-//    template<typename IN, typename OUT>
-//    struct unary_function_traits<std::function<OUT(IN)>> {
-//        typedef void    is_valid_tag;
-//        typedef IN      argument_type;
-//        typedef OUT     result_type;
-//    };
-//
-//    template<typename T>
-//    struct unary_function_traits<T, std::void_t<decltype(std::function(std::declval<T>()))>>:
-//        public unary_function_traits<decltype(std::function(std::declval<T>()))> { };
-//
-//
-//
-//    // requires that TRANSFORM(DOWNSTREAMCONSUMER) is valid
-//    template<typename TRANSFORM, typename DOWNSTREAMCONSUMER, typename = std::void_t<typename TRANSFORM::transform_tag>>
-//    auto operator >>=(TRANSFORM &&transform, DOWNSTREAMCONSUMER &&downstreamConsumer) {
-//        return [downstreamConsumer = std::forward<DOWNSTREAMCONSUMER>(downstreamConsumer),
-//                transform = std::forward<TRANSFORM>(transform)](const auto &item) mutable {
-//            return transform(downstreamConsumer, item);
-//        };
-//    }
-//
-//
-//    // requires that CONSUMER(PRODUCER) returns bool
-//    template<typename PRODUCER, typename CONSUMER, typename = std::void_t<
-//                std::enable_if_t<
-//                    std::is_same_v<decltype(std::declval<CONSUMER>()(std::declval<PRODUCER>()())), bool>
-//                >
-//            >>
-//    void operator >>=(PRODUCER &&producer, CONSUMER &&consumer) {
-//        while(consumer(producer())) {};
-//    }
-//
 
-    template<typename PRODUCER, typename CONSUMER, typename =
-    std::enable_if_t< std::is_invocable_v<PRODUCER> && std::is_invocable_r_v<bool,CONSUMER,decltype(std::declval<PRODUCER>()())> >>
-    inline void operator >>=(PRODUCER &producer, CONSUMER &&consumer) {
+    // To maintain c++20 compatability...
+    template<class T> struct unary_function_arg { };
+
+    template<class IN, class OUT>
+    struct unary_function_arg<std::function<OUT(IN)>> {
+        typedef IN type;
+    };
+
+    template<class CONSUMER, class ITEM>
+    using enable_if_is_consumer_of = std::enable_if_t<std::is_invocable_r_v<bool,CONSUMER,ITEM>>;
+
+    template<class TRANSFORM, class CONSUMER,
+            class FUNC = decltype(std::function(std::declval<TRANSFORM>())),
+            class ITEM = typename unary_function_arg<FUNC>::type,
+            typename = enable_if_is_consumer_of<CONSUMER,typename FUNC::result_type>>
+    auto operator >>=(TRANSFORM &&transform, CONSUMER &&consumer) {
+        return [trans = std::forward<TRANSFORM>(transform), consumer = std::forward<CONSUMER>(consumer)](const ITEM &item) mutable -> bool {
+            return consumer(trans(item));
+        };
+    }
+
+    template<typename PRODUCER, typename CONSUMER,
+            typename = enable_if_is_consumer_of<CONSUMER,decltype(std::declval<PRODUCER>()())>>
+    inline void operator >>=(PRODUCER &&producer, CONSUMER &&consumer) {
         while(consumer(producer())) {};
     }
 
-    template<class RETURN, class ITEM, class CONSUMER
-            , typename = std::enable_if_t<std::is_invocable_r_v<bool,CONSUMER,const RETURN &>>
-    >
+    template<class RETURN, class ITEM, class CONSUMER,
+            typename = enable_if_is_consumer_of<CONSUMER,RETURN>>
     auto operator >>=(RETURN(ITEM::*ptr)() const, CONSUMER &&consumer) {
-        return [ptr, consumer](const ITEM &item) mutable {
+        return [ptr, consumer = std::forward<CONSUMER>(consumer)](const ITEM &item) mutable {
             return consumer((item.*ptr)());
         };
     }
-
-    template<class RETURN, class ITEM, class CONSUMER
-            , typename = std::enable_if_t<std::is_invocable_r_v<bool,CONSUMER,const RETURN &>>
-    >
-    auto operator >>=(RETURN(*ptr)(const ITEM &), CONSUMER &&consumer) {
-        return [ptr, consumer](const ITEM &item) mutable {
-            return consumer((*ptr)(item));
-        };
-    }
-
-
-    template<class RETURN, class ITEM, class CONSUMER, typename =
-    std::enable_if_t<std::is_invocable_r_v<bool,CONSUMER,const RETURN &>>>
-    auto operator >>=(std::function<RETURN(const ITEM &)> f, CONSUMER &&consumer) {
-        return [f = std::move(f), consumer = std::forward<CONSUMER>(consumer)](const ITEM &item) mutable {
-            return consumer(f(item));
-        };
-    }
-
-
-//    template<typename F1, typename F2, typename =
-//    std::enable_if_t< !(std::is_invocable_r_v<bool,F1> || std::is_integral_v<F2>) >>
-//    inline auto operator >>=(F1 &&f1, F2 &&f2) {
-//        return [f1 = std::forward<F1>(f1), f2 = std::forward<F2>(f2)](const auto &x) mutable {
-//            return f2(f1(x));
-//        };
-//    }
-
-
-//    class Transform {
-//    public:
-//        typedef void transform_tag;
-//    };
-
-    // Map is a TRANSFORM that allows any function to be used in a dataflow pipeline
-//    template<typename FUNC, typename = typename unary_function_traits<FUNC>::is_valid_tag>
-//    class Map: public Transform {
-//    public:
-//        FUNC mapFunc;
-//
-//        typedef typename unary_function_traits<FUNC>::argument_type upstream_type;
-//
-//        Map(FUNC mapFunction): mapFunc(mapFunction) { }
-//
-//        // requires that
-//        template<typename CONSUMER>
-//        bool operator()(CONSUMER &downstreamConsumer, const upstream_type &item) {
-//            return downstreamConsumer(mapFunc(item));
-//        }
-//    };
 
 
     // Split is a CONSUMER that splits a datastream over any number of consumers,

@@ -58,6 +58,7 @@ private:
 
     void sanityCheck(const ConstrainedFactorisedDistribution<DOMAIN> &distribution) {
         // test that the basis is truly a basis of the constraints in the distribution
+        assert(origin.size() == DOMAIN::dimension);
         assert(distribution.constraints.isValidSolution(origin));
         for (int i = 0; i < basisVectors.size(); ++i) {
             origin += basisVectors[i];

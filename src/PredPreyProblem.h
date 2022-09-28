@@ -52,7 +52,7 @@ public:
             pObserveIfPresent(pObserveIfPresent),
             pPredator(pPredator),
             pPrey(pPrey),
-            realTrajectory(ABMPriorSampler<PredPreyTrajectory<GRIDSIZE,NTIMESTEPS>>(startState())),
+            realTrajectory(startState().priorSampler()()),
             kappa(kappa),
             observations(Likelihood<trajectory_type>::generateObservations(realTrajectory, pMakeObservation, pObserveIfPresent)),
             basisObj(posterior())
@@ -110,11 +110,13 @@ public:
 //
 //
     friend std::ostream &operator <<(std::ostream &out, const PredPreyProblem<GRIDSIZE,NTIMESTEPS> &predPreyProblem) {
-        out << "Real trajectory: " << predPreyProblem.realTrajectory << std::endl;
-        out << "Observations: " << predPreyProblem.observations << std::endl;
+        out << "pObserveIfPresent: " << predPreyProblem.pObserveIfPresent << std::endl;
         out << "pPredator: " << predPreyProblem.pPredator << std::endl;
         out << "pPrey: " << predPreyProblem.pPrey << std::endl;
         out << "kappa: " << predPreyProblem.kappa << std::endl;
+        out << "Real trajectory: " << predPreyProblem.realTrajectory << std::endl;
+        out << "Observations: " << predPreyProblem.observations << std::endl;
+        out << "Basis (nVectors x domainSize): " << predPreyProblem.basisObj.basisVectors.size() << " x " << predPreyProblem.basisObj.origin.size() << std::endl;
         out << "(Gridsize x Timesteps): " << GRIDSIZE << " x " << NTIMESTEPS << std::endl;
         return out;
     }
@@ -134,7 +136,7 @@ private:
 
     template <typename Archive>
     void serialize(Archive &ar, const unsigned int version) {
-        ar & pPredator & pPrey & kappa & realTrajectory & observations & basisObj;
+        ar & pObserveIfPresent & pPredator & pPrey & kappa & realTrajectory & observations & basisObj;
     }
 
 

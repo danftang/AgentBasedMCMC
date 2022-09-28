@@ -112,6 +112,17 @@ public:
             basisDistribution.push_back(logWeighttoBasisProb(currentWeight[basisIndex]));
         }
         debug(sanityCheck());
+        findInitialFeasibleSolution();
+    }
+
+    // X should start valid, but not necessarily feasible
+    void findInitialFeasibleSolution() {
+        int nTransitions = 0;
+        while(currentInfeasibility != 0) {
+            performTransition(basisDistribution(Random::gen));
+            ++nTransitions;
+        }
+        std::cout << "Found initial feasible solution in " << nTransitions << " transitions" << std::endl;
     }
 
     const DOMAIN &operator()() { return nextSample(); }
@@ -132,11 +143,11 @@ public:
                 wasAccepted = false;
                 performTransition(proposedBasisIndex ^ 1); // reject: reverse transition
             } else {
-//                std::cout << "Accepting" << std::endl;
+//                std::cout << "Accepting. Infeasibility = " << currentInfeasibility << std::endl;
             }
             stats.addSample(wasAccepted, startStateIsFeasible, proposalIsFeasible);
             debug(if(++attempts%10000 == 0) std::cout << "Stuck with infeasibility = " << currentInfeasibility << std::endl;);
-            debug(sanityCheck());
+//            debug(sanityCheck());
         } while(currentInfeasibility != 0);
         return X;
     }

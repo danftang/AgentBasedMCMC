@@ -32,7 +32,7 @@ public:
         for(int partitionId=0; partitionId < constraints.size(); ++partitionId) {
             constraints[partitionId].constant = partitionToPopulation(partitionId);
         }
-        _modelStateSampler = sampler(partitionToAgents, partitionToPopulation);
+        _modelStateSampler = modelStateSampler(partitionToAgents, partitionToPopulation);
     }
 
 
@@ -52,7 +52,9 @@ public:
 
     std::function<const ModelState<AGENT> &()> modelStateSampler() const { return _modelStateSampler; }
 
-    static std::function<const ModelState<AGENT> &()> sampler(std::vector<std::vector<int>> &partitionToAgents, std::function<int(int)> partitionToPopulation) {
+    ABMPriorSampler<DOMAIN> priorSampler() const { return ABMPriorSampler<DOMAIN>(modelStateSampler()); }
+
+    static std::function<const ModelState<AGENT> &()> modelStateSampler(std::vector<std::vector<int>> &partitionToAgents, std::function<int(int)> partitionToPopulation) {
         return [partitionToAgents, partitionToPopulation, sample = ModelState<AGENT>()] () mutable -> const ModelState<AGENT> & {
             sample = ModelState<AGENT>::zero;
             for(int partitionId=0; partitionId < partitionToAgents.size(); ++partitionId) {

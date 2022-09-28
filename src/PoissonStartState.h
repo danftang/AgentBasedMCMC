@@ -11,6 +11,7 @@
 #include <functional>
 #include "ModelState.h"
 #include "ConstrainedFactorisedDistribution.h"
+#include "ABMPriorSampler.h"
 
 // DOMAIN should be an ABM trajectory that implements index operator over States
 // and implements a static coefficients(state) function that gives the
@@ -28,7 +29,7 @@ public:
             for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
                 addPoissonFactor(agentId, agentToLambda(AGENT(agentId)));
             }
-        _modelStateSampler = sampler(agentToLambda);
+        _modelStateSampler = modelStateSampler(agentToLambda);
     }
 
 
@@ -39,7 +40,9 @@ public:
 
     std::function<const ModelState<AGENT> &()> modelStateSampler() const { return _modelStateSampler; }
 
-    static std::function<const ModelState<AGENT> &()> sampler(std::function<double(AGENT)> &agentToLambda) {
+    ABMPriorSampler<DOMAIN> priorSampler() const { return ABMPriorSampler<DOMAIN>(modelStateSampler()); }
+
+    static std::function<const ModelState<AGENT> &()> modelStateSampler(std::function<double(AGENT)> &agentToLambda) {
         return [agentToLambda, sample = ModelState<AGENT>()]() mutable -> const ModelState<AGENT> & {
             for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
                 sample[agentId] = Random::nextPoisson(agentToLambda(AGENT(agentId)));

@@ -35,6 +35,18 @@
 //    return out.out;
 //}
 
+template<class T>
+std::ostream & default_container_printer(std::ostream &out, const T &container) {
+    out << "{";
+    auto it = container.begin();
+    if(it != container.end()) {
+        out << *it;
+        while(++it != container.end()) out << ", " << *it;
+    }
+    out << "}";
+    return out;
+}
+
 template<class T, int N>
 std::ostream & operator <<(std::ostream &out, const std::array<T,N> &container) { return default_container_printer(out, container); }
 template<class T>
@@ -50,17 +62,6 @@ std::ostream & operator <<(std::ostream &out, const std::set<T> &container) { re
 template<class T>
 std::ostream & operator <<(std::ostream &out, const std::unordered_set<T> &container) { return default_container_printer(out, container); }
 
-template<class T>
-std::ostream & default_container_printer(std::ostream &out, const T &container) {
-    out << "{";
-    auto it = container.begin();
-    if(it != container.end()) {
-        out << *it;
-        while(++it != container.end()) out << ", " << *it;
-    }
-    out << "}";
-    return out;
-}
 
 
 template<typename T>

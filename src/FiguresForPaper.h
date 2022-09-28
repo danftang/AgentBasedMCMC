@@ -51,8 +51,8 @@ public:
         std::cout << "Loaded problem" << std::endl;
         std::cout << problem;
 
-//        ABMPrior<trajectory_type> prior(problem.prior());
         auto posterior = problem.posterior();
+        ABM::kappa = problem.kappa;
 
         auto startTime = std::chrono::steady_clock::now();
 
@@ -95,6 +95,7 @@ public:
         const int nLags = 200;
         const int nBurnIn = nSamples*0.1;
 
+        std::cout << "Creating sampler" << std::endl;
         ConstrainedFactorisedSampler sampler(targetDistribution, basisVectors, initalSample);
 
         std::valarray<std::valarray<double>> firstSynopsisSamples(nSamples/2);
@@ -102,7 +103,9 @@ public:
         ModelState<PredPreyAgent<GRIDSIZE>> firstMeanEndState;
         ModelState<PredPreyAgent<GRIDSIZE>> lastMeanEndState;
 
-        sampler >>= Drop(nBurnIn)
+        std::cout << "Starting sampling" << std::endl;
+        sampler //>>= [](const trajectory_type &item) -> const trajectory_type & { std::cout << item << std::endl; return item; }
+                >>= Drop(nBurnIn)
                 >>= &PredPreyTrajectory<GRIDSIZE,TIMESTEPS>::endState
                 >>= SwitchOnClose {
                         Split {
@@ -113,7 +116,7 @@ public:
                                 synopsis >>= save(lastSynopsisSamples),
                                 Sum(nSamples/2,firstMeanEndState)
                         },
-                };
+                    };
 
         std::cout << "Stats =\n" << sampler.stats << std::endl;
 
@@ -149,14 +152,19 @@ public:
         std::cout << "Loaded problem" << std::endl;
         std::cout << problem;
 
+        auto posterior = problem.posterior();
+        ABM::kappa = problem.kappa;
+
         auto startTime = std::chrono::steady_clock::now();
 
-        std::vector<ChainStats> stats = startStatsThread<GRIDSIZE>(problem, problem.prior.nextSample(false), nSamples);
+        std::vector<ChainStats> stats = startStatsThread(posterior,
+                                                         problem.basisVectors(),
+                                                         problem.randomInitialSolution(),
+                                                         nSamples);
 
         auto endTime = std::chrono::steady_clock::now();
-        auto execTimeMilliSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
-
-        std::cout << "Executed in " << execTimeMilliSeconds << "ms" << std::endl;
+//        std::cout << stats << std::endl;
+        std::cout << "Executed in " << endTime - startTime << std::endl;
     }
 
 
@@ -170,7 +178,7 @@ public:
         std::cout << "Loaded problem" << std::endl;
         std::cout << problem;
 
-        std::cout << "Creating sampler..." << std::endl;
+        std::cout << "Creating modelStateSampler..." << std::endl;
         ConstrainedFactorisedSampler sampler(problem.tableau, problem.posterior.factors, problem.posterior.perturbableFunctionFactory(), problem.prior.nextSample(false), problem.kappa);
 
         std::cout << "Burning in..." << std::endl;

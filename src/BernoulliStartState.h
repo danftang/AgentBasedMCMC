@@ -7,6 +7,7 @@
 
 #include "ConstrainedFactorisedDistribution.h"
 #include "ModelState.h"
+#include "ABMPriorSampler.h"
 
 template<class DOMAIN, class AGENT = typename DOMAIN::agent_type>
 class BernoulliStartState: public ConstrainedFactorisedDistribution<DOMAIN> {
@@ -22,7 +23,7 @@ public:
         for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
             addBernoulliFactor(agentId, agentToProb(AGENT(agentId)));
         }
-        _modelStateSampler = sampler(agentToProb);
+        _modelStateSampler = modelStateSampler(agentToProb);
     }
 
     explicit BernoulliStartState(std::initializer_list<double> probs): BernoulliStartState([probs = std::vector(probs)](AGENT agent) {
@@ -31,8 +32,9 @@ public:
 
     std::function<const ModelState<AGENT> &()> modelStateSampler() const { return _modelStateSampler; }
 
+    ABMPriorSampler<DOMAIN> priorSampler() const { return ABMPriorSampler<DOMAIN>(modelStateSampler()); }
 
-    static std::function<const ModelState<AGENT> &()> sampler(std::function<double(AGENT)> &agentToprob) {
+    static std::function<const ModelState<AGENT> &()> modelStateSampler(std::function<double(AGENT)> &agentToprob) {
         return [sample = ModelState<AGENT>(), agentToprob]() mutable -> const ModelState<AGENT> & {
             for(int agentId=0; agentId < AGENT::domainSize; ++agentId) {
                 sample[agentId] = Random::nextBool(agentToprob(AGENT(agentId)));
