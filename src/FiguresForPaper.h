@@ -27,8 +27,8 @@ public:
     static void generateStandardProblemFile(double kappa)  {
         constexpr double pPredator = PredPreyAgent<GRIDSIZE>::pPred;
         constexpr double pPrey = PredPreyAgent<GRIDSIZE>::pPrey;
-        constexpr double pMakeObservation = 0.05;
-        constexpr double pObserveIfPresent = 1.0;//0.9;
+        constexpr double pMakeObservation = 0.001;//0.05;
+        constexpr double pObserveIfPresent = 1.0;
         std::ofstream probFile(problemFilename);
         boost::archive::binary_oarchive probArchive(probFile);
 
@@ -51,8 +51,10 @@ public:
         std::cout << "Loaded problem" << std::endl;
         std::cout << problem;
 
+//        std::cout << "Basis vectors:" << std::endl;
+//        for(const auto &basisVec : problem.basisObj.basisVectors) std::cout << basisVec << std::endl;
+
         auto posterior = problem.posterior();
-        ABM::kappa = problem.kappa;
 
         auto startTime = std::chrono::steady_clock::now();
 
@@ -62,9 +64,9 @@ public:
                                                posterior,
                                                problem.basisVectors(),
                                                problem.randomInitialSolution(),
+                                               problem.kappa,
                                                nSamples);
         }
-
 
         MultiChainStats multiChainStats(problem.kappa, problemFilename);
         multiChainStats.reserve(2*nThreads);
@@ -86,16 +88,17 @@ public:
 
     static std::vector<ChainStats> startStatsThread(
             const ConstrainedFactorisedDistribution<trajectory_type> &targetDistribution,
-            std::vector<SparseVec<value_type>> basisVectors,
+            const std::vector<SparseVec<value_type>> &basisVectors,
             trajectory_type initalSample,
+            double kappa,
             int nSamples) {
         using namespace dataflow;
 
         const double maxLagProportion = 0.5;
         const int nLags = 200;
-        const int nBurnIn = nSamples*0.1;
+        const int nBurnIn = nSamples*0.2;
+        ABM::kappa = kappa;
 
-        std::cout << "Creating sampler" << std::endl;
         ConstrainedFactorisedSampler sampler(targetDistribution, basisVectors, initalSample);
 
         std::valarray<std::valarray<double>> firstSynopsisSamples(nSamples/2);
@@ -103,7 +106,6 @@ public:
         ModelState<PredPreyAgent<GRIDSIZE>> firstMeanEndState;
         ModelState<PredPreyAgent<GRIDSIZE>> lastMeanEndState;
 
-        std::cout << "Starting sampling" << std::endl;
         sampler //>>= [](const trajectory_type &item) -> const trajectory_type & { std::cout << item << std::endl; return item; }
                 >>= Drop(nBurnIn)
                 >>= &PredPreyTrajectory<GRIDSIZE,TIMESTEPS>::endState
@@ -148,18 +150,19 @@ public:
         boost::archive::binary_iarchive probArchive(probFile);
         PredPreyProblem<GRIDSIZE,TIMESTEPS> problem;
         probArchive >> problem;
+        ABM::kappa = problem.kappa;
 
         std::cout << "Loaded problem" << std::endl;
         std::cout << problem;
 
         auto posterior = problem.posterior();
-        ABM::kappa = problem.kappa;
 
         auto startTime = std::chrono::steady_clock::now();
 
         std::vector<ChainStats> stats = startStatsThread(posterior,
                                                          problem.basisVectors(),
                                                          problem.randomInitialSolution(),
+                                                         problem.kappa,
                                                          nSamples);
 
         auto endTime = std::chrono::steady_clock::now();
@@ -252,7 +255,7 @@ public:
         // plot end state
 
         Plotter endStatePlotter;
-        endStatePlotter.plot(ModelState(problem.realTrajectory,problem.realTrajectory.nTimesteps()), stats.meanEndState(),"");
+        endStatePlotter.plot(problem.realTrajectory.endState(), stats.meanEndState(),"");
 
         if(waitForKeypressToExit) {
             std::cout << "Press Enter to exit" << std::endl;

@@ -102,7 +102,8 @@ public:
     // A Bernoulli distribution that decays exponentially below zero
     static std::pair<double,bool> widenedLogBernoulli(double logP, double logNotP, int occupation) {
         if(occupation == 0) return std::pair(logNotP, true);
-        if(occupation < 0) return std::pair(logNotP + ABM::kappa*occupation, false);
+//        if(occupation < 0) return std::pair(logNotP + ABM::kappa*occupation, false);
+        if(occupation < 0) return std::pair(logNotP, false); // TODO: TEST!!!
         if(occupation > 1) return std::pair(logP + ABM::kappa*(1-occupation), false);
         return std::pair(logP, true);
     }

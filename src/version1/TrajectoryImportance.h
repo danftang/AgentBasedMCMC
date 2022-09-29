@@ -103,7 +103,7 @@ public:
                 for (int act = 0; act < AGENT::actDomainSize; ++act) {
                     int actOccupation = eventTrajectory[Event<AGENT>(state.time, state.agent, act).id];
                     if(actOccupation > 0 && actPMF[act] > 0.0) {
-                        newLogP += log(actPMF[act] / state.agent.marginalTimestep(act)); // Fermionic bounding
+                        newLogP += log(actPMF[act] / state.agent.logMarginalTimestep(act)); // Fermionic bounding
                     }
                 }
             }
@@ -129,7 +129,7 @@ public:
                     for (int actId = 0; actId < AGENT::actDomainSize; ++actId) {
                         double actOccupation = eventTrajectory[Event<AGENT>(t, agentId, actId).id];
                         if (actOccupation > 0 && actPMF[actId] > 0.0) {
-                            factorLogProb += log(actPMF[actId] / state.agent.marginalTimestep(actId)); // Fermionic bounding
+                            factorLogProb += log(actPMF[actId] / state.agent.logMarginalTimestep(actId)); // Fermionic bounding
                         }
                     }
                     totalLogProb += factorLogProb;
@@ -164,7 +164,7 @@ protected:
                     for (int actId = 0; actId < AGENT::actDomainSize; ++actId) {
                         double actOccupation = eventTrajectory[Event<AGENT>(t, agentId, actId).id];
                         if (actOccupation > 0 && actPMF[actId] > 0.0)
-                            agentStateLogP += log(actPMF[actId] / agent.marginalTimestep(actId)); // Fermionic bounding
+                            agentStateLogP += log(actPMF[actId] / agent.logMarginalTimestep(actId)); // Fermionic bounding
                     }
                     assert(fabs(agentStateLogP - stateLogProbs[State<AGENT>(t,agentId).id()]) < 1e-5);
                     logP += agentStateLogP;

@@ -51,6 +51,8 @@ public:
         return { *this };
     }
 
+    double logMarginalTimestep(Act act) const { return act == 1?lpMove:lpNotMove; }
+
 };
 
 template<int GRIDSIZE>

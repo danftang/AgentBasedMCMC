@@ -58,7 +58,6 @@ public:
 
 //    std::vector<double> timestep(const ModelState<CatMouseAgent> &others) const;
 //    std::vector<double> timestep(const Trajectory<CatMouseAgent> &others, int time) const;
-//    double marginalTimestep(Act act) const;
     std::vector<CatMouseAgent> consequences(Act act) const; // the consequences of an act
 //    // returns the constraints implied by the given act
 //    std::vector<Constraint<ABM::occupation_type>> constraints(int time, Act act) const; // to be generated automatically by static analysis...eventually.
@@ -75,6 +74,8 @@ public:
         out << (agent.type()==CAT?"CAT":"MSE") << ":" << (agent.position()==LEFT?"L":"R");
         return out;
     }
+
+    double logMarginalTimestep(Act act) const { return log(0.5); }
 
 };
 

@@ -7,4 +7,5 @@ set(CMAKE_CXX_STANDARD 17)
 link_directories(lib)
 link_libraries(boost_system boost_iostreams boost_filesystem boost_serialization pthread)
 
-add_executable(abmcmc main.cpp MCMCStatistics.cpp Experiments.cpp agents/CatMouseAgent.cpp)
+add_executable(abmcmc main.cpp MCMCStatistics.cpp)
+#add_executable(abmcmc main.cpp MCMCStatistics.cpp Experiments.cpp agents/CatMouseAgent.cpp)

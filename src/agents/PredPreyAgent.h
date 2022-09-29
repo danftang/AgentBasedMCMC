@@ -104,6 +104,12 @@ public:
 
     static const double lpMove;
 
+    // marginals
+    static const double lpPredBirth;
+    static const double lpPreyBirth;
+    static const double lpPredDeath;
+    static const double lpPreyDeath;
+
     // Agent Domain stuff
     static constexpr int actDomainSize= 6;
 };
@@ -119,6 +125,11 @@ inline const double PredPreyAgentBase::lpPreyBirthGivenNoPred = log(0.5 * cluste
 inline const double PredPreyAgentBase::lpPreyDeathGivenNoPred = log(clustering - exp(lpPreyBirthGivenNoPred));
 
 inline const double PredPreyAgentBase::lpMove = log(0.25 * (1.0 - clustering));
+
+inline const double PredPreyAgentBase::lpPredBirth = log(exp(lpPredBirthGivenPrey)*(1.0-pNoPreyClose) + exp(lpPredBirthGivenNoPrey)*pNoPreyClose);
+inline const double PredPreyAgentBase::lpPreyBirth = log(exp(lpPreyBirthGivenPred)*(1.0-pNoPredClose) + exp(lpPreyBirthGivenNoPred)*pNoPredClose);
+inline const double PredPreyAgentBase::lpPredDeath = log(exp(lpPredDeathGivenPrey)*(1.0-pNoPreyClose) + exp(lpPredDeathGivenNoPrey)*pNoPreyClose);
+inline const double PredPreyAgentBase::lpPreyDeath = log(exp(lpPreyDeathGivenPred)*(1.0-pNoPredClose) + exp(lpPreyDeathGivenNoPred)*pNoPredClose);
 
 
 template<int GRIDSIZE>
@@ -139,8 +150,14 @@ public:
     template<class TRAJECTORY>
     static double logEventProb(const Event<PredPreyAgent<GRIDSIZE>> &event, const TRAJECTORY &trajectory);
 
+    template<class TRAJECTORY>
+    static std::pair<double,bool> widenedLogEventProb(const Event<PredPreyAgent<GRIDSIZE>> &event, const TRAJECTORY &trajectory);
+
+
     template<class DOMAIN>
     static std::vector<int> eventProbDependencies(const Event<PredPreyAgent<GRIDSIZE>> &event);
+
+    double logMarginalTimestep(Act act) const;
 
     template<class TRAJECTORY>
     bool hasAnySurrounding(Type type, int time, const TRAJECTORY &trajectory) const {
@@ -186,6 +203,7 @@ public:
 //    }
 
 
+
 };
 
 
@@ -229,23 +247,39 @@ double PredPreyAgent<GRIDSIZE>::logEventProb(const Event<PredPreyAgent<GRIDSIZE>
             surroundingCount = trajectory.surroundingCountOf(State<PredPreyAgent<GRIDSIZE>>(event.time(), event.agent()));
             if (event.agent().type() == PREDATOR) return surroundingCount >= 1 ? lpPredDeathGivenPrey : lpPredDeathGivenNoPrey;
             return surroundingCount >= 1 ? lpPreyDeathGivenPred : lpPreyDeathGivenNoPred;
-
-//        case GIVEBIRTH:
-//            if (event.agent().type() == PREDATOR) {
-//                return (event.agent().hasAnySurrounding(PREY, event.time(), trajectory)) ? lpPredBirthGivenPrey : lpPredBirthGivenNoPrey;
-//            } else {
-//                return (event.agent().hasAnySurrounding(PREDATOR, event.time(), trajectory)) ? lpPreyBirthGivenPred : lpPreyBirthGivenNoPred;
-//            }
-//        case DIE:
-//            if (event.agent().type() == PREDATOR) {
-//                return (event.agent().hasAnySurrounding(PREY, event.time(), trajectory)) ? lpPredDeathGivenPrey : lpPredDeathGivenNoPrey;
-//            } else {
-//                return (event.agent().hasAnySurrounding(PREDATOR, event.time(), trajectory)) ? lpPreyDeathGivenPred : lpPreyDeathGivenNoPred;
-//            }
     }
     assert(false);
     return -INFINITY;
 }
+
+
+template<int GRIDSIZE>
+template<class TRAJECTORY>
+std::pair<double,bool> PredPreyAgent<GRIDSIZE>::widenedLogEventProb(const Event<PredPreyAgent<GRIDSIZE>> &event, const TRAJECTORY &trajectory) {
+    int surroundingCount;
+    switch(event.act()) {
+        case MOVEUP:
+        case MOVEDOWN:
+        case MOVELEFT:
+        case MOVERIGHT:
+            return std::pair(lpMove,true);
+        case GIVEBIRTH:
+            surroundingCount = trajectory.surroundingCountOf(State<PredPreyAgent<GRIDSIZE>>(event.time(), event.agent()));
+            if (event.agent().type() == PREDATOR) {
+                return (surroundingCount > 0) ? std::pair(lpPredBirthGivenPrey,true):std::pair(-5.0,true);
+            }
+            return (surroundingCount > 0) ? std::pair(-5.0,true) : std::pair(lpPreyBirthGivenNoPred,true);
+        case DIE:
+            surroundingCount = trajectory.surroundingCountOf(State<PredPreyAgent<GRIDSIZE>>(event.time(), event.agent()));
+            if (event.agent().type() == PREDATOR) {
+                return (surroundingCount > 0) ? std::pair(-5.0,true) : std::pair(lpPredDeathGivenNoPrey,true);
+            }
+            return (surroundingCount > 0) ? std::pair(lpPreyDeathGivenPred,true) : std::pair(-5.0,true);
+    }
+    assert(false);
+    return std::pair(-INFINITY,false);
+}
+
 
 template<int GRIDSIZE>
 template<class DOMAIN>
@@ -285,26 +319,22 @@ std::vector<int> PredPreyAgent<GRIDSIZE>::eventProbDependencies(const Event<Pred
 // Should be factored approximation of multinomial given an agent in start position and
 // that the constraints are satisfied
 // (i.e. given that the prob of this act is not zero)
-//template<int GRIDSIZE>
-//double PredPreyAgent<GRIDSIZE>::marginalTimestep(Act act) const {
-//    constexpr double pPreyNeighbourGivenPred = (1.0-pNoPrey4);
-//    constexpr double pPredNeighbourGivenPrey = (1.0-pNoPred4);
-//    constexpr double pPreyMove = 0.25 * (1.0 - pPreyDie - pPreyEatenGivenPred*pPredNeighbourGivenPrey - pPreyBirth);
-//    constexpr double pPredMove = 0.25 * (1.0 - pPredDie - pPredBirthGivenPrey*pPreyNeighbourGivenPred);
-//
-//    if(type() == PREDATOR) {
-//        switch (act) {
-//            case DIE:       return pPredDie;
-//            case GIVEBIRTH: return pPredBirthGivenPrey; // assume feasible
-//        }
-//        return pPredMove;
-//    }
-//    switch (act) {
-//        case DIE:       return pPreyDie + pPreyEatenGivenPred*pPredNeighbourGivenPrey;
-//        case GIVEBIRTH: return pPreyBirth;
-//    }
-//    return pPreyMove;
-//}
+template<int GRIDSIZE>
+double PredPreyAgent<GRIDSIZE>::logMarginalTimestep(Act act) const {
+    switch(act) {
+        case MOVEUP:
+        case MOVEDOWN:
+        case MOVELEFT:
+        case MOVERIGHT:
+            return lpMove;
+        case GIVEBIRTH:
+            return type() == PREDATOR ? lpPredBirthGivenPrey:lpPreyBirthGivenNoPred;
+        case DIE:
+            return type() == PREDATOR ? lpPredDeathGivenNoPrey:lpPreyDeathGivenPred;
+    }
+    assert(false);
+    return -INFINITY;
+}
 
 
 //template<int GRIDSIZE>

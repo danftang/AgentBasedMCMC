@@ -119,6 +119,7 @@ public:
     void findInitialFeasibleSolution() {
         int nTransitions = 0;
         while(currentInfeasibility != 0) {
+//            std::cout << "current infeasibility " << currentInfeasibility << std::endl;
             performTransition(basisDistribution(Random::gen));
             ++nTransitions;
         }
@@ -146,7 +147,7 @@ public:
 //                std::cout << "Accepting. Infeasibility = " << currentInfeasibility << std::endl;
             }
             stats.addSample(wasAccepted, startStateIsFeasible, proposalIsFeasible);
-            debug(if(++attempts%10000 == 0) std::cout << "Stuck with infeasibility = " << currentInfeasibility << std::endl;);
+            debug(if(++attempts%10000 == 0) std::cout << attempts << ": stuck with infeasibility = " << currentInfeasibility << std::endl;);
 //            debug(sanityCheck());
         } while(currentInfeasibility != 0);
         return X;

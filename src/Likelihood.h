@@ -51,6 +51,7 @@ public:
             this->addFactor(
                     [state, nObserved, pObserveIfPresent, logPnObserved](const DOMAIN &trajectory) {
                         typename DOMAIN::value_type realOccupation = trajectory[state];
+                        if(realOccupation < 0) std::pair(logPnObserved - ABM::kappa*nObserved, false);// TODO: TEST no decay in negative!!!!!
                         if (realOccupation < nObserved)
                             return std::pair(logPnObserved + ABM::kappa * (realOccupation - nObserved), false);
                         return std::pair(log(boost::math::pdf(boost::math::binomial(realOccupation, pObserveIfPresent),

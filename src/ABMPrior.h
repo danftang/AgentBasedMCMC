@@ -81,9 +81,12 @@ public:
                     );
                 }
 
-                this->addFactor(
+                this->addFactor( // factorial of state occupation
                         [state](const DOMAIN &trajectory) {
-                            return std::pair(lgamma(std::max(trajectory[state], 0) + 1), true);
+                            auto occupation = trajectory[state];
+//                            return (occupation < 0) ? std::pair(ABM::kappa*occupation,false) : std::pair(lgamma(occupation + 1), true); // TODO: Test!!
+//                            return std::pair(lgamma(std::max(trajectory[state], 0) + 1), true);
+                            return std::pair(lgamma(std::abs(trajectory[state]) + 1), true);
                         },
                         {DOMAIN::indexOf(state)}
                 );
@@ -126,25 +129,20 @@ public:
 //    }
 
     static std::pair<double, bool> widenedEventFactor(const Event<AGENT> &event, const DOMAIN &trajectory) {
-        double logP = 0.0;
-        double logpAct;
-        bool exactValue = true;
         int actOccupation = trajectory[event];
-        if (actOccupation != 0) {
-            if (actOccupation < 0) { // negative occupation widening
-                logpAct = -ABM::kappa;
-                actOccupation = -actOccupation;
-                exactValue = false;
-            } else {
-                logpAct = AGENT::logEventProb(event, trajectory);
-                if (logpAct == -INFINITY) {
-                    logpAct = -ABM::kappa; // impossible act widening
-                    exactValue = false;
-                }
-            }
-            logP = actOccupation * logpAct - lgamma(actOccupation + 1);
+        if(actOccupation == 0) return std::pair(0.0, true);
+        if (actOccupation < 0) { // negative occupation widening
+            return std::pair(-actOccupation * log(1.0/AGENT::actDomainSize) - lgamma(1-actOccupation) + ABM::kappa * actOccupation, false); // pair production and decay
+//            return std::pair(ABM::kappa * actOccupation - lgamma(1-actOccupation), false);
         }
-        return std::pair(logP, exactValue);
+        auto [logpAct, isFeasible] = AGENT::widenedLogEventProb(event, trajectory); // TODO: test!!!
+        return std::pair(actOccupation * logpAct - lgamma(actOccupation + 1), isFeasible);
+
+//        double logpAct = AGENT::logEventProb(event, trajectory);
+//        if (logpAct == -INFINITY) { // impossible act widening
+//            return std::pair(event.agent().logMarginalTimestep(event.act())* actOccupation - lgamma(actOccupation + 1) - ABM::kappa, false);
+//        }
+//        return std::pair(actOccupation * logpAct - lgamma(actOccupation + 1), true);
     }
 
 
