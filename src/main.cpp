@@ -15,6 +15,7 @@ int main(int argc, char *argv[]) {
     // double decay on start state and likelihood: kappa=6.25, infeasible = 88%, time/eff-sample = 69.5ms
     // normal decay on start state, no decay on likelihood, marginal with step down on infeasible proir, kappa=6.5, infeasible=80%, time/eff-sample = 55.1ms
     FiguresForPaper<8,4>::generateStandardProblemFile(4.5);
+    Random::gen.seed(9174024);
     FiguresForPaper<8,4>::generateStats(1000000);
     FiguresForPaper<8,4>::plotStats(false); // set to true to allow printing from plots.
 
