@@ -68,11 +68,14 @@ public:
     static constexpr double pPrey = 0.05; // steady state probability that there are no prey on a square
     static constexpr double pNoPred = 1.0-pPred; // steady state probability that there are no predators on a square
     static constexpr double pNoPrey = 1.0-pPrey; // steady state probability that there are no prey on a square
-    static constexpr double clustering = 0.33; // tendency to cluster / instability
+    static constexpr double clustering = 0.33; // tendency to cluster
     static constexpr double pNoPredClose = pNoPred*pNoPred*pNoPred*pNoPred; // no pow function for constexpr :-(
     static constexpr double pNoPreyClose = pNoPrey*pNoPrey*pNoPrey*pNoPrey;
-    static constexpr double pPredClose = 1.0 - pNoPredClose; // no pow function for constexpr :-(
+    static constexpr double pPredClose = 1.0 - pNoPredClose;
     static constexpr double pPreyClose = 1.0 - pNoPreyClose;
+    static constexpr double APred = 0.666;  // predator birth/death ratio in the presence of prey, 0.5 < APred <= 1.0
+    static constexpr double APrey = 0.333; // prey birth/death ratio in the presence of predators, 0.0 <= APrey < 0.5
+
     // values for which there is a steady state prior of uniform, uncorrelated Poisson distribution
     // At steady state probability of birth must equal prob of death, so:
     //      pPredDie = pPreyClose*pPredBirthGivenPrey
@@ -114,18 +117,20 @@ public:
     static constexpr int actDomainSize= 6;
 };
 
-inline const double PredPreyAgentBase::lpPredBirthGivenPrey = log(clustering);
-inline const double PredPreyAgentBase::lpPredDeathGivenPrey = log(0.0);
-inline const double PredPreyAgentBase::lpPredBirthGivenNoPrey = log(0.5 * clustering * (1.0 - pPreyClose / pNoPreyClose));
+// These values ensure that the average population density of pred and prey stays constant in an infinitely large simulation
+inline const double PredPreyAgentBase::lpPredBirthGivenPrey = log(clustering*APred);
+inline const double PredPreyAgentBase::lpPredDeathGivenPrey = log(clustering*(1.0 - APred));
+inline const double PredPreyAgentBase::lpPredBirthGivenNoPrey = log(0.5 * clustering * (1.0 + (1.0-2.0*APred) * pPreyClose / pNoPreyClose));
 inline const double PredPreyAgentBase::lpPredDeathGivenNoPrey = log(clustering - exp(lpPredBirthGivenNoPrey));
 
-inline const double PredPreyAgentBase::lpPreyBirthGivenPred = log(0.0);
-inline const double PredPreyAgentBase::lpPreyDeathGivenPred = log(clustering);
-inline const double PredPreyAgentBase::lpPreyBirthGivenNoPred = log(0.5 * clustering * (1.0 + pPredClose / pNoPredClose));
+inline const double PredPreyAgentBase::lpPreyBirthGivenPred = log(clustering*APrey);
+inline const double PredPreyAgentBase::lpPreyDeathGivenPred = log(clustering*(1.0-APrey));
+inline const double PredPreyAgentBase::lpPreyBirthGivenNoPred = log(0.5 * clustering * (1.0 + (1.0-2.0*APrey) * pPredClose / pNoPredClose));
 inline const double PredPreyAgentBase::lpPreyDeathGivenNoPred = log(clustering - exp(lpPreyBirthGivenNoPred));
 
 inline const double PredPreyAgentBase::lpMove = log(0.25 * (1.0 - clustering));
 
+// marginal values
 inline const double PredPreyAgentBase::lpPredBirth = log(exp(lpPredBirthGivenPrey)*(1.0-pNoPreyClose) + exp(lpPredBirthGivenNoPrey)*pNoPreyClose);
 inline const double PredPreyAgentBase::lpPreyBirth = log(exp(lpPreyBirthGivenPred)*(1.0-pNoPredClose) + exp(lpPreyBirthGivenNoPred)*pNoPredClose);
 inline const double PredPreyAgentBase::lpPredDeath = log(exp(lpPredDeathGivenPrey)*(1.0-pNoPreyClose) + exp(lpPredDeathGivenNoPrey)*pNoPreyClose);
@@ -266,15 +271,19 @@ std::pair<double,bool> PredPreyAgent<GRIDSIZE>::widenedLogEventProb(const Event<
         case GIVEBIRTH:
             surroundingCount = trajectory.surroundingCountOf(State<PredPreyAgent<GRIDSIZE>>(event.time(), event.agent()));
             if (event.agent().type() == PREDATOR) {
-                return (surroundingCount > 0) ? std::pair(lpPredBirthGivenPrey,true):std::pair(-5.0,true);
+//                return (surroundingCount > 0) ? std::pair(lpPredBirthGivenPrey,true):std::pair(lpPredBirthGivenNoPrey,true);
+                return std::pair(lpPredBirth,true);
             }
-            return (surroundingCount > 0) ? std::pair(-5.0,true) : std::pair(lpPreyBirthGivenNoPred,true);
+//            return (surroundingCount > 0) ? std::pair(lpPreyBirthGivenPred,true) : std::pair(lpPreyBirthGivenNoPred,true);
+            return std::pair(lpPreyBirth,true);
         case DIE:
             surroundingCount = trajectory.surroundingCountOf(State<PredPreyAgent<GRIDSIZE>>(event.time(), event.agent()));
             if (event.agent().type() == PREDATOR) {
-                return (surroundingCount > 0) ? std::pair(-5.0,true) : std::pair(lpPredDeathGivenNoPrey,true);
+//                return (surroundingCount > 0) ? std::pair(lpPredDeathGivenPrey,true) : std::pair(lpPredDeathGivenNoPrey,true);
+                return std::pair(lpPredDeath,true);
             }
-            return (surroundingCount > 0) ? std::pair(lpPreyDeathGivenPred,true) : std::pair(-5.0,true);
+//            return (surroundingCount > 0) ? std::pair(lpPreyDeathGivenPred,true) : std::pair(lpPreyDeathGivenNoPred,true);
+            return std::pair(lpPreyDeath,true);
     }
     assert(false);
     return std::pair(-INFINITY,false);
@@ -292,24 +301,8 @@ std::vector<int> PredPreyAgent<GRIDSIZE>::eventProbDependencies(const Event<Pred
             return {};
         case GIVEBIRTH:
         case DIE:
-            return { DOMAIN::surroundingCountIndexOf(State<PredPreyAgent<GRIDSIZE>>(event.time(), event.agent())) };
-
-//            PredPreyAgent<GRIDSIZE> agent = event.agent();
-//            Type affectedType = (agent.type()==PREDATOR?PREY:PREDATOR);
-//            return {
-//                    DOMAIN::indexOf(State(event.time(),
-//                                          PredPreyAgent<GRIDSIZE>(agent.xLeft(), agent.yPosition(),
-//                                                                  affectedType))),
-//                    DOMAIN::indexOf(State(event.time(),
-//                                          PredPreyAgent<GRIDSIZE>(agent.xRight(), agent.yPosition(),
-//                                                                  affectedType))),
-//                    DOMAIN::indexOf(State(event.time(), PredPreyAgent<GRIDSIZE>(agent.xPosition(), agent.yUp(),
-//                                                                                affectedType))),
-//                    DOMAIN::indexOf(State(event.time(),
-//                                          PredPreyAgent<GRIDSIZE>(agent.xPosition(), agent.yDown(),
-//                                                                  affectedType)))
-//            };
-
+//            return { DOMAIN::surroundingCountIndexOf(State<PredPreyAgent<GRIDSIZE>>(event.time(), event.agent())) };
+            return {}; // TODO: test!!!!
     }
     assert(false);
     return {};

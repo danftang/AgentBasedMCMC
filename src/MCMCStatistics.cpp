@@ -50,6 +50,7 @@ std::ostream &operator <<(std::ostream &out, const MCMCStatistics &stats) {
     out << "Proportion infeasible       " << stats.nInfeasibleSamples()*100.0/ stats.totalProposals() << "%" << std::endl;
     out << "Mean feasible run-length    " << stats.nFeasibleSamples()/(stats.nAccepted[false][true]+1.0) << std::endl;
     out << "Mean infeasible run-length  " << stats.nInfeasibleSamples()*1.0/stats.nAccepted[true][false] << std::endl;
+    out << "Mean acceptance             " << stats.totalAccepted()*100.0/ stats.totalProposals() << "%" << std::endl;
 //    out << "Proposals" << std::endl;
 //    out << "   total                    " << stats.totalProposals() << std::endl;
 //    out << "   feasible-feasible        " << stats.nProposals[true][true]*100.0/ stats.totalProposals() << "%" << std::endl;

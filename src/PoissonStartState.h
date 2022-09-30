@@ -73,7 +73,7 @@ public:
     static std::pair<double,bool> widenedUnnormalisedPoisson(double logLambda, int occupation) {
         //if(occupation < 0) return std::pair(0.0, false); //TODO: TEST: no negative decay!!!! //std::pair(ABM::kappa*occupation, false);               // widening
 //        if(occupation < 0) return std::pair(ABM::kappa*occupation - lgamma(1-occupation), false);
-        if(occupation < 0) return std::pair(-log(0.01)*occupation, false);
+        if(occupation < 0) return std::pair(ABM::kappa*occupation - exp(logLambda), false);
         return std::pair(occupation*logLambda - lgamma(occupation+1) - exp(logLambda), true);    // log of Poisson
     }
 

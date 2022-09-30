@@ -4,6 +4,22 @@
 int main(int argc, char *argv[]) {
 //    auto startTime = std::chrono::steady_clock::now();
 
+//    std::cout
+//            << exp(PredPreyAgentBase::lpPredBirthGivenPrey) << " "
+//            << exp(PredPreyAgentBase::lpPredDeathGivenPrey) << " "
+//            << exp(PredPreyAgentBase::lpPredBirthGivenNoPrey) << " "
+//            << exp(PredPreyAgentBase::lpPredDeathGivenNoPrey) << " "
+//            << exp(PredPreyAgentBase::lpPreyBirthGivenPred) << " "
+//            << exp(PredPreyAgentBase::lpPreyDeathGivenPred) << " "
+//            << exp(PredPreyAgentBase::lpPreyBirthGivenNoPred) << " "
+//            << exp(PredPreyAgentBase::lpPreyDeathGivenNoPred) << std::endl;
+
+//    std::cout
+//            << exp(PredPreyAgentBase::lpPredDeath) << " "
+//            << exp(PredPreyAgentBase::lpPredBirth) << " "
+//            << exp(PredPreyAgentBase::lpPreyDeath) << " "
+//            << exp(PredPreyAgentBase::lpPreyBirth) << std::endl;
+
     // 8 x 4
     // kappa    %age infeasible     time/effetive sample
     // 7.25     53%                 113ms
@@ -14,9 +30,8 @@ int main(int argc, char *argv[]) {
     // No decay on start state or likelihood at negative vals: kappa=6.25, infeasible = 90%, time/eff-sample = 77ms
     // double decay on start state and likelihood: kappa=6.25, infeasible = 88%, time/eff-sample = 69.5ms
     // normal decay on start state, no decay on likelihood, marginal with step down on infeasible proir, kappa=6.5, infeasible=80%, time/eff-sample = 55.1ms
-    FiguresForPaper<8,4>::generateStandardProblemFile(4.5);
-    Random::gen.seed(9174024);
-    FiguresForPaper<8,4>::generateStats(1000000);
+//    FiguresForPaper<8,4>::generateStandardProblemFile(6.0);
+//    FiguresForPaper<8,4>::generateStats(1000000);
     FiguresForPaper<8,4>::plotStats(false); // set to true to allow printing from plots.
 
     // TODO: Normalise all Poissons properly (so that -ve side is comparable)

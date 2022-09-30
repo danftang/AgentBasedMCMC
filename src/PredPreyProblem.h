@@ -61,12 +61,12 @@ public:
 
 
     auto startState() {
-        return PoissonStartState<trajectory_type>([pPredator=pPredator, pPrey=pPrey](agent_type agent) {
-            return agent.type() == PredPreyAgentBase::PREDATOR?pPredator:pPrey;
-        });
-//        return BernoulliStartState<trajectory_type>([pPredator=pPredator, pPrey=pPrey](agent_type agent) {
+//        return PoissonStartState<trajectory_type>([pPredator=pPredator, pPrey=pPrey](agent_type agent) {
 //            return agent.type() == PredPreyAgentBase::PREDATOR?pPredator:pPrey;
 //        });
+        return BernoulliStartState<trajectory_type>([pPredator=pPredator, pPrey=pPrey](agent_type agent) {
+            return agent.type() == PredPreyAgentBase::PREDATOR?pPredator:pPrey;
+        });
     };
 
 

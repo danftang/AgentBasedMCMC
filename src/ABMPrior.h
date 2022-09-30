@@ -84,9 +84,9 @@ public:
                 this->addFactor( // factorial of state occupation
                         [state](const DOMAIN &trajectory) {
                             auto occupation = trajectory[state];
-//                            return (occupation < 0) ? std::pair(ABM::kappa*occupation,false) : std::pair(lgamma(occupation + 1), true); // TODO: Test!!
+                            return (occupation < 0) ? std::pair(ABM::kappa*occupation,false) : std::pair(lgamma(occupation + 1), true); // TODO: Test!!
+//                            return std::pair(lgamma(std::abs(trajectory[state]) + 1), true); // TODO: test
 //                            return std::pair(lgamma(std::max(trajectory[state], 0) + 1), true);
-                            return std::pair(lgamma(std::abs(trajectory[state]) + 1), true);
                         },
                         {DOMAIN::indexOf(state)}
                 );
@@ -132,10 +132,14 @@ public:
         int actOccupation = trajectory[event];
         if(actOccupation == 0) return std::pair(0.0, true);
         if (actOccupation < 0) { // negative occupation widening
-            return std::pair(-actOccupation * log(1.0/AGENT::actDomainSize) - lgamma(1-actOccupation) + ABM::kappa * actOccupation, false); // pair production and decay
+//            return std::pair(-actOccupation * log(1.0/AGENT::actDomainSize) - lgamma(1-actOccupation) + ABM::kappa * actOccupation, false); // pair production and decay
 //            return std::pair(ABM::kappa * actOccupation - lgamma(1-actOccupation), false);
+            return std::pair(ABM::kappa * actOccupation, false);
         }
         auto [logpAct, isFeasible] = AGENT::widenedLogEventProb(event, trajectory); // TODO: test!!!
+//        if (actOccupation > 1) { // Fermionic occupation widening
+//            return std::pair(logpAct + ABM::kappa * (1-actOccupation), false); // TODO: test!!!
+//        }
         return std::pair(actOccupation * logpAct - lgamma(actOccupation + 1), isFeasible);
 
 //        double logpAct = AGENT::logEventProb(event, trajectory);
