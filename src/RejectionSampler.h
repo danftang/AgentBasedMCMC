@@ -8,7 +8,7 @@
 #include <functional>
 #include "ModelState.h"
 #include "ABMPrior.h"
-#include "Likelihood.h"
+#include "ABMLikelihood.h"
 
 template<class DOMAIN>
 class RejectionSampler {

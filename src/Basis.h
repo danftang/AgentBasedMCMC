@@ -25,9 +25,11 @@ public:
     DOMAIN                              origin;
 
     Basis()=default;
+//    Basis(const Basis<DOMAIN> &)=default;
+//    Basis(Basis<DOMAIN> &&)=default;
 
-    Basis(std::vector<SparseVec<value_type>> basis, DOMAIN origin) :
-            basisVectors(std::move(basis)),
+    Basis(std::vector<SparseVec<value_type>> basisVecs, DOMAIN origin) :
+            basisVectors(std::move(basisVecs)),
             origin(std::move(origin)) {
     }
 
@@ -36,7 +38,7 @@ public:
         TableauNormMinimiser<value_type> tableau(distribution);
         basisVectors = tableau.getBasisVectors();
         origin += tableau.getOrigin(); // assumes default constructor of DOMAIN is the zero vector
-        debug(sanityCheck(distribution));
+        debug(sanityCheck(distribution.constraints));
     }
 
 
@@ -56,13 +58,13 @@ public:
 private:
     friend class boost::serialization::access;
 
-    void sanityCheck(const ConstrainedFactorisedDistribution<DOMAIN> &distribution) {
+    void sanityCheck(const EqualityConstraints<value_type> &constraints) {
         // test that the basis is truly a basis of the constraints in the distribution
         assert(origin.size() == DOMAIN::dimension);
-        assert(distribution.constraints.isValidSolution(origin));
+        assert(constraints.isValidSolution(origin));
         for (int i = 0; i < basisVectors.size(); ++i) {
             origin += basisVectors[i];
-            assert(distribution.constraints.isValidSolution(origin));
+            assert(constraints.isValidSolution(origin));
             origin -= basisVectors[i];
         }
     }

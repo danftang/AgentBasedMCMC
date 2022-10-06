@@ -19,8 +19,8 @@
 // Created by daniel on 07/09/22.
 //
 
-#ifndef ABMCMC_CONSTRAINEDFACTORISEDSAMPLER_H
-#define ABMCMC_CONSTRAINEDFACTORISEDSAMPLER_H
+#ifndef ABMCMC_FACTORISEDDISTRIBUTIONSAMPLER_H
+#define ABMCMC_FACTORISEDDISTRIBUTIONSAMPLER_H
 
 #include <vector>
 #include <map>
@@ -34,69 +34,110 @@
 #include "ConstrainedFactorisedDistribution.h"
 #include "TableauNormMinimiser.h"
 #include "Basis.h"
+#include "FactorisedDistributionOnBasis.h"
+#include "ABMPosterior.h"
 
-template<typename DOMAIN, typename ELEMENT>
-class ConstrainedFactorisedSampler {
+template<typename DOMAIN, typename ELEMENT = typename DOMAIN::value_type>
+class FactorisedDistributionSampler {
+public:
+
+    // USER is a function object that takes a producer of samples and returns a result
+//    template<class USER, class RESULT = typename SamplingProblem<ConstrainedFactorisedDistribution<DOMAIN,ELEMENT>,USER>::result_type>
+//    static RESULT solve(const SamplingProblem<ConstrainedFactorisedDistribution<DOMAIN,ELEMENT>,USER> &problem) {
+//        FactorisedDistributionSampler sampler(problem.distribution);
+//        return problem.user(sampler);
+//    }
+
+    template<class USER, class RESULT = std::result_of<USER(std::function<const DOMAIN &()>)>>
+    static RESULT solve(const ConstrainedFactorisedDistribution<DOMAIN,ELEMENT> &distribution, USER user) {
+        FactorisedDistributionSampler sampler(distribution);
+        return user(sampler);
+    }
+
+    template<class USER, class RESULT = std::result_of<USER(std::function<const DOMAIN &()>)>>
+    static std::future<RESULT> solveAsync(const ConstrainedFactorisedDistribution<DOMAIN,ELEMENT> &distribution, USER user) {
+        FactorisedDistributionSampler sampler(distribution);
+        return std::async(user,sampler);
+    }
+
+
 public:
     typedef std::vector<int> IndexSet;
 
     struct RowEntry {
         RowEntry(int index): basisIndex(index) { }
         int basisIndex;
-        std::pair<double,bool> value;
+        std::pair<double,bool> value; // value of this row's factor after unit perturbation of this column's basis vector
     };
 
     struct ColEntry {
         ColEntry(int index, std::pair<double,bool> &val): factorIndex(index), value(val) { }
         int factorIndex;
-        std::pair<double,bool> &value;
+        std::pair<double,bool> &value; // reference to value stored in corresponding RowEntry
     };
 
-    std::vector<SparseVec<ELEMENT>> basisVectors;       // the basis vectors by basis index and domain index
-    MutableCategoricalArray         basisDistribution;  // probability of proposing to update the j'th basis
-    std::vector<double>             currentWeight;   // current log weight of the j'th transition
-
+    std::vector<SparseVec<ELEMENT>> basisVectors;       // the basis vectors by basis index and domain index (doubled for +-)
     std::vector<std::function<std::pair<double,bool>(const DOMAIN &)>>  factors;
-    std::vector<std::pair<double,bool>>                         currentFactorVal;       // current log value of the i'th factor
-
     // dependency matrix, each col is a basis, each row is a factor
     std::vector<std::vector<RowEntry>>       factorToBasisPerturbedValue; // set of basis vectors that a given factor is dependent on
     std::vector<std::vector<ColEntry>>     basisToFactorPerturbedValue; // set of factors that are dependent on a given basis
 
-    DOMAIN                      X;      // the current point on the lattice
+    MutableCategoricalArray         basisDistribution;  // probability of proposing to update the j'th basis
+    std::vector<double>             currentWeight;   // current log weight of the j'th transition
+    std::vector<std::pair<double,bool>>  currentFactorVal;  // current log value of the i'th factor
+
+    DOMAIN                      X;      // the current Markov state
     int                         currentInfeasibility; // current number of factors that are in widened support
-    MCMCStatistics              stats;
+    MCMCStatistics              stats;  // statistics on all samples since construction
 
 public:
-    ConstrainedFactorisedSampler(const ConstrainedFactorisedDistribution<DOMAIN, ELEMENT> &targetDistribution):
-            ConstrainedFactorisedSampler(targetDistribution, Basis(targetDistribution)) { }
+    FactorisedDistributionSampler(const FactorisedDistributionSampler &other) = default;
 
-    ConstrainedFactorisedSampler(const ConstrainedFactorisedDistribution<DOMAIN, ELEMENT> &targetDistribution, const Basis<DOMAIN> &basis):
-            ConstrainedFactorisedSampler(targetDistribution, basis.basisVectors, basis.origin) { }
+//    FactorisedDistributionSampler(const ConstrainedFactorisedDistribution<DOMAIN, ELEMENT> &targetDistribution):
+//            FactorisedDistributionSampler(FactorisedDistributionOnBasis(targetDistribution)) { }
+//
+////    FactorisedDistributionSampler(const ConstrainedFactorisedDistribution<DOMAIN, ELEMENT> &targetDistribution, const Basis<DOMAIN> &basis):
+////            FactorisedDistributionSampler(targetDistribution, basis.basisVectors, basis.origin) { }
+//
+//    FactorisedDistributionSampler(const FactorisedDistributionOnBasis<DOMAIN, ELEMENT> &targetDistribution):
+//            FactorisedDistributionSampler(targetDistribution, targetDistribution.basis.origin) { }
+//
+//    FactorisedDistributionSampler(const ConstrainedFactorisedDistribution<DOMAIN, ELEMENT> &targetDistribution, const DOMAIN &initialValidSample):
+//            FactorisedDistributionSampler(FactorisedDistributionOnBasis(targetDistribution), initialValidSample) { }
 
-    ConstrainedFactorisedSampler(
-            const ConstrainedFactorisedDistribution<DOMAIN, ELEMENT> &targetDistribution,
-            const std::vector<SparseVec<ELEMENT>> &basisVecs,
-            const DOMAIN &initialValidSample): X(initialValidSample) {
+    template<class STARTSTATE>
+    FactorisedDistributionSampler(const ABMPosterior<DOMAIN,STARTSTATE> &targetDistribution):
+            FactorisedDistributionSampler(targetDistribution.basis, targetDistribution.factors) { }
 
-        assert(targetDistribution.constraints.isValidSolution(X));
 
-        // double-up unique basis vectors for + and -
-        basisVectors.reserve(basisVecs.size()*2);
-        for(int i=0; i < basisVecs.size(); ++i) {
-            basisVectors.push_back(-(basisVecs[i]));
-            basisVectors.push_back( basisVecs[i]);
+    FactorisedDistributionSampler(
+            const Basis<DOMAIN> &basis,
+            const std::vector<SparseFunction<std::pair<double,bool>,const DOMAIN &>> distFactors): X(basis.origin) {
+
+        Random::gen.seed(Random::nextRandomSeed());
+        for(int i=0; i<basis.basisVectors.size(); ++i) {
+            if(Random::nextBool(0.005)) X += basis.basisVectors[i];
         }
 
-        initDependencies(targetDistribution, basisVectors);
+//        assert(targetDistribution.constraints.isValidSolution(X));
+
+        // double-up unique basis vectors for + and -
+        basisVectors.reserve(basis.basisVectors.size()*2);
+        for(int i=0; i < basis.basisVectors.size(); ++i) {
+            basisVectors.push_back(-(basis.basisVectors[i]));
+            basisVectors.push_back( basis.basisVectors[i]);
+        }
+
+        initDependencies(distFactors, basisVectors);
 
         // initialise factors and factor values
-        factors.reserve(targetDistribution.factors.size());
-        currentFactorVal.reserve(targetDistribution.factors.size());
+        factors.reserve(distFactors.size());
+        currentFactorVal.reserve(distFactors.size());
         currentInfeasibility = 0;
-        for(const auto &factor: targetDistribution.factors) {
+        for(const auto &factor: distFactors) {
             factors.push_back(factor);
-            currentFactorVal.push_back(factor(X));
+            currentFactorVal.push_back(factor(X)); // Assumes all factors with single basis dependency are feasible
+            assert((factorToBasisPerturbedValue[factors.size()-1].size() != 2) || (currentFactorVal.back().second == true));
             currentInfeasibility += !currentFactorVal.back().second;
         }
 
@@ -106,6 +147,10 @@ public:
             X += basisVectors[basisIndex];
             for(ColEntry &colEntry : basisToFactorPerturbedValue[basisIndex]) {
                 colEntry.value = factors[colEntry.factorIndex](X);
+//                std::cout << factorToBasisPerturbedValue[colEntry.factorIndex].size() << std::endl;
+                if(factorToBasisPerturbedValue[colEntry.factorIndex].size() == 2 && colEntry.value.second == false) { // if this factor depends only on this basis, stay within feasible region
+                    colEntry.value.first -= 24.0; // TODO: test!!!!
+                }
                 currentWeight[basisIndex] += colEntry.value.first - currentFactorVal[colEntry.factorIndex].first;
             }
             X -= basisVectors[basisIndex];
@@ -132,12 +177,13 @@ public:
         debug(int attempts = 0);
         do {
 //            std::cout << "Infeasibility = " << currentInfeasibility << std::endl;
-            bool startStateIsFeasible = currentInfeasibility == 0;
+            bool startStateIsFeasible = (currentInfeasibility == 0);
             int proposedBasisIndex = basisDistribution(Random::gen);
             double oldSum = basisDistribution.sum();
             performTransition(proposedBasisIndex);
+            bool proposalIsFeasible = (currentInfeasibility == 0);
             double acceptance = oldSum / basisDistribution.sum();
-            bool proposalIsFeasible = currentInfeasibility == 0;
+//            double acceptance = (oldSum*(proposalIsFeasible?1.0:0.9)) / (basisDistribution.sum()*(startStateIsFeasible?1.0:0.9)); // TODO: Test!!!
             bool wasAccepted = true;
             if (Random::nextDouble() > acceptance) {
 //                std::cout << "Rejecting" << std::endl;
@@ -155,7 +201,13 @@ public:
 
     double currentLogProb() {
         double logProb = 0.0;
-        for(const auto &factor: factors) logProb += factor(X).first;
+        for(int i=0; i<factors.size(); ++i) {
+            auto factorVal = factors[i](X);
+            logProb += factorVal.first;
+            if(factorToBasisPerturbedValue[i].size() == 2 && factorVal.second == false) {
+                logProb -= 24.0; // TODO: Test!!!!
+            }
+        }
         return logProb;
     }
 
@@ -175,6 +227,13 @@ public:
 //            assert(fabs(weighttoBasisProb(ratioOfProbs) - basisDistribution[basisId]) < 1e-8);
             X -= basisVectors[basisId];
         }
+        int infeasibility = 0;
+        for(int j=0; j<currentFactorVal.size(); ++j) {
+            assert(factors[j](X) == currentFactorVal[j]);
+            if(factorToBasisPerturbedValue[j].size() == 2) assert(currentFactorVal[j].second == true);
+            infeasibility += !currentFactorVal[j].second;
+        }
+        assert(infeasibility == currentInfeasibility);
     }
 
 
@@ -186,11 +245,11 @@ protected:
     // and whose second element is the dependency mapping from domain element to
     // the set of basis vectors that depend on that element, where the
     // basis vectors are given an index by the ordering of the first element.
-    void initDependencies(const ConstrainedFactorisedDistribution<DOMAIN,ELEMENT> &targetDistribution,
+    void initDependencies(const std::vector<SparseFunction<std::pair<double,bool>,const DOMAIN &>> &distFactors,
                           const std::vector<SparseVec<ELEMENT>> &basisVecs)
     {
 
-        // construct the dependencies from domain index to basis index
+        // construct the dependencies from domain index to basis index (i.e. rows of the basis matrix)
         std::vector<IndexSet> domainToBasisDependencies(DOMAIN::dimension);
         int nBasisEntries = 0;
         for(int j=0; j<basisVecs.size(); ++j) {
@@ -200,10 +259,11 @@ protected:
             }
         }
 
+
         // calculate factor by basis-dependency matrix
         std::set<std::pair<int,int>> dependencyMatrix; // entries
-        for(int factorId = 0; factorId<targetDistribution.factors.size(); ++factorId) {
-            for(int domainIndex: targetDistribution.factors[factorId].dependencies) {
+        for(int factorId = 0; factorId<distFactors.size(); ++factorId) {
+            for(int domainIndex: distFactors[factorId].dependencies) {
                 for(int basisIndex: domainToBasisDependencies[domainIndex]) {
                     dependencyMatrix.insert(std::pair(factorId, basisIndex));
                 }
@@ -211,12 +271,12 @@ protected:
         }
         std::cout << "mean basis size = " << nBasisEntries * 1.0 / basisVecs.size() << std::endl;
         std::cout << "mean dependency col size = " << dependencyMatrix.size() * 1.0 / basisVecs.size() << std::endl;
-        std::cout << "mean dependency row size = " << dependencyMatrix.size() * 1.0/ targetDistribution.factors.size() << std::endl;
-        std::cout << "mean updates per transition = " << pow(dependencyMatrix.size(),2)*1.0/(basisVecs.size()*targetDistribution.factors.size())  << std::endl;
+        std::cout << "mean dependency row size = " << dependencyMatrix.size() * 1.0/ distFactors.size() << std::endl;
+        std::cout << "mean updates per transition = " << pow(dependencyMatrix.size(),2)*1.0/(basisVecs.size()*distFactors.size())  << std::endl;
 
         // now transfer to forward and backward dependencies
         // set up structure, values will be added later
-        factorToBasisPerturbedValue.resize(targetDistribution.factors.size());
+        factorToBasisPerturbedValue.resize(distFactors.size());
         for(auto &dependencyEntry: dependencyMatrix) {
             factorToBasisPerturbedValue[dependencyEntry.first].emplace_back(dependencyEntry.second);
         }
@@ -238,21 +298,25 @@ protected:
         X += basisVectors[transitionBasis];
         for(ColEntry &colEntry: basisToFactorPerturbedValue[transitionBasis]) {
             int factorIndex = colEntry.factorIndex;
-            double newFVal = colEntry.value.first;
-            double oldFVal = currentFactorVal[factorIndex].first;
+            double newFVal = colEntry.value.first; // factor val after this transition
+            double oldFVal = currentFactorVal[factorIndex].first;   // factor val before transition
             for(RowEntry &rowEntry: factorToBasisPerturbedValue[factorIndex]) {
-                int basisIndex = rowEntry.basisIndex;
-                std::pair<double,bool> &factorVal = rowEntry.value;
+                int basisIndex = rowEntry.basisIndex; // basis of potential perturbation
+                std::pair<double,bool> &perturbedFactorVal = rowEntry.value; // factor val after perturbation by basisIndex
                 if(basisIndex == transitionBasis) {
-                    currentInfeasibility += currentFactorVal[factorIndex].second - factorVal.second;
-                    currentFactorVal[factorIndex] = factorVal;
+                    currentInfeasibility += currentFactorVal[factorIndex].second - perturbedFactorVal.second;
+                    currentFactorVal[factorIndex] = perturbedFactorVal;
+                    assert((factorToBasisPerturbedValue[factorIndex].size() != 2) || (perturbedFactorVal.second == true));
                 }
-                currentWeight[basisIndex] += oldFVal - factorVal.first; // remove old ratio
+                currentWeight[basisIndex] += oldFVal - perturbedFactorVal.first; // remove old ratio
                 // update the given factor of the given basis transition
                 X += basisVectors[basisIndex];
-                factorVal = factors[factorIndex](X);
+                perturbedFactorVal = factors[factorIndex](X); // record the new perturbed value
+                if(factorToBasisPerturbedValue[factorIndex].size() == 2 && perturbedFactorVal.second == false) { // if this factor depends only on this basis (+-), stay within feasible region
+                    perturbedFactorVal.first -= 24.0; // TODO: test!!!!
+                }
                 X -= basisVectors[basisIndex];
-                currentWeight[basisIndex] += factorVal.first - newFVal; // insert new ratio
+                currentWeight[basisIndex] += perturbedFactorVal.first - newFVal; // insert new ratio
                 updatedBasisWeights.insert(basisIndex);
             }
         }
@@ -263,4 +327,4 @@ protected:
 };
 
 
-#endif //ABMCMC_CONSTRAINEDFACTORISEDSAMPLER_H
+#endif //ABMCMC_FACTORISEDDISTRIBUTIONSAMPLER_H

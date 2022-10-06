@@ -1,3 +1,4 @@
+// MCMC convergence statistics
 //
 // Created by daniel on 04/11/2021.
 //
@@ -8,38 +9,51 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/serialization/vector.hpp>
+#include <iostream>
+#include <future>
 
 #include "ChainStats.h"
+#include "../include/StlStream.h"
 
 class MultiChainStats: public std::vector<ChainStats> {
 public:
-    std::string cpuinfo;
-    double kappa;
-    std::string problemDescription;
-    long execTimeMilliSeconds;
+//    std::string cpuinfo;
+//    double kap0pa;
+//    std::string problemDescription;
+    std::chrono::steady_clock::duration execTime;
 
 
-    MultiChainStats(double Kappa, std::string description=""):
-        kappa(Kappa),
-        problemDescription(std::move(description)) {
+//    MultiChainStats(double Kappa, std::string description=""):
+//        kappa(Kappa),
+//        problemDescription(std::move(description)) {
+//
+//    }
 
-    }
-
-    MultiChainStats &operator +=(std::vector<ChainStats> &&chains) {
-        reserve(size()+chains.size());
-        for(ChainStats &chain: chains) {
-            if(this->size()>0) assert(chain.nSamples() == this->nSamplesPerChain()); // all chains should be of the same length
-            this->push_back(std::move(chain));
+//    MultiChainStats &operator +=(std::vector<ChainStats> &&chains) {
+//        reserve(size()+chains.size());
+//        for(ChainStats &chain: chains) {
+//            if(this->size()>0) assert(chain.nSamples() == this->nSamplesPerChain()); // all chains should be of the same length
+//            this->push_back(std::move(chain));
+//        }
+//        return *this;
+//    }
+//
+//    MultiChainStats &operator +=(const std::vector<ChainStats> &chains) {
+//        reserve(size()+chains.size());
+//        for(const ChainStats &chain: chains) {
+//            if(this->size()>0) assert(chain.nSamples() == this->nSamplesPerChain()); // all chains should be of the same length
+//            this->push_back(chain);
+//        }
+//        return *this;
+//    }
+    MultiChainStats &add(std::pair<ChainStats,ChainStats> &&chains) {
+        reserve(size()+2);
+        if(size()>0) {
+            assert(chains.first.nSamples() == nSamplesPerChain()); // all chains should be of the same length
+            assert(chains.second.nSamples() == nSamplesPerChain());
         }
-        return *this;
-    }
-
-    MultiChainStats &operator +=(const std::vector<ChainStats> &chains) {
-        reserve(size()+chains.size());
-        for(const ChainStats &chain: chains) {
-            if(this->size()>0) assert(chain.nSamples() == this->nSamplesPerChain()); // all chains should be of the same length
-            this->push_back(chain);
-        }
+        push_back(std::move(chains.first));
+        push_back(std::move(chains.second));
         return *this;
     }
 
@@ -50,19 +64,15 @@ public:
 
     int nChains() const { return size(); }
 
-    int dimension() const {
-        return size()==0?0:front().dimension();
+    int dataDimension() const {
+        return size()==0?0: front().dataDimension();
     }
 
     std::valarray<double> meanEndState() {
         std::valarray<double> mean = (*this)[0].meanEndState;
         for(int j=1; j<size(); ++j) {
             mean += (*this)[j].meanEndState;
-//            for(int i=0; i<mean.size(); ++i) {
-//                mean[i] += (*this)[j].meanEndState[i];
-//            }
         }
-//        for(int i=0; i<mean.size(); ++i) mean[i] /= size();
         mean /= size();
         return mean;
     }
@@ -79,11 +89,11 @@ public:
     // and var+ is an overestimate of the variance of the sampled distribution as defined below
     // and the sum over t starts at 0 and continues until rho_t + rho_t-1 < 0 for some odd t.
     std::valarray<double> effectiveSamples() {
-        std::valarray<double> neff(dimension());
+        std::valarray<double> neff(dataDimension());
         auto V = meanVariogram();
         std::valarray<double> varplus = varPlus();
         // calculate one dimension at a time, as each dimension may have a different stopping t
-        for(int d=0; d<dimension(); ++d) {
+        for(int d=0; d < dataDimension(); ++d) {
             double vp = varplus[d];
             int t = 0;
             double nextS = 1.0 - V[0][d]/(2.0*vp);
@@ -123,9 +133,9 @@ public:
 
     // The mean of the variograms in each chain
     std::valarray<std::valarray<double>> meanVariogram() {
-        std::valarray<std::valarray<double>> V(std::valarray<double>(0.0,dimension()), front().vario.size());
+        std::valarray<std::valarray<double>> V(std::valarray<double>(0.0, dataDimension()), front().variogram.size());
         for(const ChainStats &chain: *this) {
-            V += chain.vario;
+            V += chain.variogram;
         }
         for(std::valarray<double> &Vt: V) {
             Vt /= nChains();
@@ -158,7 +168,7 @@ public:
     // where n is number of samples, m is number of chains,
     // mu_m is the mean of the m'th chain and mu is the mean over all chains
     std::valarray<double> B() const {
-        std::valarray<double> variance(0.0,dimension());
+        std::valarray<double> variance(0.0, dataDimension());
         std::valarray<double> mu = mean();
         for(const ChainStats &chain: *this) {
             std::valarray<double> Dmu_m = chain.meanVariance.mean() - mu;
@@ -172,7 +182,7 @@ public:
     // W = 1/m sum_m s2_m
     // where m is the number of chains and s2_m is the variance of the m'th chain
     std::valarray<double> W() const {
-        std::valarray<double> variance(0.0,dimension());
+        std::valarray<double> variance(0.0, dataDimension());
         for(const ChainStats &chain: *this) {
             variance += chain.meanVariance.sampleVariance();
         }
@@ -182,7 +192,7 @@ public:
 
     // mean over all samples and all chains
     std::valarray<double> mean() const {
-        std::valarray<double> mu(0.0,dimension());
+        std::valarray<double> mu(0.0, dataDimension());
         for(const ChainStats &chain: *this) {
             mu += chain.meanVariance.mean();
         }
@@ -190,28 +200,54 @@ public:
         return mu;
     }
 
-    static std::string getCpuInfo() {
-        FILE *pipe = popen("lscpu","r");
-        std::stringstream strstr;
-        while(!feof(pipe)) strstr << static_cast<char>(fgetc(pipe));
-        fclose(pipe);
-        return strstr.str();
-    }
+//    static std::string getCpuInfo() {
+//        FILE *pipe = popen("lscpu","r");
+//        std::stringstream strstr;
+//        while(!feof(pipe)) strstr << static_cast<char>(fgetc(pipe));
+//        fclose(pipe);
+//        return strstr.str();
+//    }
 
     friend std::ostream &operator <<(std::ostream &out, const MultiChainStats &multiChainStats) {
-        out << "MultiChainStats for " << multiChainStats.problemDescription << " " << multiChainStats.nChains() << " chains with " << multiChainStats.nSamplesPerChain() << " samples" << std::endl;
-        out << multiChainStats.cpuinfo << std::endl;
-        out << "kappa = " << multiChainStats.kappa << std::endl;
-        out << "Exec time = " << multiChainStats.execTimeMilliSeconds/1000.0 << "s" << std::endl;
+//        out << "MultiChainStats for " << multiChainStats.problemDescription << " " << multiChainStats.nChains() << " chains with " << multiChainStats.nSamplesPerChain() << " samples" << std::endl;
+        out << "MultiChainStats for "  << multiChainStats.nChains() << " chains with " << multiChainStats.nSamplesPerChain() << " samples" << std::endl;
+//        out << multiChainStats.cpuinfo << std::endl;
+        out << "Exec time = " << multiChainStats.execTime << std::endl;
         out << "W = " << multiChainStats.W() << std::endl;
         out << "B = " << multiChainStats.B() << std::endl;
         out << "Samples   Sums    SumOfSquares    VarioStride     Vario" << std::endl;
         for(const ChainStats &chain: multiChainStats) {
-            out << " " << chain.meanVariance.nSamples << " " << chain.meanVariance.sum << " " << chain.meanVariance.sumOfSquares << " " << chain.varioStride << " " << chain.vario << std::endl;
+            out << " " << chain.meanVariance.nSamples << " " << chain.meanVariance.sum << " " << chain.meanVariance.sumOfSquares << " " << chain.varioStride << " " << chain.variogram << std::endl;
             std::cout << "MCMC stats:" << std::endl;
-            std::cout << chain.stats << std::endl;
+            std::cout << chain.samplerStats << std::endl;
         }
         return out;
+    }
+
+    template<class SAMPLER>
+    static MultiChainStats analyseConvergence(SAMPLER &sampler, int nSamples, int nThreads = 4) {
+        MultiChainStats allThreadResults;
+        allThreadResults.reserve(2 * nThreads);
+
+        auto startTime = std::chrono::steady_clock::now();
+
+        std::future<std::pair<ChainStats,ChainStats>> futureResults[nThreads-1];
+//        std::vector<SAMPLER> samplers(nThreads-1,sampler);
+        for(int thread = 0; thread < nThreads-1; ++thread) {
+//            futureResults[thread] = std::async(&ChainStats::sampleChainStatsPair<SAMPLER>, sampler, nSamples);
+        }
+        FactorisedDistributionSampler samplerCopy(sampler);
+        allThreadResults.add(ChainStats::sampleChainStatsPair(samplerCopy, nSamples));
+
+        for(int thread=0; thread<nThreads-1; ++thread) {
+            futureResults[thread].wait();
+            allThreadResults.add(futureResults[thread].get());
+        }
+
+        auto endTime = std::chrono::steady_clock::now();
+
+        allThreadResults.execTime = endTime - startTime;
+        return allThreadResults;
     }
 
 private:
@@ -219,8 +255,9 @@ private:
 
     template <typename Archive>
     void serialize(Archive &ar, const unsigned int version) {
-        cpuinfo = getCpuInfo();
-        ar & cpuinfo & kappa & problemDescription & execTimeMilliSeconds & static_cast<std::vector<ChainStats> &>(*this);
+//        cpuinfo = getCpuInfo();
+//        ar & execTime & static_cast<std::vector<ChainStats> &>(*this);
+        ar & static_cast<std::vector<ChainStats> &>(*this); // TODO: save execTime (std::duration)
     }
 };
 

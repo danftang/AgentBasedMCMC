@@ -121,5 +121,12 @@ std::ostream &operator <<(std::ostream &out, const std::pair<T1,T2> &pair) {
     return out;
 }
 
+template<typename T>
+std::ostream &operator <<(std::ostream &out, const std::optional<T> &optional) {
+    if(optional.has_value()) out << optional.value(); else out << "undefined";
+    return out;
+}
+
+
 
 #endif //GLPKTEST_STLSTREAM_H

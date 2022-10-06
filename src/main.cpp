@@ -1,7 +1,14 @@
-//#include "Experiments.h"
+#include <iostream>
+#include <future>
+#include <optional>
+#include <vector>
+
+#include "Experiments.h"
 #include "FiguresForPaper.h"
 
 int main(int argc, char *argv[]) {
+
+
 //    auto startTime = std::chrono::steady_clock::now();
 
 //    std::cout
@@ -30,11 +37,11 @@ int main(int argc, char *argv[]) {
     // No decay on start state or likelihood at negative vals: kappa=6.25, infeasible = 90%, time/eff-sample = 77ms
     // double decay on start state and likelihood: kappa=6.25, infeasible = 88%, time/eff-sample = 69.5ms
     // normal decay on start state, no decay on likelihood, marginal with step down on infeasible proir, kappa=6.5, infeasible=80%, time/eff-sample = 55.1ms
-//    FiguresForPaper<8,4>::generateStandardProblemFile(6.0);
-//    FiguresForPaper<8,4>::generateStats(1000000);
-    FiguresForPaper<8,4>::plotStats(false); // set to true to allow printing from plots.
 
-    // TODO: Normalise all Poissons properly (so that -ve side is comparable)
+//    FiguresForPaper<8,4>::generateStandardPredPreyPosteriorFile(6.0);
+//    FiguresForPaper<8,4>::generateStats(100000,1);
+//    FiguresForPaper<8,4>::plotStats(false); // set to true to allow printing from plots.
+
 
     // 16 x 4
     // kappa    %age infeasible     time/effetive sample
@@ -55,14 +62,12 @@ int main(int argc, char *argv[]) {
 
     ////////////// Test MCMC against small, tractable examples
 
-    // TODO: try factorising extended model state
-
 //    Experiments::Animation();
 
 //    Experiments::BinomialAgentSingleObservation();
 //    Experiments::CatMouseSingleObservation();
 //    Experiments::CatMouseAssimilation();
-//    Experiments::PredPreySingleObservation();
+    Experiments::PredPreySingleObservation();
         // Trajectory: 8.16 x 59.56 = 486, RMS= 0.023, t= 58.8s.
         // Extended: 2.3 x 16.9 = 39.09, RMS = 0.030, sample time = 7.54s, 59.2% infeasible
         // Extended, separated phi factorial: 2.5 x 10.9 = 27.2, RMS=0.037, sample time = 7.6s, 62.9% infeasible

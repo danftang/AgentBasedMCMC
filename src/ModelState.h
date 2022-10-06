@@ -29,6 +29,8 @@ public:
     template<class DOMAIN>
     ModelState(const DOMAIN &trajectory, int time);
 
+    using std::vector<int>::operator[];
+
     // so that Modelstate can also look like a trajectory
     const value_type &operator[](const State<AGENT> &state) const {
         return std::vector<value_type>::operator[]((int)state.agent);
@@ -38,9 +40,9 @@ public:
         return std::vector<value_type>::operator[]((int)agent);
     }
 
-    value_type &operator[](const AGENT &agent) {
-        return std::vector<value_type>::operator[]((int)agent);
-    }
+//    value_type &operator[](const AGENT &agent) {
+//        return std::vector<value_type>::operator[]((int)agent);
+//    }
 
     void setToZero() {
         for(int i=0; i<size(); ++i) (*this)[i] = 0;
@@ -69,7 +71,6 @@ public:
         return *this;
     }
 
-
     // Addition for aggregation of states
     ModelState<AGENT> &operator +=(const ModelState<AGENT> &other) {
         for(int agentId=0; agentId < AGENT::domainSize; ++agentId) {
@@ -85,21 +86,34 @@ public:
         return *this;
     }
 
-    std::valarray<double> operator /(double denominator) const {
-        std::valarray<double> probs(size());
-        for(int agentId=0; agentId < AGENT::domainSize; ++agentId) {
-            probs[agentId] = (*this)[agentId] / denominator;
+    operator std::valarray<double>() const {
+        std::valarray<double> copy(size());
+        for(int agentId=0; agentId<size(); ++agentId) {
+            copy[agentId] = (*this)[agentId];
         }
-        return probs;
+        return copy;
     }
 
-    std::valarray<double> operator *(double multiplier) const {
-        std::valarray<double> probs(size());
-        for(int agentId=0; agentId < AGENT::domainSize; ++agentId) {
-            probs[agentId] = (*this)[agentId] * multiplier;
-        }
-        return probs;
+    static int indexOf(const State<AGENT> &state) {
+        return state.agent;
     }
+
+//    std::valarray<double> operator /(double denominator) const {
+//        std::valarray<double> probs(size());
+//        for(int agentId=0; agentId < AGENT::domainSize; ++agentId) {
+//            probs[agentId] = (*this)[agentId] / denominator;
+//        }
+//        return probs;
+//    }
+//
+//    std::valarray<double> operator *(double multiplier) const {
+//        std::valarray<double> probs(size());
+//        for(int agentId=0; agentId < AGENT::domainSize; ++agentId) {
+//            probs[agentId] = (*this)[agentId] * multiplier;
+//        }
+//        return probs;
+//    }
+
 
 
 //    static ModelState<AGENT> randomPoissonState(const std::function<double (const AGENT &)> &pmf) {
@@ -121,6 +135,7 @@ ModelState<AGENT>::ModelState(const DOMAIN &trajectory, int time) : ModelState()
 }
 
 template<typename AGENT> const ModelState<AGENT> ModelState<AGENT>::zero;
+
 
 
 #endif //GLPKTEST_MODELSTATE_H

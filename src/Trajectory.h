@@ -25,6 +25,29 @@ public:
 
     Trajectory(): Trajectory(dimension) { }
 
+//    Trajectory(const ModelState<AGENT> &startState): Trajectory(dimension) {
+//        ModelState<AGENT> t0State = startState;
+//        ModelState<AGENT> t1State;
+//        for (int t = 0; t < nTimesteps; ++t) {
+//            for (int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
+//                AGENT agent(agentId);
+//                int nAgents = t0State[agentId];
+//                for (int actId = 0; actId < AGENT::actDomainSize; ++actId) {
+//                    (*this)[indexOf(Event<AGENT>(t, agent, actId))] = 0;
+//                }
+//                std::vector<double> actPMF = agent.timestep(t0State);
+//                for (int a = 0; a < nAgents; ++a) {
+//                    int nextAct = Random::nextIntFromDiscrete(actPMF);
+//                    (*this)[indexOf(Event<AGENT>(t, agent, nextAct))] += 1;
+//                    t1State += agent.consequences(nextAct);
+//                }
+//            }
+//            t0State.setToZero();
+//            t0State.swap(t1State);
+//        }
+//    }
+
+
 protected:
     Trajectory(size_t nElements): std::vector<value_type>(nElements,0) {}
 

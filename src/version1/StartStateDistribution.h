@@ -9,7 +9,7 @@
 
 #include <functional>
 #include "../ABM.h"
-#include "../FactoredConvexDistribution.h"
+#include "FactoredConvexDistribution.h"
 #include "../ModelState.h"
 
 template<class AGENT>

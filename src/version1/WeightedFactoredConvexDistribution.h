@@ -22,7 +22,7 @@
 #ifndef ABMCMC_WEIGHTEDFACTOREDCONVEXDISTRIBUTION_H
 #define ABMCMC_WEIGHTEDFACTOREDCONVEXDISTRIBUTION_H
 
-#include "../FactoredConvexDistribution.h"
+#include "FactoredConvexDistribution.h"
 #include "PerturbableFunction.h"
 
 template<class T>

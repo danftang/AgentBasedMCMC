@@ -6,6 +6,7 @@
 #define GLPKTEST_EXPERIMENTS_H
 
 #include "ConstrainedFactorisedDistribution.h"
+#include "ABMPosterior.h"
 
 class Experiments {
 public:
@@ -17,12 +18,10 @@ public:
 
     template<class DOMAIN, class STARTSTATE>
     static void doValidationExperiment(
+            const ABMPosterior<DOMAIN,STARTSTATE> &,
             int nBurnin,
             int nSamples,
-            int nRejectionSamples,
-            double kappa,
-            const STARTSTATE &startStateDistribution,
-            const ConstrainedFactorisedDistribution<DOMAIN> &likelihood);
+            int nRejectionSamples);
 };
 
 

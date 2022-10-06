@@ -32,7 +32,7 @@
 template<typename OUT, typename IN>
 class SparseFunction: public std::function<OUT(IN)> {
 public:
-    typedef typename subscript_operator_traits<IN>::base_type element_type;
+//    typedef typename subscript_operator_traits<IN>::base_type element_type;
 
     std::vector<int>          dependencies;
 

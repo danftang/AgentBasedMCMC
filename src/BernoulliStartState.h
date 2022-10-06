@@ -5,43 +5,89 @@
 #ifndef ABMCMC_BERNOULLISTARTSTATE_H
 #define ABMCMC_BERNOULLISTARTSTATE_H
 
+#include <algorithm>
 #include "ConstrainedFactorisedDistribution.h"
 #include "ModelState.h"
 #include "ABMPriorSampler.h"
 
-template<class DOMAIN, class AGENT = typename DOMAIN::agent_type>
+template<class TRAJECTORY, class STARTSTATE, class AGENT> class ABMPrior;
+
+template<class AGENT, class DOMAIN = ModelState<AGENT>>
 class BernoulliStartState: public ConstrainedFactorisedDistribution<DOMAIN> {
-protected:
-    std::function<const ModelState<AGENT> &()> _modelStateSampler;
 public:
+    std::vector<double> probabilities;
+    double kappa;
 
-    using typename ConstrainedFactorisedDistribution<DOMAIN>::coefficient_type;
+    typedef typename DOMAIN::agent_type agent_type;
+
+    BernoulliStartState()=default;
+
+    explicit BernoulliStartState(std::vector<double> agentIdToProb, double kappa): probabilities(std::move(agentIdToProb)), kappa(kappa) {
+        init();
+    }
+
+    explicit BernoulliStartState(std::function<double(agent_type)> agentToProb, double kappa): kappa(kappa) {
+        probabilities.reserve(agent_type::domainSize);
+        for(int agentId = 0; agentId < agent_type::domainSize; ++agentId) probabilities.push_back(agentToProb(agent_type(agentId)));
+        init();
+    }
+
+    template<class OTHERDOMAIN>
+    BernoulliStartState<AGENT,OTHERDOMAIN> toDomain() {
+        return BernoulliStartState<AGENT,OTHERDOMAIN>(probabilities, kappa);
+    }
+
+    const DOMAIN &operator ()() const { return nextSample(); }
+
+    const DOMAIN &nextSample() const {
+        static thread_local DOMAIN sample;
+        for(int i=0; i < AGENT::domainSize; ++i) sample[DOMAIN::indexOf(State<agent_type>(0, agent_type(i)))] = Random::nextBool(probabilities[i]);
+        return sample;
+    }
 
 
-    explicit BernoulliStartState(std::function<double(AGENT)> agentToProb) {
-        this->factors.reserve(AGENT::domainSize);
-        for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
-            addBernoulliFactor(agentId, agentToProb(AGENT(agentId)));
+protected:
+    void init() {
+        for(int agentId = 0; agentId < agent_type::domainSize; ++agentId) {
+            addBernoulliFactor(agentId, probabilities[agentId]);
         }
-        _modelStateSampler = modelStateSampler(agentToProb);
     }
 
-    explicit BernoulliStartState(std::initializer_list<double> probs): BernoulliStartState([probs = std::vector(probs)](AGENT agent) {
-        return probs[agent];
-    }) {}
+    void addBernoulliFactor(int agentId, double p) {
+        State<agent_type> state(0,agentId);
+        if(p != 1.0 && p != 0.0) {
+            double logP = log(p);
+            double logNotP = log(1.0-p);
+            this->addFactor(
+                    [logP, logNotP, state, kappa = this->kappa](const DOMAIN &x) {
+                        return widenedLogBernoulli(logP, logNotP, kappa, x[state]); // log of Bernoulli
+                    },
+                    {DOMAIN::indexOf(state) }
 
-    std::function<const ModelState<AGENT> &()> modelStateSampler() const { return _modelStateSampler; }
-
-    ABMPriorSampler<DOMAIN> priorSampler() const { return ABMPriorSampler<DOMAIN>(modelStateSampler()); }
-
-    static std::function<const ModelState<AGENT> &()> modelStateSampler(std::function<double(AGENT)> &agentToprob) {
-        return [sample = ModelState<AGENT>(), agentToprob]() mutable -> const ModelState<AGENT> & {
-            for(int agentId=0; agentId < AGENT::domainSize; ++agentId) {
-                sample[agentId] = Random::nextBool(agentToprob(AGENT(agentId)));
-            }
-            return  sample;
-        };
+            );
+        } else {
+            this->constraints.push_back(X(DOMAIN::indexOf(state)) == (typename DOMAIN::value_type)p);
+        }
     }
+
+    //    template<class TRAJECTORY>
+//    ABMPrior<TRAJECTORY, BernoulliStartState<AGENT>, AGENT> toABMPrior() {
+//        return ABMPrior<TRAJECTORY, BernoulliStartState<AGENT>, AGENT>(*this);
+//    }
+
+
+//    std::function<const ModelState<AGENT> &()> modelStateSampler() const { return _modelStateSampler; }
+
+//    ABMPriorSampler<DOMAIN> priorSampler() const { return ABMPriorSampler<DOMAIN>(modelStateSampler()); }
+
+//    static std::function<const ModelState<AGENT> &()> modelStateSampler(std::function<double(AGENT)> &agentToprob) {
+//        return [sample = ModelState<AGENT>(), agentToprob]() mutable -> const ModelState<AGENT> & {
+//            for(int agentId=0; agentId < AGENT::domainSize; ++agentId) {
+//                sample[agentId] = Random::nextBool(agentToprob(AGENT(agentId)));
+//            }
+//            return  sample;
+//        };
+//    }
 
 //    const ModelState<AGENT> &nextSample() const {
 //        static thread_local ModelState<AGENT> sample;
@@ -54,23 +100,6 @@ public:
 //        return sample;
 //    }
 
-
-    void addBernoulliFactor(int agentId, double p) {
-        State<AGENT> state(0,agentId);
-        if(p != 1.0 && p != 0.0) {
-            double logP = log(p);
-            double logNotP = log(1.0-p);
-            this->addFactor(
-                    [logP, logNotP, state](const DOMAIN &x) {
-                        return widenedLogBernoulli(logP, logNotP, x[state]); // log of Bernoulli
-                    },
-                    { DOMAIN::indexOf(state) }
-
-            );
-        } else {
-            this->constraints.push_back(X(DOMAIN::indexOf(state)) == (typename DOMAIN::value_type)p);
-        }
-    }
 
 //    // convert to a distribution over trajectories
 //    operator ConstrainedFactorisedDistribution<Trajectory<AGENT>>() {
@@ -100,10 +129,10 @@ public:
 //    }
 
     // A Bernoulli distribution that decays exponentially below zero
-    static std::pair<double,bool> widenedLogBernoulli(double logP, double logNotP, int occupation) {
+    static std::pair<double,bool> widenedLogBernoulli(double logP, double logNotP, double kappa, int occupation) {
         if(occupation == 0) return std::pair(logNotP, true);
-        if(occupation < 0) return std::pair(logNotP + ABM::kappa*occupation, false);
-        if(occupation > 1) return std::pair(logP + ABM::kappa*(1-occupation), false);
+        if(occupation < 0) return std::pair(logNotP + kappa*occupation, false);
+        if(occupation > 1) return std::pair(logP + kappa*(1-occupation), false);
         return std::pair(logP, true);
     }
 
@@ -119,26 +148,26 @@ public:
         return out;
     }
 
-//private:
-//    friend class boost::serialization::access;
-//
-//    template <typename Archive>
-//    void load(Archive &ar, const unsigned int version) {
-//        for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
-//            double p;
-//            ar >> p;
-//            addBernoulliFactor(agentId, p);
-//        }
-//    }
-//
-//    template <typename Archive>
-//    void save(Archive &ar, const unsigned int version) const {
-//        for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
-//            ar << probability(agentId);
-//        }
-//    }
-//
-//    BOOST_SERIALIZATION_SPLIT_MEMBER();
+
+private:
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void load(Archive &ar, const unsigned int version) {
+        for(int agentId = 0; agentId < agent_type::domainSize; ++agentId) {
+            ar >> probabilities >> kappa;
+            init();
+        }
+    }
+
+    template <typename Archive>
+    void save(Archive &ar, const unsigned int version) const {
+        for(int agentId = 0; agentId < agent_type::domainSize; ++agentId) {
+            ar << probabilities << kappa;
+        }
+    }
+
+    BOOST_SERIALIZATION_SPLIT_MEMBER();
 };
 
 #endif //ABMCMC_BERNOULLISTARTSTATE_H

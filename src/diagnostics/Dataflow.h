@@ -36,6 +36,7 @@
 // would describe the typical pipeline.
 //
 ////////////////////////////////////////////////////////////////////////////////////////
+#include <future>
 #include "../gnuplot-iostream/gnuplot-iostream.h"
 
 namespace dataflow {
@@ -51,6 +52,7 @@ namespace dataflow {
     template<class CONSUMER, class ITEM>
     using enable_if_is_consumer_of = std::enable_if_t<std::is_invocable_r_v<bool,CONSUMER,ITEM>>;
 
+    // Transform by object that can be constructor of a std::function<OUT(IN)>
     template<class TRANSFORM, class CONSUMER,
             class FUNC = decltype(std::function(std::declval<TRANSFORM>())),
             class ITEM = typename unary_function_arg<FUNC>::type,
@@ -61,12 +63,7 @@ namespace dataflow {
         };
     }
 
-    template<typename PRODUCER, typename CONSUMER,
-            typename = enable_if_is_consumer_of<CONSUMER,decltype(std::declval<PRODUCER>()())>>
-    inline void operator >>=(PRODUCER &&producer, CONSUMER &&consumer) {
-        while(consumer(producer())) {};
-    }
-
+    // Transform by data-type member function
     template<class RETURN, class ITEM, class CONSUMER,
             typename = enable_if_is_consumer_of<CONSUMER,RETURN>>
     auto operator >>=(RETURN(ITEM::*ptr)() const, CONSUMER &&consumer) {
@@ -74,6 +71,27 @@ namespace dataflow {
             return consumer((item.*ptr)());
         };
     }
+
+    // execute a dataflow diagram
+    template<typename PRODUCER, typename CONSUMER,
+            typename = enable_if_is_consumer_of<CONSUMER,std::result_of_t<PRODUCER()>>>
+    inline void operator >>=(PRODUCER &&producer, CONSUMER &&consumer) {
+        while(consumer(producer())) {};
+    }
+
+
+    // explicit exec
+    template<typename PRODUCER, typename CONSUMER>
+    inline void exec(PRODUCER &&producer, CONSUMER &&consumer) {
+        while(consumer(producer())) {};
+    }
+
+    // execute a dataflow diagram in a separate thread
+    template<typename PRODUCER, typename CONSUMER>
+    inline auto exec_async(PRODUCER &&producer, CONSUMER &&consumer) {
+        return std::async([producer = std::forward<PRODUCER>(producer), consumer = std::forward<CONSUMER>(consumer)]() {while(consumer(producer())) {};});
+    }
+
 
 
     // Split is a CONSUMER that splits a datastream over any number of consumers,
@@ -245,15 +263,16 @@ namespace dataflow {
 
 
     // Sums data elements to a supplied accumulator
-    template<typename DATA>
+    template<typename SUM>
     class Sum {
     public:
         int n;
-        DATA &sum;
+        SUM &sum;
 
-        Sum(int nItems, DATA &result): sum(result), n(nItems) {}
+        Sum(int nItems, SUM &result): sum(result), n(nItems) {}
 
-        bool operator()(const DATA &item) {
+        template<class ITEM>
+        bool operator()(const ITEM &item) {
             sum += item;
             --n;
             return n > 0;

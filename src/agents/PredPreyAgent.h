@@ -50,18 +50,20 @@ public:
 
     enum ActNames {
         GIVEBIRTH,
-        DIE,
         MOVELEFT,
         MOVERIGHT,
         MOVEUP,
-        MOVEDOWN
+        MOVEDOWN,
+        DIE
     };
+    static constexpr int actDomainSize= 6;
 
 
     enum Type {
         PREDATOR,
         PREY
     };
+    static constexpr int typeDomainSize = 2;
 
 
     static constexpr double pPred = 0.05; // steady state probability that there are no predators on a square
@@ -114,7 +116,6 @@ public:
     static const double lpPreyDeath;
 
     // Agent Domain stuff
-    static constexpr int actDomainSize= 6;
 };
 
 // These values ensure that the average population density of pred and prey stays constant in an infinitely large simulation
@@ -142,6 +143,7 @@ class PredPreyAgent: public PredPreyAgentBase {
 public:
 
     // Agent Domain stuff
+    static constexpr int gridsize = GRIDSIZE;
     static constexpr int domainSize = GRIDSIZE*GRIDSIZE*2;
 
     int stateId;
@@ -155,23 +157,23 @@ public:
     template<class TRAJECTORY>
     static double logEventProb(const Event<PredPreyAgent<GRIDSIZE>> &event, const TRAJECTORY &trajectory);
 
-    template<class TRAJECTORY>
-    static std::pair<double,bool> widenedLogEventProb(const Event<PredPreyAgent<GRIDSIZE>> &event, const TRAJECTORY &trajectory);
+//    template<class TRAJECTORY>
+//    static std::pair<double,bool> widenedLogEventProb(const Event<PredPreyAgent<GRIDSIZE>> &event, const TRAJECTORY &trajectory);
 
 
     template<class DOMAIN>
     static std::vector<int> eventProbDependencies(const Event<PredPreyAgent<GRIDSIZE>> &event);
 
-    double logMarginalTimestep(Act act) const;
+//    double logMarginalTimestep(Act act) const;
 
-    template<class TRAJECTORY>
-    bool hasAnySurrounding(Type type, int time, const TRAJECTORY &trajectory) const {
-        return
-                trajectory[State(time,PredPreyAgent(xRight(),yPosition(),type))] ||
-                trajectory[State(time,PredPreyAgent(xLeft(),yPosition(),type))] ||
-                trajectory[State(time,PredPreyAgent(xPosition(),yUp(),type))] ||
-                trajectory[State(time,PredPreyAgent(xPosition(),yDown(),type))];
-    }
+//    template<class TRAJECTORY>
+//    bool hasAnySurrounding(Type type, int time, const TRAJECTORY &trajectory) const {
+//        return
+//                trajectory[State(time,PredPreyAgent(xRight(),yPosition(),type))] ||
+//                trajectory[State(time,PredPreyAgent(xLeft(),yPosition(),type))] ||
+//                trajectory[State(time,PredPreyAgent(xPosition(),yUp(),type))] ||
+//                trajectory[State(time,PredPreyAgent(xPosition(),yDown(),type))];
+//    }
 
 
     operator int() const { return stateId; }
@@ -258,36 +260,36 @@ double PredPreyAgent<GRIDSIZE>::logEventProb(const Event<PredPreyAgent<GRIDSIZE>
 }
 
 
-template<int GRIDSIZE>
-template<class TRAJECTORY>
-std::pair<double,bool> PredPreyAgent<GRIDSIZE>::widenedLogEventProb(const Event<PredPreyAgent<GRIDSIZE>> &event, const TRAJECTORY &trajectory) {
-    int surroundingCount;
-    switch(event.act()) {
-        case MOVEUP:
-        case MOVEDOWN:
-        case MOVELEFT:
-        case MOVERIGHT:
-            return std::pair(lpMove,true);
-        case GIVEBIRTH:
-            surroundingCount = trajectory.surroundingCountOf(State<PredPreyAgent<GRIDSIZE>>(event.time(), event.agent()));
-            if (event.agent().type() == PREDATOR) {
-//                return (surroundingCount > 0) ? std::pair(lpPredBirthGivenPrey,true):std::pair(lpPredBirthGivenNoPrey,true);
-                return std::pair(lpPredBirth,true);
-            }
-//            return (surroundingCount > 0) ? std::pair(lpPreyBirthGivenPred,true) : std::pair(lpPreyBirthGivenNoPred,true);
-            return std::pair(lpPreyBirth,true);
-        case DIE:
-            surroundingCount = trajectory.surroundingCountOf(State<PredPreyAgent<GRIDSIZE>>(event.time(), event.agent()));
-            if (event.agent().type() == PREDATOR) {
-//                return (surroundingCount > 0) ? std::pair(lpPredDeathGivenPrey,true) : std::pair(lpPredDeathGivenNoPrey,true);
-                return std::pair(lpPredDeath,true);
-            }
-//            return (surroundingCount > 0) ? std::pair(lpPreyDeathGivenPred,true) : std::pair(lpPreyDeathGivenNoPred,true);
-            return std::pair(lpPreyDeath,true);
-    }
-    assert(false);
-    return std::pair(-INFINITY,false);
-}
+//template<int GRIDSIZE>
+//template<class TRAJECTORY>
+//std::pair<double,bool> PredPreyAgent<GRIDSIZE>::widenedLogEventProb(const Event<PredPreyAgent<GRIDSIZE>> &event, const TRAJECTORY &trajectory) {
+//    int surroundingCount;
+//    switch(event.act()) {
+//        case MOVEUP:
+//        case MOVEDOWN:
+//        case MOVELEFT:
+//        case MOVERIGHT:
+//            return std::pair(lpMove,true);
+//        case GIVEBIRTH:
+//            surroundingCount = trajectory.surroundingCountOf(State<PredPreyAgent<GRIDSIZE>>(event.time(), event.agent()));
+//            if (event.agent().type() == PREDATOR) {
+////                return (surroundingCount > 0) ? std::pair(lpPredBirthGivenPrey,true):std::pair(lpPredBirthGivenNoPrey,true);
+//                return std::pair(lpPredBirth,true);
+//            }
+////            return (surroundingCount > 0) ? std::pair(lpPreyBirthGivenPred,true) : std::pair(lpPreyBirthGivenNoPred,true);
+//            return std::pair(lpPreyBirth,true);
+//        case DIE:
+//            surroundingCount = trajectory.surroundingCountOf(State<PredPreyAgent<GRIDSIZE>>(event.time(), event.agent()));
+//            if (event.agent().type() == PREDATOR) {
+////                return (surroundingCount > 0) ? std::pair(lpPredDeathGivenPrey,true) : std::pair(lpPredDeathGivenNoPrey,true);
+//                return std::pair(lpPredDeath,true);
+//            }
+////            return (surroundingCount > 0) ? std::pair(lpPreyDeathGivenPred,true) : std::pair(lpPreyDeathGivenNoPred,true);
+//            return std::pair(lpPreyDeath,true);
+//    }
+//    assert(false);
+//    return std::pair(-INFINITY,false);
+//}
 
 
 template<int GRIDSIZE>
@@ -301,8 +303,8 @@ std::vector<int> PredPreyAgent<GRIDSIZE>::eventProbDependencies(const Event<Pred
             return {};
         case GIVEBIRTH:
         case DIE:
-//            return { DOMAIN::surroundingCountIndexOf(State<PredPreyAgent<GRIDSIZE>>(event.time(), event.agent())) };
-            return {}; // TODO: test!!!!
+            return { DOMAIN::surroundingCountIndexOf(State<PredPreyAgent<GRIDSIZE>>(event.time(), event.agent())) };
+//            return {}; // TODO: test!!!!
     }
     assert(false);
     return {};
@@ -312,22 +314,22 @@ std::vector<int> PredPreyAgent<GRIDSIZE>::eventProbDependencies(const Event<Pred
 // Should be factored approximation of multinomial given an agent in start position and
 // that the constraints are satisfied
 // (i.e. given that the prob of this act is not zero)
-template<int GRIDSIZE>
-double PredPreyAgent<GRIDSIZE>::logMarginalTimestep(Act act) const {
-    switch(act) {
-        case MOVEUP:
-        case MOVEDOWN:
-        case MOVELEFT:
-        case MOVERIGHT:
-            return lpMove;
-        case GIVEBIRTH:
-            return type() == PREDATOR ? lpPredBirthGivenPrey:lpPreyBirthGivenNoPred;
-        case DIE:
-            return type() == PREDATOR ? lpPredDeathGivenNoPrey:lpPreyDeathGivenPred;
-    }
-    assert(false);
-    return -INFINITY;
-}
+//template<int GRIDSIZE>
+//double PredPreyAgent<GRIDSIZE>::logMarginalTimestep(Act act) const {
+//    switch(act) {
+//        case MOVEUP:
+//        case MOVEDOWN:
+//        case MOVELEFT:
+//        case MOVERIGHT:
+//            return lpMove;
+//        case GIVEBIRTH:
+//            return type() == PREDATOR ? lpPredBirthGivenPrey:lpPreyBirthGivenNoPred;
+//        case DIE:
+//            return type() == PREDATOR ? lpPredDeathGivenNoPrey:lpPreyDeathGivenPred;
+//    }
+//    assert(false);
+//    return -INFINITY;
+//}
 
 
 //template<int GRIDSIZE>

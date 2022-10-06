@@ -24,7 +24,9 @@
 #include "SparseFunction.h"
 #include "ABM.h"
 
-template<typename DOMAIN, typename CONSTRAINTCOEFF = typename subscript_operator_traits<DOMAIN>::base_type>
+template<class COEFF> class TableauNormMinimiser;
+
+template<typename DOMAIN, typename CONSTRAINTCOEFF = typename subscript_operator_traits<DOMAIN>::decay_type>
 class ConstrainedFactorisedDistribution {
 public:
     typedef CONSTRAINTCOEFF coefficient_type;
@@ -32,8 +34,9 @@ public:
     typedef DOMAIN domain_type;
 
     std::vector<function_type>           factors;
-    EqualityConstraints<CONSTRAINTCOEFF> constraints;        // linear constraints
+    EqualityConstraints<CONSTRAINTCOEFF> constraints;       // linear constraints
 
+    void factoriseConstraints();
 
     void addFactor(SparseFunction<std::pair<double,bool>,const DOMAIN &> factor) {
         factors.push_back(std::move(factor));
@@ -110,18 +113,18 @@ public:
     // use logPexact if the total probability may be too small for double.
       double Pexact(const DOMAIN &X) const { return std::exp(logPexact(X)); }
 
-    double logPwidened(const DOMAIN &X) const {
-        double logP = 0.0;
-        double distanceToValidHyperplane = 0.0;
-        for(const auto &constraint : constraints) {
-            distanceToValidHyperplane += fabs(constraint.coefficients * X - constraint.constant);
-        }
-        logP += -ABM::kappa * distanceToValidHyperplane;
-        for(const auto &factor: factors) {
-            logP += log(factor(X).first);
-        }
-        return logP;
-    }
+//    double logPwidened(const DOMAIN &X) const {
+//        double logP = 0.0;
+//        double distanceToValidHyperplane = 0.0;
+//        for(const auto &constraint : constraints) {
+//            distanceToValidHyperplane += fabs(constraint.coefficients * X - constraint.constant);
+//        }
+//        logP += -ABM::kappa * distanceToValidHyperplane;
+//        for(const auto &factor: factors) {
+//            logP += log(factor(X).first);
+//        }
+//        return logP;
+//    }
 
     void sanityCheck(const DOMAIN &testVector) const {
         for(const auto &factor: factors) {
@@ -246,5 +249,12 @@ std::ostream &operator <<(std::ostream &out, const ConstrainedFactorisedDistribu
     out << distribution.constraints;
     return out;
 }
+
+
+template<class DOMAIN, class CONSTRAINTCOEFF>
+void ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF>::factoriseConstraints() {
+    TableauNormMinimiser<CONSTRAINTCOEFF>::factoriseConstraints(*this);
+}
+
 
 #endif //ABMCMC_CONSTRAINEDFACTORISEDDISTRIBUTION_H

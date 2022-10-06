@@ -41,8 +41,15 @@
 template<class COEFF>
 class TableauNormMinimiser {
 public:
+    template<class DOMAIN>
+    static void factorise(ConstrainedFactorisedDistribution<DOMAIN,COEFF> &distribution) {
+        TableauNormMinimiser minimiser(distribution);
+        distribution.constraints = minimiser.getFactorisedConstraints();
+    }
 
-    static constexpr int MAX_VECTORS_TO_TEST = 10;
+public:
+
+    static constexpr int MAX_VECTORS_TO_TEST = 15;
     static constexpr int UNREDUCED = -1;
 
 
@@ -100,12 +107,13 @@ public:
     std::vector<COEFF>              F;                  // constant in linear equations by row (see intro above)
 
     template<class DOMAIN>
-    TableauNormMinimiser(const ConstrainedFactorisedDistribution<DOMAIN,COEFF> &problem);
+    TableauNormMinimiser(const ConstrainedFactorisedDistribution<DOMAIN,COEFF> &distribution);
 
     TableauNormMinimiser()=default;
 
     void findMinimalBasis();
     std::vector<SparseVec<COEFF>> getBasisVectors();
+    EqualityConstraints<COEFF> getFactorisedConstraints();
 //    template<class DOMAIN>
 //    Basis<DOMAIN> getBasis();
     SparseVec<COEFF> getOrigin();
@@ -166,13 +174,13 @@ std::ostream &operator <<(std::ostream &out, const TableauNormMinimiser<T> &tabl
 // are constraints.
 template<class T>
 template<class D>
-TableauNormMinimiser<T>::TableauNormMinimiser(const ConstrainedFactorisedDistribution<D,T> &problem)
+TableauNormMinimiser<T>::TableauNormMinimiser(const ConstrainedFactorisedDistribution<D,T> &distribution)
 {
-    basicVars.reserve(problem.constraints.size());
-    F.reserve(problem.constraints.size());
-    rows.reserve(problem.constraints.size());
+    basicVars.reserve(distribution.constraints.size());
+    F.reserve(distribution.constraints.size());
+    rows.reserve(distribution.constraints.size());
     // initialise row information
-    for(const EqualityConstraint<T> &constraint: problem.constraints) {
+    for(const EqualityConstraint<T> &constraint: distribution.constraints) {
         rows.emplace_back(constraint.coefficients, true);
         addRowSparsityEntry(rows.size()-1);
         basicVars.push_back(UNREDUCED); // unreduced row
@@ -182,8 +190,8 @@ TableauNormMinimiser<T>::TableauNormMinimiser(const ConstrainedFactorisedDistrib
 
     cols.resize(D::dimension);
     // Now fill column information from rows and factor dependencies
-    for(int factorIndex = 0; factorIndex < problem.factors.size(); ++factorIndex) {
-        for(int basisIndex : problem.factors[factorIndex].dependencies) {
+    for(int factorIndex = 0; factorIndex < distribution.factors.size(); ++factorIndex) {
+        for(int basisIndex : distribution.factors[factorIndex].dependencies) {
             cols[basisIndex].insert(-1 - factorIndex);
         }
     }
@@ -197,7 +205,7 @@ TableauNormMinimiser<T>::TableauNormMinimiser(const ConstrainedFactorisedDistrib
     }
     std::cout << "Initial mean column L0 norm = " << meanColumnL0Norm() << std::endl;
     std::cout << "Initial column L1 norm = " << meanColumnL1Norm() << std::endl;
-//    findMinimalBasis();
+    findMinimalBasis();
 }
 
 template<class T>
@@ -218,6 +226,8 @@ std::pair<int,int> TableauNormMinimiser<T>::findMarkowitzPivot() {
     int vectorsTested = 0;
     std::pair<int,int> bestPivot(-1,-1);
     while(k<colsBySparsity.size() && k<rowsBySparsity.size()) {
+//        std::vector<int> sparseCols(colsBySparsity[k].begin(), colsBySparsity[k].end());
+//        std::shuffle(sparseCols.begin(), sparseCols.end(), Random::gen);
         for(int j: colsBySparsity[k]) {
             int bestRow = sparsestRowInCol(j);
             if(bestRow != -1) {
@@ -230,6 +240,8 @@ std::pair<int,int> TableauNormMinimiser<T>::findMarkowitzPivot() {
                 if (++vectorsTested >= MAX_VECTORS_TO_TEST) return bestPivot;
             }
         }
+//        std::vector<int> sparseRows(rowsBySparsity[k].begin(), rowsBySparsity[k].end());
+//        std::shuffle(sparseRows.begin(), sparseRows.end(), Random::gen);
         for(int i: rowsBySparsity[k]) {
             int bestCol = sparsestColInRow(i);
             if(bestCol != -1) {
@@ -448,7 +460,7 @@ std::vector<SparseVec<T>> TableauNormMinimiser<T>::getBasisVectors() {
 //    std::cout << rowsBySparsity << std::endl;
 //    std::cout << colsBySparsity << std::endl;
 //    std::cout << cols << std::endl;
-    findMinimalBasis();
+//    findMinimalBasis();
 //    std::cout << "Finished with tableaux: " << std::endl << *this << std::endl;
 //    std::cout << rowsBySparsity << std::endl;
 //    std::cout << colsBySparsity << std::endl;
@@ -489,6 +501,18 @@ SparseVec<T> TableauNormMinimiser<T>::getOrigin() {
     for(int row =0; row < basicVars.size(); ++row) origin.insert(basicVars[row], F[row]);
     return origin;
 }
+
+
+// Get the solution as a set of constraints, with each constraint having a basic variable
+// that is not present in any other constraint
+template<class T>
+EqualityConstraints<T> TableauNormMinimiser<T>::getFactorisedConstraints() {
+    EqualityConstraints<T> constraints;
+    constraints.reserve(rows.size());
+    for(int i = 0; i<rows.size(); ++i) constraints.emplace_back(rows[i], F[i]);
+    return constraints;
+}
+
 
 // Updates the basic variables of X, leaving the non-basic variables unchanged
 // so that X satisfies all constraints.

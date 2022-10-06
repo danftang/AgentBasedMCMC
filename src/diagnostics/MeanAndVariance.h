@@ -1,3 +1,4 @@
+// Calculates the mean and varaince of each dimension in a multivaraite object
 //
 // Created by daniel on 20/10/2021.
 //
@@ -25,7 +26,7 @@ public:
         for(const auto &sample : datapoints) (*this)(sample);
     }
 
-    int dimension() const {
+    int dataDimension() const {
         return sum.size();
     }
 

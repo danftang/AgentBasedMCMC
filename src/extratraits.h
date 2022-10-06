@@ -17,7 +17,7 @@ template<typename T, typename = decltype(std::declval<T>()[0])>
 class subscript_operator_traits {
 public:
     typedef decltype(std::declval<T>()[0]) return_type;
-    typedef std::remove_cv_t<std::remove_reference_t<return_type>> base_type;
+    typedef std::remove_cv_t<std::remove_reference_t<return_type>> decay_type;
 };
 
 
