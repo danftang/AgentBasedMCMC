@@ -5,9 +5,9 @@
 
 #include "Experiments.h"
 #include "FiguresForPaper.h"
+#include "include/asyncvector.h"
 
 int main(int argc, char *argv[]) {
-
 
 //    auto startTime = std::chrono::steady_clock::now();
 
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     // normal decay on start state, no decay on likelihood, marginal with step down on infeasible proir, kappa=6.5, infeasible=80%, time/eff-sample = 55.1ms
 
 //    FiguresForPaper<8,4>::generateStandardPredPreyPosteriorFile(6.0);
-//    FiguresForPaper<8,4>::generateStats(100000,1);
+//    FiguresForPaper<8,4>::generateStats(100000);
 //    FiguresForPaper<8,4>::plotStats(false); // set to true to allow printing from plots.
 
 
@@ -67,7 +67,8 @@ int main(int argc, char *argv[]) {
 //    Experiments::BinomialAgentSingleObservation();
 //    Experiments::CatMouseSingleObservation();
 //    Experiments::CatMouseAssimilation();
-    Experiments::PredPreySingleObservation();
+//    Experiments::PredPreySingleObservation();
+    Experiments::PredPreyPriorTest();
         // Trajectory: 8.16 x 59.56 = 486, RMS= 0.023, t= 58.8s.
         // Extended: 2.3 x 16.9 = 39.09, RMS = 0.030, sample time = 7.54s, 59.2% infeasible
         // Extended, separated phi factorial: 2.5 x 10.9 = 27.2, RMS=0.037, sample time = 7.6s, 62.9% infeasible

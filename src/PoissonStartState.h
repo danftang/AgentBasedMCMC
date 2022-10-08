@@ -96,12 +96,9 @@ public:
         return std::pair(occupation*logLambda - lgamma(occupation+1) - exp(logLambda), true);    // log of Poisson
     }
 
-    friend std::ostream &operator <<(std::ostream &out, const PoissonStartState<DOMAIN> &startState) {
-        out << "{ ";
-        for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
-            out << startState.lambda(agentId) << " ";
-        }
-        out << "}";
+    friend std::ostream &operator <<(std::ostream &out, const PoissonStartState<AGENT,DOMAIN> &startState) {
+        out << startState.lambdas << std::endl;
+        out << "kappa = " << startState.kappa << std::endl;
         return out;
     }
 

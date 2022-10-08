@@ -12,6 +12,7 @@
 #include "diagnostics/Dataflow.h"
 #include "Plotter.h"
 #include "FactorisedDistributionSampler.h"
+#include "include/asyncvector.h"
 
 template<int GRIDSIZE, int TIMESTEPS>
 class FiguresForPaper {
@@ -57,10 +58,22 @@ public:
 
         std::cout << "Loaded ABM posterior:" << std::endl;
         std::cout << posterior;
-//        std::cout << "Basis vectors:" << std::endl;
-//        for(const auto &basisVec : problem.basisObj.basisVectors) std::cout << basisVec << std::endl;
 
-        FactorisedDistributionSampler sampler(posterior);
+
+//        FactorisedDistributionSampler sampler(posterior);
+//        MultiChainStats multiChainStats = MultiChainStats::analyseConvergence(posterior, nSamples, nThreads);
+
+        MultiChainStats multiChainStats(generateVectorAsync(nThreads, [&posterior, nSamples]() {
+            FactorisedDistributionSampler sampler(posterior);
+            for(int s = 1; s<nSamples/5; ++s) sampler(); // burn-in
+            return MultiChainStats(nSamples/2, sampler);
+        }));
+
+        std::ofstream statFile(statFilename);
+        if(!statFile.good()) throw("Can't open stats probFile to save results.");
+        boost::archive::binary_oarchive statArchive(statFile);
+        statArchive << multiChainStats;
+
         //
 //        std::future<std::pair<ChainStats,ChainStats>> futureResults[nThreads];
 //        for(int thread = 0; thread < nThreads; ++thread) {
@@ -77,12 +90,6 @@ public:
 //            multiChainStats.add(futureResults[thread].get());
 //        }
 
-        MultiChainStats multiChainStats = MultiChainStats::analyseConvergence(sampler, nSamples, nThreads);
-
-        std::ofstream statFile(statFilename);
-        if(!statFile.good()) throw("Can't open stats probFile to save results.");
-        boost::archive::binary_oarchive statArchive(statFile);
-        statArchive << multiChainStats;
     }
 
 
@@ -228,18 +235,18 @@ public:
         // Print scale reduction and effective samples
         std::valarray<double> neff = stats.effectiveSamples();
         std::valarray<double> ineff = (stats.nSamplesPerChain() * 1.0) / neff;
-        auto execTimePerSample = stats.execTime * 2.0 / (stats.front().samplerStats.totalProposals() * stats.size());
-        auto execTimePerFeasibleSample = stats.execTime * 1.0 / (stats.nSamplesPerChain() * stats.nChains());
+//        auto execTimePerSample = stats.totalSampleTime() * 2.0 / (stats.front().samplerStats.totalProposals() * stats.size());
+        auto execTimePerFeasibleSample = stats.totalSampleTime() * 1.0 / (stats.nSamplesPerChain() * stats.nChains());
         std::cout << "Summary statistics for " << GRIDSIZE << " x " << TIMESTEPS << std::endl;
-        std::cout << "Total exec time: " << stats.execTime << std::endl;
+        std::cout << "Total exec time: " << stats.totalSampleTime() << std::endl;
         std::cout << "Potential scale reduction: " << stats.potentialScaleReduction() << std::endl;
         std::cout << "Actual number of samples per chain: " << stats.nSamplesPerChain() << std::endl;
         std::cout << "Number of chains: " << stats.size() << std::endl;
         std::cout << "Effective number of samples (per chain): " << neff << std::endl;
         std::cout << "Sample inefficiency factor: " << ineff << std::endl << std::endl;
-        std::cout << "Execution time per sample (all threads): " << execTimePerSample << std::endl;
+//        std::cout << "Execution time per sample (all threads): " << execTimePerSample << std::endl;
         std::cout << "Execution time per feasible sample (all threads): " << execTimePerFeasibleSample << std::endl;
-        std::cout << "Execution time per (worst case) effective sample: " << stats.execTime/(neff.min()*stats.nChains()) << std::endl;
+        std::cout << "Execution time per (worst case) effective sample: " << stats.totalSampleTime()/(neff.min()*stats.nChains()) << std::endl;
         // plot end state
 
         Plotter endStatePlotter;

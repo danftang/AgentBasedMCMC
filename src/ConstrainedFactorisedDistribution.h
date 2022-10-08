@@ -235,16 +235,18 @@ protected:
 
 template<typename T>
 std::ostream &operator <<(std::ostream &out, const ConstrainedFactorisedDistribution<T> &distribution) {
-    for(const auto &factor: distribution.factors) {
+    for(int i=0; i<distribution.factors.size() && i<100; ++i) {
         out << "P(";
-        if(factor.dependencies.size() > 0) {
-            out << "X" << factor.dependencies[0];
-            for(int i=1; i<factor.dependencies.size(); ++i) {
-                out << ", X" << factor.dependencies[i];
+        auto deps = distribution.factors[i].dependencies;
+        if(deps.size() > 0) {
+            out << "X" << deps[0];
+            for(int i=1; i<deps.size(); ++i) {
+                out << ", X" << deps[i];
             }
         }
         out << ")";
     }
+    if(distribution.factors.size() > 100) out << "... ...";
     out << "\nSubject to\n";
     out << distribution.constraints;
     return out;

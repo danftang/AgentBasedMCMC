@@ -19,6 +19,8 @@
 #include "PredPreyTrajectory.h"
 #include "Plotter.h"
 #include "ABMPriorSampler.h"
+#include "diagnostics/MultiChainStats.h"
+#include "include/asyncvector.h"
 
 using namespace dataflow;
 
@@ -90,13 +92,57 @@ void Experiments::PredPreySingleObservation() {
 
     doValidationExperiment(posterior, nBurnin, nSamples, nRejectionSamples);
 
-//    Plotter gp;
-//    gp.plot(window.realTrajectory.endState(), sampleStats.means());
+}
+
+
+void Experiments::PredPreyPriorTest() {
+    constexpr int GRIDSIZE = 4;
+    constexpr int TIMESTEPS = 4;
+    constexpr double pPredator = 0.1;//0.08;          // Bernoulli prob of predator in each gridsquare at t=0
+    constexpr double pPrey = pPredator;    // Bernoulli prob of prey in each gridsquare at t=0
+    constexpr int nSamples = 1000; //250000;
+    constexpr double kappa = 6.0;//3.5;
+
+    typedef PredPreyAgent<GRIDSIZE> agent_type;
+    typedef PredPreyTrajectory<GRIDSIZE,TIMESTEPS> trajectory_type;
+
+    PoissonStartState<agent_type> startState([](agent_type agent) {
+        return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
+    }, kappa);
+
+    ABMPrior prior = makeABMPrior<PredPreyTrajectory<GRIDSIZE,TIMESTEPS>>(startState);
+
+    std::cout << prior;
+
+    FactorisedDistributionSampler sampler(prior);
+
+        std::cout << "Burning-in..." << std::endl;
+        for(int s = 1; s<1000; ++s) {
+            sampler(); // burn-in
+        }
+        std::cout << "Sampling..." << std::endl;
+        MultiChainStats multiChainStats(1000000,sampler);
+//    MultiChainStats result(nSamples/2, prior);
+//    std::cout << result;
+
+
+//    MultiChainStats multiChainStats(generateVectorAsync(1, [prior]() {
+//        return MultiChainStats(nSamples/2, prior);
+//    }));
+
+//    MultiChainStats multiChainStats(generateVectorAsync(4, [&prior, nSamples]() {
+//        FactorisedDistributionSampler sampler(prior);
+//        std::cout << "Burning-in..." << std::endl;
+//        for(int s = 1; s<nSamples/5; ++s) sampler(); // burn-in
+//        std::cout << "Sampling..." << std::endl;
+//        return MultiChainStats(nSamples/2, sampler);
+//    }));
 //
-//    Plotter gp2;
-//    gp2.plot(window.realTrajectory.endState(), rejectionSampleStats.means());
+    Plotter plotter;
+    plotter.plot<agent_type>(multiChainStats);
 
 }
+
 
 
 //void Experiments::CatMouseAssimilation() {
@@ -107,7 +153,8 @@ void Experiments::PredPreySingleObservation() {
 //    constexpr int nBurnin = 100;
 //    constexpr double kappa = 3.0;
 //
-//    ABM::kappa = kappa;
+//
+//
 //    Prior<Trajectory<CatMouseAgent>> prior(nTimesteps, FixedPopulationStartState<Trajectory<CatMouseAgent>>({0, 0, 1, 1},{1,1}));
 //    std::cout << "Prior is\n" << prior << std::endl;
 //
@@ -161,8 +208,8 @@ void Experiments::PredPreySingleObservation() {
 //        std::cout << trajectory << "  p_exact = " << prob << "  p_reject = " << rejectionPMF[trajectory] << "  p_mcmc = " << pmf[trajectory] << "  p_exact - p_mcmc = " << prob - pmf[trajectory] << std::endl;
 //    }
 //}
-//
-//
+
+
 
 
 template<class DOMAIN, class STARTSTATE>

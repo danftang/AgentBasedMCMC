@@ -20,9 +20,23 @@ public:
 //    std::string cpuinfo;
 //    double kap0pa;
 //    std::string problemDescription;
-    std::chrono::steady_clock::duration execTime;
 
+    MultiChainStats()=default;
 
+    // Generates two chain stats from first and last half of a 2xhalfSize chain
+    template<class SAMPLER>
+    MultiChainStats(int halfSize, SAMPLER &sampler, int nLags = ChainStats::defaultNLags, double maxLagProportion = ChainStats::defaultMaxLagProportion) {
+        push_back(ChainStats(halfSize, sampler, nLags, maxLagProportion));
+        push_back(ChainStats(halfSize, sampler, nLags, maxLagProportion));
+    }
+
+    MultiChainStats(std::vector<MultiChainStats> otherStats) {
+        for(MultiChainStats &mcs: otherStats) {
+            for(ChainStats &chain: mcs) {
+                push_back(std::move(chain));
+            }
+        }
+    }
 //    MultiChainStats(double Kappa, std::string description=""):
 //        kappa(Kappa),
 //        problemDescription(std::move(description)) {
@@ -68,7 +82,7 @@ public:
         return size()==0?0: front().dataDimension();
     }
 
-    std::valarray<double> meanEndState() {
+    std::valarray<double> meanEndState() const {
         std::valarray<double> mean = (*this)[0].meanEndState;
         for(int j=1; j<size(); ++j) {
             mean += (*this)[j].meanEndState;
@@ -88,7 +102,7 @@ public:
     // where Vt is the mean variogram over all chains at time-lag t
     // and var+ is an overestimate of the variance of the sampled distribution as defined below
     // and the sum over t starts at 0 and continues until rho_t + rho_t-1 < 0 for some odd t.
-    std::valarray<double> effectiveSamples() {
+    std::valarray<double> effectiveSamples() const {
         std::valarray<double> neff(dataDimension());
         auto V = meanVariogram();
         std::valarray<double> varplus = varPlus();
@@ -120,7 +134,7 @@ public:
     //
     // where Vt is the mean variogram over all chains at time-lag t
     // and var+ is an overestimate of the variance of the sampled distribution as defined below
-    std::valarray<std::valarray<double>> autocorrelation() {
+    std::valarray<std::valarray<double>> autocorrelation() const {
         auto V = meanVariogram();
         std::valarray<double> oneover2varplus = 1.0 / (varPlus()*2.0);
         std::valarray<std::valarray<double>> rhoHat( V.size());
@@ -132,7 +146,7 @@ public:
 
 
     // The mean of the variograms in each chain
-    std::valarray<std::valarray<double>> meanVariogram() {
+    std::valarray<std::valarray<double>> meanVariogram() const {
         std::valarray<std::valarray<double>> V(std::valarray<double>(0.0, dataDimension()), front().variogram.size());
         for(const ChainStats &chain: *this) {
             V += chain.variogram;
@@ -148,7 +162,7 @@ public:
     // Chapter 11, page 285.
     //
     // R_hat = sqrt((n-1)/n + B/(nW))
-    std::valarray<double> potentialScaleReduction() {
+    std::valarray<double> potentialScaleReduction() const {
         return sqrt((B() / (W()*(1.0 * nSamplesPerChain()))) + ((nSamplesPerChain() - 1.0) / nSamplesPerChain()));
     }
 
@@ -158,7 +172,7 @@ public:
     // Chapter 11, equation (11.3), page 284.
     //
     // var+ = (n-1/n) W + (1/n) B
-    std::valarray<double> varPlus() {
+    std::valarray<double> varPlus() const {
         return W() * ((nSamplesPerChain() - 1.0) / nSamplesPerChain()) + B() * (1.0 / nSamplesPerChain());
     }
 
@@ -200,6 +214,14 @@ public:
         return mu;
     }
 
+    std::chrono::steady_clock::duration totalSampleTime() const {
+        std::chrono::steady_clock::duration t(0);
+        for(const ChainStats &chain: *this) {
+            t += chain.sampleTime;
+        }
+        return t;
+    }
+
 //    static std::string getCpuInfo() {
 //        FILE *pipe = popen("lscpu","r");
 //        std::stringstream strstr;
@@ -212,52 +234,46 @@ public:
 //        out << "MultiChainStats for " << multiChainStats.problemDescription << " " << multiChainStats.nChains() << " chains with " << multiChainStats.nSamplesPerChain() << " samples" << std::endl;
         out << "MultiChainStats for "  << multiChainStats.nChains() << " chains with " << multiChainStats.nSamplesPerChain() << " samples" << std::endl;
 //        out << multiChainStats.cpuinfo << std::endl;
-        out << "Exec time = " << multiChainStats.execTime << std::endl;
-        out << "W = " << multiChainStats.W() << std::endl;
-        out << "B = " << multiChainStats.B() << std::endl;
+        out << "Exec time = " << multiChainStats.totalSampleTime() << std::endl;
+//        out << "W = " << multiChainStats.W() << std::endl;
+//        out << "B = " << multiChainStats.B() << std::endl;
         out << "Samples   Sums    SumOfSquares    VarioStride     Vario" << std::endl;
         for(const ChainStats &chain: multiChainStats) {
             out << " " << chain.meanVariance.nSamples << " " << chain.meanVariance.sum << " " << chain.meanVariance.sumOfSquares << " " << chain.varioStride << " " << chain.variogram << std::endl;
-            std::cout << "MCMC stats:" << std::endl;
-            std::cout << chain.samplerStats << std::endl;
+//            std::cout << "MCMC stats:" << std::endl;
+//            std::cout << chain.samplerStats << std::endl;
         }
         return out;
     }
 
-    template<class SAMPLER>
-    static MultiChainStats analyseConvergence(SAMPLER &sampler, int nSamples, int nThreads = 4) {
-        MultiChainStats allThreadResults;
-        allThreadResults.reserve(2 * nThreads);
 
-        auto startTime = std::chrono::steady_clock::now();
-
-        std::future<std::pair<ChainStats,ChainStats>> futureResults[nThreads-1];
-//        std::vector<SAMPLER> samplers(nThreads-1,sampler);
-        for(int thread = 0; thread < nThreads-1; ++thread) {
-//            futureResults[thread] = std::async(&ChainStats::sampleChainStatsPair<SAMPLER>, sampler, nSamples);
-        }
-        FactorisedDistributionSampler samplerCopy(sampler);
-        allThreadResults.add(ChainStats::sampleChainStatsPair(samplerCopy, nSamples));
-
-        for(int thread=0; thread<nThreads-1; ++thread) {
-            futureResults[thread].wait();
-            allThreadResults.add(futureResults[thread].get());
-        }
-
-        auto endTime = std::chrono::steady_clock::now();
-
-        allThreadResults.execTime = endTime - startTime;
-        return allThreadResults;
-    }
+//    template<class DISTRIBUTION>
+//    static MultiChainStats analyseConvergence(const DISTRIBUTION &distribution, int nSamples, int nThreads = 4) {
+//        MultiChainStats allThreadResults;
+//        allThreadResults.reserve(2 * nThreads);
+//
+//        std::future<std::pair<ChainStats,ChainStats>> futureResults[nThreads-1];
+//        for(int thread = 0; thread < nThreads-1; ++thread) {
+//            futureResults[thread] = std::async(std::launch::async, [&distribution, nSamples]() {
+//                return ChainStats::makeChainStatsPair(distribution, nSamples);
+//            });
+//        }
+//        allThreadResults.add(ChainStats::makeChainStatsPair(distribution, nSamples));
+//
+//        for(int thread=0; thread<nThreads-1; ++thread) {
+//            futureResults[thread].wait();
+//            allThreadResults.add(futureResults[thread].get());
+//        }
+//
+//        return allThreadResults;
+//    }
 
 private:
     friend class boost::serialization::access;
 
     template <typename Archive>
     void serialize(Archive &ar, const unsigned int version) {
-//        cpuinfo = getCpuInfo();
-//        ar & execTime & static_cast<std::vector<ChainStats> &>(*this);
-        ar & static_cast<std::vector<ChainStats> &>(*this); // TODO: save execTime (std::duration)
+        ar & static_cast<std::vector<ChainStats> &>(*this);
     }
 };
 

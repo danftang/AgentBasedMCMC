@@ -62,7 +62,10 @@ public:
 
 template<typename COEFF>
 std::ostream &operator <<(std::ostream &out, const EqualityConstraints<COEFF> &constraints) {
-    for(const EqualityConstraint<COEFF> &constraint: constraints) out << constraint << std::endl;
+    for(int i=0; i<constraints.size() && i<100; ++i) {
+        out << constraints[i] << std::endl;
+    }
+    if(constraints.size() >100) out << "...  ..." << std::endl;
     return out;
 }
 

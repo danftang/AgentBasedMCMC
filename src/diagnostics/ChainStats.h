@@ -19,26 +19,59 @@
 
 class ChainStats {
 public:
+    static constexpr int defaultNLags = 200;
+    static constexpr double defaultMaxLagProportion = 0.5;
+
     MeanAndVariance meanVariance;
-    std::valarray<std::valarray<double>> variogram;
     int varioStride;
+    std::valarray<std::valarray<double>> variogram;
     std::valarray<double> meanEndState;
-    MCMCStatistics samplerStats;
+//    MCMCStatistics samplerStats;
+    std::chrono::steady_clock::duration sampleTime;
 
     ChainStats() {}
 
-    template<typename SYNOPSIS>
-    ChainStats(const std::valarray<SYNOPSIS> &synopsisSamples,
-               int nLags,
-               double maxLagProportion,
-               std::valarray<double> meanEndState,
-               const MCMCStatistics &samplerStats) :
-            meanVariance(synopsisSamples),
-            variogram(calcVariogram(synopsisSamples, nLags, maxLagProportion)),
-            varioStride((maxLagProportion * synopsisSamples.size()) / (nLags - 1.0)),
-            meanEndState(std::move(meanEndState)),
-            samplerStats(samplerStats)
-            { }
+    template<class SAMPLER>
+    ChainStats(int nSamples,SAMPLER &sampler, int nLags = defaultNLags, double maxLagProportion = defaultMaxLagProportion):
+            varioStride(std::max(1,static_cast<int>(maxLagProportion * nSamples) / (nLags - 1))),
+            meanEndState(0.0, sampler().endState().size())
+    {
+
+        std::valarray<std::valarray<double>> statisticsSamples(nSamples);
+
+        auto startTime = std::chrono::steady_clock::now();
+
+        for (int s = 0; s < nSamples; ++s) {
+            auto endState = sampler().endState();
+            statisticsSamples[s] = convergenceStatistics(endState);
+            meanEndState += endState;
+        }
+
+        auto endTime = std::chrono::steady_clock::now();
+
+//        std::cout << "Stats =\n" << sampler.stats << std::endl;
+
+        meanEndState /= nSamples;
+        meanVariance.template addDatapoints(statisticsSamples);
+        variogram = calcVariogram(statisticsSamples, nSamples*maxLagProportion, varioStride);
+//        samplerStats = sampler.stats;
+        sampleTime = endTime - startTime;
+
+    }
+
+
+//    template<typename SYNOPSIS>
+//    ChainStats(const std::valarray<SYNOPSIS> &synopsisSamples,
+//               int nLags,
+//               int lagStride,
+//               std::valarray<double> meanEndState,
+//               const MCMCStatistics &samplerStats) :
+//            meanVariance(synopsisSamples),
+//            varioStride(lagStride),
+//            variogram(calcVariogram(synopsisSamples, nLags, varioStride)),
+//            meanEndState(std::move(meanEndState)),
+//            samplerStats(samplerStats)
+//            { }
 
     int nSamples() const { return meanVariance.nSamples; }
 
@@ -51,8 +84,8 @@ public:
     //
     // V_t = 1/(n-t) sum_{i=0}^{n-t-1} (x_i - x_{i+t})^2
     //
-    // The lag, t, is calculated at "nLags" different values
-    // evently spaced from 0 until "maxLagProportion"*(n+1).
+    // The lag, t, is calculated at equally spaced intervals from 0 until (but not including)
+    // "maxLag" with a spacing of 'lagStride'
     //
     // Since we're only interested in estimating the overall rate of decay,
     // we don't need to calculate g_t at all values of t, so although this
@@ -66,17 +99,18 @@ public:
     ////////////////////////////////////////////////////////////////////////////
     template<typename SAMPLE>
     static std::valarray<std::valarray<double>>
-    calcVariogram(const std::valarray<SAMPLE> &samples, int nLags = 100, double maxLagProportion = 0.5) {
-        std::valarray<std::valarray<double>> vario(0.0 * samples[0], nLags);
+    calcVariogram(const std::valarray<SAMPLE> &samples, int maxLag, int lagStride) {
+        assert(maxLag <= samples.size());
+        std::valarray<std::valarray<double>> vario(0.0 * samples[0], maxLag/lagStride);
 
-        int stride = (maxLagProportion * samples.size()) / (nLags - 1.0);
-        for (int j = 0; j < nLags; ++j) {
-            int t = j * stride;
-            for (int i = 0; i < samples.size() - t; ++i) {
-                auto dxt = samples[i] - samples[i + t];
+        int j = 0;
+        for(int lag = 0; lag < maxLag; lag += lagStride) {
+            for (int i = 0; i < samples.size() - lag; ++i) {
+                auto dxt = samples[i] - samples[i + lag];
                 vario[j] += dxt * dxt;
             }
-            vario[j] /= samples.size() - t;
+            vario[j] /= samples.size() - lag;
+            ++j;
         }
         return vario;
     }
@@ -85,42 +119,49 @@ public:
     // Gelman, A., Carlin, J.B., Stern, H.S. and Rubin, D.B., 2021. Bayesian data analysis 3rd Edition.
     // we want to compare the statistics of the first half and last half of a Markov chain in order
     // to better detect convergence, so this takes samples, and generates first/last half statistics.
-    template<class SAMPLER>
-    static std::pair<ChainStats,ChainStats> sampleChainStatsPair(SAMPLER &sampler, int nSamples) {
-        std::cout << "Starting ChainStats on sampler " << sampler.basisVectors.size() << " " << sampler.factors.size() << std::endl;
-        assert(nSamples%1 == 0); // nSamples should be an even number
-        const double maxLagProportion = 0.5;
-        const int nLags = 200;
-        const int nBurnIn = nSamples/5;
-        const int endStateDimension = sampler().endState().size();
+//    template<class SAMPLER, class SAMPLE = std::result_of<SAMPLER()>>
+//    static std::pair<ChainStats,ChainStats> makeChainStatsPair(SAMPLER &sampler, int nSamples) {
+//        assert(nSamples%1 == 0); // nSamples should be an even number
+//        const double maxLagProportion = 0.5;
+//        const int nLags = 200;
+//        const int nBurnIn = nSamples/5;
+//        const int endStateDimension = sampler().endState().size();
+//
+//        std::valarray<std::valarray<double>> firstHalfSynopsisSamples(nSamples / 2);
+//        std::valarray<std::valarray<double>> lastHalfSynopsisSamples(nSamples / 2);
+//        std::valarray<double> firstHalfMeanEndState(0.0, endStateDimension);
+//        std::valarray<double> lastHalfMeanEndState(0.0, endStateDimension);
+//
+//        for(int s = 1; s<nBurnIn; ++s) sampler();
+//        for (int s = 0; s < nSamples; ++s) {
+//            auto endState = sampler().endState();
+//            if (s < (nSamples / 2)) {
+//                firstHalfSynopsisSamples[s] = convergenceStatistics(endState);
+//                firstHalfMeanEndState += endState;
+//            } else {
+//                lastHalfSynopsisSamples[s - nSamples/2] = convergenceStatistics(endState);
+//                lastHalfMeanEndState += endState;
+//            }
+//        }
+//
+//        std::cout << "Stats =\n" << sampler.stats << std::endl;
+//
+//        firstHalfMeanEndState /= nSamples/2.0;
+//        lastHalfMeanEndState /= nSamples/2.0;
+//
+////        std::cout << "First half mean end state = " << firstHalfMeanEndState << std::endl;
+////        std::cout << "Last  half mean end state = " << lastHalfMeanEndState << std::endl;
+//
+//        return std::pair(
+//                ChainStats(firstHalfSynopsisSamples, nLags, maxLagProportion, firstHalfMeanEndState, sampler.stats),
+//                ChainStats(lastHalfSynopsisSamples, nLags, maxLagProportion, lastHalfMeanEndState, sampler.stats));
+//    }
 
-        std::valarray<std::valarray<double>> firstHalfSynopsisSamples(nSamples / 2);
-        std::valarray<std::valarray<double>> lastHalfSynopsisSamples(nSamples / 2);
-        std::valarray<double> firstHalfMeanEndState(0.0, endStateDimension);
-        std::valarray<double> lastHalfMeanEndState(0.0, endStateDimension);
-
-        for(int s = 1; s<nBurnIn; ++s) sampler();
-        for (int s = 0; s < nSamples; ++s) {
-            auto endState = sampler().endState();
-            if (s < nSamples / 2) {
-                firstHalfSynopsisSamples[s] = convergenceStatistics(endState);
-                firstHalfMeanEndState += endState;
-            } else {
-                lastHalfSynopsisSamples[s - nSamples/2] = convergenceStatistics(endState);
-                lastHalfMeanEndState += endState;
-            }
-        }
-
-        std::cout << "Stats =\n" << sampler.stats << std::endl;
-
-        firstHalfMeanEndState /= nSamples/2.0;
-        lastHalfMeanEndState /= nSamples/2.0;
-
-        return std::pair(
-                ChainStats(firstHalfSynopsisSamples, nLags, maxLagProportion, firstHalfMeanEndState, sampler.stats),
-                ChainStats(lastHalfSynopsisSamples, nLags, maxLagProportion, lastHalfMeanEndState, sampler.stats));
+    template<class DISTRIBUTION, class TEST = std::enable_if_t<!std::is_invocable_v<DISTRIBUTION>>>
+    static std::pair<ChainStats,ChainStats> makeChainStatsPair(const DISTRIBUTION &distribution, int nSamples) {
+        FactorisedDistributionSampler sampler(distribution);
+        return makeChainStatsPair(sampler, nSamples);
     }
-
 
 private:
     friend class boost::serialization::access;
@@ -140,7 +181,7 @@ private:
             int occupation = 0;
             for(int x=0; x < partitionSize; ++x) {
                 for(int y=0; y < partitionSize; ++y) {
-                    for(int type = 0; type <= AGENT::typeDomainSize; ++type) {
+                    for(int type = 0; type < AGENT::typeDomainSize; ++type) {
                         occupation += endState[AGENT(origin + x,origin + y,typename AGENT::Type(type))];
                     }
                 }
@@ -171,11 +212,20 @@ private:
 
 
 
+    template <typename Archive>
+    void load(Archive &ar, const unsigned int version) {
+        std::chrono::steady_clock::duration::rep durationCount;
+        ar >> meanVariance >> variogram >> varioStride >> meanEndState >> durationCount;
+        sampleTime = std::chrono::steady_clock::duration(durationCount);
+    }
 
     template <typename Archive>
-    void serialize(Archive &ar, const unsigned int version) {
-        ar & meanVariance & variogram & varioStride & samplerStats;
+    void save(Archive &ar, const unsigned int version) const {
+        ar << meanVariance << variogram << varioStride << meanEndState << sampleTime.count();
     }
+
+    BOOST_SERIALIZATION_SPLIT_MEMBER();
+
 };
 
 

@@ -15,6 +15,7 @@ public:
     static void PredPreySingleObservation();
     static void CatMouseAssimilation();
     static void Animation();
+    static void PredPreyPriorTest();
 
     template<class DOMAIN, class STARTSTATE>
     static void doValidationExperiment(
@@ -22,6 +23,7 @@ public:
             int nBurnin,
             int nSamples,
             int nRejectionSamples);
+
 };
 
 

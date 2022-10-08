@@ -34,7 +34,7 @@ public:
     ABMLikelihood(TRAJECTORY realTrajectory, double pMakeObservation, double pObserveIfPresent, double kappa):
         ABMLikelihood(generateObservations(realTrajectory, pMakeObservation, pObserveIfPresent), pObserveIfPresent, kappa)
     {
-        realTrajectory = std::move(realTrajectory);
+        this->realTrajectory = std::move(realTrajectory);
     }
 
 
@@ -111,7 +111,7 @@ private:
         if(realTrajectoryHasValue) {
             TRAJECTORY rTraj;
             ar >> rTraj;
-            realTrajectory.template emplace(rTraj);
+            realTrajectory = std::move(rTraj);
         }
         init();
     }

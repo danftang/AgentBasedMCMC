@@ -23,6 +23,11 @@ public:
 
     template<typename DATAPOINTS>
     MeanAndVariance(const DATAPOINTS &datapoints): MeanAndVariance() {
+        addDatapoints(datapoints);
+    }
+
+    template<typename CONTAINER>
+    void addDatapoints(const CONTAINER &datapoints) {
         for(const auto &sample : datapoints) (*this)(sample);
     }
 
