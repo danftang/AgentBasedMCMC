@@ -58,20 +58,44 @@ public:
 
 
     static EqualityConstraints<value_type> constraints() {
-        EqualityConstraints<value_type> constraints = ExtendedTrajectory<agent_type, NTIMESTEPS>::constraints();
+//        EqualityConstraints<value_type> constraints = ExtendedTrajectory<agent_type, NTIMESTEPS>::constraints();
+        EqualityConstraints<value_type> constraints;
         for (int t = 0; t < NTIMESTEPS; ++t) {
             for (int agentId = 0; agentId < agent_type::domainSize; ++agentId) {
                 State<agent_type> state(t, agentId);
-                constraints.push_back(
-                        X(indexOf(State<agent_type>(t, state.agent.upOther()))) +
-                        X(indexOf(State<agent_type>(t, state.agent.downOther()))) +
-                        X(indexOf(State<agent_type>(t, state.agent.leftOther()))) +
-                        X(indexOf(State<agent_type>(t, state.agent.rightOther()))) -
-                        X(surroundingCountIndexOf(state))
-                        == value_type(0)
-                );
+                if(t == 0) {
+                    constraints.push_back(
+                            X(indexOf(State<agent_type>(t, state.agent.upOther()))) +
+                            X(indexOf(State<agent_type>(t, state.agent.downOther()))) +
+                            X(indexOf(State<agent_type>(t, state.agent.leftOther()))) +
+                            X(indexOf(State<agent_type>(t, state.agent.rightOther()))) -
+                            X(surroundingCountIndexOf(state))
+                            == value_type(0)
+                    );
+                } else {
+                    SparseVec<value_type> backwardCoeffs;
+                    for (const Event<agent_type> &inEdge: State<agent_type>(t,
+                                                                            state.agent.upOther()).backwardOccupationDependencies()) {
+                        backwardCoeffs.insert(indexOf(inEdge), 1);
+                    }
+                    for (const Event<agent_type> &inEdge: State<agent_type>(t,
+                                                                            state.agent.downOther()).backwardOccupationDependencies()) {
+                        backwardCoeffs.insert(indexOf(inEdge), 1);
+                    }
+                    for (const Event<agent_type> &inEdge: State<agent_type>(t,
+                                                                            state.agent.leftOther()).backwardOccupationDependencies()) {
+                        backwardCoeffs.insert(indexOf(inEdge), 1);
+                    }
+                    for (const Event<agent_type> &inEdge: State<agent_type>(t,
+                                                                            state.agent.rightOther()).backwardOccupationDependencies()) {
+                        backwardCoeffs.insert(indexOf(inEdge), 1);
+                    }
+                    backwardCoeffs.insert(surroundingCountIndexOf(state), -1);
+                    constraints.template emplace_back(backwardCoeffs, 0);
+                }
             }
         }
+        constraints += ExtendedTrajectory<agent_type, NTIMESTEPS>::constraints();
         return constraints;
     }
 };

@@ -15,8 +15,9 @@
 
 template<typename AGENT>
 class State {
+protected:
+    static const std::vector<std::vector<Event<AGENT>>> incomingEventsAtT0ByAgentId; // evants at time t=0
 public:
-    static const std::vector<std::vector<Event<AGENT>>> incomingEventsByState;
 
     int       time;
     AGENT     agent;
@@ -60,18 +61,30 @@ public:
     template<class DOMAIN>
     typename DOMAIN::value_type backwardOccupation(const DOMAIN &trajectory) const {
         typename DOMAIN::value_type occupation = 0;
-        for(const Event<AGENT> &incomingEvent : incomingEventsByState[agent]) {
+        for(const Event<AGENT> &incomingEvent : incomingEventsAtT0ByAgentId[agent]) {
             occupation += trajectory[DOMAIN::indexOf(Event<AGENT>(time-1, incomingEvent.agent(), incomingEvent.act()))];
         }
         return occupation;
     }
 
-    std::vector<int> forwardOccupationDependencies() const {
-        std::vector<int> dependencies;
-        int beginIndex = Event<AGENT>(time, agent, 0).id;
-        int endIndex = beginIndex + AGENT::actDomainSize;
-        for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
-            dependencies.push_back(eventId);
+    std::vector<Event<AGENT>> forwardOccupationDependencies() const {
+        std::vector<Event<AGENT>> dependencies;
+//        int beginIndex = Event<AGENT>(time, agent, 0).id;
+//        int endIndex = beginIndex + AGENT::actDomainSize;
+//        for (int eventId = beginIndex; eventId < endIndex; ++eventId) {
+//            dependencies.push_back(eventId);
+//        }
+        for(int actId=0; actId < AGENT::actDomainSize; ++actId) {
+            dependencies.push_back(Event<AGENT>(time,agent,typename AGENT::Act(actId)));
+        }
+        return dependencies;
+    }
+
+    std::vector<Event<AGENT>> backwardOccupationDependencies() const {
+        assert(time > 0);
+        std::vector<Event<AGENT>> dependencies;
+        for(const Event<AGENT> &t0Event: incomingEventsAtT0ByAgentId[agent]) {
+            dependencies.push_back(Event<AGENT>(time-1, t0Event.agent(), t0Event.act()));
         }
         return dependencies;
     }
@@ -107,19 +120,17 @@ public:
     }
 
 
-    static std::vector<std::vector<Event<AGENT>>> calculateIncomingEventsByState() {
-        std::vector<std::vector<Event<AGENT>>> endStateToEvents(AGENT::domainSize);
-        std::vector<AGENT> consequences;
+    static std::vector<std::vector<Event<AGENT>>> calculateIncomingEventsByAgentId() {
+        std::vector<std::vector<Event<AGENT>>> consequenceToEvent(AGENT::domainSize);
         for(int agentState = 0; agentState < AGENT::domainSize; ++agentState) {
             AGENT agent(agentState);
             for (int act = 0; act < AGENT::actDomainSize; ++act) {
-                consequences = agent.consequences(act);
-                for(const AGENT &endState: consequences) {
-                    endStateToEvents[endState].push_back(Event(0,agent,act));
+                for(const AGENT &endState: agent.consequences(act)) {
+                    consequenceToEvent[endState].push_back(Event(0, agent, act));
                 }
             }
         }
-        return endStateToEvents;
+        return consequenceToEvent;
     }
 
 private:
@@ -144,6 +155,6 @@ private:
 };
 
 template<typename AGENT>
-const std::vector<std::vector<Event<AGENT>>> State<AGENT>::incomingEventsByState = State<AGENT>::calculateIncomingEventsByState();
+const std::vector<std::vector<Event<AGENT>>> State<AGENT>::incomingEventsAtT0ByAgentId = State<AGENT>::calculateIncomingEventsByAgentId();
 
 #endif //GLPKTEST_STATE_H

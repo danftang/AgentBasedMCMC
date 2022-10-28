@@ -16,6 +16,7 @@ public:
     static void CatMouseAssimilation();
     static void Animation();
     static void PredPreyPriorTest();
+    static void ReducedPredPreyPriorTest();
 
     template<class DOMAIN, class STARTSTATE>
     static void doValidationExperiment(

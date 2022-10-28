@@ -49,15 +49,19 @@ public:
                     );
                 }
 
+                // TODO: if we add zero factors then convergence goes to shit. Why???
                 this->addFactor( // factorial of state occupation
                         [state](const TRAJECTORY &trajectory) {
-                            auto occupation = trajectory[state];
+                            auto stateOccupation = trajectory[state];
 //                            return (occupation < 0) ? std::pair(ABM::kappa*occupation,false) : std::pair(lgamma(occupation + 1), true); // TODO: Test!!
-//                            return std::pair(lgamma(std::abs(trajectory[state]) + 1), true); // TODO: test
-                            return std::pair(lgamma(std::max(trajectory[state], 0) + 1), true);
+//                            return std::pair(lgamma(std::abs(stateOccupation) + 1), true); // TODO: test
+                            return std::pair(lgamma(std::max(stateOccupation, 0) + 1), true);
+//                            return std::pair(0.0, true); // TODO: TEST!!!!
                         },
                         {TRAJECTORY::indexOf(state)}
+//                        { } // TODO: Adding dependency here makes convergence go to shit
                 );
+
             }
         }
     }
@@ -69,7 +73,7 @@ public:
         if(actOccupation == 0) return std::pair(0.0, true);
         if (actOccupation < 0) { // negative occupation widening
 //            return std::pair(-actOccupation * log(1.0/AGENT::actDomainSize) - lgamma(1-actOccupation) + ABM::kappa * actOccupation, false); // pair production and decay
-//            return std::pair(ABM::kappa * actOccupation - lgamma(1-actOccupation), false);
+//            return std::pair(kappa * actOccupation - lgamma(1-actOccupation), false);
             return std::pair(kappa * actOccupation, false);
         }
 

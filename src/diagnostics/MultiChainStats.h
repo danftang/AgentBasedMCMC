@@ -25,9 +25,9 @@ public:
 
     // Generates two chain stats from first and last half of a 2xhalfSize chain
     template<class SAMPLER>
-    MultiChainStats(int halfSize, SAMPLER &sampler, int nLags = ChainStats::defaultNLags, double maxLagProportion = ChainStats::defaultMaxLagProportion) {
-        push_back(ChainStats(halfSize, sampler, nLags, maxLagProportion));
-        push_back(ChainStats(halfSize, sampler, nLags, maxLagProportion));
+    MultiChainStats(int nSamples, SAMPLER &sampler, int nLags = ChainStats::defaultNLags, double maxLagProportion = ChainStats::defaultMaxLagProportion) {
+        push_back(ChainStats(nSamples/2, sampler, nLags, maxLagProportion));
+        push_back(ChainStats(nSamples/2, sampler, nLags, maxLagProportion));
     }
 
     MultiChainStats(std::vector<MultiChainStats> otherStats) {

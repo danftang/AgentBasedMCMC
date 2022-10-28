@@ -36,32 +36,6 @@
 //    return out.out;
 //}
 
-template<class T>
-std::ostream & default_container_printer(std::ostream &out, const T &container) {
-    out << "{";
-    auto it = container.begin();
-    if(it != container.end()) {
-        out << *it;
-        while(++it != container.end()) out << ", " << *it;
-    }
-    out << "}";
-    return out;
-}
-
-template<class T, int N>
-std::ostream & operator <<(std::ostream &out, const std::array<T,N> &container) { return default_container_printer(out, container); }
-template<class T>
-std::ostream & operator <<(std::ostream &out, const std::vector<T> &container) { return default_container_printer(out, container); }
-template<class T>
-std::ostream & operator <<(std::ostream &out, const std::deque<T> &container) { return default_container_printer(out, container); }
-template<class T>
-std::ostream & operator <<(std::ostream &out, const std::forward_list<T> &container) { return default_container_printer(out, container); }
-template<class T>
-std::ostream & operator <<(std::ostream &out, const std::list<T> &container) { return default_container_printer(out, container); }
-template<class T>
-std::ostream & operator <<(std::ostream &out, const std::set<T> &container) { return default_container_printer(out, container); }
-template<class T>
-std::ostream & operator <<(std::ostream &out, const std::unordered_set<T> &container) { return default_container_printer(out, container); }
 
 
 
@@ -127,6 +101,41 @@ std::ostream &operator <<(std::ostream &out, const std::optional<T> &optional) {
     return out;
 }
 
+// Need prior declarations for containers of containers...
+template<class T, int N> std::ostream & operator <<(std::ostream &out, const std::array<T,N> &container);
+template<class T> std::ostream & operator <<(std::ostream &out, const std::vector<T> &container);
+template<class T> std::ostream & operator <<(std::ostream &out, const std::deque<T> &container);
+template<class T> std::ostream & operator <<(std::ostream &out, const std::forward_list<T> &container);
+template<class T> std::ostream & operator <<(std::ostream &out, const std::list<T> &container);
+template<class T> std::ostream & operator <<(std::ostream &out, const std::set<T> &container);
+template<class T> std::ostream & operator <<(std::ostream &out, const std::unordered_set<T> &container);
+
+template<class T>
+std::ostream & default_container_printer(std::ostream &out, const T &container) {
+    out << "{";
+    auto it = container.begin();
+    if(it != container.end()) {
+        out << *it;
+        while(++it != container.end()) out << ", " << *it;
+    }
+    out << "}";
+    return out;
+}
+
+template<class T, int N>
+std::ostream & operator <<(std::ostream &out, const std::array<T,N> &container) { return default_container_printer(out, container); }
+template<class T>
+std::ostream & operator <<(std::ostream &out, const std::vector<T> &container) { return default_container_printer(out, container); }
+template<class T>
+std::ostream & operator <<(std::ostream &out, const std::deque<T> &container) { return default_container_printer(out, container); }
+template<class T>
+std::ostream & operator <<(std::ostream &out, const std::forward_list<T> &container) { return default_container_printer(out, container); }
+template<class T>
+std::ostream & operator <<(std::ostream &out, const std::list<T> &container) { return default_container_printer(out, container); }
+template<class T>
+std::ostream & operator <<(std::ostream &out, const std::set<T> &container) { return default_container_printer(out, container); }
+template<class T>
+std::ostream & operator <<(std::ostream &out, const std::unordered_set<T> &container) { return default_container_printer(out, container); }
 
 
 #endif //GLPKTEST_STLSTREAM_H

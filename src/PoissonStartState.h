@@ -99,6 +99,7 @@ public:
     friend std::ostream &operator <<(std::ostream &out, const PoissonStartState<AGENT,DOMAIN> &startState) {
         out << startState.lambdas << std::endl;
         out << "kappa = " << startState.kappa << std::endl;
+        out << static_cast<const ConstrainedFactorisedDistribution<DOMAIN> &>(startState);
         return out;
     }
 

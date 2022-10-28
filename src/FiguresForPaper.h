@@ -30,8 +30,8 @@ public:
     static void generateStandardPredPreyPosteriorFile(double kappa)  {
         constexpr double pPredator = PredPreyAgent<GRIDSIZE>::pPred;
         constexpr double pPrey = PredPreyAgent<GRIDSIZE>::pPrey;
-        constexpr double pMakeObservation = 0.001;//0.05;
-        constexpr double pObserveIfPresent = 1.0;
+        constexpr double pMakeObservation = 0.05;
+        constexpr double pObserveIfPresent = 0.9;
         std::ofstream probFile(problemFilename);
         boost::archive::binary_oarchive probArchive(probFile);
 
@@ -43,7 +43,7 @@ public:
 //        ABMLikelihood likelihood(prior.nextSample(), pMakeObservation, pObserveIfPresent, kappa);
         ABMPosterior posterior = makeABMPosterior<trajectory_type>(startState, pMakeObservation, pObserveIfPresent, kappa);
 
-        std::cout << posterior << std::endl;
+//        std::cout << posterior << std::endl;
         probArchive << posterior;
     }
 
@@ -66,6 +66,7 @@ public:
         MultiChainStats multiChainStats(generateVectorAsync(nThreads, [&posterior, nSamples]() {
             FactorisedDistributionSampler sampler(posterior);
             for(int s = 1; s<nSamples/5; ++s) sampler(); // burn-in
+            std::cout << sampler.stats << std::endl;
             return MultiChainStats(nSamples/2, sampler);
         }));
 

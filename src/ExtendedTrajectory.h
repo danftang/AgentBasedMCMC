@@ -43,24 +43,45 @@ public:
     static EqualityConstraints<value_type> constraints() {
         EqualityConstraints<value_type> constraints;
         for(int time = 0; time < NTIMESTEPS; ++time) {
-            for(int agentState = 0; agentState < AGENT::domainSize; ++agentState) {
+            for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
+                State<AGENT> state(time,agentId);
                 // forward occupation
-                SparseVec<value_type> forwardCoeffs;
-                for (int act = 0; act < AGENT::actDomainSize; ++act) {
-                    forwardCoeffs.insert(indexOf(Event<AGENT>(time, agentState, act)), 1);
-                }
-                forwardCoeffs.insert(indexOf(State<agent_type>(time, agentState)), -1);
-                constraints.emplace_back(forwardCoeffs, 0);
-
-                // reverse occupation
-                if(time > 0) {
-                    SparseVec<value_type> backwardCoeffs;
-                    for (const Event<AGENT> &inEdge: State<AGENT>::incomingEventsByState[agentState]) {
-                        backwardCoeffs.insert(indexOf(Event<AGENT>(time - 1, inEdge.agent(), inEdge.act())), 1);
+                if(time == 0) {
+                    SparseVec<value_type> forwardCoeffs;
+                    for (int act = 0; act < AGENT::actDomainSize; ++act) {
+                        forwardCoeffs.insert(indexOf(Event<AGENT>(time, agentId, act)), 1);
                     }
-                    backwardCoeffs.insert(indexOf(State<agent_type>(time, agentState)), -1);
+                    forwardCoeffs.insert(indexOf(state), -1);
+                    constraints.emplace_back(forwardCoeffs, 0);
+                } else {
+                    SparseVec<value_type> backwardCoeffs;
+                    for (const Event<AGENT> &inEdge: state.backwardOccupationDependencies()) {
+                        backwardCoeffs.insert(indexOf(inEdge),1);
+                    }
+                    backwardCoeffs.insert(indexOf(state), -1);
                     constraints.emplace_back(backwardCoeffs, 0);
+
+                    SparseVec<value_type> doubleCoeffs;
+                    for (const Event<AGENT> &inEdge: state.backwardOccupationDependencies()) {
+                        doubleCoeffs.insert(indexOf(inEdge),1);
+                    }
+                    for (int act = 0; act < AGENT::actDomainSize; ++act) {
+                        doubleCoeffs.insert(indexOf(Event<AGENT>(time, agentId, act)), -1);
+                    }
+                    constraints.emplace_back(doubleCoeffs, 0);
                 }
+                // reverse occupation
+//                if(time > 0) {
+//                    SparseVec<value_type> backwardCoeffs;
+//                    for (const Event<AGENT> &inEdge: state.backwardOccupationDependencies()) {
+//                        backwardCoeffs.insert(indexOf(inEdge),1);
+//                    }
+////                    for (int act = 0; act < AGENT::actDomainSize; ++act) {
+////                        backwardCoeffs.insert(indexOf(Event<AGENT>(time, agentId, act)), -1);
+////                    }
+//                    backwardCoeffs.insert(indexOf(state), -1);
+//                    constraints.emplace_back(backwardCoeffs, 0);
+//                }
             }
         }
         return constraints;
@@ -92,6 +113,19 @@ public:
     void setStartState(const ModelState<AGENT> &startState) {
         for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
             (*this)[indexOf(State<AGENT>(0,agentId))] = startState[agentId];
+        }
+    }
+
+    void sanityCheck() const {
+        for(int t=0; t<NTIMESTEPS; ++t) {
+            for(int agentId=0; agentId < AGENT::domainSize; ++agentId) {
+                int stateOccupation = (*this)[State<AGENT>(t,agentId)];
+                int sumOfEvents = 0;
+                for(int actId = 0; actId < AGENT::actDomainSize; ++actId) {
+                    sumOfEvents += (*this)[Event<AGENT>(t,agentId,actId)];
+                }
+                assert(sumOfEvents == stateOccupation);
+            }
         }
     }
 };

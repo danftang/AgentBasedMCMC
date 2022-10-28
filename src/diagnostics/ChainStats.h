@@ -100,18 +100,28 @@ public:
     template<typename SAMPLE>
     static std::valarray<std::valarray<double>>
     calcVariogram(const std::valarray<SAMPLE> &samples, int maxLag, int lagStride) {
-        assert(maxLag <= samples.size());
-        std::valarray<std::valarray<double>> vario(0.0 * samples[0], maxLag/lagStride);
+        assert(maxLag < samples.size());
+        std::valarray<double> zeroSample(0.0,samples[0].size());
+        std::valarray<std::valarray<double>> vario(zeroSample, maxLag/lagStride + 1);
 
-        int j = 0;
-        for(int lag = 0; lag < maxLag; lag += lagStride) {
+        int lag = 0;
+        for(int j = 0; j < vario.size(); ++j) {
+            assert(lag < samples.size());
             for (int i = 0; i < samples.size() - lag; ++i) {
                 auto dxt = samples[i] - samples[i + lag];
                 vario[j] += dxt * dxt;
             }
             vario[j] /= samples.size() - lag;
-            ++j;
+            lag += lagStride;
         }
+//        for(int lag = 0; lag < maxLag; lag += lagStride) {
+//            for (int i = 0; i < samples.size() - lag; ++i) {
+//                auto dxt = samples[i] - samples[i + lag];
+//                vario[j] += dxt * dxt;
+//            }
+//            vario[j] /= samples.size() - lag;
+//            ++j;
+//        }
         return vario;
     }
 
@@ -163,12 +173,9 @@ public:
         return makeChainStatsPair(sampler, nSamples);
     }
 
-private:
-    friend class boost::serialization::access;
-
-    template<typename T> static bool hasGridsize() { return hasGridsize<T>(0); }
-    template<typename T, int = T::gridsize> static bool hasGridsize(int dummy) { return true; }
-    template<typename T, typename DUMMYARG> static bool hasGridsize(DUMMYARG x) { return false; }
+    template<typename T> static constexpr bool hasGridsize() { return hasGridsize<T>(0); }
+    template<typename T, typename DUMMYARG> static constexpr bool hasGridsize(DUMMYARG x) { return false; }
+    template<typename T, int = T::gridsize> static constexpr bool hasGridsize(int dummy) { return true; }
 
     // For gridded agents, use total occupations of decreasing size square areas
     // aligned along the diagonal
@@ -210,6 +217,10 @@ private:
         return synopsis;
     }
 
+
+
+private:
+    friend class boost::serialization::access;
 
 
     template <typename Archive>

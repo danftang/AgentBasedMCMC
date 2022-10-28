@@ -13,7 +13,9 @@
 
 template<int GRIDSIZE>
 class ReducedPredPreyAgent {
+public:
     typedef int Act;
+    static constexpr int gridsize = GRIDSIZE;
 
     enum ActNames {
         GIVEBIRTH,
@@ -29,16 +31,14 @@ class ReducedPredPreyAgent {
         PREDATOR,
         PREY
     };
-    static constexpr int typeSize = 2;
+    static constexpr int typeDomainSize = 2;
 
-    static constexpr double lpMove = 1.0/6.0;
-    static constexpr double lpPredBirth = 1.0/6.0;
-    static constexpr double lpPreyBirth = 1.0/6.0;
-    static constexpr double lpPredDeath = 1.0/6.0;
-    static constexpr double lpPreyDeath = 1.0/6.0;
+    static constexpr double lpMove = -1.79175946922805500081; // ln(1/6)
+    static constexpr double lpPredBirth = -1.79175946922805500081;
+    static constexpr double lpPreyBirth = -1.79175946922805500081;
+    static constexpr double lpPredDeath = -1.79175946922805500081;
+    static constexpr double lpPreyDeath = -1.79175946922805500081;
 
-    // Agent Domain stuff
-    // Agent Domain stuff
     static constexpr int domainSize = GRIDSIZE*GRIDSIZE*2;
 
     int stateId;
@@ -46,7 +46,8 @@ class ReducedPredPreyAgent {
     ReducedPredPreyAgent(int ordinal): stateId(ordinal) {}
     ReducedPredPreyAgent(int x, int y, Type type): stateId(x + GRIDSIZE * y + GRIDSIZE * GRIDSIZE * type) { }
 
-//    std::vector<double> timestep(const ModelState<PredPreyAgent<GRIDSIZE>> &others) const;
+    operator int() const { return stateId; }
+
     std::vector<ReducedPredPreyAgent<GRIDSIZE>> consequences(Act act) const; // the consequences of an act
 
     template<class TRAJECTORY>
@@ -60,7 +61,6 @@ class ReducedPredPreyAgent {
         return out;
     }
 
-protected:
     int xPosition() const { return stateId%GRIDSIZE; }
     int yPosition() const { return (stateId/GRIDSIZE)%GRIDSIZE; }
     Type type() const { return Type(stateId/(GRIDSIZE*GRIDSIZE)); }
@@ -77,7 +77,6 @@ template<int GRIDSIZE>
 template<class TRAJECTORY>
 double ReducedPredPreyAgent<GRIDSIZE>::logEventProb(const Event<ReducedPredPreyAgent<GRIDSIZE>> &event,
                                                     const TRAJECTORY &trajectory) {
-    int surroundingCount;
     switch (event.act()) {
         case MOVEUP:
         case MOVEDOWN:

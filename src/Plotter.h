@@ -181,7 +181,7 @@ public:
         std::cout << "Effective number of samples (per chain): " << neff << std::endl;
         std::cout << "Sample inefficiency factor: " << ineff << std::endl << std::endl;
 //        std::cout << "Execution time per sample (all threads): " << execTimePerSample << std::endl;
-        std::cout << "Execution time per feasible sample (all threads): " << execTimePerFeasibleSample << std::endl;
+        std::cout << "Execution time per feasible sample (per thread): " << execTimePerFeasibleSample << std::endl;
         std::cout << "Execution time per (worst case) effective sample: " << stats.totalSampleTime()/(neff.min()*stats.nChains()) << std::endl;
         // plot end state
 

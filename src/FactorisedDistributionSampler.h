@@ -165,6 +165,7 @@ public:
     // X should start valid, but not necessarily feasible
     void findInitialFeasibleSolution() {
         int nTransitions = 0;
+        std::cout << "Finding initial feasible solution..." << std::endl;
         while(currentInfeasibility != 0) {
 //            std::cout << "current infeasibility " << currentInfeasibility << std::endl;
             performTransition(basisDistribution(Random::gen));
@@ -196,7 +197,7 @@ public:
             }
             stats.addSample(wasAccepted, startStateIsFeasible, proposalIsFeasible);
             debug(if(++attempts%10000 == 0) std::cout << attempts << ": stuck with infeasibility = " << currentInfeasibility << std::endl;);
-            debug(sanityCheck());
+//            debug(sanityCheck());
         } while(currentInfeasibility != 0);
         return X;
     }
@@ -319,7 +320,11 @@ protected:
 
     };
 
-    static double logWeighttoBasisProb(double w) { return w<0.0?exp(w):1.0; } // convert change in energy of a column to probability of proposal
+    // convert the log(P(destination)/P(source)) of a transition to the probability of proposal
+    static double logWeighttoBasisProb(double w) {
+        return w<0.0?exp(w):1.0;
+//        return exp(0.5*w); // square root of prob ratio
+    }
 
 
     // Given a transition along basis j,

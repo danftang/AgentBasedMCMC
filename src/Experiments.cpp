@@ -21,6 +21,8 @@
 #include "ABMPriorSampler.h"
 #include "diagnostics/MultiChainStats.h"
 #include "include/asyncvector.h"
+#include "agents/ReducedPredPreyAgent.h"
+#include "TableauEntropyMaximiser.h"
 
 using namespace dataflow;
 
@@ -43,8 +45,20 @@ void Experiments::BinomialAgentSingleObservation() {
     ABMLikelihood<trajectory_type> likelihood(State<agent_type>(1,0), 1, pObserveIfPresent, kappa);
     ABMPosterior posterior(startState, likelihood);
 
-    doValidationExperiment(posterior, nBurnin, nSamples, nRejectionSamples);
-    std::cout << "Exact state = " << 0.5*p0+ 0.25*p1 << " " << 0.5*p0 + 0.25*p1 << " " << 0.5*p1 << std::endl;
+    std::cout << posterior.constraints << std::endl;
+
+    std::vector<double> entropies(trajectory_type::dimension);
+    for(double &EFi: entropies) EFi = Random::nextDouble();
+
+    TableauEntropyMaximiser<int> tableau(entropies, posterior.constraints, 0.0001);
+    std::cout << tableau << std::endl;
+
+    tableau.factorise();
+
+    std::cout << tableau << std::endl;
+
+//    doValidationExperiment(posterior, nBurnin, nSamples, nRejectionSamples);
+//    std::cout << "Exact state = " << 0.5*p0+ 0.25*p1 << " " << 0.5*p0 + 0.25*p1 << " " << 0.5*p1 << std::endl;
 }
 
 
@@ -96,32 +110,31 @@ void Experiments::PredPreySingleObservation() {
 
 
 void Experiments::PredPreyPriorTest() {
-    constexpr int GRIDSIZE = 4;
+    constexpr int GRIDSIZE = 8;
     constexpr int TIMESTEPS = 4;
-    constexpr double pPredator = 0.1;//0.08;          // Bernoulli prob of predator in each gridsquare at t=0
+    constexpr double pPredator = 0.05;//0.08;          // Bernoulli prob of predator in each gridsquare at t=0
     constexpr double pPrey = pPredator;    // Bernoulli prob of prey in each gridsquare at t=0
-    constexpr int nSamples = 1000; //250000;
-    constexpr double kappa = 6.0;//3.5;
+    constexpr int nSamples = 100000; //250000;
+    constexpr double kappa = 6.0;//4.75;//3.5;
 
     typedef PredPreyAgent<GRIDSIZE> agent_type;
     typedef PredPreyTrajectory<GRIDSIZE,TIMESTEPS> trajectory_type;
 
     PoissonStartState<agent_type> startState([](agent_type agent) {
-        return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
+        return agent.type() == agent_type::PREDATOR?pPredator:pPrey;
     }, kappa);
 
-    ABMPrior prior = makeABMPrior<PredPreyTrajectory<GRIDSIZE,TIMESTEPS>>(startState);
+    ABMPrior prior = makeABMPrior<trajectory_type>(startState);
 
     std::cout << prior;
 
-    FactorisedDistributionSampler sampler(prior);
-
-        std::cout << "Burning-in..." << std::endl;
-        for(int s = 1; s<1000; ++s) {
-            sampler(); // burn-in
-        }
-        std::cout << "Sampling..." << std::endl;
-        MultiChainStats multiChainStats(1000000,sampler);
+//    FactorisedDistributionSampler sampler(prior);
+//        std::cout << "Burning-in..." << std::endl;
+//        for(int s = 1; s<1000; ++s) {
+//            sampler(); // burn-in
+//        }
+//        std::cout << "Sampling..." << std::endl;
+//        MultiChainStats multiChainStats(1000000,sampler);
 //    MultiChainStats result(nSamples/2, prior);
 //    std::cout << result;
 
@@ -130,19 +143,65 @@ void Experiments::PredPreyPriorTest() {
 //        return MultiChainStats(nSamples/2, prior);
 //    }));
 
-//    MultiChainStats multiChainStats(generateVectorAsync(4, [&prior, nSamples]() {
-//        FactorisedDistributionSampler sampler(prior);
-//        std::cout << "Burning-in..." << std::endl;
-//        for(int s = 1; s<nSamples/5; ++s) sampler(); // burn-in
-//        std::cout << "Sampling..." << std::endl;
-//        return MultiChainStats(nSamples/2, sampler);
-//    }));
+    MultiChainStats multiChainStats(generateVectorAsync(1, [&prior, nSamples]() {
+        FactorisedDistributionSampler sampler(prior);
+        std::cout << sampler.basisVectors << std::endl;
+        std::cout << "Burning-in..." << std::endl;
+        for(int s = 1; s<nSamples/5; ++s) sampler(); // burn-in
+        std::cout << sampler.stats << std::endl;
+        std::cout << "Sampling..." << std::endl;
+        return MultiChainStats(nSamples, sampler);
+    }));
 //
     Plotter plotter;
     plotter.plot<agent_type>(multiChainStats);
 
 }
 
+
+void Experiments::ReducedPredPreyPriorTest() {
+    constexpr int GRIDSIZE = 8;
+    constexpr int TIMESTEPS = 4;
+    constexpr double pPredator = 0.05;//0.08;          // Bernoulli prob of predator in each gridsquare at t=0
+    constexpr double pPrey = pPredator;    // Bernoulli prob of prey in each gridsquare at t=0
+    constexpr int nSamples = 500000; //250000;
+    constexpr double kappa = 6.0;//4.75;//3.5;
+
+    typedef ReducedPredPreyAgent<GRIDSIZE> agent_type;
+    typedef ExtendedTrajectory<agent_type,TIMESTEPS> trajectory_type;
+
+    PoissonStartState<agent_type> startState([](agent_type agent) {
+        return agent.type() == agent_type::PREDATOR?pPredator:pPrey;
+    }, kappa);
+
+    ABMPrior prior = makeABMPrior<trajectory_type>(startState);
+
+    std::cout << prior;
+
+//    FactorisedDistributionSampler sampler(prior);
+//        std::cout << "Burning-in..." << std::endl;
+//        for(int s = 1; s<1000; ++s) {
+//            sampler(); // burn-in
+//        }
+//        std::cout << "Sampling..." << std::endl;
+//        MultiChainStats multiChainStats(1000000,sampler);
+//    MultiChainStats result(nSamples/2, prior);
+//    std::cout << result;
+
+
+    MultiChainStats multiChainStats(generateVectorAsync(4, [&prior, nSamples]() {
+        FactorisedDistributionSampler sampler(prior);
+        std::cout << "Burning-in..." << std::endl;
+        for(int s = 1; s<nSamples/5; ++s) sampler(); // burn-in
+        std::cout << sampler.stats << std::endl;
+        std::cout << "Sampling..." << std::endl;
+        return MultiChainStats(nSamples, sampler);
+    }));
+//
+    Plotter plotter;
+    plotter.plot<agent_type>(multiChainStats);
+
+}
 
 
 //void Experiments::CatMouseAssimilation() {

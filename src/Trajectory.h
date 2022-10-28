@@ -82,7 +82,7 @@ public:
                     coefficients.insert(indexOf(Event<AGENT>(time, agentState, act)), 1);
                 }
                 // incoming edges
-                for (const Event<AGENT> &inEdge: State<AGENT>::incomingEventsByState[agentState]) {
+                for (const Event<AGENT> &inEdge: State<AGENT>::incomingEventsByAgentId[agentState]) {
                     coefficients.insert(indexOf(Event<AGENT>(time-1,inEdge.agent(),inEdge.act())), -1);
                 }
                 constraints.emplace_back(coefficients,0);

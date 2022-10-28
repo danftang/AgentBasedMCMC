@@ -13,6 +13,7 @@
 #include "boost/serialization/set.hpp"
 #include "EqualityConstraints.h"
 #include "ConstrainedFactorisedDistribution.h"
+#include "include/StlStream.h"
 
 // Takes an LP Problem and finds the basis that pivots out as many
 // fixed-variables as possible, while attempting to keep the L0-norm of the tableau
@@ -188,21 +189,35 @@ TableauNormMinimiser<T>::TableauNormMinimiser(const ConstrainedFactorisedDistrib
         assert(rows.back().size() > 0);
     }
 
-    cols.resize(D::dimension);
     // Now fill column information from rows and factor dependencies
-    for(int factorIndex = 0; factorIndex < distribution.factors.size(); ++factorIndex) {
-        for(int basisIndex : distribution.factors[factorIndex].dependencies) {
-            cols[basisIndex].insert(-1 - factorIndex);
-        }
+    cols.resize(D::dimension);
+    for (int factorIndex = 0; factorIndex < distribution.factors.size(); ++factorIndex) {
+            for (int basisIndex: distribution.factors[factorIndex].dependencies) {
+                cols[basisIndex].insert(-1 - factorIndex);
+            }
     }
+
     for(int i=0; i<rows.size(); ++i) {
         for(auto [j, v]: rows[i]) {
             cols[j].insert(i);
         }
     }
-    for(int j=0; j<cols.size(); ++j) {
+//    for(int j=0; j<cols.size(); ++j) {
+//        addColSparsityEntry(j);
+//    }
+//    for(int j=cols.size()-1; j>=0; --j) {
+//        addColSparsityEntry(j);
+//    }
+
+    std::vector<int> colIndices(cols.size());
+    std::generate(colIndices.begin(), colIndices.end(), [i = 0]() mutable { return i++; });
+    std::shuffle(colIndices.begin(), colIndices.end(), Random::gen);
+    for(int j: colIndices) {
         addColSparsityEntry(j);
     }
+
+
+
     std::cout << "Initial mean column L0 norm = " << meanColumnL0Norm() << std::endl;
     std::cout << "Initial column L1 norm = " << meanColumnL1Norm() << std::endl;
     findMinimalBasis();
@@ -210,10 +225,18 @@ TableauNormMinimiser<T>::TableauNormMinimiser(const ConstrainedFactorisedDistrib
 
 template<class T>
 void TableauNormMinimiser<T>::findMinimalBasis() {
+    std::cout << "Finding minimal basis for tableau of size " << rows.size() << " x " << cols.size() << std::endl;
+//    std::cout << colsBySparsity << std::endl << std::endl;
+//    std::cout << rowsBySparsity << std::endl << std::endl;
+
     while(!rowsBySparsity.empty()) {
         auto [i,j] = findMarkowitzPivot();
         pivot(i,j);
     }
+
+    std::vector<int> basics = basicVars;
+    std::sort(basics.begin(), basics.end());
+//    std::cout << "Basic vars: " << basics << std::endl;
     std::cout << "Reduced mean column L0 norm = " << meanColumnL0Norm() << std::endl;
     std::cout << "Reduced column L1 norm = " << meanColumnL1Norm() << std::endl;
 
@@ -228,34 +251,48 @@ std::pair<int,int> TableauNormMinimiser<T>::findMarkowitzPivot() {
     while(k<colsBySparsity.size() && k<rowsBySparsity.size()) {
 //        std::vector<int> sparseCols(colsBySparsity[k].begin(), colsBySparsity[k].end());
 //        std::shuffle(sparseCols.begin(), sparseCols.end(), Random::gen);
-        for(int j: colsBySparsity[k]) {
-            int bestRow = sparsestRowInCol(j);
-            if(bestRow != -1) {
-                int score = (rows[bestRow].size() - 1) * (cols[j].size() - 1);
-                if (score < lowestScore) {
-                    bestPivot = std::pair<int, int>(bestRow, j);
-                    if (score <= (k - 1) * (k - 1)) return bestPivot;
-                    lowestScore = score;
-                }
-                if (++vectorsTested >= MAX_VECTORS_TO_TEST) return bestPivot;
-            }
-        }
 //        std::vector<int> sparseRows(rowsBySparsity[k].begin(), rowsBySparsity[k].end());
 //        std::shuffle(sparseRows.begin(), sparseRows.end(), Random::gen);
         for(int i: rowsBySparsity[k]) {
-            int bestCol = sparsestColInRow(i);
+            int bestCol = sparsestColInRow(i); // TODO: if k=1 or 2 best col is the densest
             if(bestCol != -1) {
-                int score = (rows[i].size() - 1) * (cols[bestCol].size() - 1);
+                int score = (rows[i].size() - 2) * (cols[bestCol].size() - 1);
                 if (score < lowestScore) {
                     bestPivot = std::pair<int, int>(i, bestCol);
-                    if (score <= (k - 1) * (k - 1)) return bestPivot;
+                    if (score <= (k - 2) * (k - 1)) {
+//                        std::cout << "Found best pivot on row of density " << k << std::endl;
+                        return bestPivot;
+                    }
                     lowestScore = score;
                 }
-                if (++vectorsTested >= MAX_VECTORS_TO_TEST) return bestPivot;
+                if (++vectorsTested >= MAX_VECTORS_TO_TEST) {
+//                    std::cout << "Found pivot at " << bestPivot << " of density " << rows[bestPivot.first].size() << " x " << cols[bestPivot.second].size() << std::endl;
+                    return bestPivot;
+                }
+            }
+        }
+
+        for(int j: colsBySparsity[k]) {
+            int bestRow = sparsestRowInCol(j);
+            if(bestRow != -1) {
+                int score = (rows[bestRow].size() - 2) * (cols[j].size() - 1);
+                if (score < lowestScore) {
+                    bestPivot = std::pair<int, int>(bestRow, j);
+                    if (score <= (k - 1) * (k - 1)) {
+//                        std::cout << "Found best pivot on col " << j << " of density " << k << std::endl;
+                        return bestPivot;
+                    }
+                    lowestScore = score;
+                }
+                if (++vectorsTested >= MAX_VECTORS_TO_TEST) {
+//                    std::cout << "Found pivot at " << bestPivot << " of density " << rows[bestPivot.first].size() << " x " << cols[bestPivot.second].size() << std::endl;
+                    return bestPivot;
+                }
             }
         }
         ++k;
     }
+//    std::cout << "Found pivot at " << bestPivot << " of density " << rows[bestPivot.first].size() << " x " << cols[bestPivot.second].size() << std::endl;
     return bestPivot;
 }
 
@@ -470,8 +507,7 @@ std::vector<SparseVec<T>> TableauNormMinimiser<T>::getBasisVectors() {
     basisVectors.reserve(cols.size());
     for(int j=0; j<cols.size(); ++j) {
         if(!cols[j].isBasic) {
-            basisVectors.emplace_back();
-            SparseVec<T> &newBasis = basisVectors.back();
+            SparseVec<T> &newBasis = basisVectors.emplace_back();
             newBasis.insert(j, 1); // element from the identity
             for (int i: cols[j]) {
                 if (i >= 0) {
