@@ -44,7 +44,12 @@ public:
 
     void init() {
         ConstrainedFactorisedDistribution<TRAJECTORY>::operator =(prior * likelihood);
-        if(basis.basisVectors.size() == 0) basis = Basis(*this);
+        if(basis.basisVectors.size() == 0) {
+            std::vector<double> entropiesByVar = prior.approximateEntropiesByVarIndex();
+//            basis = Basis(entropiesByVar, *this, 6.0); // Entropy minimisation
+            basis = Basis(*this); // norm-minimisation
+            std::cout << "Basis entropy = " << basis.calculateEntropy(entropiesByVar) << std::endl;
+        }
     }
 
     friend std::ostream &operator <<(std::ostream &out, const ABMPosterior<TRAJECTORY, STARTSTATE> &posterior) {

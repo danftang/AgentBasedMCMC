@@ -25,6 +25,8 @@ public:
 
     Trajectory(): Trajectory(dimension) { }
 
+    Trajectory(const SparseVec<int> &sparseInit): Trajectory(dimension, sparseInit) { }
+
 //    Trajectory(const ModelState<AGENT> &startState): Trajectory(dimension) {
 //        ModelState<AGENT> t0State = startState;
 //        ModelState<AGENT> t1State;
@@ -50,12 +52,17 @@ public:
 
 protected:
     Trajectory(size_t nElements): std::vector<value_type>(nElements,0) {}
+    Trajectory(size_t nElements, const SparseVec<int> &sparseInit): Trajectory(dimension) {
+        for(const auto &nonZeroEntry: sparseInit) {
+            (*this)[nonZeroEntry.index()] = nonZeroEntry.value();
+        }
+    }
 
 public:
 
 
     const value_type &operator[](const Event<AGENT> &event) const {
-        return std::vector<value_type>::operator[](event.id);
+        return std::vector<value_type>::operator[](event.getRawIndex());
     }
 
 
@@ -69,7 +76,7 @@ public:
 
 
     static int indexOf(const Event<AGENT> &event) {
-        return event.id;
+        return event.getRawIndex();
     }
 
     static EqualityConstraints<value_type> constraints(int nTimesteps) {

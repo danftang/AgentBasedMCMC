@@ -14,7 +14,7 @@
 #include "MeanAndVariance.h"
 #include "../MCMCStatistics.h"
 #include "../FactorisedDistributionOnBasis.h"
-#include "../FactorisedDistributionSampler.h"
+#include "../ABMSampler.h"
 #include "../ModelState.h"
 
 class ChainStats {
@@ -169,7 +169,7 @@ public:
 
     template<class DISTRIBUTION, class TEST = std::enable_if_t<!std::is_invocable_v<DISTRIBUTION>>>
     static std::pair<ChainStats,ChainStats> makeChainStatsPair(const DISTRIBUTION &distribution, int nSamples) {
-        FactorisedDistributionSampler sampler(distribution);
+        ABMSampler sampler(distribution);
         return makeChainStatsPair(sampler, nSamples);
     }
 

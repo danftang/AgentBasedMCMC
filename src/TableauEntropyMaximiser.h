@@ -145,6 +145,7 @@
 #include "include/SparseVec.h"
 #include "ConstrainedFactorisedDistribution.h"
 #include "include/SortedSparseVec.h"
+#include "include/StlStream.h"
 
 template<class COEFF>
 class TableauEntropyMaximiser {
@@ -155,8 +156,9 @@ public:
     class PotentialPivotRef;
 
     class PotentialPivot {
-    public:
+    protected:
         int j; // best pivot col, or basic var if inactive
+    public:
         double Sprime; // entropy of best pivot col / functionEntropy^|Mij|
         double R;
         double Rprime;
@@ -169,7 +171,15 @@ public:
             bestPivots.erase(bestPivotsEntry);
             bestPivotsEntry = bestPivots.end();
         }
-        bool isActive() const { return R >= 0.0; }
+        bool isActive() const { return R != -1.0; }
+        int basicVar() const {
+            assert(!isActive());
+            return j;
+        }
+        int bestPivotCol() const {
+            assert(isActive());
+            return j;
+        }
         void setInactive(std::multimap<double,int> &bestPivots) {
             bestPivots.erase(bestPivotsEntry);
             bestPivotsEntry = typename std::multimap<double,int>::iterator();
@@ -177,6 +187,10 @@ public:
         }
         bool bestPivotIsKnown() const { return j >= 0; }
         void setBestPivotUnknown() { j = -1; }
+        void setBestPivot(int j) {
+            assert(isActive());
+            this->j = j;
+        }
 //        const double &entropyChangeForecast() { return bestPivotsEntry->first; }
 //        void recalculateEntropyChangeForecast(std::set<PotentialPivotRef> &bestPivots) {
 //            assert(bestPivotsEntry == bestPivots.end());
@@ -244,7 +258,18 @@ public:
     std::vector<COEFF>      F;     // constant in linear equations by row (see intro above)
 
 
-    TableauEntropyMaximiser(const std::vector<double> &entropiesByVarIndex, const EqualityConstraints<COEFF> &constraints, double constraintEntropy);
+//    template<class DOMAIN>
+//    TableauEntropyMaximiser(const ConstrainedFactorisedDistribution<DOMAIN,COEFF> &distribution, double constraintKappa):
+//            TableauEntropyMaximiser(calculateEntropiesByVarIndex(distribution), distribution.constraints, constraintKappa)
+//            { }
+
+//    template<class SAMPLER>
+//    TableauEntropyMaximiser(const SAMPLER &priorSampler, const EqualityConstraints<COEFF> &constraints, double constraintKappa):
+//            TableauEntropyMaximiser(calculateEntropiesByVarIndex(priorSampler), constraints, constraintKappa)
+//    { }
+
+
+    TableauEntropyMaximiser(const std::vector<double> &entropiesByVarIndex, const EqualityConstraints<COEFF> &constraints, double constraintKappa);
 
     void factorise();
     std::vector<SparseVec<COEFF>> getBasisVectors();
@@ -266,6 +291,13 @@ protected:
 
     std::vector<int> prePivotUpdates(int i);
     void postPivotUpdates();
+
+//    template<class DOMAIN>
+//    static std::vector<double> calculateEntropiesByVarIndex(const ConstrainedFactorisedDistribution<DOMAIN,COEFF> &dist);
+
+//    template<class SAMPLER>
+//    static std::vector<double> calculateEntropiesByVarIndex(const SAMPLER &priorSampler);
+
     //    int sparsestColInRow(int i);
 //    int sparsestRowInCol(int j);
 //
@@ -296,7 +328,7 @@ protected:
 // where 1_j is a vector with a one in index j and zero elsewhere.
 // constraints are the linear constraints
 template<class COEFF>
-TableauEntropyMaximiser<COEFF>::TableauEntropyMaximiser(const std::vector<double> &entropiesByVarIndex, const EqualityConstraints<COEFF> &constraints, double constraintEntropy):
+TableauEntropyMaximiser<COEFF>::TableauEntropyMaximiser(const std::vector<double> &entropiesByVarIndex, const EqualityConstraints<COEFF> &constraints, double constraintKappa):
     cols(entropiesByVarIndex.size()),
     rows(constraints.size()),
     potentialPivots(constraints.size()),
@@ -305,7 +337,7 @@ TableauEntropyMaximiser<COEFF>::TableauEntropyMaximiser(const std::vector<double
     // initialise row entries
     for(int i=0; i < constraints.size(); ++i) {
         rows[i].coefficients() = constraints[i].coefficients;
-        rows[i].funcEntropy = constraintEntropy;
+        rows[i].funcEntropy = exp(-0.5*constraintKappa); // Entropy of F(x) = Ae^-k|x|
         F[i] = constraints[i].constant;
     }
 
@@ -318,17 +350,20 @@ TableauEntropyMaximiser<COEFF>::TableauEntropyMaximiser(const std::vector<double
     for(int j=0; j<cols.size(); ++j) cols[j].sort();
 
     // initialise col entropies
+    std::cout << "Col entropies" << std::endl;
     for(int j=0; j<cols.size(); ++j) {
         cols[j].funcEntropy = entropiesByVarIndex[j];
         cols[j].colEntropy = calculateColEntropy(j);
+        std::cout << cols[j].colEntropy << " ";
     }
+    std::cout << std::endl;
 
     // initialise potential pivots
     for(int i=0; i < constraints.size(); ++i) {
         potentialPivots[i].R = calculateR(i);
         potentialPivots[i].Rprime = calculateRPrime(i);
         std::pair<int,double> piv = findBestPivotOnRow(i);
-        potentialPivots[i].j = piv.first;
+        potentialPivots[i].setBestPivot(piv.first);
         potentialPivots[i].Sprime = piv.second;
         potentialPivots[i].bestPivotsEntry = bestPivots.emplace(potentialPivots[i].calculateEntropyChangeForecast(), i);
     }
@@ -336,13 +371,53 @@ TableauEntropyMaximiser<COEFF>::TableauEntropyMaximiser(const std::vector<double
 }
 
 
+// Use the zero vector to fit exponential approximation
+//template<class COEFF>
+//template<class DOMAIN>
+//std::vector<double> TableauEntropyMaximiser<COEFF>::calculateEntropiesByVarIndex(const ConstrainedFactorisedDistribution<DOMAIN,COEFF> &dist) {
+//    std::vector<double> entropiesByVarIndex
+//}
+
+// Use the zero vector to fit exponential approximation
+//template<class COEFF>
+//template<class SAMPLER>
+//std::vector<double> TableauEntropyMaximiser<COEFF>::calculateEntropiesByVarIndex(const SAMPLER &priorSampler) {
+//    std::cout << "Calculating dimension entropies" << std::endl;
+//
+//    int domainSize = priorSampler().size();
+//    std::vector<int> sampleCounts(domainSize,0);
+//    int targetMeanSampleCount = 100;
+//    int targetTotalCount = domainSize*targetMeanSampleCount;
+//    int nSamples = 0;
+//    while(targetTotalCount > 0) {
+//        const auto &sample = priorSampler();
+//        for(int i=0; i<domainSize; ++i) {
+//            targetTotalCount -= sample[i];
+//            sampleCounts[i] += sample[i];
+//        }
+//        ++nSamples;
+//    }
+//
+//    // fit exponential distribution to samples
+//    std::vector<double> entropiesByVarIndex(domainSize);
+//    for(int i=0; i<domainSize; ++i) {
+//        double expki = sampleCounts[i]*1.0/(sampleCounts[i] + nSamples); // e^k of fitted exponential distribution
+//        entropiesByVarIndex[i] = sqrt(expki); // entropy at Delta = 1
+//    }
+//
+//    std::cout << entropiesByVarIndex << std::endl;
+//    return entropiesByVarIndex;
+//}
+
+
 template<class COEFF>
 void TableauEntropyMaximiser<COEFF>::factorise() {
     while(!bestPivots.empty()) {
         int bestPivotRow = bestPivots.rbegin()->second;
-        std::cout << "pivoting on " << bestPivotRow << ", " << potentialPivots[bestPivotRow].j << std::endl;
-        pivot(bestPivotRow, potentialPivots[bestPivotRow].j);
-        std::cout << *this << std::endl;
+        int bestPivotCol = potentialPivots[bestPivotRow].bestPivotCol();
+//        std::cout << "pivoting on " << bestPivotRow << ", " << bestPivotCol << " " << "colSize = " << cols[bestPivotCol].size() << " entropy change forecast = " << bestPivots.rbegin()->first << std::endl;
+        pivot(bestPivotRow, bestPivotCol);
+//        std::cout << *this << std::endl;
     }
 }
 
@@ -353,7 +428,7 @@ void TableauEntropyMaximiser<COEFF>::pivot(int i, int j) {
     Row &pivotRow = rows[i];
     Column &pivotCol = cols[j];
     COEFF minusMij = -pivotCol.get(i);
-    assert(minusMij != 0);
+    assert(abs(minusMij) == 1);
 
     std::vector<int> affectedRows = prePivotUpdates(i);
 
@@ -371,7 +446,9 @@ void TableauEntropyMaximiser<COEFF>::pivot(int i, int j) {
     pivotCol.set(i,0); // leave pivot row unchanged (sort this out later)
     for(const std::pair<int,COEFF> &pivotRowEntry: pivotRow) {
         const int &l = pivotRowEntry.first;
-        if(l != j) cols[l].weightedPlusAssign(pivotRowEntry.second / minusMij, pivotCol);
+        if(l != j) {
+            cols[l].weightedPlusAssign(pivotRowEntry.second / minusMij, pivotCol);
+        }
     }
     pivotCol.clear(); // set pivot column to pivot element only, with original value
     pivotCol.set(i, -minusMij);
@@ -403,7 +480,7 @@ std::vector<int> TableauEntropyMaximiser<COEFF>::prePivotUpdates(int i) {
                     potentialPivotk.setScheduledForUpdate(bestPivots);
                     affectedRows.push_back(k);
                 }
-                if (potentialPivotk.j == j) { // this col is best pivot for row k
+                if (potentialPivotk.bestPivotCol() == j) { // this col is best pivot for row k
                     potentialPivotk.setBestPivotUnknown();
                 }
             }
@@ -426,7 +503,7 @@ void TableauEntropyMaximiser<COEFF>::postPivotUpdates(int i, int j, const std::v
     double Rprime = 0.0;
     double bestSij = -INFINITY;
 
-    rows[i].funcEntropy = cols[j].funcEntropy;
+    rows[i].funcEntropy = cols[j].funcEntropy; // pivot row now represents basic column
 
     // recalculate affected colEntropies
     for(const auto &[l,Mij]: rows[i]) {
@@ -443,7 +520,7 @@ void TableauEntropyMaximiser<COEFF>::postPivotUpdates(int i, int j, const std::v
                 potentialPivotk.Rprime += Sprime;
                 if (potentialPivotk.bestPivotIsKnown() && Sprime > potentialPivotk.Sprime) {
                     potentialPivotk.Sprime = Sprime;
-                    potentialPivotk.j = j;
+                    potentialPivotk.setBestPivot(j);
                 }
             }
         }
@@ -459,12 +536,13 @@ void TableauEntropyMaximiser<COEFF>::postPivotUpdates(int i, int j, const std::v
                 double Sprimej = cols[j].colEntropy / rows[k].functionEntropy(Mij);
                 if(Sprimej > affectedRow.Sprime) {
                     affectedRow.Sprime = Sprimej;
-                    affectedRow.j = j;
+                    affectedRow.setBestPivot(j);
                 }
             }
         }
-        assert(affectedRow.j >=0);
-        std::cout << "updating entropy change for row " << k << std::endl;
+        assert(affectedRow.bestPivotIsKnown());
+        assert(affectedRow.bestPivotCol() >=0);
+//        std::cout << "updating entropy change for row " << k << std::endl;
         assert(affectedRow.bestPivotsEntry == bestPivots.end());
         affectedRow.bestPivotsEntry = bestPivots.emplace(affectedRow.calculateEntropyChangeForecast(), k);
     }
@@ -498,6 +576,7 @@ template<class COEFF>
 void TableauEntropyMaximiser<COEFF>::sanityCheck() {
     // check row/col are consistent
     for(int i=0; i<rows.size(); ++i) {
+        assert(std::adjacent_find(rows[i].begin(), rows[i].end()) == rows[i].end());
         for(const auto &[j,Mij]: rows[i]) {
             assert(cols[j][i] == Mij);
         }
@@ -515,7 +594,7 @@ void TableauEntropyMaximiser<COEFF>::sanityCheck() {
             assert(fabs(potentialPivots[i].R - calculateR(i)) < 1e-8);
             assert(fabs(potentialPivots[i].Rprime - calculateRPrime(i)) < 1e-8);
             auto [bestPivj, bestSprime] = findBestPivotOnRow(i);
-            assert(potentialPivots[i].j == bestPivj);
+            assert(potentialPivots[i].bestPivotCol() == bestPivj);
             assert(potentialPivots[i].Sprime == bestSprime);
             assert(potentialPivots[i].bestPivotsEntry->second == i);
             assert(potentialPivots[i].bestPivotsEntry->first == potentialPivots[i].calculateEntropyChangeForecast());
@@ -528,8 +607,13 @@ void TableauEntropyMaximiser<COEFF>::sanityCheck() {
 
     // check colEntropies are consistent
     for(int j=0; j<cols.size(); ++j) {
-        if(!cols[j].isBasic()) assert(fabs(cols[j].colEntropy - calculateColEntropy(j)) < 1e-8);
+        assert(cols[j].funcEntropy <= 1.0 && cols[j].funcEntropy >= 0.0);
+        if(!cols[j].isBasic()) {
+            assert(cols[j].colEntropy <= 1.0 && cols[j].colEntropy >= 0.0);
+            assert(fabs(cols[j].colEntropy - calculateColEntropy(j)) < 1e-8);
+        }
     }
+//    std::cout << "passed sanity check" << std::endl;
 }
 
 // R_i = \sum_{j, Mij!=0} S_j
@@ -578,19 +662,29 @@ std::vector<SparseVec<T>> TableauEntropyMaximiser<T>::getBasisVectors() {
     std::vector<SparseVec<T>> basisVectors;
 
     basisVectors.reserve(cols.size());
-//    for(int j=0; j<cols.size(); ++j) {
-//        if(!cols[j].isBasic) {
-//            SparseVec<T> &newBasis = basisVectors.emplace_back();
-//            newBasis.insert(j, 1); // element from the identity
-//            for (int i: cols[j]) {
-//                if (i >= 0) {
-//                    assert(basicVars[i] != UNREDUCED); // every row should have a basic variable
-//                    newBasis.insert(basicVars[i], rows[i][j]);
-//                }
-//            }
-//        }
-//    }
+    for(int j=0; j<cols.size(); ++j) {
+        if(!cols[j].isBasic()) {
+            SparseVec<T> &newBasis = basisVectors.emplace_back();
+            newBasis.insert(j, 1); // element from the identity
+            for (auto & [i, Mij]: cols[j]) {
+                int basicj = potentialPivots[i].basicVar();
+                newBasis.insert(basicj, Mij / (-rows[i][basicj]));
+            }
+        }
+    }
     return basisVectors;
+}
+
+
+// returns the value of the domain when all non-basic variables are zero
+template<class T>
+SparseVec<T> TableauEntropyMaximiser<T>::getOrigin() {
+    SparseVec<T> origin;
+    for(int row =0; row < potentialPivots.size(); ++row) {
+        int basicVar = potentialPivots[row].basicVar();
+        origin.insert(basicVar, F[row]/cols[basicVar][row]);
+    }
+    return origin;
 }
 
 

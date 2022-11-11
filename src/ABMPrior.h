@@ -8,6 +8,7 @@
 
 #include "ABM.h"
 #include "ConstrainedFactorisedDistribution.h"
+#include "include/StlStream.h"
 
 // DOMAIN should be a domain over ABM trajectories that inplements
 // index operators over Events and States
@@ -26,13 +27,13 @@ public:
 protected:
     void init() {
         this->addConstraints(TRAJECTORY::constraints());
-        addMultinomials();
+        initMultinomials();
         (*this) *= startState.template toDomain<TRAJECTORY>();
     }
 
 public:
 
-    void addMultinomials() {
+    void initMultinomials() {
         for(int time = 0; time < TRAJECTORY::nTimesteps; ++time) {
             for (int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
                 State<AGENT> state(time, AGENT(agentId));
@@ -137,6 +138,41 @@ public:
         }
         return pmf;
     }
+
+
+    // Returns an approximation of
+    // S_i = sum_X sqrt(P(X)P(X+1_i))
+    // by fitting a function of the form P'(X) = prod_i e^{k_iX_i}
+    // to a set of samples from the prior and returning the
+    // entropy of P'(X).
+    std::vector<double> approximateEntropiesByVarIndex() const {
+        std::cout << "Calculating dimension entropies" << std::endl;
+
+        constexpr int domainSize = TRAJECTORY::dimension;
+        std::vector<int> sampleCounts(domainSize,0);
+        int targetMeanSampleCount = 100;
+        int targetTotalCount = domainSize*targetMeanSampleCount;
+        int nSamples = 0;
+        while(targetTotalCount > 0) {
+            const auto &sample = nextSample();
+            for(int i=0; i<domainSize; ++i) {
+                targetTotalCount -= sample[i];
+                sampleCounts[i] += sample[i];
+            }
+            ++nSamples;
+        }
+
+        // fit exponential distribution to samples
+        std::vector<double> entropiesByVarIndex(domainSize);
+        for(int i=0; i<domainSize; ++i) {
+            double expki = (sampleCounts[i]+0.5)/(sampleCounts[i] + 0.5 + nSamples); // e^k of fitted exponential distribution
+            entropiesByVarIndex[i] = sqrt(expki); // entropy at Delta = 1
+        }
+
+        std::cout << entropiesByVarIndex << std::endl;
+        return entropiesByVarIndex;
+    }
+
 
     friend std::ostream &operator <<(std::ostream &out, const ABMPrior<TRAJECTORY,STARTSTATE> &prior) {
         out << "Start state: " << prior.startState << std::endl;

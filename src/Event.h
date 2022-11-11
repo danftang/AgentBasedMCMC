@@ -11,13 +11,16 @@
 
 template<typename AGENT>
 class Event {
-public:
+protected:
     int id;
+public:
 
     Event(int time, const AGENT agent, const typename AGENT::Act act):
             id(time*AGENT::domainSize*AGENT::actDomainSize + agent*AGENT::actDomainSize + (int)act) { }
 
     Event(int eventId): id(eventId) {}
+
+    int getRawIndex() const { return id; }
 
     int time() const        { return id/(AGENT::domainSize*AGENT::actDomainSize); }
     AGENT agent() const     { return id%(AGENT::domainSize*AGENT::actDomainSize)/AGENT::actDomainSize; }

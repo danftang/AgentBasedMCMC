@@ -230,7 +230,6 @@ std::ostream &operator<<(std::ostream &out, const SparseVec<T> &sVector) {
     return out;
 }
 
-
 template<typename T, typename OTHER, typename = decltype(std::declval<OTHER>()[0] += std::declval<T>())>
 OTHER &operator +=(OTHER &lhs, const SparseVec<T> &rhs) {
     for(const auto &entry: rhs) lhs[entry.index()] += entry.value();

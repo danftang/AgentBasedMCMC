@@ -10,7 +10,7 @@
 #include <valarray>
 #include <future>
 #include "ChainStats.h"
-#include "../FactorisedDistributionSampler.h"
+#include "../ABMSampler.h"
 #include "../ModelState.h"
 #include "MultiChainStats.h"
 
@@ -71,7 +71,7 @@ public:
         const int nLags = 200;
         const int nBurnIn = nSamples*0.2;
 
-        FactorisedDistributionSampler sampler(targetDistribution, initalSample);
+        ABMSampler sampler(targetDistribution, initalSample);
 
         std::valarray<std::valarray<double>> firstSynopsisSamples(nSamples/2);
         std::valarray<std::valarray<double>> lastSynopsisSamples(nSamples/2);

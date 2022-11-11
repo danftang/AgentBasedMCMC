@@ -24,7 +24,6 @@
 #include "SparseFunction.h"
 #include "ABM.h"
 
-template<class COEFF> class TableauNormMinimiser;
 
 template<typename DOMAIN, typename CONSTRAINTCOEFF = typename subscript_operator_traits<DOMAIN>::decay_type>
 class ConstrainedFactorisedDistribution {
@@ -36,7 +35,7 @@ public:
     std::vector<function_type>           factors;
     EqualityConstraints<CONSTRAINTCOEFF> constraints;       // linear constraints
 
-    void factoriseConstraints();
+//    void factoriseConstraints();
 
     void addFactor(SparseFunction<std::pair<double,bool>,const DOMAIN &> factor) {
         factors.push_back(std::move(factor));
@@ -253,10 +252,10 @@ std::ostream &operator <<(std::ostream &out, const ConstrainedFactorisedDistribu
 }
 
 
-template<class DOMAIN, class CONSTRAINTCOEFF>
-void ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF>::factoriseConstraints() {
-    TableauNormMinimiser<CONSTRAINTCOEFF>::factoriseConstraints(*this);
-}
+//template<class DOMAIN, class CONSTRAINTCOEFF>
+//void ConstrainedFactorisedDistribution<DOMAIN,CONSTRAINTCOEFF>::factoriseConstraints() {
+//    TableauNormMinimiser<CONSTRAINTCOEFF>::factoriseConstraints(*this);
+//}
 
 
 #endif //ABMCMC_CONSTRAINEDFACTORISEDDISTRIBUTION_H

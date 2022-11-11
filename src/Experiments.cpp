@@ -13,7 +13,7 @@
 #include "ABMPrior.h"
 #include "ExactSolver.h"
 #include "PoissonStartState.h"
-#include "FactorisedDistributionSampler.h"
+#include "ABMSampler.h"
 #include "FixedPopulationStartState.h"
 #include "ExtendedTrajectory.h"
 #include "PredPreyTrajectory.h"
@@ -47,18 +47,19 @@ void Experiments::BinomialAgentSingleObservation() {
 
     std::cout << posterior.constraints << std::endl;
 
-    std::vector<double> entropies(trajectory_type::dimension);
-    for(double &EFi: entropies) EFi = Random::nextDouble();
+//
+//    TableauEntropyMaximiser<int> tableau(posterior.prior, posterior.constraints, 0.0001);
+//    std::cout << tableau << std::endl;
+//
+//    tableau.factorise();
+//
+//    std::cout << tableau << std::endl;
+//
+//    std::cout << "Basis vectors" << std::endl;
+//    std::cout << tableau.getBasisVectors() << std::endl;
 
-    TableauEntropyMaximiser<int> tableau(entropies, posterior.constraints, 0.0001);
-    std::cout << tableau << std::endl;
-
-    tableau.factorise();
-
-    std::cout << tableau << std::endl;
-
-//    doValidationExperiment(posterior, nBurnin, nSamples, nRejectionSamples);
-//    std::cout << "Exact state = " << 0.5*p0+ 0.25*p1 << " " << 0.5*p0 + 0.25*p1 << " " << 0.5*p1 << std::endl;
+    doValidationExperiment(posterior, nBurnin, nSamples, nRejectionSamples);
+    std::cout << "Exact state = " << 0.5*p0+ 0.25*p1 << " " << 0.5*p0 + 0.25*p1 << " " << 0.5*p1 << std::endl;
 }
 
 
@@ -93,7 +94,8 @@ void Experiments::PredPreySingleObservation() {
     constexpr int nSamples = 100000; //250000;
     constexpr int nBurnin = nSamples/5;
     constexpr int nRejectionSamples = nSamples/10;
-    constexpr double kappa = 3.5;// 5.75;
+    constexpr double kappa = 4.0; //3.5;// 5.75;
+    constexpr double pObserveIfPresent = 1.0;
 
     typedef PredPreyAgent<GRIDSIZE> agent_type;
     typedef PredPreyTrajectory<GRIDSIZE,nTimesteps> trajectory_type;
@@ -101,8 +103,29 @@ void Experiments::PredPreySingleObservation() {
     PoissonStartState<agent_type> startState([](agent_type agent) {
         return agent.type() == PredPreyAgent<GRIDSIZE>::PREDATOR?pPredator:pPrey;
     }, kappa);
-    ABMLikelihood<trajectory_type> likelihood(State(1, PredPreyAgent<GRIDSIZE>(1, 1, PredPreyAgent<GRIDSIZE>::PREY)), 1, 1.0, kappa);
+    ABMLikelihood<trajectory_type> likelihood(State(1, PredPreyAgent<GRIDSIZE>(1, 1, PredPreyAgent<GRIDSIZE>::PREY)), 1, pObserveIfPresent, kappa);
     ABMPosterior posterior(startState, likelihood);
+
+
+    std::cout << "Constraints = " << std::endl << posterior.constraints << std::endl;
+
+//    std::vector<double> entropiesByVar = posterior.prior.approximateEntropiesByVarIndex();
+//    Basis normMinimisedBasis(posterior);
+//    Basis entropyMaximisedBasis(entropiesByVar, posterior, 6.0);
+
+//    std::cout << "Basis = " << std::endl;
+//    for(const SparseVec<int> &basisVec: entropyMaximisedBasis) {
+//        for(const auto &event: basisVec) {
+//            std::cout << event.value() << "X" << event.index() << ":" << Event<agent_type>(event.index()) << "  ";
+//        }
+//        std::cout << std::endl;
+//    }
+//    std::cout << "Origin = " <<  posterior.basis.origin << std::endl;
+
+//    std::cout << "ABMPosterior Basis entropy = " << posterior.basis.calculateEntropy(entropiesByVar) << std::endl << std::endl;
+//    std::cout << "Entropy maximised Basis entropy = " << entropyMaximisedBasis.calculateEntropy(entropiesByVar) << std::endl << std::endl;
+//    std::cout << "Norm minimised basis entropy = " << normMinimisedBasis.calculateEntropy(entropiesByVar) << std::endl;
+
 
     doValidationExperiment(posterior, nBurnin, nSamples, nRejectionSamples);
 
@@ -144,7 +167,7 @@ void Experiments::PredPreyPriorTest() {
 //    }));
 
     MultiChainStats multiChainStats(generateVectorAsync(1, [&prior, nSamples]() {
-        FactorisedDistributionSampler sampler(prior);
+        ABMSampler sampler(prior);
         std::cout << sampler.basisVectors << std::endl;
         std::cout << "Burning-in..." << std::endl;
         for(int s = 1; s<nSamples/5; ++s) sampler(); // burn-in
@@ -190,7 +213,7 @@ void Experiments::ReducedPredPreyPriorTest() {
 
 
     MultiChainStats multiChainStats(generateVectorAsync(4, [&prior, nSamples]() {
-        FactorisedDistributionSampler sampler(prior);
+        ABMSampler sampler(prior);
         std::cout << "Burning-in..." << std::endl;
         for(int s = 1; s<nSamples/5; ++s) sampler(); // burn-in
         std::cout << sampler.stats << std::endl;
@@ -279,7 +302,7 @@ void Experiments::doValidationExperiment(const ABMPosterior<DOMAIN,STARTSTATE> &
 //
     std::cout << "Posterior is\n" << posterior << std::endl;
 
-    FactorisedDistributionSampler sampler(posterior);
+    ABMSampler sampler(posterior);
 
     std::cout << "Burning-in..." << std::endl;
     for(int i=0; i < nBurnin; ++i) {

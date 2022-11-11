@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include "StlStream.h"
 
 template<class T>
 class SortedSparseVec : public std::vector<std::pair<int, T>> {
@@ -149,7 +150,9 @@ public:
             const std::pair<int,T> & y = *(extractionPointB++);
             result.emplace_back(y.first, weight * y.second);
         }
-        std::cout << *this << " + " << weight << " * " << other << " = " << result << std::endl;
+//        std::cout << *this << " + " << weight << " * " << other << " = " << result << std::endl;
+        assert(std::adjacent_find(this->begin(), this->end()) == this->end());
+        assert(std::adjacent_find(other.begin(), other.end()) == other.end());
         std::vector<std::pair<int, T>>::operator=(std::move(result));
         return *this;
     }
@@ -159,6 +162,8 @@ public:
             this->template emplace_back(entry.index(), entry.value());
         }
         sort();
+//        std::cout << unsortedSparseVec << " = " << *this << std::endl;
+        assert(std::adjacent_find(this->begin(), this->end()) == this->end());
         return *this;
     }
 

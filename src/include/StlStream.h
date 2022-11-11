@@ -90,10 +90,7 @@ std::ostream &operator <<(std::ostream &out, const std::chrono::duration<I,std::
 }
 
 template<typename T1, typename T2>
-std::ostream &operator <<(std::ostream &out, const std::pair<T1,T2> &pair) {
-    out << "(" << pair.first << ", " << pair.second << ")";
-    return out;
-}
+std::ostream &operator <<(std::ostream &out, const std::pair<T1,T2> &pair);
 
 template<typename T>
 std::ostream &operator <<(std::ostream &out, const std::optional<T> &optional) {
@@ -109,6 +106,12 @@ template<class T> std::ostream & operator <<(std::ostream &out, const std::forwa
 template<class T> std::ostream & operator <<(std::ostream &out, const std::list<T> &container);
 template<class T> std::ostream & operator <<(std::ostream &out, const std::set<T> &container);
 template<class T> std::ostream & operator <<(std::ostream &out, const std::unordered_set<T> &container);
+
+template<typename T1, typename T2>
+std::ostream &operator <<(std::ostream &out, const std::pair<T1,T2> &pair) {
+    out << "(" << pair.first << ", " << pair.second << ")";
+    return out;
+}
 
 template<class T>
 std::ostream & default_container_printer(std::ostream &out, const T &container) {

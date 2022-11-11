@@ -23,6 +23,7 @@ public:
 
 
     PredPreyTrajectory() : ExtendedTrajectory<agent_type, NTIMESTEPS>(dimension) {}
+    PredPreyTrajectory(const SparseVec<int> &sparseInit): ExtendedTrajectory<agent_type,NTIMESTEPS>(dimension, sparseInit) {}
 
     const value_type &surroundingCountOf(const State<agent_type> &state) const {
         return (*this)[surroundingCountIndexOf(state)];
@@ -63,6 +64,16 @@ public:
         for (int t = 0; t < NTIMESTEPS; ++t) {
             for (int agentId = 0; agentId < agent_type::domainSize; ++agentId) {
                 State<agent_type> state(t, agentId);
+//                constraints.push_back(
+//                        X(indexOf(State<agent_type>(t, state.agent.upOther()))) +
+//                        X(indexOf(State<agent_type>(t, state.agent.downOther()))) +
+//                        X(indexOf(State<agent_type>(t, state.agent.leftOther()))) +
+//                        X(indexOf(State<agent_type>(t, state.agent.rightOther()))) -
+//                        X(surroundingCountIndexOf(state))
+//                        == value_type(0)
+//                );
+
+                // TODO: need to deal with doubling of birth event when size = 3;
                 if(t == 0) {
                     constraints.push_back(
                             X(indexOf(State<agent_type>(t, state.agent.upOther()))) +
@@ -93,6 +104,7 @@ public:
                     backwardCoeffs.insert(surroundingCountIndexOf(state), -1);
                     constraints.template emplace_back(backwardCoeffs, 0);
                 }
+
             }
         }
         constraints += ExtendedTrajectory<agent_type, NTIMESTEPS>::constraints();

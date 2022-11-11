@@ -12,23 +12,39 @@
 
 int main(int argc, char *argv[]) {
 
-    //    auto startTime = std::chrono::steady_clock::now();
-
-//    std::cout
-//            << exp(PredPreyAgentBase::lpPredBirthGivenPrey) << " "
-//            << exp(PredPreyAgentBase::lpPredDeathGivenPrey) << " "
-//            << exp(PredPreyAgentBase::lpPredBirthGivenNoPrey) << " "
-//            << exp(PredPreyAgentBase::lpPredDeathGivenNoPrey) << " "
-//            << exp(PredPreyAgentBase::lpPreyBirthGivenPred) << " "
-//            << exp(PredPreyAgentBase::lpPreyDeathGivenPred) << " "
-//            << exp(PredPreyAgentBase::lpPreyBirthGivenNoPred) << " "
-//            << exp(PredPreyAgentBase::lpPreyDeathGivenNoPred) << std::endl;
-
-//    std::cout
-//            << exp(PredPreyAgentBase::lpPredDeath) << " "
-//            << exp(PredPreyAgentBase::lpPredBirth) << " "
-//            << exp(PredPreyAgentBase::lpPreyDeath) << " "
-//            << exp(PredPreyAgentBase::lpPreyBirth) << std::endl;
+    // Forward basis (8x4)
+    // Entropy = 6.05847
+    // mean basis size = 4.4
+    // mean dependency col size = 5.22
+    // mean dependency row size = 7.533
+    // mean updates per transition = 39.35
+    // infeasible = 69%
+    // Sample inefficiency 4972, 1488
+    // time per feasible sample 41.6uS
+    // time per effective sample 207mS
+    //
+    // Backward basis (8x4)
+    // Entropy = 5.97
+    // mean basis size = 7.33
+    // mean dependency col size = 11.03
+    // mean dependency row size = 15.9
+    // mean updates per transition = 175.3
+    // infeasible = 62%
+    // Sample inefficiency 123, 50.8
+    // time per feasible sample 137uS
+    // time per effective sample 16.8mS
+    //
+    // Norm-minimised backward-basis (8x4)
+    // Entropy = 5.38
+    // mean basis size = 7.33
+    // mean dependency col size = 11.03
+    // mean dependency row size = 16.0
+    // mean updates per transition = 175.3
+    // infeasible = 62%
+    // Sample inefficiency = 91.9, 47.0
+    // time per feasible sample 115.6uS
+    // time per effective sample 10.6mS
+    //
 
     // 8 x 4
     // kappa    %age infeasible     time/effetive sample
@@ -43,10 +59,9 @@ int main(int argc, char *argv[]) {
 
 //    FiguresForPaper<32,16>::generateStandardPredPreyPosteriorFile(6.0);
 
-//    FiguresForPaper<8,4>::generateStandardPredPreyPosteriorFile(6.0);
-//    FiguresForPaper<8,4>::generateStats(100000);
-//    FiguresForPaper<8,4>::plotStats(false); // set to true to allow printing from plots.
-
+    FiguresForPaper<8,4>::generateStandardPredPreyPosteriorFile(12.0);
+    FiguresForPaper<8,4>::generateStats(200000);
+    FiguresForPaper<8,4>::plotStats(false); // set to true to allow printing from plots.
 
     // 16 x 4
     // kappa    %age infeasible     time/effetive sample
@@ -69,11 +84,9 @@ int main(int argc, char *argv[]) {
 
 //    Experiments::Animation();
 
-// TODO: Add expected gradient of each factor per dependency and minimise
-//          expected gradient of each basis when factorising, rather than
-//          sparsity.
+// TODO: function entropies should always be between 0 and 1
 
-    Experiments::BinomialAgentSingleObservation();
+//    Experiments::BinomialAgentSingleObservation();
 //    Experiments::CatMouseSingleObservation();
 //    Experiments::CatMouseAssimilation();
 //    Experiments::PredPreySingleObservation();

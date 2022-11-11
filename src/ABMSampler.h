@@ -19,8 +19,8 @@
 // Created by daniel on 07/09/22.
 //
 
-#ifndef ABMCMC_FACTORISEDDISTRIBUTIONSAMPLER_H
-#define ABMCMC_FACTORISEDDISTRIBUTIONSAMPLER_H
+#ifndef ABMCMC_ABMSAMPLER_H
+#define ABMCMC_ABMSAMPLER_H
 
 #include <vector>
 #include <map>
@@ -40,7 +40,7 @@
 
 
 template<typename DOMAIN, typename ELEMENT = typename DOMAIN::value_type>
-class FactorisedDistributionSampler {
+class ABMSampler {
 public:
 
     // USER is a function object that takes a producer of samples and returns a result
@@ -55,6 +55,7 @@ public:
 public:
     typedef std::vector<int> IndexSet;
 
+    // Rows and cols of the factor/basis dependency matrix
     struct RowEntry {
         RowEntry(int index): basisIndex(index) { }
         int basisIndex;
@@ -82,16 +83,16 @@ public:
     MCMCStatistics              stats;  // statistics on all samples since construction
 
 public:
-    FactorisedDistributionSampler(FactorisedDistributionSampler &&other)=delete;
-    FactorisedDistributionSampler(const FactorisedDistributionSampler &other)=delete;
+    ABMSampler(ABMSampler &&other)=delete;
+    ABMSampler(const ABMSampler &other)=delete;
 //    basisVectors(other.basisVectors),
 //    factors(other.factors),
 //    X(other.X) {
 //        init(factors, basisVectors, X);
 //    }
 
-    FactorisedDistributionSampler(const ConstrainedFactorisedDistribution<DOMAIN, ELEMENT> &targetDistribution):
-            FactorisedDistributionSampler(Basis(targetDistribution), targetDistribution.factors) { }
+//    ABMPosteriorSampler(const ConstrainedFactorisedDistribution<DOMAIN, ELEMENT> &targetDistribution):
+//            ABMPosteriorSampler(Basis(targetDistribution), targetDistribution.factors) { }
 //
 ////    FactorisedDistributionSampler(const ConstrainedFactorisedDistribution<DOMAIN, ELEMENT> &targetDistribution, const Basis<DOMAIN> &basis):
 ////            FactorisedDistributionSampler(targetDistribution, basis.basisVectors, basis.origin) { }
@@ -103,11 +104,15 @@ public:
 //            FactorisedDistributionSampler(FactorisedDistributionOnBasis(targetDistribution), initialValidSample) { }
 
     template<class STARTSTATE>
-    FactorisedDistributionSampler(const ABMPosterior<DOMAIN,STARTSTATE> &targetDistribution):
-            FactorisedDistributionSampler(targetDistribution.basis, targetDistribution.factors) { }
+    ABMSampler(const ABMPosterior<DOMAIN,STARTSTATE> &targetDistribution):
+            ABMSampler(targetDistribution.basis, targetDistribution.factors) { }
+
+    template<class STARTSTATE>
+    ABMSampler(const ABMPrior<DOMAIN,STARTSTATE> &targetPrior, double constraintKappa = 6):
+            ABMSampler(Basis(targetPrior.approximateEntropiesByVarIndex(),targetPrior, constraintKappa), targetPrior.factors) { }
 
 
-    FactorisedDistributionSampler(
+    ABMSampler(
             const Basis<DOMAIN> &basis,
             const std::vector<SparseFunction<std::pair<double,bool>,const DOMAIN &>> &distFactors): X(basis.origin) {
 
@@ -179,7 +184,7 @@ public:
     const DOMAIN &nextSample() {
         debug(int attempts = 0);
         do {
-//            std::cout << "Infeasibility = " << currentInfeasibility << std::endl;
+//            std::cout << "Taking sample. Current infeasibility = " << currentInfeasibility << std::endl;
             bool startStateIsFeasible = (currentInfeasibility == 0);
             int proposedBasisIndex = basisDistribution(Random::gen);
             double oldSum = basisDistribution.sum();
@@ -207,7 +212,7 @@ public:
         for(int i=0; i<factors.size(); ++i) {
             auto factorVal = factors[i](X);
             logProb += factorVal.first;
-            if(factorToBasisPerturbedValue[i].size() == 2 && factorVal.second == false) {
+            if(factorVal.second == false && factorToBasisPerturbedValue[i].size() == 2 && currentFactorVal[i].second == true) {
                 logProb -= 24.0; // TODO: Test!!!!
             }
         }
@@ -232,9 +237,14 @@ public:
         }
         int infeasibility = 0;
         for(int j=0; j<currentFactorVal.size(); ++j) {
-            assert(factors[j](X) == currentFactorVal[j]);
-            if(factorToBasisPerturbedValue[j].size() == 2) assert(currentFactorVal[j].second == true);
-            infeasibility += !currentFactorVal[j].second;
+            std::pair<double,bool> realFactorVal = factors[j](X);
+            if(realFactorVal.second == false && factorToBasisPerturbedValue[j].size() == 2 && currentFactorVal[j].second == true) {
+                assert(currentFactorVal[j].first == realFactorVal.first - 24.0);
+                assert(currentFactorVal[j].second == false);
+            } else {
+                assert(currentFactorVal[j] == realFactorVal);
+            }
+            infeasibility += !realFactorVal.second;
         }
         assert(infeasibility == currentInfeasibility);
     }
@@ -242,12 +252,6 @@ public:
 
 protected:
 
-    // Turns the given constraints into a minimal basis that spans the
-    // subspace described by the constraints.
-    // Returns a pair whose first element is the basis vectors
-    // and whose second element is the dependency mapping from domain element to
-    // the set of basis vectors that depend on that element, where the
-    // basis vectors are given an index by the ordering of the first element.
     void init(const std::vector<SparseFunction<std::pair<double,bool>,const DOMAIN &>> &distFactors,
               const std::vector<SparseVec<ELEMENT>> &basisVecs, DOMAIN &X) {
 
@@ -297,8 +301,9 @@ protected:
         currentFactorVal.reserve(distFactors.size());
         currentInfeasibility = 0;
         for(const auto &factor: distFactors) {
-            currentFactorVal.push_back(factor(X)); // Assumes all factors with single basis dependency are feasible
-            assert((factorToBasisPerturbedValue[currentFactorVal.size()-1].size() != 2) || (currentFactorVal.back().second == true));
+            currentFactorVal.push_back(factor(X));
+            // Assumes all factors with single basis dependency are feasible
+//            assert((factorToBasisPerturbedValue[currentFactorVal.size()-1].size() != 2) || (currentFactorVal.back().second == true));
             currentInfeasibility += !currentFactorVal.back().second;
         }
 
@@ -309,7 +314,8 @@ protected:
             for(ColEntry &colEntry : basisToFactorPerturbedValue[basisIndex]) {
                 colEntry.value = distFactors[colEntry.factorIndex](X);
 //                std::cout << factorToBasisPerturbedValue[colEntry.factorIndex].size() << std::endl;
-                if(factorToBasisPerturbedValue[colEntry.factorIndex].size() == 2 && colEntry.value.second == false) { // if this factor depends only on this basis, stay within feasible region
+                if(colEntry.value.second == false && factorToBasisPerturbedValue[colEntry.factorIndex].size() == 2 && currentFactorVal[colEntry.factorIndex].second == true) {
+                    // if this factor depends only on this basis (i.e. + and - basis vectors), don't transition from feasible to infeasible
                     colEntry.value.first -= 24.0; // TODO: test!!!!
                 }
                 currentWeight[basisIndex] += colEntry.value.first - currentFactorVal[colEntry.factorIndex].first;
@@ -342,13 +348,14 @@ protected:
                 if(basisIndex == transitionBasis) {
                     currentInfeasibility += currentFactorVal[factorIndex].second - perturbedFactorVal.second;
                     currentFactorVal[factorIndex] = perturbedFactorVal;
-                    assert((factorToBasisPerturbedValue[factorIndex].size() != 2) || (perturbedFactorVal.second == true));
+                    assert(!(perturbedFactorVal.second == false && factorToBasisPerturbedValue[factorIndex].size() == 2 && currentFactorVal[factorIndex].second == true));
                 }
                 currentWeight[basisIndex] += oldFVal - perturbedFactorVal.first; // remove old ratio
                 // update the given factor of the given basis transition
                 X += basisVectors[basisIndex];
                 perturbedFactorVal = factors[factorIndex](X); // record the new perturbed value
-                if(factorToBasisPerturbedValue[factorIndex].size() == 2 && perturbedFactorVal.second == false) { // if this factor depends only on this basis (+-), stay within feasible region
+                if(perturbedFactorVal.second == false && factorToBasisPerturbedValue[factorIndex].size() == 2 && currentFactorVal[factorIndex].second == true) {
+                    // if this factor depends only on this basis (i.e. + and - basis vectors), don't transition from feasible to infeasible
                     perturbedFactorVal.first -= 24.0; // TODO: test!!!!
                 }
                 X -= basisVectors[basisIndex];
@@ -365,18 +372,18 @@ protected:
 
 template<class DISTRIBUTION, class USER,
         class RESULT = std::result_of<USER(std::function<const typename DISTRIBUTION::domain_type &()>)>,
-        class SOLVER = decltype(FactorisedDistributionSampler(std::declval<DISTRIBUTION>()))>
+        class SOLVER = decltype(ABMSampler(std::declval<DISTRIBUTION>()))>
 static RESULT solve(const DISTRIBUTION &distribution, USER user) {
-    FactorisedDistributionSampler sampler(distribution);
+    ABMSampler sampler(distribution);
     return user(sampler);
 }
 
 template<class DISTRIBUTION, class USER,
         class RESULT = std::result_of<USER(std::function<const typename DISTRIBUTION::domain_type &()>)>,
-        class SOLVER = decltype(FactorisedDistributionSampler(std::declval<DISTRIBUTION>()))>
+        class SOLVER = decltype(ABMSampler(std::declval<DISTRIBUTION>()))>
 static std::future<RESULT> solveAsync(const DISTRIBUTION &distribution, USER user) {
-    FactorisedDistributionSampler sampler(distribution);
+    ABMSampler sampler(distribution);
     return std::async(user,sampler);
 }
 
-#endif //ABMCMC_FACTORISEDDISTRIBUTIONSAMPLER_H
+#endif //ABMCMC_ABMSAMPLER_H

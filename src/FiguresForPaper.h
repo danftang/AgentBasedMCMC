@@ -11,7 +11,7 @@
 #include "diagnostics/MultiChainStats.h"
 #include "diagnostics/Dataflow.h"
 #include "Plotter.h"
-#include "FactorisedDistributionSampler.h"
+#include "ABMSampler.h"
 #include "include/asyncvector.h"
 
 template<int GRIDSIZE, int TIMESTEPS>
@@ -64,7 +64,7 @@ public:
 //        MultiChainStats multiChainStats = MultiChainStats::analyseConvergence(posterior, nSamples, nThreads);
 
         MultiChainStats multiChainStats(generateVectorAsync(nThreads, [&posterior, nSamples]() {
-            FactorisedDistributionSampler sampler(posterior);
+            ABMSampler sampler(posterior);
             for(int s = 1; s<nSamples/5; ++s) sampler(); // burn-in
             std::cout << sampler.stats << std::endl;
             return MultiChainStats(nSamples/2, sampler);

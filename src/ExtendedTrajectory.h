@@ -19,9 +19,12 @@ public:
     using Trajectory<AGENT,NTIMESTEPS>::indexOf;
 
     ExtendedTrajectory(): Trajectory<AGENT,NTIMESTEPS>(dimension) { }
+    ExtendedTrajectory(const SparseVec<int> &sparseInit): ExtendedTrajectory(dimension, sparseInit) { }
+
 
 protected:
     ExtendedTrajectory(size_t nElements): Trajectory<AGENT, NTIMESTEPS>(nElements) {}
+    ExtendedTrajectory(size_t nElements, const SparseVec<int> &sparseInit): Trajectory<AGENT,NTIMESTEPS>(dimension, sparseInit) { }
 public:
 
     const value_type &operator [](const State<AGENT> &state) const {
@@ -45,7 +48,7 @@ public:
         for(int time = 0; time < NTIMESTEPS; ++time) {
             for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
                 State<AGENT> state(time,agentId);
-                // forward occupation
+
                 if(time == 0) {
                     SparseVec<value_type> forwardCoeffs;
                     for (int act = 0; act < AGENT::actDomainSize; ++act) {
@@ -70,18 +73,24 @@ public:
                     }
                     constraints.emplace_back(doubleCoeffs, 0);
                 }
-                // reverse occupation
+
+//                // forward occupation
+//                SparseVec<value_type> forwardCoeffs;
+//                for (int act = 0; act < AGENT::actDomainSize; ++act) {
+//                   forwardCoeffs.insert(indexOf(Event<AGENT>(time, agentId, act)), 1);
+//                }
+//                forwardCoeffs.insert(indexOf(state), -1);
+//                constraints.emplace_back(forwardCoeffs, 0);
+//                // reverse occupation
 //                if(time > 0) {
 //                    SparseVec<value_type> backwardCoeffs;
 //                    for (const Event<AGENT> &inEdge: state.backwardOccupationDependencies()) {
 //                        backwardCoeffs.insert(indexOf(inEdge),1);
 //                    }
-////                    for (int act = 0; act < AGENT::actDomainSize; ++act) {
-////                        backwardCoeffs.insert(indexOf(Event<AGENT>(time, agentId, act)), -1);
-////                    }
 //                    backwardCoeffs.insert(indexOf(state), -1);
 //                    constraints.emplace_back(backwardCoeffs, 0);
 //                }
+
             }
         }
         return constraints;
