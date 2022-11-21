@@ -1,6 +1,9 @@
 // Represents a sparse vector stored as a vector of non-zero indices/values.
 // In order to improve performance, multiple entries with the same index are allowed.
 // The value of a non-zero element is the sum of entries with that index value.
+// Multiple entries with the same index can be removed by converting to
+// SortedSparseVec (and converting back if necessary).
+//
 //
 // Created by daniel on 09/04/2021.
 //
@@ -10,10 +13,11 @@
 
 #include <vector>
 #include <map>
-#include <ostream>
+#include <iostream>
 #include <algorithm>
 #include <boost/serialization/access.hpp>
 
+template<class T> class SortedSparseVec;
 
 template<class T>
 class SparseVec {
@@ -40,6 +44,8 @@ public:
         reserve(map.size());
         for(const auto &entry: map) insert(entry.first, entry.second);
     }
+
+    explicit SparseVec(const SortedSparseVec<T> &sortedSparseVector);
 
     SparseVec(const std::initializer_list<std::pair<int,T>> &initValues) {
         reserve(initValues.size());
@@ -151,6 +157,11 @@ public:
         return *this;
     }
 
+    SparseVec<T> &operator =(const SortedSparseVec<T> &sortedSparseVector);
+    SparseVec<T> &operator =(SortedSparseVec<T> &&sortedSparseVector);
+
+    void sortAndMerge();
+
 protected:
     void swap(SparseVec<T> &rvalue) {
         indices.swap(rvalue.indices);
@@ -166,6 +177,12 @@ private:
     }
 };
 
+
+template<class T>
+SparseVec<T>::SparseVec(const SortedSparseVec<T> &sortedSparseVector) {
+    reserve(sortedSparseVector.sparseSize());
+    for(const auto &entry: sortedSparseVector) insert(entry.first, entry.second);
+}
 
 template<class T>
 int SparseVec<T>::maxNonZeroIndex() const {
@@ -221,6 +238,30 @@ std::vector<T> SparseVec<T>::toDense(int dimension) const {
 
 
 template<class T>
+SparseVec<T> &SparseVec<T>::operator =(const SortedSparseVec<T> &sortedSparseVector) {
+    this->clear();
+    this->reserve(sortedSparseVector.sparseSize());
+    for(const auto &entry: sortedSparseVector) insert(entry.first, entry.second);
+    return *this;
+}
+
+
+template<class T>
+SparseVec<T> &SparseVec<T>::operator =(SortedSparseVec<T> &&sortedSparseVector) {
+    this->clear();
+    this->reserve(sortedSparseVector.sparseSize());
+    for(const auto &entry: sortedSparseVector) insert(entry.first, std::move(entry.second));
+    return *this;
+}
+
+template<class T>
+void SparseVec<T>::sortAndMerge() {
+    SortedSparseVec<T> sortedVec(*this);
+    *this = std::move(sortedVec);
+}
+
+
+template<class T>
 std::ostream &operator<<(std::ostream &out, const SparseVec<T> &sVector) {
     out << "{";
     for(const auto &entry: sVector) {
@@ -248,6 +289,8 @@ template<typename T, typename OTHER, typename = decltype(std::declval<SparseVec<
 auto operator *(const OTHER &lhs, const SparseVec<T> &rhs) {
     return rhs * lhs;
 }
+
+
 
 
 #endif //GLPKTEST_SPARSEVEC_H

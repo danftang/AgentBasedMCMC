@@ -207,14 +207,16 @@ public:
         return X;
     }
 
+
+    // Log prob of current state X
     double currentLogProb() {
         double logProb = 0.0;
         for(int i=0; i<factors.size(); ++i) {
             auto factorVal = factors[i](X);
             logProb += factorVal.first;
-            if(factorVal.second == false && factorToBasisPerturbedValue[i].size() == 2 && currentFactorVal[i].second == true) {
-                logProb -= 24.0; // TODO: Test!!!!
-            }
+//            if(factorVal.second == false && factorToBasisPerturbedValue[i].size() == 2 && currentFactorVal[i].second == true) {
+//                logProb -= 24.0; // TODO: Test!!!!
+//            }
         }
         return logProb;
     }
@@ -224,26 +226,22 @@ public:
     void sanityCheck() {
         // check weights
         double logProbX0 = currentLogProb();
-//        double PX0 = currentProb();
         for(int basisId=0; basisId < basisVectors.size(); ++basisId) {
             X += basisVectors[basisId];
             double logRatioOfProbs = currentLogProb() - logProbX0;
             assert(fabs(currentWeight[basisId] - logRatioOfProbs) < 1e-8);
-            assert(fabs(logWeighttoBasisProb(logRatioOfProbs) - basisDistribution[basisId]) < 1e-8);
-//            double ratioOfProbs = currentProb()/PX0;
-//            assert(fabs(currentWeight[basisId] - ratioOfProbs) < 1e-8);
-//            assert(fabs(weighttoBasisProb(ratioOfProbs) - basisDistribution[basisId]) < 1e-8);
             X -= basisVectors[basisId];
+            assert(fabs(basisProbabilityFromCurrentWeight(basisId) - basisDistribution[basisId]) < 1e-8);
         }
         int infeasibility = 0;
         for(int j=0; j<currentFactorVal.size(); ++j) {
             std::pair<double,bool> realFactorVal = factors[j](X);
-            if(realFactorVal.second == false && factorToBasisPerturbedValue[j].size() == 2 && currentFactorVal[j].second == true) {
-                assert(currentFactorVal[j].first == realFactorVal.first - 24.0);
-                assert(currentFactorVal[j].second == false);
-            } else {
+//            if(realFactorVal.second == false && factorToBasisPerturbedValue[j].size() == 2 && currentFactorVal[j].second == true) {
+//                assert(currentFactorVal[j].first == realFactorVal.first - 24.0);
+//                assert(currentFactorVal[j].second == false);
+//            } else {
                 assert(currentFactorVal[j] == realFactorVal);
-            }
+//            }
             infeasibility += !realFactorVal.second;
         }
         assert(infeasibility == currentInfeasibility);
@@ -314,29 +312,36 @@ protected:
             for(ColEntry &colEntry : basisToFactorPerturbedValue[basisIndex]) {
                 colEntry.value = distFactors[colEntry.factorIndex](X);
 //                std::cout << factorToBasisPerturbedValue[colEntry.factorIndex].size() << std::endl;
-                if(colEntry.value.second == false && factorToBasisPerturbedValue[colEntry.factorIndex].size() == 2 && currentFactorVal[colEntry.factorIndex].second == true) {
-                    // if this factor depends only on this basis (i.e. + and - basis vectors), don't transition from feasible to infeasible
-                    colEntry.value.first -= 24.0; // TODO: test!!!!
-                }
+//                if(colEntry.value.second == false && factorToBasisPerturbedValue[colEntry.factorIndex].size() == 2 && currentFactorVal[colEntry.factorIndex].second == true) {
+//                    // if this factor depends only on this basis (i.e. + and - basis vectors), don't transition from feasible to infeasible
+//                    colEntry.value.first -= 24.0; // TODO: test!!!!
+//                }
                 currentWeight[basisIndex] += colEntry.value.first - currentFactorVal[colEntry.factorIndex].first;
             }
             X -= basisVectors[basisIndex];
-            basisDistribution.push_back(logWeighttoBasisProb(currentWeight[basisIndex]));
+            basisDistribution.push_back(basisProbabilityFromCurrentWeight(basisIndex));
         }
 
     };
 
+
+    double basisProbabilityFromCurrentWeight(int basisIndex) {
+        ELEMENT XiNonBasic = X[basisVectors[basisIndex].indices[0]];
+        return ((XiNonBasic < 0) || (XiNonBasic + basisVectors[basisIndex].values[0] >= 0))?
+            logWeighttoBasisProb(currentWeight[basisIndex]):0.0;
+    }
+
     // convert the log(P(destination)/P(source)) of a transition to the probability of proposal
     static double logWeighttoBasisProb(double w) {
-        return w<0.0?exp(w):1.0;
-//        return exp(0.5*w); // square root of prob ratio
+//        return w<0.0?exp(w):1.0;
+        return exp(0.5*w); // square root of prob ratio
     }
 
 
     // Given a transition along basis j,
     // Update each basis, k, for which there exists a factor that depends on both j and k
     void performTransition(int transitionBasis) {
-        std::set<int> updatedBasisWeights;
+        std::vector<int> updatedBasisIndices;
         X += basisVectors[transitionBasis];
         for(ColEntry &colEntry: basisToFactorPerturbedValue[transitionBasis]) {
             int factorIndex = colEntry.factorIndex;
@@ -348,23 +353,26 @@ protected:
                 if(basisIndex == transitionBasis) {
                     currentInfeasibility += currentFactorVal[factorIndex].second - perturbedFactorVal.second;
                     currentFactorVal[factorIndex] = perturbedFactorVal;
-                    assert(!(perturbedFactorVal.second == false && factorToBasisPerturbedValue[factorIndex].size() == 2 && currentFactorVal[factorIndex].second == true));
+//                    assert(!(perturbedFactorVal.second == false && factorToBasisPerturbedValue[factorIndex].size() == 2 && currentFactorVal[factorIndex].second == true));
                 }
                 currentWeight[basisIndex] += oldFVal - perturbedFactorVal.first; // remove old ratio
                 // update the given factor of the given basis transition
                 X += basisVectors[basisIndex];
                 perturbedFactorVal = factors[factorIndex](X); // record the new perturbed value
-                if(perturbedFactorVal.second == false && factorToBasisPerturbedValue[factorIndex].size() == 2 && currentFactorVal[factorIndex].second == true) {
-                    // if this factor depends only on this basis (i.e. + and - basis vectors), don't transition from feasible to infeasible
-                    perturbedFactorVal.first -= 24.0; // TODO: test!!!!
-                }
+//                if(perturbedFactorVal.second == false && factorToBasisPerturbedValue[factorIndex].size() == 2 && currentFactorVal[factorIndex].second == true) {
+//                    // if this factor depends only on this basis (i.e. + and - basis vectors), don't transition from feasible to infeasible
+//                    perturbedFactorVal.first -= 24.0; // TODO: test!!!!
+//                }
                 X -= basisVectors[basisIndex];
                 currentWeight[basisIndex] += perturbedFactorVal.first - newFVal; // insert new ratio
-                updatedBasisWeights.insert(basisIndex);
+                updatedBasisIndices.push_back(basisIndex);
             }
         }
-        for(int basisIndex: updatedBasisWeights) {
-            basisDistribution[basisIndex] = logWeighttoBasisProb(currentWeight[basisIndex]);
+        std::sort(updatedBasisIndices.begin(), updatedBasisIndices.end());
+        auto newEnd = std::unique(updatedBasisIndices.begin(), updatedBasisIndices.end());
+        for(auto it=updatedBasisIndices.begin(); it != newEnd; ++it) {
+            int basisIndex = *it;
+            basisDistribution[basisIndex] = basisProbabilityFromCurrentWeight(basisIndex);
         }
     }
 };

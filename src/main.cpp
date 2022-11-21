@@ -59,26 +59,40 @@ int main(int argc, char *argv[]) {
 
 //    FiguresForPaper<32,16>::generateStandardPredPreyPosteriorFile(6.0);
 
-    FiguresForPaper<8,4>::generateStandardPredPreyPosteriorFile(12.0);
-    FiguresForPaper<8,4>::generateStats(200000);
-    FiguresForPaper<8,4>::plotStats(false); // set to true to allow printing from plots.
+//    FiguresForPaper<8,4>::generateStandardPredPreyPosteriorFile(6.0);
+//    FiguresForPaper<8,4>::generateStats(200000);
+//    FiguresForPaper<8,4>::plotStats(false); // set to true to allow printing from plots.
+
+    // 50ms per effective sample, inefficiency (206,167)
+    FiguresForPaper<8,8>::generateStandardPredPreyPosteriorFile(6.75);
+    FiguresForPaper<8,8>::generateStats(400000);
+    FiguresForPaper<8,8>::plotStats(false); // set to true to allow printing from plots.
 
     // 16 x 4
     // kappa    %age infeasible     time/effetive sample
     // 8.0      75%                 3035ms
 
-//    FiguresForPaper<16,4>::generateStandardProblemFile(7.5);
-//    FiguresForPaper<16,4>::generateStats(1000000);
+//    FiguresForPaper<16,4>::generateStandardPredPreyPosteriorFile(7.5);
+//    FiguresForPaper<16,4>::generateStats(800000);
 //    FiguresForPaper<16,4>::plotStats(false); // set to true to allow printing from plots.
 
+//    FiguresForPaper<16,8>::generateStandardPredPreyPosteriorFile(8.0);
+//    FiguresForPaper<16,8>::generateStats(1000000);
+//    FiguresForPaper<16,8>::plotStats(false); // set to true to allow printing from plots.
+
+//    FiguresForPaper<32,8>::generateStandardPredPreyPosteriorFile(15.0); // 9.5
+//    FiguresForPaper<32,8>::generateStats(1500000);
+//    FiguresForPaper<32,8>::plotStats(false); // set to true to allow printing from plots.
+
     /////////////// Generate data for figures 3 and 4 and statistics for table 2
-    //    FiguresForPaper<32,16>::generateStandardProblemFile(10.0);
+    // 4s per effective sample
+//    FiguresForPaper<32,16>::generateStandardPredPreyPosteriorFile(10.25); // 10.0
 //    FiguresForPaper<32,16>::generateStats(10000000);
     /////////////// Plot figures 3 and 4 and print statistics for table 2
 //    FiguresForPaper<32,16>::plotStats(false); // set to true to allow printing from plots.
 
     /////////////// Get timing for a sample on a single core
-//    FiguresForPaper<32,16>::sampleTiming(1000000);
+//    FiguresForPaper<32,16>::sampleTiming(100000);
 
     ////////////// Test MCMC against small, tractable examples
 

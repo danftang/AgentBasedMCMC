@@ -56,8 +56,8 @@ public:
         ABMPosterior<trajectory_type, start_state_type> posterior;
         probArchive >> posterior;
 
-        std::cout << "Loaded ABM posterior:" << std::endl;
-        std::cout << posterior;
+//        std::cout << "Loaded ABM posterior:" << std::endl;
+//        std::cout << posterior;
 
 
 //        FactorisedDistributionSampler sampler(posterior);
@@ -167,34 +167,32 @@ public:
 //    }
 
 
-//    static void sampleTiming(int nSamples) {
-//        std::ifstream probFile(problemFilename);
-//        if(!probFile.good()) throw("Can't open problem probFile for this geometry. Run generateStandardProblemFile first.");
-//        boost::archive::binary_iarchive probArchive(probFile);
-//        PredPreyProblem<GRIDSIZE,TIMESTEPS> problem;
-//        probArchive >> problem;
-//
-//        std::cout << "Loaded problem" << std::endl;
-//        std::cout << problem;
-//
-//        std::cout << "Creating modelStateSampler..." << std::endl;
-//        FactorisedDistributionSampler sampler(problem.tableau, problem.posterior.factors, problem.posterior.perturbableFunctionFactory(), problem.prior.nextSample(false), problem.kappa);
-//
-//        std::cout << "Burning in..." << std::endl;
-//        for(int burnIn=0; burnIn<nSamples/4; ++burnIn) sampler();
-//
-//        std::cout << "Taking samples..." << std::endl;
-//        auto startTime = std::chrono::steady_clock::now();
-//        for(int s=0; s<nSamples; ++s) sampler();
-//        auto endTime = std::chrono::steady_clock::now();
-//        auto execTimeMilliSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
-//
-//        const trajectory_type &sample = sampler();
-//        std::cout << "Final state is " << std::vector(sample.begin(), sample.begin() + 20) << "..." << std::endl;
-//        std::cout << "Executed in " << execTimeMilliSeconds << "ms" << std::endl;
-//        std::cout << "Time per feasible sample " << execTimeMilliSeconds*1.0/nSamples << "ms" << std::endl;
-//
-//    }
+    static void sampleTiming(int nSamples) {
+        std::ifstream probFile(problemFilename);
+        if(!probFile.good()) throw("Can't open problem probFile for this geometry. Run generateStandardProblemFile first.");
+        boost::archive::binary_iarchive probArchive(probFile);
+        ABMPosterior<trajectory_type, start_state_type> posterior;
+        probArchive >> posterior;
+
+        std::cout << "Loaded problem." << std::endl;
+
+        std::cout << "Creating ABMSampler..." << std::endl;
+        ABMSampler sampler(posterior);
+
+        std::cout << "Burning in..." << std::endl;
+        for(int burnIn=0; burnIn<nSamples/5; ++burnIn) sampler();
+        std::cout << sampler.stats << std::endl;
+        std::cout << "Taking samples..." << std::endl;
+        auto startTime = std::chrono::steady_clock::now();
+        for(int s=0; s<nSamples; ++s) sampler();
+        auto endTime = std::chrono::steady_clock::now();
+        auto execTime = endTime - startTime;
+
+        const trajectory_type &sample = sampler();
+        std::cout << "Final state is " << sample << std::endl;
+        std::cout << "Executed in " << execTime << std::endl;
+        std::cout << "Time per feasible sample " << execTime/nSamples << std::endl;
+    }
 
 
 //    static void plotProblemEndState() {
@@ -218,7 +216,7 @@ public:
         ABMPosterior<trajectory_type,start_state_type> posterior;
         probArchive >> posterior;
 
-        std::cout << posterior << std::endl;
+//        std::cout << posterior << std::endl;
 
         // plot autocorrelations
         Plotter acPlotter;

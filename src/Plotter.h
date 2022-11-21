@@ -37,22 +37,19 @@ public:
                 for(int typeId=0; typeId < AGENT::typeDomainSize; ++typeId) {
                     gridSquareOccupation += analysis[AGENT(x, y, typename AGENT::Type(typeId))];
                 }
-                gridSquareOccupation /= AGENT::typeDomainSize;
                 maxP = std::max(maxP, gridSquareOccupation);
                 minP = std::min(minP, gridSquareOccupation);
             }
         }
 
-
         std::cout << "Mean ModelState gridsquare occupation range = " << minP << ":" << maxP << std::endl;
-
 
         // make realState data
         // map from [0...1] to 0xRRGGBB
         std::function<int(double,double)> colourMap = [](double hue, double saturation) {
-            int r = 128.0 * saturation * (1.0 + cos(3.141 * hue));
+            int r = 127.5 * saturation * (1.0 + cos(3.141 * hue));
             int g = 0.0;//255.0 * saturation * sin(3.141 * hue);
-            int b = 128.0 * saturation * (1.0 - cos(3.141 * hue));
+            int b = 127.5 * saturation * (1.0 - cos(3.141 * hue));
             return 0x10000*r + 0x100*g + b;
         };
         for (int x = 0; x < GRIDSIZE; ++x) {
@@ -65,10 +62,10 @@ public:
                     meanType += typeId * typeOccupation;
                 }
                 if (gridsquareMeanOccupation != 0.0) {
-                    double hue = meanType/(AGENT::typeDomainSize*gridsquareMeanOccupation);
-                    gridsquareMeanOccupation = std::min(1.0, gridsquareMeanOccupation/AGENT::typeDomainSize);
-                    std::cout << gridsquareMeanOccupation << std::endl;
-                    pointData.emplace_back(x, y, colourMap(hue,gridsquareMeanOccupation));
+                    double hue = meanType/((AGENT::typeDomainSize-1)*gridsquareMeanOccupation);
+//                    gridsquareMeanOccupation = std::min(1.0, gridsquareMeanOccupation/AGENT::typeDomainSize);
+//                    std::cout << gridsquareMeanOccupation << std::endl;
+                    pointData.emplace_back(x, y, colourMap(hue,1.0));
                 }
             }
         }
@@ -90,8 +87,8 @@ public:
 //                lPred = std::max(lPred,minP);
 //                record.emplace_back(x, y, lPrey * 240.0/maxP, 0.0, lPred * 240.0/maxP);
 //                record.emplace_back(x, y, (log(lPrey) - log(minP))* 240.0/(log(maxP)-log(minP)), 0.0, (log(lPred) - log(minP)) * 240.0/(log(maxP)-log(minP)));
-                double hue = meanType/(AGENT::typeDomainSize*gridsquareMeanOccupation);
-                gridsquareMeanOccupation = std::min(1.0, gridsquareMeanOccupation/(AGENT::typeDomainSize*maxP));
+                double hue = meanType/((AGENT::typeDomainSize-1)*gridsquareMeanOccupation);
+                gridsquareMeanOccupation = std::min(1.0, gridsquareMeanOccupation/maxP);
                 int rgbColour = colourMap(hue,gridsquareMeanOccupation);
                 record.template emplace_back(x,y,rgbColour >> 16, (rgbColour & 0xff00) >> 8, rgbColour & 0xff);
             }
@@ -106,11 +103,17 @@ public:
         *this << "plot [-0.5:" << GRIDSIZE - 0.5 << "][-0.5:" << GRIDSIZE - 0.5 << "] ";
 //        *this << "'-' with image notitle, ";
         *this << "'-' with rgbimage notitle";
-        if(!pointData.empty()) *this << ", '-' with points pointtype 5 pointsize 0.75 lc rgbcolor variable notitle";
+        if(!pointData.empty()) {
+            *this << ", '-' with points pointtype 5 pointsize 1.25 lc black notitle";
+            *this << ", '-' with points pointtype 5 pointsize 0.75 lc rgbcolor variable notitle";
+        }
         *this << "\n";
 //        *this << "'-' with points pointtype 5 pointsize 0.75 lc palette notitle\n";
         send2d(heatData);
-        if(!pointData.empty()) send1d(pointData);
+        if(!pointData.empty()) {
+            send1d(pointData);
+            send1d(pointData);
+        }
     }
 
 

@@ -469,7 +469,7 @@ template<class COEFF>
 std::vector<int> TableauEntropyMaximiser<COEFF>::prePivotUpdates(int i) {
     std::vector<int> affectedRows;
     potentialPivots[i].setInactive(bestPivots);
-    affectedRows.reserve(rows[i].size() * cols[rows[i].front().first].size()); // approximate size
+    affectedRows.reserve(rows[i].sparseSize() * cols[rows[i].front().first].sparseSize()); // approximate size
     for(const auto &[j,Mij]: rows[i]) {
         for(const auto &[k,Mkj]: cols[j]) {
             PotentialPivot &potentialPivotk = potentialPivots[k];
@@ -582,9 +582,9 @@ void TableauEntropyMaximiser<COEFF>::sanityCheck() {
         }
     }
     int nColEntries = 0;
-    for(const auto &col: cols) { nColEntries += col.size(); }
+    for(const auto &col: cols) { nColEntries += col.sparseSize(); }
     int nRowEntries = 0;
-    for(const auto &row: rows) { nRowEntries += row.size(); }
+    for(const auto &row: rows) { nRowEntries += row.sparseSize(); }
     assert(nColEntries == nRowEntries);
 
     // check Potential pivot data is consistent
@@ -600,7 +600,7 @@ void TableauEntropyMaximiser<COEFF>::sanityCheck() {
             assert(potentialPivots[i].bestPivotsEntry->first == potentialPivots[i].calculateEntropyChangeForecast());
             ++nActive;
         } else {
-            assert(cols[potentialPivots[i].basicColIndex()].size() == 1);
+            assert(cols[potentialPivots[i].basicColIndex()].sparseSize() == 1);
         }
     }
     assert(nActive == bestPivots.size());
@@ -665,7 +665,7 @@ std::vector<SparseVec<T>> TableauEntropyMaximiser<T>::getBasisVectors() {
     for(int j=0; j<cols.size(); ++j) {
         if(!cols[j].isBasic()) {
             SparseVec<T> &newBasis = basisVectors.emplace_back();
-            newBasis.insert(j, 1); // element from the identity
+            newBasis.insert(j, 1); // element from the identity (insert first to ensure canonical)
             for (auto & [i, Mij]: cols[j]) {
                 int basicj = potentialPivots[i].basicVar();
                 newBasis.insert(basicj, Mij / (-rows[i][basicj]));

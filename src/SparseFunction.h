@@ -36,10 +36,9 @@ public:
 
     std::vector<int>          dependencies;
 
-
     template<class CONTAINER>
-    SparseFunction(std::function<OUT(IN)> widenedFunction, const CONTAINER &dependencies):
-            std::function<OUT(IN)>(std::move(widenedFunction))
+    SparseFunction(std::function<OUT(IN)> function, const CONTAINER &dependencies):
+            std::function<OUT(IN)>(std::move(function))
     {
                 this->dependencies.reserve(dependencies.size());
                 for(int dependency: dependencies) {

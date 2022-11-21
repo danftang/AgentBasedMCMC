@@ -508,7 +508,7 @@ std::vector<SparseVec<T>> TableauNormMinimiser<T>::getBasisVectors() {
     for(int j=0; j<cols.size(); ++j) {
         if(!cols[j].isBasic) {
             SparseVec<T> &newBasis = basisVectors.emplace_back();
-            newBasis.insert(j, 1); // element from the identity
+            newBasis.insert(j, 1); // element from the identity (insert first to ensure canonical)
             for (int i: cols[j]) {
                 if (i >= 0) {
                     assert(basicVars[i] != UNREDUCED); // every row should have a basic variable

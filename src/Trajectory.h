@@ -79,19 +79,21 @@ public:
         return event.getRawIndex();
     }
 
-    static EqualityConstraints<value_type> constraints(int nTimesteps) {
+    static EqualityConstraints<value_type> constraints() {
         EqualityConstraints<value_type> constraints;
-        for(int time = 1; time < nTimesteps; ++time) {
-            for(int agentState = 0; agentState < AGENT::domainSize; ++agentState) {
+        for(int time = 1; time < NTIMESTEPS; ++time) {
+            for(int agentId = 0; agentId < AGENT::domainSize; ++agentId) {
+                State<AGENT> state(time, agentId);
                 SparseVec<value_type> coefficients;
                 // outgoing edges
                 for (int act = 0; act < AGENT::actDomainSize; ++act) {
-                    coefficients.insert(indexOf(Event<AGENT>(time, agentState, act)), 1);
+                    coefficients.insert(indexOf(Event<AGENT>(time, agentId, act)), 1);
                 }
                 // incoming edges
-                for (const Event<AGENT> &inEdge: State<AGENT>::incomingEventsByAgentId[agentState]) {
-                    coefficients.insert(indexOf(Event<AGENT>(time-1,inEdge.agent(),inEdge.act())), -1);
+                for (const Event<AGENT> &inEdge: state.backwardOccupationDependencies()) {
+                    coefficients.insert(indexOf(inEdge), -1);
                 }
+                coefficients.sortAndMerge();
                 constraints.emplace_back(coefficients,0);
             }
         }

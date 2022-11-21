@@ -1,3 +1,6 @@
+// An extended trajectory with the addition of variables for the
+// count of agents surrounding each gridsquare, suitable for
+// predator-prey interaction
 //
 // Created by daniel on 22/09/22.
 //
@@ -102,6 +105,7 @@ public:
                         backwardCoeffs.insert(indexOf(inEdge), 1);
                     }
                     backwardCoeffs.insert(surroundingCountIndexOf(state), -1);
+                    backwardCoeffs.sortAndMerge(); // ensure all entries have unique index
                     constraints.template emplace_back(backwardCoeffs, 0);
                 }
 

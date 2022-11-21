@@ -9,6 +9,7 @@
 #include <map>
 #include <algorithm>
 #include "StlStream.h"
+#include "SparseVec.h"
 
 template<class T>
 class SortedSparseVec : public std::vector<std::pair<int, T>> {
@@ -23,6 +24,7 @@ public:
 
     SortedSparseVec(): std::vector<std::pair<int,T>>() {}
     SortedSparseVec(const std::map<int, T> &map) : std::vector<std::pair<int, T>>(map.begin(), map.end()) {}
+    explicit SortedSparseVec(const SparseVec<T> &unsortedSparseVec);
 
     class MutableAccessor {
     public:
@@ -37,6 +39,9 @@ public:
     inline MutableAccessor operator [](int index) { return MutableAccessor(*this, index); }
     inline const T & operator [](int index) const { return get(index); }
 
+    size_t sparseSize() const { return vector_type::size(); }
+
+    size_t size() = delete; // ambiguous between sparseSize and dimension
 
     inline void set(int index, const T &value) {
         iterator lb = find(index);
@@ -126,7 +131,7 @@ public:
     SortedSparseVec &weightedPlusAssign(const T &weight, const SortedSparseVec<T> &other) {
         if(weight == 0 || other.empty()) return *this;
         std::vector<std::pair<int, T>> result;
-        result.reserve(this->size() + other.size());
+        result.reserve(this->sparseSize() + other.sparseSize());
         auto extractionPointA = this->begin();
         auto extractionPointB = other.begin();
         while (extractionPointA != this->end() && extractionPointB != other.end()) {
@@ -167,15 +172,42 @@ public:
         return *this;
     }
 
+    // sorts the entries by index
     void sort() {
         std::sort(this->begin(), this->end(), [](const std::pair<int,T> &a, const std::pair<int,T> &b) {
             return a.first < b.first;
         });
     }
 
+    // Sorts the entries by index and merges any entries that have the same index
+    void sortAndMerge() {
+        sort();
+        iterator readIt = this->begin();
+        iterator writeIt = this->begin();
+        while(++readIt != this->end()) {
+            if(readIt->first == writeIt->first) {
+                writeIt->second += readIt->second;
+            } else {
+                ++writeIt;
+                if(writeIt != readIt) *writeIt = *readIt;
+            }
+        }
+        ++writeIt;
+        this->resize(writeIt - this->begin());
+    }
+
 
 };
 
 template<class T> const T SortedSparseVec<T>::zero = 0;
+
+template<class T>
+SortedSparseVec<T>::SortedSparseVec(const SparseVec<T> &unsortedSparseVec) {
+    this->reserve(unsortedSparseVec.sparseSize());
+    for(int i=0; i<unsortedSparseVec.sparseSize(); ++i) {
+        this->template emplace_back(unsortedSparseVec.indices[i], unsortedSparseVec.values[i]);
+    }
+    this->sortAndMerge();
+}
 
 #endif //ABMCMC_SORTEDSPARSEVEC_H

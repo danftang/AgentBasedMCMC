@@ -1,3 +1,5 @@
+// A Trajectory with additional variables for the count of agents in each
+// gridsquare, to allow for factorised multinomial calculation
 //
 // Created by daniel on 23/09/22.
 //
@@ -62,16 +64,17 @@ public:
                         backwardCoeffs.insert(indexOf(inEdge),1);
                     }
                     backwardCoeffs.insert(indexOf(state), -1);
+                    backwardCoeffs.sortAndMerge();
                     constraints.emplace_back(backwardCoeffs, 0);
 
-                    SparseVec<value_type> doubleCoeffs;
-                    for (const Event<AGENT> &inEdge: state.backwardOccupationDependencies()) {
-                        doubleCoeffs.insert(indexOf(inEdge),1);
-                    }
-                    for (int act = 0; act < AGENT::actDomainSize; ++act) {
-                        doubleCoeffs.insert(indexOf(Event<AGENT>(time, agentId, act)), -1);
-                    }
-                    constraints.emplace_back(doubleCoeffs, 0);
+//                    SparseVec<value_type> doubleCoeffs;
+//                    for (const Event<AGENT> &inEdge: state.backwardOccupationDependencies()) {
+//                        doubleCoeffs.insert(indexOf(inEdge),1);
+//                    }
+//                    for (int act = 0; act < AGENT::actDomainSize; ++act) {
+//                        doubleCoeffs.insert(indexOf(Event<AGENT>(time, agentId, act)), -1);
+//                    }
+//                    constraints.emplace_back(doubleCoeffs, 0);
                 }
 
 //                // forward occupation
@@ -93,6 +96,7 @@ public:
 
             }
         }
+        constraints += Trajectory<AGENT,NTIMESTEPS>::constraints();
         return constraints;
     }
 

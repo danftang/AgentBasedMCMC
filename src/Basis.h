@@ -32,6 +32,7 @@ public:
     Basis(std::vector<SparseVec<value_type>> basisVecs, DOMAIN origin) :
             basisVectors(std::move(basisVecs)),
             origin(std::move(origin)) {
+        debug(isCanonical());
     }
 
 
@@ -82,19 +83,76 @@ public:
         return S;
     }
 
+
+    // ensures that the first non-zero entry in each basis is non-basic (i.e. that no other basis-vector
+    // has a non-zero in this index.
+    // returns true if a canonical form was possible, falso otherwise
+    bool makeCanonical() {
+        std::vector<int> basisIndex(DOMAIN::size(),-1); // basisVector that contains a given non-basic
+        std::vector<int> entryIndex(DOMAIN::size(),-1); // the non-zero index of the entry that contains the non-basic
+        for(int i=0; i<basisVectors.size(); ++i) {
+            for(int nnz = 0; nnz < basisVectors[i].sparseSize(); ++nnz) {
+                int domainIndex = basisVectors[i].indices[nnz];
+                if(basisIndex[domainIndex] == -1) {
+                    basisIndex[domainIndex] = i;
+                    entryIndex[domainIndex] = nnz;
+                } else {
+                    basisIndex[domainIndex] = -2;
+                }
+            }
+        }
+        int nNonBasic = 0;
+        for(int j=0; j<DOMAIN::size(); ++j) {
+            if(basisIndex[j] >= 0 && entryIndex[j] != 0) {
+                const SparseVec<value_type> &basisVec = basisVectors[basisIndex[j]];
+                std::swap(basisVec.indices[entryIndex[j]], basisVec.indices[0]); // bring non-basic to front
+                std::swap(basisVec.values[entryIndex[j]], basisVec.values[0]);
+                ++nNonBasic;
+            }
+        }
+        return nNonBasic >= basisVectors.size();
+    }
+
+
+//    // returns the highest index in any basis vector
+//    int maxNonZeroIndex() {
+//        int max = 0;
+//        for(const auto &vec: basisVectors) max = std::max(max, vec.maxNonZeroIndex());
+//        return max;
+//    }
+
+    bool isCanonical() const {
+        std::vector<int> nonBasicVars(basisVectors.size());
+        std::transform(basisVectors.begin(), basisVectors.end(), nonBasicVars.begin(), [](const SparseVec<value_type> &basisVec) {
+            return basisVec.indices[0];
+        });
+        std::sort(nonBasicVars.begin(), nonBasicVars.end());
+        return std::adjacent_find(nonBasicVars.begin(), nonBasicVars.end()) == nonBasicVars.end();
+    }
+
 private:
     friend class boost::serialization::access;
 
     void sanityCheck(const EqualityConstraints<value_type> &constraints) {
         // test that the basis is truly a basis of the constraints in the distribution
+
+//        std::cout << "Checking basis. Basis vectors = " << std::endl;
+//        std::cout << basisVectors << std::endl;
+//        std::cout << "origin = " << origin << std::endl;
+//        std::cout << "against constraints: " << std::endl;
+//        std::cout << constraints << std::endl;
+
         assert(origin.size() == DOMAIN::dimension);
         assert(basisVectors.size() == DOMAIN::dimension - constraints.size());
         assert(constraints.isValidSolution(origin));
         for (int i = 0; i < basisVectors.size(); ++i) {
             origin += basisVectors[i];
+//            std::cout << "Cheking basis " << basisVectors[i] << std::endl;
+//            std::cout << "X = " << origin << std::endl;
             assert(constraints.isValidSolution(origin));
             origin -= basisVectors[i];
         }
+        assert(isCanonical());
     }
 
 
